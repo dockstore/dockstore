@@ -70,6 +70,7 @@ import io.dockstore.openapi.client.model.CpuMetric;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
+import io.dockstore.openapi.client.model.ExecutionsResponseBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
@@ -328,7 +329,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 .taskExecutions(List.of(taskExecutions))
                 .validationExecutions(List.of(validationExecution))
                 .aggregatedExecutions(List.of(aggregatedExecution));
-        extendedGa4GhApi.executionMetricsPost(executionsRequestBody, platform1, workflowId, workflowVersionId, description);
+        ExecutionsResponseBody executionsResponseBody = extendedGa4GhApi.executionMetricsPost(executionsRequestBody, platform1, workflowId, workflowVersionId, description);
+        assertEquals(4, executionsResponseBody.getExecutionResponses().size(), "There should be a response for each execution");
+        assertTrue(executionsResponseBody.getExecutionResponses().stream().allMatch(response -> response.getStatus() == HttpStatus.SC_OK), "All executions should've been successfully submitted");
         verifyMetricsDataList(workflowId, workflowVersionId, 4); // There should be 4 files, one for each execution
     }
 

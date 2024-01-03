@@ -697,8 +697,12 @@ paths:
           execution metrics is deprecated.
         required: true
       responses:
-        "204":
-          description: Execution metrics submitted successfully.
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionsResponseBody'
+          description: Execution metrics submitted.
         "401":
           content:
             application/json:
@@ -770,12 +774,12 @@ paths:
         description: The updated executions
         required: true
       responses:
-        "200":
+        "207":
           content:
             application/json:
               schema:
-                type: string
-          description: Execution updated successfully.
+                $ref: '#/components/schemas/ExecutionsResponseBody'
+          description: Executions updated successfully.
         "401":
           content:
             application/json:
@@ -787,7 +791,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-          description: The tool cannot be found to update the execution.
+          description: The tool cannot be found to update the executions.
       security:
       - BEARER: []
       summary: Update a workflow execution that was executed on a platform
@@ -9439,6 +9443,23 @@ components:
       required:
       - dateExecuted
       - executionId
+    ExecutionResponse:
+      type: object
+      description: Response for a single execution metric as a result of an API
+      properties:
+        error:
+          type: string
+          description: The error message if one exists
+        executionId:
+          type: string
+          description: The ID of the execution that the response is for
+        status:
+          type: integer
+          format: int32
+          description: The response status code of the action for the execution
+      required:
+      - executionId
+      - status
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -9538,6 +9559,15 @@ components:
       - runExecutions
       - taskExecutions
       - validationExecutions
+    ExecutionsResponseBody:
+      type: object
+      description: Response body model for execution metric APIs
+      properties:
+        executionResponses:
+          type: array
+          description: A list of responses for the executions submitted
+          items:
+            $ref: '#/components/schemas/ExecutionResponse'
     ExtendedUserData:
       type: object
       properties:

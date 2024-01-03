@@ -70,29 +70,18 @@ public class MetricsDataS3Client {
      * @param metricsData The metrics data in JSON format
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public boolean createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData, boolean overwriteExistingObject) {
-        boolean isSuccessful = false;
+    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) throws AwsServiceException, SdkClientException {
         String key = generateKey(toolId, versionName, platform, fileName);
-        if (!doesKeyExistInS3(key) || overwriteExistingObject) {
-            Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
-                    ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(key)
-                    .metadata(metadata)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .build();
-            RequestBody requestBody = RequestBody.fromString(metricsData);
-            try {
-                s3.putObject(request, requestBody);
-                isSuccessful = true;
-            } catch (AwsServiceException | SdkClientException exception) {
-                LOG.error("Could not put object with key {} to S3", key, exception);
-            }
-        } else {
-            LOG.error("S3 key {} already exists", key);
-        }
-        return isSuccessful;
+        Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
+                ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .metadata(metadata)
+                .contentType(MediaType.APPLICATION_JSON)
+                .build();
+        RequestBody requestBody = RequestBody.fromString(metricsData);
+        s3.putObject(request, requestBody);
     }
 
     /**
