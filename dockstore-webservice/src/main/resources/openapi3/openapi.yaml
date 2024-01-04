@@ -702,7 +702,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExecutionsResponseBody'
-          description: Execution metrics submitted.
+          description: Execution metrics submitted. Please view the individual responses.
         "401":
           content:
             application/json:
@@ -722,8 +722,8 @@ paths:
       tags:
       - extendedGA4GH
     put:
-      description: This endpoint updates a workflow execution that was executed on
-        a platform
+      description: "This endpoint updates workflow executions that were executed on\
+        \ a platform. Does not update aggregated metrics, which is deprecated."
       operationId: ExecutionMetricsUpdate
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -779,7 +779,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExecutionsResponseBody'
-          description: Executions updated successfully.
+          description: Executions to update processed. Please view the individual
+            responses.
         "401":
           content:
             application/json:
@@ -794,7 +795,8 @@ paths:
           description: The tool cannot be found to update the executions.
       security:
       - BEARER: []
-      summary: Update a workflow execution that was executed on a platform
+      summary: "Update workflow executions that were executed on a platform. Does\
+        \ not update aggregated metrics, which is deprecated."
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:

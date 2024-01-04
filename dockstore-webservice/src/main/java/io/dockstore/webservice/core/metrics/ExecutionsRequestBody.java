@@ -90,6 +90,11 @@ public class ExecutionsRequestBody {
         this.aggregatedExecutions = aggregatedExecutions;
     }
 
+    /**
+     * Update the object with the executions from newExecutionsRequestBody if the same execution exists in the object.
+     * Ignores the deprecated aggregated executions.
+     * @param newExecutionsRequestBody
+     */
     public void update(ExecutionsRequestBody newExecutionsRequestBody) {
         this.runExecutions.forEach(oldWorkflowExecution -> {
             Optional<RunExecution> matchedExecution = newExecutionsRequestBody.runExecutions.stream().filter(newExecution -> oldWorkflowExecution.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
