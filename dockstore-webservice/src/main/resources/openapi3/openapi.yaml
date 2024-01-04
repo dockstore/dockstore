@@ -10680,31 +10680,6 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: object
-              description: "Additional properties that aren't defined. Provide a context,\
-                \ like one from schema.org, if you want to use a specific vocabulary"
-              example:
-                '@context':
-                  schema: https://schema.org
-                schema:actionStatus: CompletedActionStatus
-            description: "Additional properties that aren't defined. Provide a context,\
-              \ like one from schema.org, if you want to use a specific vocabulary"
-            example:
-              '@context':
-                schema: https://schema.org
-              schema:actionStatus: CompletedActionStatus
-          dateExecuted:
-            type: string
-            description: The date and time that the execution occurred in ISO 8601
-              UTC date format
-            example: 2023-03-31T15:06:49.888745366Z
-          executionId:
-            type: string
-            description: User-provided ID of the execution. This ID is used to identify
-              the execution when updating the execution
           taskExecutions:
             type: array
             description: Metrics of individual tasks that were executed during the
