@@ -18,14 +18,17 @@
 package io.dockstore.webservice.core.metrics;
 
 import io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics;
+import io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @HasExecutionsOrMetrics
+@HasUniqueExecutionIds
 @Schema(name = "ExecutionsRequestBody", description = "Request body model for executionMetricsPost")
 public class ExecutionsRequestBody {
 
@@ -85,5 +88,22 @@ public class ExecutionsRequestBody {
     @Deprecated(since = "1.15.0")
     public void setAggregatedExecutions(List<AggregatedExecution> aggregatedExecutions) {
         this.aggregatedExecutions = aggregatedExecutions;
+    }
+
+    public void update(ExecutionsRequestBody newExecutionsRequestBody) {
+        this.runExecutions.forEach(oldWorkflowExecution -> {
+            Optional<RunExecution> matchedExecution = newExecutionsRequestBody.runExecutions.stream().filter(newExecution -> oldWorkflowExecution.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
+            matchedExecution.ifPresent(oldWorkflowExecution::update);
+        });
+
+        this.taskExecutions.forEach(oldTaskExecutions -> {
+            Optional<TaskExecutions> matchedExecution = newExecutionsRequestBody.taskExecutions.stream().filter(newExecution -> oldTaskExecutions.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
+            matchedExecution.ifPresent(oldTaskExecutions::update);
+        });
+
+        this.validationExecutions.forEach(oldValidationExecution -> {
+            Optional<ValidationExecution> matchedExecution = newExecutionsRequestBody.validationExecutions.stream().filter(newExecution -> oldValidationExecution.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
+            matchedExecution.ifPresent(oldValidationExecution::update);
+        });
     }
 }

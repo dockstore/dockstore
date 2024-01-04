@@ -28,6 +28,7 @@ import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.Ex
 import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
 import static io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics.MUST_CONTAIN_EXECUTIONS_OR_METRICS;
 import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
+import static io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds.MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
@@ -67,6 +68,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.AggregatedExecution;
 import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.CpuMetric;
+import io.dockstore.openapi.client.model.ExecutionResponse;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
@@ -215,8 +217,10 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         // List of 1 workflow run execution
         List<RunExecution> runExecutions = createRunExecutions(1);
         // List of one set of task executions. This set of task executions represent two tasks that were executed during the workflow execution
-        List<TaskExecutions> taskExecutions = List.of(new TaskExecutions().executionId(generateExecutionId()).taskExecutions(createRunExecutions(2)));
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions).taskExecutions(taskExecutions), platform1, workflowId, workflowVersionId, description);
+        List<TaskExecutions> taskExecutions = List.of(createTaskExecutions(2));
+        ExecutionsResponseBody responseBody = extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions).taskExecutions(taskExecutions), platform1, workflowId, workflowVersionId, description);
+        assertEquals(2, responseBody.getExecutionResponses().size());
+        assertTrue(responseBody.getExecutionResponses().stream().allMatch(response -> response.getStatus() == HttpStatus.SC_OK));
 
         List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 2);
         List<ExecutionsRequestBody> s3ExecutionRequestBodies = metricsDataList.stream()
@@ -249,7 +253,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setValidatorToolVersion("v1.9.1");
         validationExecution.setDateExecuted(Instant.now().toString());
         List<ValidationExecution> validationExecutions = List.of(validationExecution);
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
+        responseBody = extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
+        assertEquals(1, responseBody.getExecutionResponses().size());
+        assertTrue(responseBody.getExecutionResponses().stream().allMatch(response -> response.getStatus() == HttpStatus.SC_OK));
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, platform2, ownerUserId, description, 1);
         List<ExecutionsRequestBody> executionsRequestBodiesWithValidationExecutions = metricsDataList.stream()
                 .map(this::getExecutionsRequestBody)
@@ -275,8 +281,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         final String toolId = "quay.io/dockstoretestuser2/dockstore-cgpmap";
         final String toolVersionId = "symbolic.v1";
-        //executionsRequestBody = new ExecutionsRequestBody().runExecutions(runExecutions);
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, toolId, toolVersionId, null);
+        responseBody = extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, toolId, toolVersionId, null);
+        assertEquals(1, responseBody.getExecutionResponses().size());
+        assertTrue(responseBody.getExecutionResponses().stream().allMatch(response -> response.getStatus() == HttpStatus.SC_OK));
         metricsDataList = verifyMetricsDataList(toolId, toolVersionId, platform1, ownerUserId, "", 1);
         List<ExecutionsRequestBody> executionsRequestBodiesWithWorkflowExecutions = metricsDataList.stream()
                 .map(this::getExecutionsRequestBody)
@@ -312,7 +319,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         // Add 1 workflow execution, 1 task execution set, 1 validation execution, 1 aggregated execution for a workflow version for one platform
         List<RunExecution> runExecutions = createRunExecutions(1);
 
-        TaskExecutions taskExecutions = new TaskExecutions().executionId(generateExecutionId()).taskExecutions(createRunExecutions(2));
+        TaskExecutions taskExecutions = createTaskExecutions(2);
 
         ValidationExecution validationExecution = new ValidationExecution();
         validationExecution.setExecutionId(generateExecutionId());
@@ -425,6 +432,31 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody(), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if execution metrics not provided");
         assertTrue(exception.getMessage().contains(MUST_CONTAIN_EXECUTIONS_OR_METRICS), "Should throw if execution metrics not provided");
+
+        // Verify that user cannot provide duplicate execution IDs in the same request body
+        List<RunExecution> duplicateIdExecutions = createRunExecutions(2);
+        duplicateIdExecutions.forEach(execution -> execution.setExecutionId("sameId"));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdExecutions), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if there are duplicate execution IDs provided");
+        assertTrue(exception.getMessage().contains(MUST_CONTAIN_UNIQUE_EXECUTION_IDS), "Should throw if there are duplicate execution IDs provided");
+
+        // Verify that user cannot provide duplicate execution IDs over multiple submissions. These errors are represented in the response body
+        final List<RunExecution> duplicateIdOverTimeExecution = createRunExecutions(1);
+        ExecutionsResponseBody responseBody = extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdOverTimeExecution), platform, id, versionId, description);
+        assertTrue(responseBody.getExecutionResponses().stream().allMatch(response -> response.getStatus() == HttpStatus.SC_OK));
+        // Submit the same execution again, but also submit a valid TaskExecutions
+        final TaskExecutions validTaskExecutions = createTaskExecutions(1);
+        responseBody = extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdOverTimeExecution).taskExecutions(List.of(validTaskExecutions)), platform, id, versionId, description);
+        assertEquals(2, responseBody.getExecutionResponses().size());
+        // There should be one failed response
+        ExecutionResponse actualResponse = responseBody.getExecutionResponses().stream().filter(response -> response.getExecutionId().equals(duplicateIdOverTimeExecution.get(0).getExecutionId())).findFirst().orElse(null);
+        assertNotNull(actualResponse);
+        assertEquals(HttpStatus.SC_BAD_REQUEST, actualResponse.getStatus());
+        assertTrue(actualResponse.getError().contains("already exists"));
+        // There should be one successful response
+        actualResponse = responseBody.getExecutionResponses().stream().filter(response -> response.getExecutionId().equals(validTaskExecutions.getExecutionId())).findFirst().orElse(null);
+        assertNotNull(actualResponse);
+        assertEquals(HttpStatus.SC_OK, actualResponse.getStatus());
     }
 
     @Test
@@ -900,6 +932,14 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             executions.add(execution);
         }
         return executions;
+    }
+
+    public static TaskExecutions createTaskExecutions(int numberOfTasks) {
+        TaskExecutions taskExecutions = new TaskExecutions();
+        taskExecutions.setExecutionId(generateExecutionId());
+        taskExecutions.setDateExecuted(Instant.now().toString());
+        taskExecutions.setTaskExecutions(createRunExecutions(numberOfTasks));
+        return taskExecutions;
     }
 
     public static String generateExecutionId() {

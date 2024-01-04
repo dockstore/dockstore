@@ -21,7 +21,6 @@ import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPON
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import com.google.gson.Gson;
 import io.dockstore.common.Partner;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -34,14 +33,12 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.metrics.AggregatedExecution;
+import io.dockstore.webservice.core.metrics.Execution;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
-import io.dockstore.webservice.core.metrics.RunExecution;
-import io.dockstore.webservice.core.metrics.TaskExecutions;
-import io.dockstore.webservice.core.metrics.ValidationExecution;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -104,7 +101,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
     public static final String SEARCH_QUERY_NOT_PARSED = "Couldn't parse search payload request.";
     public static final String SEARCH_QUERY_REGEX = "([.?+*#@&~\"{}()<>\\[\\]|\\\\])";
-    private static final Gson GSON = new Gson();
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
@@ -508,35 +504,20 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             if (StringUtils.isBlank(metricsData)) {
                 throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
             }
-
-            // Don't overwrite existing files when submitting metrics. This can happen if the user specifies an execution ID that already exists for the version and platform.
-            final boolean overwrite = false;
-            ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
-            // Each Execution is stored in its own file
-            for (RunExecution workflowExecution: executions.getRunExecutions()) {
-                executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleWorkflowExecution(id, versionId, platform.name(), workflowExecution.getExecutionId(), owner.getId(), description, workflowExecution, overwrite, metricsDataS3Client));
-            }
-
-            // Each Execution is stored in its own file
-            for (TaskExecutions taskExecutions: executions.getTaskExecutions()) {
-                executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleTaskExecutions(id, versionId, platform.name(), taskExecutions.getExecutionId(), owner.getId(), description, taskExecutions, overwrite, metricsDataS3Client));
-            }
-
-            // Each Execution is stored in its own file
-            for (ValidationExecution validationExecution: executions.getValidationExecutions()) {
-                executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleValidationExecution(id, versionId, platform.name(), validationExecution.getExecutionId(), owner.getId(), description, validationExecution, overwrite, metricsDataS3Client));
-            }
-
-            // Each Execution is stored in its own file
-            for (AggregatedExecution aggregatedExecution: executions.getAggregatedExecutions()) {
-                executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleAggregatedExecution(id, versionId, platform.name(), aggregatedExecution.getExecutionId(), owner.getId(), description, aggregatedExecution, overwrite, metricsDataS3Client));
-            }
-
-            return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
-        } catch (AwsServiceException | SdkClientException | JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
             throw new CustomWebApplicationException(COULD_NOT_SUBMIT_METRICS_DATA, HttpStatus.SC_BAD_REQUEST);
         }
+
+        // Don't overwrite existing files when submitting metrics. This can happen if the user specifies an execution ID that already exists for the version and platform.
+        final boolean overwrite = false;
+        ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
+        // Each Execution is stored in its own file
+        ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).forEach((executionId, singleExecutionRequestBody) -> {
+            executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), executionId, owner.getId(), description, singleExecutionRequestBody, overwrite, metricsDataS3Client));
+        });
+
+        return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
     }
 
     /**
@@ -553,7 +534,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     private ExecutionResponse createS3ObjectForSingleExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, ExecutionsRequestBody executionsRequestBody, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
-        String s3Key = MetricsDataS3Client.generateKey(id, versionId, platform, executionId);
+        final String fileName = executionId.endsWith(".json") ? executionId : executionId + ".json";
+
+        String s3Key = MetricsDataS3Client.generateKey(id, versionId, platform, fileName);
         if (!overwrite && metricsDataS3Client.doesKeyExistInS3(s3Key)) {
             return new ExecutionResponse(executionId, HttpStatus.SC_BAD_REQUEST, String.format("%s: An execution with id %s already exists for version %s and platform %s", COULD_NOT_SUBMIT_METRICS_DATA, executionId, versionId, platform));
         }
@@ -561,42 +544,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         final String executionsRequestBodyString;
         try {
             executionsRequestBodyString = OBJECT_MAPPER.writeValueAsString(executionsRequestBody);
-            final String fileName = executionId.endsWith(".json") ? executionId : executionId + ".json";
             metricsDataS3Client.createS3Object(id, versionId, platform, fileName, ownerId, description, executionsRequestBodyString);
             return new ExecutionResponse(executionId, HttpStatus.SC_OK);
         } catch (AwsServiceException | SdkClientException | JsonProcessingException e) {
             LOG.error("{} for execution with ID {}", COULD_NOT_SUBMIT_METRICS_DATA, executionId, e);
             return new ExecutionResponse(executionId, HttpStatus.SC_BAD_REQUEST, COULD_NOT_SUBMIT_METRICS_DATA + ": " + e.getMessage());
         }
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private ExecutionResponse createS3ObjectForSingleWorkflowExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, RunExecution workflowExecution, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
-        ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody();
-        executionsRequestBody.setRunExecutions(List.of(workflowExecution));
-        return createS3ObjectForSingleExecution(id, versionId, platform, executionId, ownerId, description, executionsRequestBody, overwrite, metricsDataS3Client);
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private ExecutionResponse createS3ObjectForSingleTaskExecutions(String id, String versionId, String platform, String executionId, long ownerId, String description, TaskExecutions taskExecutions, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
-        ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody();
-        executionsRequestBody.setTaskExecutions(List.of(taskExecutions));
-        return createS3ObjectForSingleExecution(id, versionId, platform, executionId, ownerId, description, executionsRequestBody, overwrite, metricsDataS3Client);
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private ExecutionResponse createS3ObjectForSingleValidationExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, ValidationExecution validationExecution, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
-        ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody();
-        executionsRequestBody.setValidationExecutions(List.of(validationExecution));
-        return createS3ObjectForSingleExecution(id, versionId, platform, executionId, ownerId, description, executionsRequestBody, overwrite, metricsDataS3Client);
-    }
-
-    @Deprecated(since = "1.15.0")
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private ExecutionResponse createS3ObjectForSingleAggregatedExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, AggregatedExecution aggregatedExecution, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
-        ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody();
-        executionsRequestBody.setAggregatedExecutions(List.of(aggregatedExecution));
-        return createS3ObjectForSingleExecution(id, versionId, platform, executionId, ownerId, description, executionsRequestBody, overwrite, metricsDataS3Client);
     }
 
     @Override
@@ -672,52 +625,21 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
         final boolean overwrite = true; // We want to overwrite files to update them
         ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
-        for (RunExecution newWorkflowExecution: executions.getRunExecutions()) {
-            try {
-                ExecutionsRequestBody oldExecutionsRequestBody = getExecutionsRequestBodyFromS3Object(id, versionId, platform.name(), newWorkflowExecution.getExecutionId(), metricsDataS3Client);
-                if (!oldExecutionsRequestBody.getRunExecutions().isEmpty()) {
-                    RunExecution oldWorkflowExecution = oldExecutionsRequestBody.getRunExecutions().get(0);
-                    oldWorkflowExecution.update(newWorkflowExecution);
-                    executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), newWorkflowExecution.getExecutionId(), owner.getId(), description, oldExecutionsRequestBody, overwrite, metricsDataS3Client));
-                }
-            } catch (IOException e) {
-                executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(newWorkflowExecution.getExecutionId(), HttpStatus.SC_BAD_REQUEST, "Could not update execution: " + e.getMessage()));
-            }
-        }
+        List<Execution> singleExecutions = new ArrayList<>(executions.getRunExecutions());
+        singleExecutions.addAll(executions.getTaskExecutions());
+        singleExecutions.addAll(executions.getValidationExecutions());
 
-        for (TaskExecutions newTaskExecutions: executions.getTaskExecutions()) {
+        singleExecutions.forEach(execution -> {
             try {
-                ExecutionsRequestBody oldExecutionsRequestBody = getExecutionsRequestBodyFromS3Object(id, versionId, platform.name(), newTaskExecutions.getExecutionId(), metricsDataS3Client);
-                if (!oldExecutionsRequestBody.getTaskExecutions().isEmpty()) {
-                    TaskExecutions oldTaskExecutions = oldExecutionsRequestBody.getTaskExecutions().get(0);
-                    oldTaskExecutions.update(newTaskExecutions);
-                    executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), newTaskExecutions.getExecutionId(), owner.getId(), description, oldExecutionsRequestBody, overwrite, metricsDataS3Client));
-                }
+                ExecutionsRequestBody oldExecutionsRequestBody = ExecutionsRequestBodyS3Handler.getExecutionsRequestBodyFromS3Object(id, versionId, platform.name(), execution.getExecutionId(), metricsDataS3Client);
+                oldExecutionsRequestBody.update(executions);
+                executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), execution.getExecutionId(), owner.getId(), description, oldExecutionsRequestBody, overwrite, metricsDataS3Client));
             } catch (IOException e) {
-                executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(newTaskExecutions.getExecutionId(), HttpStatus.SC_BAD_REQUEST, "Could not update execution: " + e.getMessage()));
+                executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(execution.getExecutionId(), HttpStatus.SC_BAD_REQUEST, "Could not update execution: " + e.getMessage()));
             }
-        }
-
-        for (ValidationExecution newValidationExecution: executions.getValidationExecutions()) {
-            try {
-                ExecutionsRequestBody oldExecutionsRequestBody = getExecutionsRequestBodyFromS3Object(id, versionId, platform.name(), newValidationExecution.getExecutionId(), metricsDataS3Client);
-                if (!oldExecutionsRequestBody.getValidationExecutions().isEmpty()) {
-                    ValidationExecution oldValidationExecution = oldExecutionsRequestBody.getValidationExecutions().get(0);
-                    oldValidationExecution.update(newValidationExecution);
-                    executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), newValidationExecution.getExecutionId(), owner.getId(), description, oldExecutionsRequestBody, overwrite, metricsDataS3Client));
-                }
-            } catch (IOException e) {
-                executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(newValidationExecution.getExecutionId(), HttpStatus.SC_BAD_REQUEST, "Could not update execution: " + e.getMessage()));
-            }
-        }
+        });
 
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
-    }
-
-    public ExecutionsRequestBody getExecutionsRequestBodyFromS3Object(String id, String versionId, String platform, String executionId, MetricsDataS3Client metricsDataS3Client)
-            throws IOException {
-        String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(id, versionId, platform, executionId + ".json");
-        return GSON.fromJson(s3FileContent, ExecutionsRequestBody.class);
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
