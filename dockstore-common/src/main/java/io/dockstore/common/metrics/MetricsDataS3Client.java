@@ -102,6 +102,17 @@ public class MetricsDataS3Client {
         return String.join("/", pathList);
     }
 
+    public boolean doesExecutionExistInS3(String toolId, String versionName, String platform, String executionId) {
+        final String fileName = S3ClientHelper.appendJsonFileTypeToFileName(executionId);
+        String s3Key = MetricsDataS3Client.generateKey(toolId, versionName, platform, fileName);
+        return doesKeyExistInS3(s3Key);
+    }
+
+    /**
+     * Returns a boolean indicating if an S3 key already exists in the metrics bucket
+     * @param s3Key
+     * @return
+     */
     public boolean doesKeyExistInS3(String s3Key) {
         HeadObjectRequest request = HeadObjectRequest.builder().bucket(bucketName).key(s3Key).build();
         try {
@@ -159,7 +170,7 @@ public class MetricsDataS3Client {
      * @throws IOException
      */
     public String getMetricsDataFileContent(String toolId, String versionName, String platform, String filename)
-            throws IOException {
+            throws IOException, NoSuchKeyException {
         String key = generateKey(toolId, versionName, platform, filename);
         GetObjectRequest request = GetObjectRequest.builder().bucket(bucketName).key(key).build();
         ResponseInputStream<GetObjectResponse> object = s3.getObject(request);

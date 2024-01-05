@@ -18,28 +18,36 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.google.gson.Gson;
+import io.dockstore.common.S3ClientHelper;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A helper class that handles ExecutionsRequestBody objects to send to S3.
+ * A helper class that handles ExecutionsRequestBody objects that are sent and retrieved from S3.
  */
 public final class ExecutionsRequestBodyS3Handler {
+    private static final Logger LOG = LoggerFactory.getLogger(ExecutionsRequestBodyS3Handler.class);
     private static final Gson GSON = new Gson();
 
     private ExecutionsRequestBodyS3Handler() {
 
     }
 
-    public static ExecutionsRequestBody getExecutionsRequestBodyFromS3Object(String id, String versionId, String platform, String executionId, MetricsDataS3Client metricsDataS3Client)
-            throws IOException {
-        String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(id, versionId, platform, executionId + ".json");
+    public static ExecutionsRequestBody getExecutionsRequestBodyFromS3Object(String id, String versionId, String platform, String executionId, MetricsDataS3Client metricsDataS3Client) throws IOException {
+        String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(id, versionId, platform, S3ClientHelper.appendJsonFileTypeToFileName(executionId));
         return GSON.fromJson(s3FileContent, ExecutionsRequestBody.class);
     }
 
+    /**
+     * Generate a map of execution IDs to ExecutionsRequestBody objects containing only 1 execution. This facilitates the creation of S3 files containing only 1 execution.
+     * @param executionsRequestBody
+     * @return
+     */
     public static Map<String, ExecutionsRequestBody> generateSingleExecutionsRequestBodies(ExecutionsRequestBody executionsRequestBody) {
         Map<String, ExecutionsRequestBody> executionIdToSingleExecutionRequestBody = new HashMap<>();
 

@@ -18,17 +18,19 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.core.metrics.constraints.ValidExecutionId;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
 @Deprecated(since = "1.15.0")
 @Schema(name = "AggregatedExecution", description = "Aggregated metrics of multiple executions on a platform", allOf = Metrics.class, deprecated = true)
 public class AggregatedExecution extends Metrics {
 
-    @NotEmpty
+    @NotNull
+    @ValidExecutionId
     @JsonProperty(required = true)
     @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
     private String executionId;

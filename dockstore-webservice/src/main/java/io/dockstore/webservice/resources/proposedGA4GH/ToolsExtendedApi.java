@@ -287,6 +287,28 @@ public class ToolsExtendedApi {
         return delegate.getAggregatedMetrics(id, versionId, user);
     }
 
+    @GET
+    @UnitOfWork(readOnly = true)
+    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @Path("/{id}/versions/{version_id}/execution")
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "executionGet", summary = ExecutionGet.SUMMARY, description = ExecutionGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                + "", description = ExecutionGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ExecutionsRequestBody.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = ExecutionGet.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = ExecutionGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    public Response executionGet(@Parameter(hidden = true) @Auth User user,
+            @Parameter(description = ExecutionGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+            @Parameter(description = ExecutionGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+            @Parameter(description = ExecutionGet.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+            @Parameter(description = ExecutionGet.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("executionId") String executionId,
+            @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.getExecution(id, versionId, platform, executionId, user);
+    }
+
     @PUT
     @UnitOfWork
     @RolesAllowed({"curator", "admin", "platformPartner"})
@@ -295,10 +317,6 @@ public class ToolsExtendedApi {
     @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(value = ExecutionMetricsUpdate.SUMMARY, notes = ExecutionMetricsUpdate.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    @ApiResponses(value = {
-        @ApiResponse(code = HttpStatus.SC_MULTI_STATUS, message = ExecutionMetricsUpdate.MULTI_STATUS_RESPONSE, response = Map.class),
-        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, response = Error.class),
-        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = ExecutionMetricsUpdate.UNAUTHORIZED_RESPONSE, response = Error.class)})
     @Operation(operationId = "ExecutionMetricsUpdate", summary = ExecutionMetricsUpdate.SUMMARY, description = ExecutionMetricsUpdate.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_MULTI_STATUS
                 + "", description = ExecutionMetricsUpdate.MULTI_STATUS_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ExecutionsResponseBody.class))),
@@ -308,12 +326,12 @@ public class ToolsExtendedApi {
                 + "", description = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
     })
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public Response executionMetricsUpdate(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
-        @ApiParam(value = ExecutionMetricsUpdate.ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsUpdate.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
-        @ApiParam(value = ExecutionMetricsUpdate.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsUpdate.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
-        @ApiParam(value = ExecutionMetricsUpdate.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsUpdate.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = ExecutionMetricsUpdate.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionMetricsUpdate.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
-        @ApiParam(value = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
+    public Response executionMetricsUpdate(@Parameter(hidden = true) @Auth User user,
+        @Parameter(description = ExecutionMetricsUpdate.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @Parameter(description = ExecutionMetricsUpdate.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @Parameter(description = ExecutionMetricsUpdate.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+        @Parameter(description = ExecutionMetricsUpdate.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
+        @RequestBody(description = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.updateExecutionMetrics(id, versionId, platform, user, description, executions);
     }
@@ -350,6 +368,17 @@ public class ToolsExtendedApi {
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String OK_RESPONSE = "Aggregated metrics retrieved successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to get aggregated metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
+    private static final class ExecutionGet {
+        public static final String SUMMARY = "Get an execution for a tool by execution ID";
+        public static final String DESCRIPTION = "This endpoint retrieves an execution for a tool by execution ID";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String OK_RESPONSE = "Execution retrieved successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The execution cannot be found.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 

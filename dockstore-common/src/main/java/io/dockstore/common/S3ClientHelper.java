@@ -170,7 +170,11 @@ public final class S3ClientHelper {
      * Creates a file name using the current time in milliseconds since epoch appended with '.json'
      * @return
      */
-    public static String createFileName() {
-        return Instant.now().toEpochMilli() + ".json";
+    public static String createCurrentTimeFileName() {
+        return appendJsonFileTypeToFileName(String.valueOf(Instant.now().toEpochMilli()));
+    }
+
+    public static String appendJsonFileTypeToFileName(String fileName) {
+        return fileName + ".json";
     }
 }

@@ -19,9 +19,9 @@ package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
+import io.dockstore.webservice.core.metrics.constraints.ValidExecutionId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
@@ -34,7 +34,8 @@ public abstract class Execution {
     protected Execution() {
     }
 
-    @NotEmpty
+    @NotNull
+    @ValidExecutionId
     @JsonProperty(required = true)
     @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
     private String executionId;
