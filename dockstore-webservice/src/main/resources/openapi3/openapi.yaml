@@ -8507,6 +8507,27 @@ paths:
       - workflows
 components:
   schemas:
+    AggregatedExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Metrics'
+      - type: object
+        properties:
+          additionalAggregatedMetrics:
+            type: object
+            additionalProperties:
+              type: object
+              description: Additional aggregated metrics
+            description: Additional aggregated metrics
+          executionId:
+            type: string
+            description: User-provided ID of the execution. This ID is used to identify
+              the execution when updating the execution
+      deprecated: true
+      description: Aggregated metrics of multiple executions on a platform
+      required:
+      - executionId
+      - executionStatusCount
     Alias:
       type: object
       properties:
@@ -9587,7 +9608,7 @@ components:
           deprecated: true
           description: List of aggregated executions to submit
           items:
-            $ref: '#/components/schemas/Metrics'
+            $ref: '#/components/schemas/AggregatedExecution'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
@@ -10003,22 +10024,10 @@ components:
       type: object
       description: Aggregated metrics associated with entry versions
       properties:
-        additionalAggregatedMetrics:
-          type: object
-          additionalProperties:
-            type: object
-            deprecated: true
-            description: Additional aggregated metrics
-          deprecated: true
-          description: Additional aggregated metrics
         cost:
           $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
-        executionId:
-          type: string
-          description: User-provided ID of the execution. This ID is used to identify
-            the execution when updating the execution
         executionStatusCount:
           $ref: '#/components/schemas/ExecutionStatusMetric'
         executionTime:
@@ -10032,7 +10041,6 @@ components:
         validationStatus:
           $ref: '#/components/schemas/ValidationStatusMetric'
       required:
-      - executionId
       - executionStatusCount
     Notebook:
       type: object

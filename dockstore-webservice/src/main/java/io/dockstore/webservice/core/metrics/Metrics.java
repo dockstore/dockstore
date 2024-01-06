@@ -18,8 +18,6 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.metrics.constraints.ValidExecutionId;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,18 +31,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
-import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "metrics")
 @ApiModel(value = "Metrics", description = "Aggregated metrics associated with entry versions")
-@Schema(name = "Metrics", description = "Aggregated metrics associated with entry versions")
+@Schema(name = "Metrics", description = "Aggregated metrics associated with entry versions", subTypes = { AggregatedExecution.class })
 public class Metrics {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -93,20 +88,6 @@ public class Metrics {
     @ApiModelProperty(value = "Aggregated validation status metrics")
     @Schema(description = "Aggregated validation status metrics")
     private ValidationStatusCountMetric validationStatus;
-
-    @Deprecated(since = "1.15.0")
-    @Transient // Don't persist to the database. This is meant to be used by platforms to submit additional aggregated metrics to Dockstore that aren't defined above.
-    @JsonProperty
-    @ApiModelProperty(value = "Additional aggregated metrics")
-    @Schema(description = "Additional aggregated metrics", deprecated = true)
-    private Map<String, Object> additionalAggregatedMetrics;
-
-    @Transient // Don't persist to the database. This is meant to be used by platforms to submit, get, and update executions
-    @NotNull
-    @ValidExecutionId
-    @JsonProperty(required = true)
-    @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
-    private String executionId;
 
     // database timestamps
     @Column(updatable = false)
@@ -180,26 +161,6 @@ public class Metrics {
 
     public void setValidationStatus(ValidationStatusCountMetric validationStatus) {
         this.validationStatus = validationStatus;
-    }
-
-    @Deprecated(since = "1.15.0")
-    @JsonIgnore // Avoid serializing this because the field is not stored in the DB and will always be null
-    public Map<String, Object> getAdditionalAggregatedMetrics() {
-        return additionalAggregatedMetrics;
-    }
-
-    @Deprecated(since = "1.15.0")
-    @JsonProperty
-    public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
-        this.additionalAggregatedMetrics = additionalAggregatedMetrics;
-    }
-
-    public String getExecutionId() {
-        return executionId;
-    }
-
-    public void setExecutionId(String executionId) {
-        this.executionId = executionId;
     }
 
     public Timestamp getDbCreateDate() {
