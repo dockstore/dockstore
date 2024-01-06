@@ -66,7 +66,6 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
-import io.dockstore.openapi.client.model.AggregatedExecution;
 import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.CpuMetric;
 import io.dockstore.openapi.client.model.ExecutionResponse;
@@ -295,7 +294,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setValidatorToolVersion("v1.9.1");
         validationExecution.setDateExecuted(Instant.now().toString());
 
-        AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
+        Metrics aggregatedExecution = new Metrics().executionId(generateExecutionId());
         aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 1)));
 
         ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody()
@@ -663,9 +662,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(id, versionId, 1);
 
         // Test that a platform partner can post aggregated metrics
-        AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
+        Metrics aggregatedExecution = new Metrics().executionId(generateExecutionId());
         aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)));
-        List<AggregatedExecution> aggregatedMetrics = List.of(aggregatedExecution);
+        List<Metrics> aggregatedMetrics = List.of(aggregatedExecution);
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(aggregatedMetrics), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 2);
     }
@@ -747,7 +746,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Add execution metrics for a workflow version for one platform
-        final AggregatedExecution expectedAggregatedMetrics = new AggregatedExecution()
+        final Metrics expectedAggregatedMetrics = new Metrics()
                 .executionId(generateExecutionId())
                 .additionalAggregatedMetrics(Map.of("cpu_utilization", 50.0));
         expectedAggregatedMetrics.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)));
@@ -755,14 +754,14 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1);
         ExecutionsRequestBody executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedMetrics.getExecutionId());
         assertEquals(1, executionsRequestBody.getAggregatedExecutions().size());
-        AggregatedExecution aggregatedMetrics = executionsRequestBody.getAggregatedExecutions().get(0);
+        Metrics aggregatedMetrics = executionsRequestBody.getAggregatedExecutions().get(0);
         assertEquals(5, aggregatedMetrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, aggregatedMetrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("cpu_utilization"), "Should be able to submit additional aggregated metrics");
 
         // Add a metric that only has additionalAggregatedMetrics because platforms may not always submit the Dockstore-defined aggregated metrics
         LocalStackTestUtilities.deleteBucketContents(s3Client, bucketName); // Clear bucket contents so it's easier to verify the contents
-        final AggregatedExecution expectedAggregatedAdditionalMetrics = new AggregatedExecution().executionId(generateExecutionId()).additionalAggregatedMetrics(Map.of("memory_utilization", 50.0));
+        final Metrics expectedAggregatedAdditionalMetrics = new Metrics().executionId(generateExecutionId()).additionalAggregatedMetrics(Map.of("memory_utilization", 50.0));
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(expectedAggregatedAdditionalMetrics)), platform1, workflowId, workflowVersionId, description);
         verifyMetricsDataList(workflowId, workflowVersionId, 1);
         executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedAdditionalMetrics.getExecutionId());
