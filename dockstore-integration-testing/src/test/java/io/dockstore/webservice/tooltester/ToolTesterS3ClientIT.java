@@ -77,7 +77,7 @@ class ToolTesterS3ClientIT {
         final String versionName = "2.7.0";
         final String testFilePath = "test1.json";
         final String runner = "cwltool";
-        final String fileName = S3ClientHelper.createCurrentTimeFileName();
+        final String fileName = S3ClientHelper.createFileName();
         final String key = ToolTesterS3Client.generateKey(toolId, versionName, testFilePath, runner, fileName);
 
         Map<String, String> userMetadata = Maps.newHashMap();
