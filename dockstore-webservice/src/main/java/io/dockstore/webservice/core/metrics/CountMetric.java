@@ -35,7 +35,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public abstract class CountMetric<K, V> {
+public abstract class CountMetric<K, V> extends Metric {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "countmetric_id_seq")

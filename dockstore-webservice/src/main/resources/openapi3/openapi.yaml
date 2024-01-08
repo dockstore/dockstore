@@ -8981,11 +8981,18 @@ components:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        numberOfExecutionsAggregated:
+          type: integer
+          format: int32
+          description: The number of executions that were aggregated
         unit:
           type: string
           default: USD
           description: The unit of the data points
           readOnly: true
+        wereExecutionsSkipped:
+          type: boolean
+          writeOnly: true
       required:
       - average
       - maximum
@@ -9016,10 +9023,17 @@ components:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        numberOfExecutionsAggregated:
+          type: integer
+          format: int32
+          description: The number of executions that were aggregated
         unit:
           type: string
           description: The unit of the data points
           readOnly: true
+        wereExecutionsSkipped:
+          type: boolean
+          writeOnly: true
       required:
       - average
       - maximum
@@ -9574,6 +9588,10 @@ components:
             execution is stopped after it has started
           example: 0
           readOnly: true
+        numberOfExecutionsAggregated:
+          type: integer
+          format: int32
+          description: The number of executions that were aggregated
         numberOfFailedExecutions:
           type: integer
           format: int32
@@ -9587,6 +9605,9 @@ components:
           description: Number of successful executions
           example: 5
           readOnly: true
+        wereExecutionsSkipped:
+          type: boolean
+          writeOnly: true
       required:
       - count
     ExecutionTimeMetric:
@@ -9615,11 +9636,18 @@ components:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        numberOfExecutionsAggregated:
+          type: integer
+          format: int32
+          description: The number of executions that were aggregated
         unit:
           type: string
           default: s
           description: The unit of the data points
           readOnly: true
+        wereExecutionsSkipped:
+          type: boolean
+          writeOnly: true
       required:
       - average
       - maximum
@@ -10022,11 +10050,18 @@ components:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        numberOfExecutionsAggregated:
+          type: integer
+          format: int32
+          description: The number of executions that were aggregated
         unit:
           type: string
           default: GB
           description: The unit of the data points
           readOnly: true
+        wereExecutionsSkipped:
+          type: boolean
+          writeOnly: true
       required:
       - average
       - maximum
@@ -11482,12 +11517,19 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the count metrics in this webservice
+        numberOfExecutionsAggregated:
+          type: integer
+          format: int32
+          description: The number of executions that were aggregated
         validatorTools:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/ValidatorInfo'
           description: A map containing key-value pairs indicating whether the validator
             tool successfully validated the workflow
+        wereExecutionsSkipped:
+          type: boolean
+          writeOnly: true
       required:
       - validatorTools
     ValidatorInfo:
