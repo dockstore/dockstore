@@ -515,9 +515,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         final boolean overwrite = false;
         ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
         // Each Execution is stored in its own file
-        ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).forEach((executionId, singleExecutionRequestBody) -> {
-            executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), executionId, owner.getId(), description, singleExecutionRequestBody, overwrite, metricsDataS3Client));
-        });
+        ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).entrySet().stream()
+                .parallel()
+                .forEach(executionIdToExecutionsRequestBody -> {
+                    final String executionId = executionIdToExecutionsRequestBody.getKey();
+                    final ExecutionsRequestBody singleExecutionRequestBody = executionIdToExecutionsRequestBody.getValue();
+                    executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), executionId, owner.getId(), description, singleExecutionRequestBody, overwrite, metricsDataS3Client));
+                });
 
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
     }
@@ -536,6 +540,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     private ExecutionResponse createS3ObjectForSingleExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, ExecutionsRequestBody executionsRequestBody, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
+        LOG.info("Creating S3 object for execution with ID {} for TRS ID {}, version {}, and platform {}", executionId, id, versionId, platform);
         if (!overwrite && metricsDataS3Client.doesExecutionExistInS3(id, versionId, platform, executionId)) {
             return new ExecutionResponse(executionId, HttpStatus.SC_BAD_REQUEST, String.format("%s: An execution with id %s already exists for version %s and platform %s", COULD_NOT_SUBMIT_METRICS_DATA, executionId, versionId, platform));
         }
