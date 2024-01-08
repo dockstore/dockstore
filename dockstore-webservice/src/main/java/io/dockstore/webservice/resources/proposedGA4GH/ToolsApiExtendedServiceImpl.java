@@ -60,6 +60,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -513,12 +514,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
         // Don't overwrite existing files when submitting metrics. This can happen if the user specifies an execution ID that already exists for the version and platform.
         final boolean overwrite = false;
+        List<ExecutionResponse> executionResponses = Collections.synchronizedList(new ArrayList<>());
+        // Each Execution is stored in its own file. Send them to S3 in parallel
+        ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).entrySet().stream()
+                .parallel()
+                .forEach(executionIdToSingleExecutionsRequestBody -> {
+                    final String executionId = executionIdToSingleExecutionsRequestBody.getKey();
+                    final ExecutionsRequestBody singleExecutionRequestBody = executionIdToSingleExecutionsRequestBody.getValue();
+                    executionResponses.add(createS3ObjectForSingleExecution(id, versionId, platform.name(), executionId, owner.getId(), description, singleExecutionRequestBody, overwrite, metricsDataS3Client));
+                });
         ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
-        // Each Execution is stored in its own file
-        ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).forEach((executionId, singleExecutionRequestBody) -> {
-            executionsResponseBody.getExecutionResponses().add(createS3ObjectForSingleExecution(id, versionId, platform.name(), executionId, owner.getId(), description, singleExecutionRequestBody, overwrite, metricsDataS3Client));
-        });
-
+        executionsResponseBody.setExecutionResponses(executionResponses);
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
     }
 
