@@ -114,4 +114,14 @@ public class RunExecution extends Execution {
     public void setRegion(String region) {
         this.region = region;
     }
+
+    public void update(RunExecution newRunExecution) {
+        // Can only update fields that are optional
+        super.update(newRunExecution);
+        this.executionTime = newRunExecution.executionTime;
+        this.memoryRequirementsGB = newRunExecution.memoryRequirementsGB;
+        this.cpuRequirements = newRunExecution.cpuRequirements;
+        this.cost = newRunExecution.cost;
+        this.region = newRunExecution.region;
+    }
 }

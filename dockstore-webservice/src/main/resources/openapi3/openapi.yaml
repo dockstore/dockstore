@@ -643,6 +643,75 @@ paths:
         a platform.
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/execution:
+    get:
+      description: This endpoint retrieves an execution for a tool by execution ID
+      operationId: executionGet
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      - description: Platform that the tool was executed on
+        in: query
+        name: executionId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionsRequestBody'
+          description: Execution retrieved successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The execution cannot be found.
+      security:
+      - BEARER: []
+      summary: Get an execution for a tool by execution ID
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
       description: This endpoint submits individual execution metrics for a tool that
@@ -697,8 +766,12 @@ paths:
           execution metrics is deprecated.
         required: true
       responses:
-        "204":
-          description: Execution metrics submitted successfully.
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionsResponseBody'
+          description: Execution metrics submitted. Please view the individual responses.
         "401":
           content:
             application/json:
@@ -715,6 +788,84 @@ paths:
       - BEARER: []
       summary: Submit individual execution metrics for a tool that was executed on
         a platform. Submitting aggregated execution metrics is deprecated.
+      tags:
+      - extendedGA4GH
+    put:
+      description: "This endpoint updates workflow executions that were executed on\
+        \ a platform. Does not update aggregated metrics, which is deprecated."
+      operationId: ExecutionMetricsUpdate
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      - description: Optional description about the execution metrics that are being
+          updated
+        in: query
+        name: description
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionsRequestBody'
+        description: The updated executions
+        required: true
+      responses:
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionsResponseBody'
+          description: Executions to update processed. Please view the individual
+            responses.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to update the executions.
+      security:
+      - BEARER: []
+      summary: "Update workflow executions that were executed on a platform. Does\
+        \ not update aggregated metrics, which is deprecated."
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -8381,6 +8532,27 @@ paths:
       - workflows
 components:
   schemas:
+    AggregatedExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Metrics'
+      - type: object
+        properties:
+          additionalAggregatedMetrics:
+            type: object
+            additionalProperties:
+              type: object
+              description: Additional aggregated metrics
+            description: Additional aggregated metrics
+          executionId:
+            type: string
+            description: User-provided ID of the execution. This ID is used to identify
+              the execution when updating the execution
+      deprecated: true
+      description: Aggregated metrics of multiple executions on a platform
+      required:
+      - executionId
+      - executionStatusCount
     Alias:
       type: object
       properties:
@@ -9360,8 +9532,30 @@ components:
           description: The date and time that the execution occurred in ISO 8601 UTC
             date format
           example: 2023-03-31T15:06:49.888745366Z
+        executionId:
+          type: string
+          description: User-provided ID of the execution. This ID is used to identify
+            the execution when updating the execution
       required:
       - dateExecuted
+      - executionId
+    ExecutionResponse:
+      type: object
+      description: Response for a single execution metric as a result of an API
+      properties:
+        error:
+          type: string
+          description: The error message if one exists
+        executionId:
+          type: string
+          description: The ID of the execution that the response is for
+        status:
+          type: integer
+          format: int32
+          description: The response status code of the action for the execution
+      required:
+      - executionId
+      - status
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -9448,7 +9642,7 @@ components:
           deprecated: true
           description: List of aggregated executions to submit
           items:
-            $ref: '#/components/schemas/Metrics'
+            $ref: '#/components/schemas/AggregatedExecution'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
@@ -9470,6 +9664,15 @@ components:
       - runExecutions
       - taskExecutions
       - validationExecutions
+    ExecutionsResponseBody:
+      type: object
+      description: Response body model for execution metric APIs
+      properties:
+        executionResponses:
+          type: array
+          description: A list of responses for the executions submitted
+          items:
+            $ref: '#/components/schemas/ExecutionResponse'
     ExtendedUserData:
       type: object
       properties:
@@ -9855,14 +10058,6 @@ components:
       type: object
       description: Aggregated metrics associated with entry versions
       properties:
-        additionalAggregatedMetrics:
-          type: object
-          additionalProperties:
-            type: object
-            deprecated: true
-            description: Additional aggregated metrics
-          deprecated: true
-          description: Additional aggregated metrics
         cost:
           $ref: '#/components/schemas/CostMetric'
         cpu:
@@ -10225,6 +10420,7 @@ components:
       description: Metrics of an execution on a platform
       required:
       - dateExecuted
+      - executionId
       - executionStatus
     Sender:
       type: object
@@ -10585,15 +10781,21 @@ components:
       - reference
     TaskExecutions:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          taskExecutions:
+            type: array
+            description: Metrics of individual tasks that were executed during the
+              workflow execution.
+            items:
+              $ref: '#/components/schemas/RunExecution'
       description: Metrics of individual tasks that were executed during the workflow
         execution.
-      properties:
-        taskExecutions:
-          type: array
-          description: Metrics of individual tasks that were executed during the workflow
-            execution.
-          items:
-            $ref: '#/components/schemas/RunExecution'
+      required:
+      - dateExecuted
+      - executionId
     Token_Auth:
       type: object
       properties:
@@ -11232,6 +11434,7 @@ components:
       description: Metrics of a workflow validated on a platform
       required:
       - dateExecuted
+      - executionId
       - isValid
       - validatorTool
       - validatorToolVersion
