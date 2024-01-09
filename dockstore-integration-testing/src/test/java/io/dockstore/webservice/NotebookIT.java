@@ -681,13 +681,13 @@ class NotebookIT extends BaseIT {
 
         String tagRef = "refs/tags/simple-v1";
         String branchRef = "refs/heads/simple";
-        String eventName = "ADD_VERSION_TO_ENTRY";
+        String eventType = "ADD_VERSION_TO_ENTRY";
 
-        long aCount = countEvents(eventName);
+        long aCount = countEvents(eventType);
         handleGitHubRelease(workflowsApi, simpleRepo, tagRef, USER_2_USERNAME);
-        long bCount = countEvents(eventName);
+        long bCount = countEvents(eventType);
         handleGitHubRelease(workflowsApi, simpleRepo, branchRef, USER_2_USERNAME);
-        long cCount = countEvents(eventName);
+        long cCount = countEvents(eventType);
 
         assertEquals(aCount + 1, bCount, "a tagged release should produce an ADD_VERSION_TO_ENTRY Event");
         assertEquals(bCount, cCount, "an untagged release should not produce an ADD_VERSION_TO_ENTRY Event");
