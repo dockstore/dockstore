@@ -678,13 +678,19 @@ class NotebookIT extends BaseIT {
     void testTagEventCreation() {
         ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        String ref = "refs/tags/simple-v1";
 
-        long beforeCount = countEvents("ADD_VERSION_TO_ENTRY");
-        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
-        long afterCount = countEvents("ADD_VERSION_TO_ENTRY");
+        String tagRef = "refs/tags/simple-v1";
+        String branchRef = "refs/heads/simple";
+        String eventName = "ADD_VERSION_TO_ENTRY";
 
-        assertTrue(beforeCount + 1 == afterCount, "a tagged release should produce an ADD_VERSION_TO_ENTRY Event");
+        long aCount = countEvents(eventName);
+        handleGitHubRelease(workflowsApi, simpleRepo, tagRef, USER_2_USERNAME);
+        long bCount = countEvents(eventName);
+        handleGitHubRelease(workflowsApi, simpleRepo, branchRef, USER_2_USERNAME);
+        long cCount = countEvents(eventName);
+
+        assertEquals(aCount + 1, bCount, "a tagged release should produce an ADD_VERSION_TO_ENTRY Event");
+        assertEquals(bCount, cCount, "an untagged release should not produce an ADD_VERSION_TO_ENTRY Event");
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
