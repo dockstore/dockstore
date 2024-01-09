@@ -561,6 +561,9 @@ class NotebookIT extends BaseIT {
         return testingPostgres.runSelectStatement(String.format("select count(*) from event where notebookid = %s and type = '%s'", notebookId, type), long.class);
     }
 
+    private long countEvents(String type) {
+        return testingPostgres.runSelectStatement(String.format("select count(*) from event where type = '%s'", type), long.class);
+    }
 
     @Test
     void testEventDeletion() {
@@ -669,6 +672,19 @@ class NotebookIT extends BaseIT {
         EntriesApi unprivilegedEntriesApi = new EntriesApi(unprivilegedApiClient);
         shouldThrow(() -> unprivilegedEntriesApi.archiveEntry(id), "unprivileged users should not be able to archive", HttpStatus.SC_FORBIDDEN);
         shouldThrow(() -> unprivilegedEntriesApi.unarchiveEntry(id), "unprivileged users should not be able to unarchive", HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testTagEventCreation() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        String ref = "refs/tags/simple-v1";
+
+        long beforeCount = countEvents("ADD_VERSION_TO_ENTRY");
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+        long afterCount = countEvents("ADD_VERSION_TO_ENTRY");
+
+        assertTrue(beforeCount + 1 == afterCount, "a tagged release should produce an ADD_VERSION_TO_ENTRY Event");
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
