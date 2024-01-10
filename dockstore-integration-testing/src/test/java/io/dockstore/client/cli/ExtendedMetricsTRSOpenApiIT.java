@@ -143,7 +143,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     public static void setup() throws Exception {
         bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
         s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
-        metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
+        metricsDataClient = new MetricsDataS3Client(bucketName, "http://localhost.localstack.cloud:4566");
         // Create a bucket to be used for tests
         s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
         createBucket(s3Client, bucketName);

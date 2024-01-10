@@ -17,10 +17,14 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.dockstore.common.S3ClientHelper;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,7 @@ import org.slf4j.LoggerFactory;
 public final class ExecutionsRequestBodyS3Handler {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutionsRequestBodyS3Handler.class);
     private static final Gson GSON = new Gson();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private ExecutionsRequestBodyS3Handler() {
 
@@ -41,6 +46,15 @@ public final class ExecutionsRequestBodyS3Handler {
     public static ExecutionsRequestBody getExecutionsRequestBodyFromS3Object(String id, String versionId, String platform, String executionId, MetricsDataS3Client metricsDataS3Client) throws IOException {
         String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(id, versionId, platform, S3ClientHelper.appendJsonFileTypeToFileName(executionId));
         return GSON.fromJson(s3FileContent, ExecutionsRequestBody.class);
+    }
+
+    public static void writeExecutionsRequestBodyToLocalFile(ExecutionsRequestBody executionsRequestBody, String executionId, Path directoryToWriteTo)
+            throws IOException {
+        // Write it to a local file in tmpDir
+        String executionsRequestBodyString = OBJECT_MAPPER.writeValueAsString(executionsRequestBody);
+        final String fileName = S3ClientHelper.appendJsonFileTypeToFileName(executionId);
+        final Path tempFile = Paths.get(directoryToWriteTo.toString(), fileName);
+        Files.writeString(tempFile, executionsRequestBodyString);
     }
 
     /**

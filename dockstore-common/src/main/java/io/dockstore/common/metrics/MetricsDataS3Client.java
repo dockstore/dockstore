@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -43,19 +45,52 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+import software.amazon.awssdk.transfer.s3.model.CompletedDirectoryUpload;
+import software.amazon.awssdk.transfer.s3.model.DirectoryUpload;
+import software.amazon.awssdk.transfer.s3.model.UploadDirectoryRequest;
 
 public class MetricsDataS3Client {
     private static final Logger LOG = LoggerFactory.getLogger(MetricsDataS3Client.class);
     private final S3Client s3; // The S3Client is thread-safe
+    private final S3AsyncClient s3Async; // The S3Client is thread-safe
+    private final S3TransferManager s3TransferManager;
     private final String bucketName;
 
-    public MetricsDataS3Client(String bucketName, S3Client s3Client) {
+    public MetricsDataS3Client(String bucketName, S3Client s3Client, S3AsyncClient s3AsyncClient) {
         this.bucketName = bucketName;
         this.s3 = s3Client;
+        this.s3Async = s3AsyncClient;
+        s3TransferManager = S3TransferManager.builder()
+                .s3Client(s3Async)
+                .build();
     }
 
     public MetricsDataS3Client(String bucketName, String endpointOverride) throws URISyntaxException {
-        this(bucketName, endpointOverride == null ? S3ClientHelper.createS3Client() : S3ClientHelper.createS3Client(endpointOverride));
+        this(bucketName, endpointOverride == null ? S3ClientHelper.createS3Client() : S3ClientHelper.createS3Client(endpointOverride), endpointOverride == null ? S3ClientHelper.createS3AsyncClient() : S3ClientHelper.createS3AsyncClient(endpointOverride));
+    }
+
+    public void createS3ObjectsFromDirectory(String toolId, String versionName, String platform, long ownerUserId, String description, String sourceDirectory) throws AwsServiceException, SdkClientException {
+        DirectoryUpload directoryUpload = this.s3TransferManager.uploadDirectory(UploadDirectoryRequest.builder()
+                    .source(Paths.get(sourceDirectory))
+                    .bucket(bucketName)
+                    .s3Prefix(generateKeyPrefix(toolId, versionName, platform))
+                    .build());
+
+        CompletedDirectoryUpload completedDirectoryUpload = directoryUpload.completionFuture().join();
+
+        /*
+        Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
+                ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .metadata(metadata)
+                .contentType(MediaType.APPLICATION_JSON)
+                .build();
+        RequestBody requestBody = RequestBody.fromString(metricsData);
+        s3.putObject(request, requestBody);
+         */
     }
 
     /**
@@ -99,6 +134,14 @@ public class MetricsDataS3Client {
         pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
         pathList.add(URLEncoder.encode(platform, StandardCharsets.UTF_8));
         pathList.add(URLEncoder.encode(fileName, StandardCharsets.UTF_8));
+        return String.join("/", pathList);
+    }
+
+    public static String generateKeyPrefix(String toolId, String versionName, String platform) {
+        List<String> pathList = new ArrayList<>();
+        pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
+        pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
+        pathList.add(URLEncoder.encode(platform, StandardCharsets.UTF_8));
         return String.join("/", pathList);
     }
 

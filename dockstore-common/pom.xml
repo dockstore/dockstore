@@ -324,6 +324,15 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3-transfer-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk.crt</groupId>
+            <artifactId>aws-crt</artifactId>
+            <version>0.29.6</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
             <artifactId>regions</artifactId>
         </dependency>
         <dependency>
@@ -421,6 +430,7 @@
                             <usedDependencies>
                                 <usedDependency>jakarta.annotation:jakarta.annotation-api</usedDependency>
                                 <usedDependency>org.javamoney.moneta:moneta-core</usedDependency>
+                                <usedDependency>software.amazon.awssdk.crt:aws-crt</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

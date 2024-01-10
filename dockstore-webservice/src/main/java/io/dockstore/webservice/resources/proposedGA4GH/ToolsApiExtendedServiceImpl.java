@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.writeExecutionsRequestBodyToLocalFile;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,6 +60,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,6 +73,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -516,16 +520,31 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         final boolean overwrite = false;
         List<ExecutionResponse> executionResponses = Collections.synchronizedList(new ArrayList<>());
         // Each Execution is stored in its own file. Send them to S3 in parallel
-        ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).entrySet().stream()
-                .parallel()
-                .forEach(executionIdToSingleExecutionsRequestBody -> {
-                    final String executionId = executionIdToSingleExecutionsRequestBody.getKey();
-                    final ExecutionsRequestBody singleExecutionRequestBody = executionIdToSingleExecutionsRequestBody.getValue();
-                    executionResponses.add(createS3ObjectForSingleExecution(id, versionId, platform.name(), executionId, owner.getId(), description, singleExecutionRequestBody, overwrite, metricsDataS3Client));
-                });
-        ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
-        executionsResponseBody.setExecutionResponses(executionResponses);
-        return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
+        Path tmpDir = null;
+        try {
+            tmpDir = Files.createTempDirectory("executionsToSubmit");
+            Path finalTmpDir = tmpDir;
+            ExecutionsRequestBodyS3Handler.generateSingleExecutionsRequestBodies(executions).entrySet()
+                    .forEach(executionIdToSingleExecutionsRequestBody -> {
+                        final String executionId = executionIdToSingleExecutionsRequestBody.getKey();
+                        final ExecutionsRequestBody singleExecutionRequestBody = executionIdToSingleExecutionsRequestBody.getValue();
+                        try {
+                            writeExecutionsRequestBodyToLocalFile(singleExecutionRequestBody, executionId, finalTmpDir);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            metricsDataS3Client.createS3ObjectsFromDirectory(id, versionId, platform.name(), owner.getId(), description, tmpDir.toString());
+            ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
+            executionsResponseBody.setExecutionResponses(executionResponses);
+            return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not create tmpDir", e);
+        } finally {
+            if (tmpDir != null) {
+                FileUtils.deleteQuietly(tmpDir.toFile());
+            }
+        }
     }
 
     /**
@@ -673,25 +692,38 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         List<Execution> singleExecutions = new ArrayList<>(executions.getRunExecutions());
         singleExecutions.addAll(executions.getTaskExecutions());
         singleExecutions.addAll(executions.getValidationExecutions());
+        Path tmpDir = null;
+        try {
+            tmpDir = Files.createTempDirectory("executionsToUpload");
+            final String tmpDirPath = tmpDir.toString();
+            Path finalTmpDir = tmpDir;
+            singleExecutions.forEach(execution -> {
+                if (metricsDataS3Client.doesExecutionExistInS3(id, versionId, platform.name(), execution.getExecutionId())) {
+                    try {
+                        ExecutionsRequestBody oldExecutionsRequestBody = ExecutionsRequestBodyS3Handler.getExecutionsRequestBodyFromS3Object(id,
+                                versionId, platform.name(), execution.getExecutionId(), metricsDataS3Client);
+                        oldExecutionsRequestBody.update(executions);
 
-        singleExecutions.forEach(execution -> {
-            if (metricsDataS3Client.doesExecutionExistInS3(id, versionId, platform.name(), execution.getExecutionId())) {
-                try {
-                    ExecutionsRequestBody oldExecutionsRequestBody = ExecutionsRequestBodyS3Handler.getExecutionsRequestBodyFromS3Object(id,
-                            versionId, platform.name(), execution.getExecutionId(), metricsDataS3Client);
-                    oldExecutionsRequestBody.update(executions);
-                    executionsResponseBody.getExecutionResponses()
-                            .add(createS3ObjectForSingleExecution(id, versionId, platform.name(), execution.getExecutionId(), owner.getId(),
-                                    description, oldExecutionsRequestBody, overwrite, metricsDataS3Client));
-                } catch (IOException e) {
-                    executionsResponseBody.getExecutionResponses()
-                            .add(new ExecutionResponse(execution.getExecutionId(), HttpStatus.SC_BAD_REQUEST,
-                                    "Could not update execution: " + e.getMessage()));
+                        // Write it to a local file in tmpDir
+                        writeExecutionsRequestBodyToLocalFile(oldExecutionsRequestBody, execution.getExecutionId(), finalTmpDir);
+                    } catch (IOException e) {
+                        executionsResponseBody.getExecutionResponses()
+                                .add(new ExecutionResponse(execution.getExecutionId(), HttpStatus.SC_BAD_REQUEST,
+                                        "Could not update execution: " + e.getMessage()));
+                    }
+                } else {
+                    executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(execution.getExecutionId(), HttpStatus.SC_NOT_FOUND, EXECUTION_NOT_FOUND_ERROR));
                 }
-            } else {
-                executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(execution.getExecutionId(), HttpStatus.SC_NOT_FOUND, EXECUTION_NOT_FOUND_ERROR));
+            });
+
+            metricsDataS3Client.createS3ObjectsFromDirectory(id, versionId, platform.name(), owner.getId(), description, tmpDirPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (tmpDir != null) {
+                FileUtils.deleteQuietly(tmpDir.toFile());
             }
-        });
+        }
 
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
     }

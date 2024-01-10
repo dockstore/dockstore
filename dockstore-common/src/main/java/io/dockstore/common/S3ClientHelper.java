@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
@@ -78,8 +79,16 @@ public final class S3ClientHelper {
         return initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
     }
 
+    public static S3AsyncClient createS3AsyncClient() {
+        return S3AsyncClient.crtBuilder().credentialsProvider(DefaultCredentialsProvider.create()).forcePathStyle(true).build();
+    }
+
+    public static S3AsyncClient createS3AsyncClient(String endpointOverride) throws URISyntaxException {
+        return S3AsyncClient.crtBuilder().credentialsProvider(DefaultCredentialsProvider.create()).forcePathStyle(true).endpointOverride(new URI(endpointOverride)).build();
+    }
+
     private static S3ClientBuilder initS3ClientBuilder() {
-        return S3Client.builder().credentialsProvider(DefaultCredentialsProvider.create());
+        return S3Client.builder().credentialsProvider(DefaultCredentialsProvider.create()).forcePathStyle(true);
     }
 
     /**
