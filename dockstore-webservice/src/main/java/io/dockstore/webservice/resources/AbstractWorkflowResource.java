@@ -654,6 +654,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
+                        // Create some events.
+                        eventDAO.createAddTagToEntryEvent(user, workflow, version);
+
                         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, true, deliveryId, computeWorkflowName(wf));
                         setEventMessage(lambdaEvent, createValidationsMessage(workflow, version));
                         lambdaEventDAO.create(lambdaEvent);
