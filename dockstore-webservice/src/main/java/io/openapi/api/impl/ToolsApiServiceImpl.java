@@ -97,6 +97,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +127,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static BioWorkflowDAO bioWorkflowDAO;
     private static PermissionsInterface permissionsInterface;
     private static VersionDAO versionDAO;
+    private static SessionFactory sessionFactory;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -165,6 +167,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setVersionDAO(VersionDAO versionDAO) {
         ToolsApiServiceImpl.versionDAO = versionDAO;
+    }
+
+    public static void setSessionFactory(SessionFactory sessionFactory) {
+        ToolsApiServiceImpl.sessionFactory = sessionFactory;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -373,7 +379,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
-        for (Entry<?, ?> c : all) {
+        for (long entryId: all.stream().map(Entry::getId).toList()) {
+            sessionFactory.getCurrentSession().clear();
+            Entry<?, ?> c = toolDAO.getGenericEntryById(entryId);
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
