@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics;
 import io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -26,6 +27,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @HasExecutionsOrMetrics
 @HasUniqueExecutionIds
@@ -90,25 +93,85 @@ public class ExecutionsRequestBody {
         this.aggregatedExecutions = aggregatedExecutions;
     }
 
+    public Optional<RunExecution> getRunExecutionByExecutionId(String executionId) {
+        return this.runExecutions.stream().filter(workflowExecution -> executionId.equals(workflowExecution.getExecutionId())).findFirst();
+    }
+
+    public Optional<TaskExecutions> getTaskExecutionsByExecutionId(String executionId) {
+        return this.taskExecutions.stream().filter(taskExecutionsSet -> executionId.equals(taskExecutionsSet.getExecutionId())).findFirst();
+    }
+
+    public Optional<ValidationExecution> getValidationExecutionByExecutionId(String executionId) {
+        return this.validationExecutions.stream().filter(validationExecution -> executionId.equals(validationExecution.getExecutionId())).findFirst();
+    }
+
+    public Optional<AggregatedExecution> getAggregatedExecutionByExecutionId(String executionId) {
+        return this.aggregatedExecutions.stream().filter(aggregatedExecution -> executionId.equals(aggregatedExecution.getExecutionId())).findFirst();
+    }
+
+    public boolean containsExecutionId(String executionId) {
+        return getRunExecutionByExecutionId(executionId).isPresent()
+                || getTaskExecutionsByExecutionId(executionId).isPresent()
+                || getValidationExecutionByExecutionId(executionId).isPresent()
+                || getAggregatedExecutionByExecutionId(executionId).isPresent();
+    }
+
     /**
-     * Update the object with the executions from newExecutionsRequestBody if the same execution exists in the object.
-     * Ignores the deprecated aggregated executions.
-     * @param newExecutionsRequestBody
+     * Finds the execution and returns it in an ExecutionsRequestBody containing only that execution.
+     * @param executionId
+     * @return
      */
-    public void update(ExecutionsRequestBody newExecutionsRequestBody) {
-        this.runExecutions.forEach(oldWorkflowExecution -> {
-            Optional<RunExecution> matchedExecution = newExecutionsRequestBody.runExecutions.stream().filter(newExecution -> oldWorkflowExecution.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
-            matchedExecution.ifPresent(oldWorkflowExecution::update);
-        });
+    public Optional<ExecutionsRequestBody> getExecution(String executionId) {
+        ExecutionsRequestBody executionsRequestBodyWithOneExecution = new ExecutionsRequestBody();
 
-        this.taskExecutions.forEach(oldTaskExecutions -> {
-            Optional<TaskExecutions> matchedExecution = newExecutionsRequestBody.taskExecutions.stream().filter(newExecution -> oldTaskExecutions.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
-            matchedExecution.ifPresent(oldTaskExecutions::update);
-        });
+        Optional<RunExecution> foundWorkflowExecution = getRunExecutionByExecutionId(executionId);
+        if (foundWorkflowExecution.isPresent()) {
+            executionsRequestBodyWithOneExecution.getRunExecutions().add(foundWorkflowExecution.get());
+            return Optional.of(executionsRequestBodyWithOneExecution);
+        }
 
-        this.validationExecutions.forEach(oldValidationExecution -> {
-            Optional<ValidationExecution> matchedExecution = newExecutionsRequestBody.validationExecutions.stream().filter(newExecution -> oldValidationExecution.getExecutionId().equals(newExecution.getExecutionId())).findFirst();
-            matchedExecution.ifPresent(oldValidationExecution::update);
-        });
+        Optional<TaskExecutions> foundTaskExecutions = getTaskExecutionsByExecutionId(executionId);
+        if (foundTaskExecutions.isPresent()) {
+            executionsRequestBodyWithOneExecution.getTaskExecutions().add(foundTaskExecutions.get());
+            return Optional.of(executionsRequestBodyWithOneExecution);
+        }
+
+        Optional<ValidationExecution> foundValidationExecution = getValidationExecutionByExecutionId(executionId);
+        if (foundValidationExecution.isPresent()) {
+            executionsRequestBodyWithOneExecution.getValidationExecutions().add(foundValidationExecution.get());
+            return Optional.of(executionsRequestBodyWithOneExecution);
+        }
+
+        Optional<AggregatedExecution> foundAggregatedExecution = getAggregatedExecutionByExecutionId(executionId);
+        if (foundAggregatedExecution.isPresent()) {
+            executionsRequestBodyWithOneExecution.getAggregatedExecutions().add(foundAggregatedExecution.get());
+            return Optional.of(executionsRequestBodyWithOneExecution);
+        }
+
+        return Optional.empty();
+    }
+
+    @JsonIgnore // Ignore because helper method
+    public List<String> getExecutionIds() {
+        List<String> executionIds = Stream.of(runExecutions, taskExecutions, validationExecutions).flatMap(List::stream)
+                .map(Execution::getExecutionId)
+                .collect(Collectors.toList());
+        executionIds.addAll(aggregatedExecutions.stream().map(AggregatedExecution::getExecutionId).toList());
+        return executionIds;
+    }
+
+    /**
+     * Updates the execution in this object specified by executionToUpdate.
+     * Does not update the deprecated AggregatedExecutions.
+     * @param executionToUpdate
+     */
+    public void updateExecution(Execution executionToUpdate) {
+        if (executionToUpdate instanceof RunExecution newWorkflowExecution) {
+            getRunExecutionByExecutionId(newWorkflowExecution.getExecutionId()).ifPresent(oldWorkflowExecution -> oldWorkflowExecution.update(newWorkflowExecution));
+        } else if (executionToUpdate instanceof TaskExecutions newTaskExecutions) {
+            getTaskExecutionsByExecutionId(newTaskExecutions.getExecutionId()).ifPresent(oldTaskExecutions -> oldTaskExecutions.update(newTaskExecutions));
+        } else if (executionToUpdate instanceof ValidationExecution newValidationExecution) {
+            getValidationExecutionByExecutionId(newValidationExecution.getExecutionId()).ifPresent(oldValidationExecution -> oldValidationExecution.update(newValidationExecution));
+        }
     }
 }

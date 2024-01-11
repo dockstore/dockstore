@@ -157,6 +157,7 @@ public class MetricsDataS3Client {
             isTruncated = listObjectsV2Response.isTruncated();
         }
 
+        LOG.info("There are {} objects in S3 directory {}", metricsData.size(), keyPrefix);
         return metricsData;
     }
 

@@ -216,11 +216,11 @@ public class ToolsExtendedApi {
     @ApiOperation(value = ExecutionMetricsPost.SUMMARY, notes = ExecutionMetricsPost.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @ApiResponses(value = {
-        @ApiResponse(code = HttpStatus.SC_MULTI_STATUS, message = ExecutionMetricsPost.MULTI_STATUS_RESPONSE),
+        @ApiResponse(code = HttpStatus.SC_NO_CONTENT, message = ExecutionMetricsPost.OK_RESPONSE),
         @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = ExecutionMetricsPost.NOT_FOUND_RESPONSE, response = Error.class),
         @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = ExecutionMetricsPost.UNAUTHORIZED_RESPONSE, response = Error.class)})
     @Operation(operationId = "executionMetricsPost", summary = ExecutionMetricsPost.SUMMARY, description = ExecutionMetricsPost.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_MULTI_STATUS + "", description = ExecutionMetricsPost.MULTI_STATUS_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ExecutionsResponseBody.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = ExecutionMetricsPost.OK_RESPONSE),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
                 + "", description = ExecutionMetricsPost.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
@@ -390,7 +390,7 @@ public class ToolsExtendedApi {
         public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
         public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics";
         public static final String EXECUTIONS_DESCRIPTION = "Individual execution metrics to submit. Submitting aggregated execution metrics is deprecated.";
-        public static final String MULTI_STATUS_RESPONSE = "Execution metrics submitted. Please view the individual responses.";
+        public static final String OK_RESPONSE = "Execution metrics submitted successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit execution metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }

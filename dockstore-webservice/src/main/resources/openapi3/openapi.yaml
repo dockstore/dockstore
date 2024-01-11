@@ -766,12 +766,8 @@ paths:
           execution metrics is deprecated.
         required: true
       responses:
-        "207":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExecutionsResponseBody'
-          description: Execution metrics submitted. Please view the individual responses.
+        "204":
+          description: Execution metrics submitted successfully.
         "401":
           content:
             application/json:

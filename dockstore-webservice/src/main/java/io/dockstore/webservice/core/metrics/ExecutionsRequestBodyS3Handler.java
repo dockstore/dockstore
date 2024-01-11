@@ -17,64 +17,128 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import io.dockstore.common.S3ClientHelper;
+import io.dockstore.common.Partner;
+import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
- * A helper class that handles ExecutionsRequestBody objects that are sent and retrieved from S3.
+ * A helper class that handles ExecutionsRequestBody objects that are sent and retrieved from S3 for a specific trsId, versionId, and platform.
+ * These functions only find/retrieve/put objects in the trsId/versionId/platform metrics directory in S3.
  */
-public final class ExecutionsRequestBodyS3Handler {
+public class ExecutionsRequestBodyS3Handler {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutionsRequestBodyS3Handler.class);
     private static final Gson GSON = new Gson();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final String trsId;
+    private final String versionId;
+    private final Partner platform;
+    private final MetricsDataS3Client metricsDataS3Client;
+    private final Map<String, String> executionIdToFileName = new HashMap<>();
+    private final Map<String, ExecutionsRequestBody> fileNameToExecutionsRequestBody = new HashMap<>();
 
-    private ExecutionsRequestBodyS3Handler() {
-
-    }
-
-    public static ExecutionsRequestBody getExecutionsRequestBodyFromS3Object(String id, String versionId, String platform, String executionId, MetricsDataS3Client metricsDataS3Client) throws IOException {
-        String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(id, versionId, platform, S3ClientHelper.appendJsonFileTypeToFileName(executionId));
-        return GSON.fromJson(s3FileContent, ExecutionsRequestBody.class);
+    public ExecutionsRequestBodyS3Handler(String trsId, String versionId, Partner platform, MetricsDataS3Client metricsDataS3Client) {
+        this.trsId = trsId;
+        this.versionId = versionId;
+        this.platform = platform;
+        this.metricsDataS3Client = metricsDataS3Client;
     }
 
     /**
-     * Generate a map of execution IDs to ExecutionsRequestBody objects containing only 1 execution. This facilitates the creation of S3 files containing only 1 execution.
-     * @param executionsRequestBody
+     * Retrieves the file with fileName from S3 and returns the file content as an ExecutionsRequestBody.
+     * @param fileName
      * @return
      */
-    public static Map<String, ExecutionsRequestBody> generateSingleExecutionsRequestBodies(ExecutionsRequestBody executionsRequestBody) {
-        Map<String, ExecutionsRequestBody> executionIdToSingleExecutionRequestBody = new HashMap<>();
-
-        executionsRequestBody.getRunExecutions().forEach(workflowExecution -> {
-            ExecutionsRequestBody singleExecutionRequestBody = new ExecutionsRequestBody();
-            singleExecutionRequestBody.setRunExecutions(List.of(workflowExecution));
-            executionIdToSingleExecutionRequestBody.put(workflowExecution.getExecutionId(), singleExecutionRequestBody);
-        });
-
-        executionsRequestBody.getTaskExecutions().forEach(taskExecutions -> {
-            ExecutionsRequestBody singleExecutionRequestBody = new ExecutionsRequestBody();
-            singleExecutionRequestBody.setTaskExecutions(List.of(taskExecutions));
-            executionIdToSingleExecutionRequestBody.put(taskExecutions.getExecutionId(), singleExecutionRequestBody);
-        });
-
-        executionsRequestBody.getValidationExecutions().forEach(validationExecution -> {
-            ExecutionsRequestBody singleExecutionRequestBody = new ExecutionsRequestBody();
-            singleExecutionRequestBody.setValidationExecutions(List.of(validationExecution));
-            executionIdToSingleExecutionRequestBody.put(validationExecution.getExecutionId(), singleExecutionRequestBody);
-        });
-
-        executionsRequestBody.getAggregatedExecutions().forEach(aggregatedExecution -> {
-            ExecutionsRequestBody singleExecutionRequestBody = new ExecutionsRequestBody();
-            singleExecutionRequestBody.setAggregatedExecutions(List.of(aggregatedExecution));
-            executionIdToSingleExecutionRequestBody.put(aggregatedExecution.getExecutionId(), singleExecutionRequestBody);
-        });
-
-        return executionIdToSingleExecutionRequestBody;
+    public Optional<ExecutionsRequestBody> getExecutionsRequestBodyByFileName(String fileName) {
+        try {
+            String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(trsId, versionId, platform.name(), fileName);
+            return Optional.of(GSON.fromJson(s3FileContent, ExecutionsRequestBody.class));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
+
+    /**
+     * Creates an S3 object for the ExecutionsRequestBody provided.
+     * @param fileName
+     * @param ownerId
+     * @param description
+     * @param executionsRequestBody
+     * @throws JsonProcessingException
+     * @throws AwsServiceException
+     * @throws SdkClientException
+     */
+    @SuppressWarnings("checkstyle:parameternumber")
+    public void createS3ObjectForExecutionsRequestBody(String fileName, long ownerId, String description, ExecutionsRequestBody executionsRequestBody)
+            throws JsonProcessingException, AwsServiceException, SdkClientException {
+        final String executionsRequestBodyString = OBJECT_MAPPER.writeValueAsString(executionsRequestBody);
+        metricsDataS3Client.createS3Object(trsId, versionId, platform.name(), fileName, ownerId, description, executionsRequestBodyString);
+    }
+
+    /**
+     * Retrieves a list of executions IDs that are in the trsId/versionName/platform directory in S3
+     * @return
+     */
+    public  List<String> getExecutionIdsFromDirectory() {
+        List<MetricsData> metricsDataList = metricsDataS3Client.getMetricsData(trsId, versionId, platform);
+        return metricsDataList.stream()
+                .map(metricsData -> getExecutionsRequestBodyByFileName(metricsData.fileName()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(ExecutionsRequestBody::getExecutionIds)
+                .flatMap(List::stream)
+                .toList();
+    }
+
+    /**
+     * Searches S3 for an execution with executionId.
+     * @param executionId executionId of the execution to find
+     * @param returnAsSingleExecutionsRequestBody A boolean indicating if the ExecutionsRequestBody returned should only contain the execution the funtion was searching for.
+     *                                            If false, it returns the entire ExecutionsRequestBody of the file that the execution belongs in.
+     * @return
+     */
+    public  Optional<ExecutionsFromS3> searchS3ForExecutionId(String executionId, boolean returnAsSingleExecutionsRequestBody) {
+        if (!executionIdToFileName.containsKey(executionId)) {
+            // Find the file that contains the execution ID
+            List<MetricsData> metricsDataList = metricsDataS3Client.getMetricsData(trsId, versionId, platform);
+            for (MetricsData metricsData: metricsDataList) {
+                Optional<ExecutionsRequestBody> executionsRequestBody = getExecutionsRequestBodyByFileName(metricsData.fileName());
+                if (executionsRequestBody.isPresent() && executionsRequestBody.get().containsExecutionId(executionId)) {
+                    // Save the info for this execution ID and all other execution IDs in the found file
+                    final String fileName = metricsData.fileName();
+                    executionIdToFileName.put(executionId, fileName);
+                    fileNameToExecutionsRequestBody.put(fileName, executionsRequestBody.get());
+                    executionsRequestBody.get().getExecutionIds().forEach(executionIdInSameFile -> executionIdToFileName.put(executionIdInSameFile, fileName));
+                    break;
+                }
+            }
+        }
+
+        final String fileName = executionIdToFileName.get(executionId);
+        final ExecutionsRequestBody foundExecutionsRequestBody = fileNameToExecutionsRequestBody.get(fileName);
+        if (foundExecutionsRequestBody != null) {
+            if (returnAsSingleExecutionsRequestBody) {
+                Optional<ExecutionsRequestBody> singleExecutionsRequestBody = foundExecutionsRequestBody.getExecution(executionId);
+                if (singleExecutionsRequestBody.isPresent()) {
+                    return Optional.of(new ExecutionsFromS3(fileName, singleExecutionsRequestBody.get()));
+                }
+            } else {
+                return Optional.of(new ExecutionsFromS3(fileName, foundExecutionsRequestBody));
+            }
+        }
+        return Optional.empty();
+    }
+
+    public record ExecutionsFromS3(String fileName, ExecutionsRequestBody executionsRequestBody) {}
 }
