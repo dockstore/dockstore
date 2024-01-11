@@ -561,6 +561,9 @@ class NotebookIT extends BaseIT {
         return testingPostgres.runSelectStatement(String.format("select count(*) from event where notebookid = %s and type = '%s'", notebookId, type), long.class);
     }
 
+    private long countEvents(String type) {
+        return testingPostgres.runSelectStatement(String.format("select count(*) from event where type = '%s'", type), long.class);
+    }
 
     @Test
     void testEventDeletion() {
@@ -669,6 +672,25 @@ class NotebookIT extends BaseIT {
         EntriesApi unprivilegedEntriesApi = new EntriesApi(unprivilegedApiClient);
         shouldThrow(() -> unprivilegedEntriesApi.archiveEntry(id), "unprivileged users should not be able to archive", HttpStatus.SC_FORBIDDEN);
         shouldThrow(() -> unprivilegedEntriesApi.unarchiveEntry(id), "unprivileged users should not be able to unarchive", HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testTagEventCreation() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+
+        String tagRef = "refs/tags/simple-v1";
+        String branchRef = "refs/heads/simple";
+        String eventType = "ADD_VERSION_TO_ENTRY";
+
+        long aCount = countEvents(eventType);
+        handleGitHubRelease(workflowsApi, simpleRepo, tagRef, USER_2_USERNAME);
+        long bCount = countEvents(eventType);
+        handleGitHubRelease(workflowsApi, simpleRepo, branchRef, USER_2_USERNAME);
+        long cCount = countEvents(eventType);
+
+        assertEquals(aCount + 1, bCount, "a tagged release should produce an ADD_VERSION_TO_ENTRY Event");
+        assertEquals(bCount, cCount, "an untagged release should not produce an ADD_VERSION_TO_ENTRY Event");
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
