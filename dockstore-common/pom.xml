@@ -338,6 +338,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
 
 
         <dependency>

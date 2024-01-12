@@ -24,6 +24,8 @@ import io.dockstore.common.Partner;
 import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,12 +63,8 @@ public class ExecutionsRequestBodyS3Handler {
      * @return
      */
     public Optional<ExecutionsRequestBody> getExecutionsRequestBodyByFileName(String fileName) {
-        try {
-            String s3FileContent = metricsDataS3Client.getMetricsDataFileContent(trsId, versionId, platform.name(), fileName);
-            return Optional.of(GSON.fromJson(s3FileContent, ExecutionsRequestBody.class));
-        } catch (IOException e) {
-            return Optional.empty();
-        }
+        Optional<String> s3FileContent = metricsDataS3Client.getMetricsDataFileContent(trsId, versionId, platform.name(), fileName);
+        return s3FileContent.map(s -> GSON.fromJson(s, ExecutionsRequestBody.class));
     }
 
     /**
@@ -91,14 +89,17 @@ public class ExecutionsRequestBodyS3Handler {
      * @return
      */
     public  List<String> getExecutionIdsFromDirectory() {
+        Instant start = Instant.now();
         List<MetricsData> metricsDataList = metricsDataS3Client.getMetricsData(trsId, versionId, platform);
-        return metricsDataList.stream()
+        List<String> executionIds = metricsDataList.stream()
                 .map(metricsData -> getExecutionsRequestBodyByFileName(metricsData.fileName()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .map(ExecutionsRequestBody::getExecutionIds)
                 .flatMap(List::stream)
                 .toList();
+        LOG.info("Getting execution IDs from directory took {}", Duration.between(start, Instant.now()));
+        return executionIds;
     }
 
     /**

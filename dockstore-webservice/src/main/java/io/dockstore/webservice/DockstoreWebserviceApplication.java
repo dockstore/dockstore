@@ -32,6 +32,8 @@ import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.LanguagePluginManager;
+import io.dockstore.common.metrics.MetricsDataS3Cache;
+import io.dockstore.common.metrics.MetricsDataS3Client;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
@@ -162,6 +164,7 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -507,6 +510,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
+
+        // Initialize S3 cache for fetching metrics data
+        try {
+            MetricsDataS3Cache.initCache(configuration.getMetricsConfig().getS3BucketName(), configuration.getMetricsConfig().getS3EndpointOverride());
+        } catch (URISyntaxException e) {
+            LOG.error("Could not create metrics data S3 cache", e);
+            throw new RuntimeException("Could not create metrics data S3 cache");
+        }
 
         // Register connection pool health check after server starts so the environment has dropwizard metrics
         environment.lifecycle().addServerLifecycleListener(server -> {
