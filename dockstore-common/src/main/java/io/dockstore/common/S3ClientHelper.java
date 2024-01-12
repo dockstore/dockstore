@@ -31,6 +31,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
 public final class S3ClientHelper {
     private static final Logger LOG = LoggerFactory.getLogger(S3ClientHelper.class);
@@ -80,11 +81,19 @@ public final class S3ClientHelper {
     }
 
     public static S3AsyncClient createS3AsyncClient() {
-        return S3AsyncClient.crtBuilder().credentialsProvider(DefaultCredentialsProvider.create()).forcePathStyle(true).build();
+        return initS3CrtSyncClientBuild().build();
     }
 
     public static S3AsyncClient createS3AsyncClient(String endpointOverride) throws URISyntaxException {
-        return S3AsyncClient.crtBuilder().credentialsProvider(DefaultCredentialsProvider.create()).forcePathStyle(true).endpointOverride(new URI(endpointOverride)).build();
+        return initS3CrtSyncClientBuild().endpointOverride(new URI(endpointOverride)).build();
+    }
+
+    private static S3CrtAsyncClientBuilder initS3CrtSyncClientBuild() {
+        final int maxConcurrency = 500;
+        return S3AsyncClient.crtBuilder()
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .forcePathStyle(true)
+                .maxConcurrency(maxConcurrency);
     }
 
     private static S3ClientBuilder initS3ClientBuilder() {

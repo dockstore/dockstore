@@ -46,8 +46,11 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
+import software.amazon.awssdk.transfer.s3.model.CompletedDirectoryDownload;
 import software.amazon.awssdk.transfer.s3.model.CompletedDirectoryUpload;
+import software.amazon.awssdk.transfer.s3.model.DirectoryDownload;
 import software.amazon.awssdk.transfer.s3.model.DirectoryUpload;
+import software.amazon.awssdk.transfer.s3.model.DownloadDirectoryRequest;
 import software.amazon.awssdk.transfer.s3.model.UploadDirectoryRequest;
 
 public class MetricsDataS3Client {
@@ -75,9 +78,13 @@ public class MetricsDataS3Client {
                     .source(Paths.get(sourceDirectory))
                     .bucket(bucketName)
                     .s3Prefix(generateKeyPrefix(toolId, versionName, platform))
+                    //.uploadFileRequestTransformer(request -> request.addTransferListener(LoggingTransferListener.create()))
                     .build());
 
         CompletedDirectoryUpload completedDirectoryUpload = directoryUpload.completionFuture().join();
+        if (!completedDirectoryUpload.failedTransfers().isEmpty()) {
+            throw new RuntimeException("Failed to upload directory " + sourceDirectory);
+        }
 
         /*
         Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
@@ -91,6 +98,20 @@ public class MetricsDataS3Client {
         RequestBody requestBody = RequestBody.fromString(metricsData);
         s3.putObject(request, requestBody);
          */
+    }
+
+    public void downloadS3ObjectsFromKeyPrefixToDirectory(String toolId, String versionName, String platform, String s3FolderToDownload, String destinationDirectory) {
+        DirectoryDownload directoryDownload =
+                this.s3TransferManager.downloadDirectory(DownloadDirectoryRequest.builder()
+                        .destination(Paths.get(destinationDirectory))
+                        .bucket(bucketName)
+                        //.listObjectsV2RequestTransformer(request -> request.prefix(s3FolderToDownload))
+                        //.downloadFileRequestTransformer(request -> request.addTransferListener(LoggingTransferListener.create()))
+                        .build());
+        CompletedDirectoryDownload completedDirectoryDownload = directoryDownload.completionFuture().join();
+        if (!completedDirectoryDownload.failedTransfers().isEmpty()) {
+            throw new RuntimeException("Failed to download complete S3 folder " + s3FolderToDownload);
+        }
     }
 
     /**

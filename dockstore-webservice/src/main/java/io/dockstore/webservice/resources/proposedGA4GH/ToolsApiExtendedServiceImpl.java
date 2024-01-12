@@ -129,6 +129,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
     private static PublicStateManager publicStateManager = null;
     private static Semaphore elasticSearchConcurrencyLimit = null;
+    private static MetricsDataS3Client metricsDataS3Client;
 
     public static void setStateManager(PublicStateManager manager) {
         ToolsApiExtendedServiceImpl.publicStateManager = manager;
@@ -153,6 +154,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
         ToolsApiExtendedServiceImpl.metricsConfig = config.getMetricsConfig();
+        try {
+            metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+        } catch (URISyntaxException e) {
+            LOG.error("Could create Dockstore metrics S3 client", e);
+            throw new CustomWebApplicationException("Could create Dockstore metrics S3 client."
+                    + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
 
         if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
@@ -499,12 +507,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
+        /*
         MetricsDataS3Client metricsDataS3Client;
         try {
             metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
         } catch (URISyntaxException e) {
             throw new CustomWebApplicationException("Error creating S3 client, could not update executions", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+         */
 
         try {
             String metricsData = OBJECT_MAPPER.writeValueAsString(executions);
@@ -556,13 +566,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      * @param ownerId
      * @param description
      * @param executionsRequestBody
-     * @param metricsDataS3Client
+     * @param s3Client
      * @return
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private ExecutionResponse createS3ObjectForSingleExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, ExecutionsRequestBody executionsRequestBody, boolean overwrite, MetricsDataS3Client metricsDataS3Client) {
+    private ExecutionResponse createS3ObjectForSingleExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, ExecutionsRequestBody executionsRequestBody, boolean overwrite, MetricsDataS3Client s3Client) {
         LOG.info("Creating S3 object for execution with ID {} for TRS ID {}, version {}, and platform {}", executionId, id, versionId, platform);
-        if (!overwrite && metricsDataS3Client.doesExecutionExistInS3(id, versionId, platform, executionId)) {
+        if (!overwrite && s3Client.doesExecutionExistInS3(id, versionId, platform, executionId)) {
             return new ExecutionResponse(executionId, HttpStatus.SC_BAD_REQUEST, String.format("%s: An execution with id %s already exists for version %s and platform %s", COULD_NOT_SUBMIT_METRICS_DATA, executionId, versionId, platform));
         }
 
@@ -570,7 +580,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         try {
             final String fileName = S3ClientHelper.appendJsonFileTypeToFileName(executionId);
             executionsRequestBodyString = OBJECT_MAPPER.writeValueAsString(executionsRequestBody);
-            metricsDataS3Client.createS3Object(id, versionId, platform, fileName, ownerId, description, executionsRequestBodyString);
+            s3Client.createS3Object(id, versionId, platform, fileName, ownerId, description, executionsRequestBodyString);
             return new ExecutionResponse(executionId, HttpStatus.SC_OK);
         } catch (AwsServiceException | SdkClientException | JsonProcessingException e) {
             LOG.error("{} for execution with ID {}", COULD_NOT_SUBMIT_METRICS_DATA, executionId, e);
@@ -641,12 +651,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
+        /*
         MetricsDataS3Client metricsDataS3Client;
         try {
             metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
         } catch (URISyntaxException e) {
             throw new CustomWebApplicationException("Error creating S3 client, could not get execution", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+         */
 
         if (!metricsDataS3Client.doesExecutionExistInS3(id, versionId, platform.name(), executionId)) {
             throw new CustomWebApplicationException(EXECUTION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
@@ -680,12 +692,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
+        /*
         MetricsDataS3Client metricsDataS3Client;
         try {
             metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
         } catch (URISyntaxException e) {
             throw new CustomWebApplicationException("Error creating S3 client, could not update executions", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+         */
 
         final boolean overwrite = true; // We want to overwrite files to update them
         ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
