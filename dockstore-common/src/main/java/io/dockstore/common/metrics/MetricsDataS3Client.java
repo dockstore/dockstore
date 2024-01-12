@@ -24,13 +24,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,7 +143,6 @@ public class MetricsDataS3Client {
     }
 
     private List<MetricsData> getMetricsData(String keyPrefix) {
-        final Instant start = Instant.now();
         List<MetricsData> metricsData = new ArrayList<>();
         boolean isTruncated = true;
         // ContinuationToken indicates to S3 that the list is being continued on this bucket with a token. This is present if the response was paginated
@@ -163,26 +158,21 @@ public class MetricsDataS3Client {
         }
 
         LOG.info("There are {} objects in S3 directory {}", metricsData.size(), keyPrefix);
-        LOG.info("Listing objects in directory took {}", Duration.between(start, Instant.now()));
         return metricsData;
     }
 
     /**
      * Get the metrics data JSON string from S3 for a GA4GH tool version
-     *
-     * @param toolId      The GA4GH Tool ID
+     * @param toolId The GA4GH Tool ID
      * @param versionName The GA4GH ToolVersion name
-     * @param platform    The platform that the metrics data is from
-     * @param filename    The file name of the S3 object
+     * @param platform The platform that the metrics data is from
+     * @param filename The file name of the S3 object
      * @return JSON string containing the metrics data
      * @throws IOException
      */
-    public Optional<String> getMetricsDataFileContent(String toolId, String versionName, String platform, String filename) {
+    public String getMetricsDataFileContent(String toolId, String versionName, String platform, String filename)
+            throws IOException, NoSuchKeyException {
         String key = generateKey(toolId, versionName, platform, filename);
-        return MetricsDataS3Cache.getInstance().getS3ObjectFromCache(key);
-    }
-
-    public String getMetricsDataFileContentByKey(String key) throws IOException, NoSuchKeyException {
         GetObjectRequest request = GetObjectRequest.builder().bucket(bucketName).key(key).build();
         ResponseInputStream<GetObjectResponse> object = s3.getObject(request);
         return IOUtils.toString(object, StandardCharsets.UTF_8);
