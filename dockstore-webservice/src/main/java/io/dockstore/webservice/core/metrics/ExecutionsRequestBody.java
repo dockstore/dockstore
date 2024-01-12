@@ -117,11 +117,11 @@ public class ExecutionsRequestBody {
     }
 
     /**
-     * Finds the execution and returns it in an ExecutionsRequestBody containing only that execution.
+     * Finds the execution and returns it in an ExecutionsRequestBody containing only that execution if "this" contains the execution with executionId
      * @param executionId
      * @return
      */
-    public Optional<ExecutionsRequestBody> getExecution(String executionId) {
+    public Optional<ExecutionsRequestBody> getExecutionAsExecutionsRequestBodyWithOneExecution(String executionId) {
         ExecutionsRequestBody executionsRequestBodyWithOneExecution = new ExecutionsRequestBody();
 
         Optional<RunExecution> foundWorkflowExecution = getRunExecutionByExecutionId(executionId);
@@ -162,7 +162,7 @@ public class ExecutionsRequestBody {
 
     /**
      * Updates the execution in this object specified by executionToUpdate.
-     * Does not update the deprecated AggregatedExecutions.
+     * Does NOT update the deprecated AggregatedExecutions.
      * @param executionToUpdate
      */
     public void updateExecution(Execution executionToUpdate) {

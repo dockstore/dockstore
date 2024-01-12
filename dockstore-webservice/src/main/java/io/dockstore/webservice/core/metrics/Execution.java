@@ -37,7 +37,7 @@ public abstract class Execution {
     @NotNull
     @ValidExecutionId
     @JsonProperty(required = true)
-    @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "User-provided ID of the execution. Must be unique and not used for previous executions. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
     private String executionId;
 
     @NotNull

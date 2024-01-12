@@ -87,21 +87,6 @@ public class ExecutionsRequestBodyS3Handler {
     }
 
     /**
-     * Retrieves a list of executions IDs that are in the trsId/versionName/platform directory in S3
-     * @return
-     */
-    public  List<String> getExecutionIdsFromDirectory() {
-        List<MetricsData> metricsDataList = metricsDataS3Client.getMetricsData(trsId, versionId, platform);
-        return metricsDataList.stream()
-                .map(metricsData -> getExecutionsRequestBodyByFileName(metricsData.fileName()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(ExecutionsRequestBody::getExecutionIds)
-                .flatMap(List::stream)
-                .toList();
-    }
-
-    /**
      * Searches S3 for an execution with executionId.
      * @param executionId executionId of the execution to find
      * @param returnAsSingleExecutionsRequestBody A boolean indicating if the ExecutionsRequestBody returned should only contain the execution the funtion was searching for.
@@ -129,7 +114,7 @@ public class ExecutionsRequestBodyS3Handler {
         final ExecutionsRequestBody foundExecutionsRequestBody = fileNameToExecutionsRequestBody.get(fileName);
         if (foundExecutionsRequestBody != null) {
             if (returnAsSingleExecutionsRequestBody) {
-                Optional<ExecutionsRequestBody> singleExecutionsRequestBody = foundExecutionsRequestBody.getExecution(executionId);
+                Optional<ExecutionsRequestBody> singleExecutionsRequestBody = foundExecutionsRequestBody.getExecutionAsExecutionsRequestBodyWithOneExecution(executionId);
                 if (singleExecutionsRequestBody.isPresent()) {
                     return Optional.of(new ExecutionsFromS3(fileName, singleExecutionsRequestBody.get()));
                 }

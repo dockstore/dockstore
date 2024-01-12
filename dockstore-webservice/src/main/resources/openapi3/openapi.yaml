@@ -8517,8 +8517,9 @@ components:
             description: Additional aggregated metrics
           executionId:
             type: string
-            description: User-provided ID of the execution. This ID is used to identify
-              the execution when updating the execution
+            description: User-provided ID of the execution. Must be unique and not
+              used for previous executions. This ID is used to identify the execution
+              when updating the execution
       deprecated: true
       description: Aggregated metrics of multiple executions on a platform
       required:
@@ -9505,8 +9506,9 @@ components:
           example: 2023-03-31T15:06:49.888745366Z
         executionId:
           type: string
-          description: User-provided ID of the execution. This ID is used to identify
-            the execution when updating the execution
+          description: User-provided ID of the execution. Must be unique and not used
+            for previous executions. This ID is used to identify the execution when
+            updating the execution
       required:
       - dateExecuted
       - executionId

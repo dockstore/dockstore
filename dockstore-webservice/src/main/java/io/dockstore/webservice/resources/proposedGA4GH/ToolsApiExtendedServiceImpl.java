@@ -118,7 +118,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String COULD_NOT_SUBMIT_METRICS_DATA = "Could not submit metrics data";
     public static final String COULD_NOT_UPDATE_EXECUTION = "Could not update execution";
     public static final String EXECUTION_NOT_FOUND_ERROR = "Execution not found";
-    public static final String EXECUTION_IDS_ALREADY_EXIST = "There are execution IDs that were previously submitted";
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -509,17 +508,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             String metricsData = OBJECT_MAPPER.writeValueAsString(executions);
             if (StringUtils.isBlank(metricsData)) {
                 throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            ExecutionsRequestBodyS3Handler executionsRequestBodyS3Handler = new ExecutionsRequestBodyS3Handler(id, versionId, platform, metricsDataS3Client);
-            // Check that execution IDs don't already exist in S3
-            List<String> existingExecutionsIdsInS3 = executionsRequestBodyS3Handler.getExecutionIdsFromDirectory();
-            List<String> duplicateExecutionIds = executions.getExecutionIds().stream()
-                    .filter(existingExecutionsIdsInS3::contains)
-                    .toList();
-
-            if (!duplicateExecutionIds.isEmpty()) {
-                throw new CustomWebApplicationException(EXECUTION_IDS_ALREADY_EXIST + ": " + duplicateExecutionIds, HttpStatus.SC_BAD_REQUEST);
             }
 
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);

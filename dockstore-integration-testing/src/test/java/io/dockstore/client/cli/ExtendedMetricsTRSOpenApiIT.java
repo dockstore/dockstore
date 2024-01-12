@@ -32,7 +32,6 @@ import static io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutio
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
-import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_IDS_ALREADY_EXIST;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
@@ -410,16 +409,6 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdExecutions), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if there are duplicate execution IDs provided");
         assertTrue(exception.getMessage().contains(MUST_CONTAIN_UNIQUE_EXECUTION_IDS), "Should throw if there are duplicate execution IDs provided");
-
-        // Verify that user cannot provide duplicate execution IDs over multiple submissions. These errors are represented in the response body
-        final List<RunExecution> duplicateIdOverTimeExecution = createRunExecutions(1);
-        final String duplicateExecutionId = duplicateIdOverTimeExecution.get(0).getExecutionId();
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdOverTimeExecution), platform, id, versionId, description);
-        // Submit the same execution again, but also submit a valid TaskExecutions
-        final TaskExecutions validTaskExecutions = createTaskExecutions(1);
-        exception =  assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdOverTimeExecution).taskExecutions(List.of(validTaskExecutions)), platform, id, versionId, description));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
-        assertTrue(exception.getMessage().contains(EXECUTION_IDS_ALREADY_EXIST) && exception.getMessage().contains(duplicateExecutionId));
     }
 
     @Test
