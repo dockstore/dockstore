@@ -336,4 +336,11 @@
         <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
         <dropColumn tableName="workflowversion_alias" columnName="dbupdatedate"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="specifyPlatformForPlatformPartnerUser">
+        <modifyDataType columnName="platformpartner" newDataType="varchar(255)" tableName="enduser"/>
+        <dropDefaultValue columnDataType="varchar(255)" columnName="platformpartner" tableName="enduser"/>
+        <sql dbms="postgresql">
+            UPDATE enduser SET platformpartner=NULL where platformpartner='false';
+        </sql>
+    </changeSet>
 </databaseChangeLog>

@@ -33,6 +33,7 @@ import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionD
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_NOT_FOUND_ERROR;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.FORBIDDEN_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
@@ -75,6 +76,8 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.ExecutionsResponseBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
+import io.dockstore.openapi.client.model.PrivilegeRequest;
+import io.dockstore.openapi.client.model.PrivilegeRequest.PlatformPartnerEnum;
 import io.dockstore.openapi.client.model.RunExecution;
 import io.dockstore.openapi.client.model.RunExecution.ExecutionStatusEnum;
 import io.dockstore.openapi.client.model.TaskExecutions;
@@ -611,13 +614,17 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         // Admin user
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final UsersApi usersApi = new UsersApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         // Non-admin user
         final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
+        final UsersApi otherUsersApi = new UsersApi(otherWebClient);
 
         String id = String.format("#workflow/%s", DOCKSTORE_WORKFLOW_CNV_PATH);
         String versionId = "master";
         String platform = Partner.TERRA.name();
+        String differentPlatform = Partner.GALAXY.name();
 
         // setup and publish the workflow
         Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", null, "cwl",
@@ -633,21 +640,45 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
 
         // convert the user role and test that a platform partner can't put aggregated metrics (which adds metrics to the database)
-        testingPostgres.runUpdateStatement("update enduser set platformpartner = 't' where username = '" + OTHER_USERNAME + "'");
+        usersApi.setUserPrivileges(new PrivilegeRequest().platformPartner(PlatformPartnerEnum.TERRA), otherUsersApi.getUser().getId());
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to put aggregated metrics");
 
-        // Test that a platform partner can post run executions
+        // Test that a platform partner can post run executions for their platform
         List<RunExecution> executions = createRunExecutions(1);
+        final String executionId = executions.get(0).getExecutionId();
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 1);
-
         // Test that a platform partner can post aggregated metrics
         AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
         aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)));
         List<AggregatedExecution> aggregatedMetrics = List.of(aggregatedExecution);
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(aggregatedMetrics), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 2);
+        // Test that a platform partner cannot post executions for a different platform
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), differentPlatform, id, versionId, "foo"));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to post executions for a different platform");
+        assertEquals(FORBIDDEN_PLATFORM, exception.getMessage());
+
+        // Test that a platform partner can get executions for their platform
+        ExecutionsRequestBody executionsRequestBody = otherExtendedGa4GhApi.executionGet(id, versionId, platform, executionId);
+        assertEquals(1, executionsRequestBody.getRunExecutions().size());
+        assertEquals(executionId, executionsRequestBody.getRunExecutions().get(0).getExecutionId());
+        // Test that a platform partner can't get executions for a different platform
+        // Post metrics for a different platform
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), differentPlatform, id, versionId, "foo");
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionGet(id, versionId, differentPlatform, executionId));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to get executions for a different platform");
+        assertEquals(FORBIDDEN_PLATFORM, exception.getMessage());
+
+        // Test that a platform partner can update executions for their platform
+        ExecutionsResponseBody responseBody = otherExtendedGa4GhApi.executionMetricsUpdate(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "");
+        assertEquals(1, responseBody.getExecutionResponses().size());
+        assertEquals(HttpStatus.SC_OK, responseBody.getExecutionResponses().get(0).getStatus());
+        // Test that a platform partner can't update executions for a different platform
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsUpdate(new ExecutionsRequestBody().runExecutions(executions), differentPlatform, id, versionId, ""));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to update executions for a different platform");
+        assertEquals(FORBIDDEN_PLATFORM, exception.getMessage());
     }
 
     @Test

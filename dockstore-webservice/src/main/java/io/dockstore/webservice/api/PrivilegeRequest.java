@@ -1,6 +1,7 @@
 package io.dockstore.webservice.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.Partner;
 import io.swagger.annotations.ApiModel;
 
 /**
@@ -11,7 +12,7 @@ import io.swagger.annotations.ApiModel;
 public class PrivilegeRequest {
     private boolean admin;
     private boolean curator;
-    private boolean platformPartner;
+    private Partner platformPartner;
 
     @JsonProperty
     public boolean isAdmin() {
@@ -32,11 +33,11 @@ public class PrivilegeRequest {
     }
 
     @JsonProperty
-    public boolean isPlatformPartner() {
+    public Partner getPlatformPartner() {
         return platformPartner;
     }
 
-    public void setPlatformPartner(boolean platformPartner) {
+    public void setPlatformPartner(Partner platformPartner) {
         this.platformPartner = platformPartner;
     }
 }

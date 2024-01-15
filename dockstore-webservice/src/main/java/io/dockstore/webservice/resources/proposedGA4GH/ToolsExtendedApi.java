@@ -304,7 +304,7 @@ public class ToolsExtendedApi {
             @Parameter(description = ExecutionGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
             @Parameter(description = ExecutionGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
             @Parameter(description = ExecutionGet.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-            @Parameter(description = ExecutionGet.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("executionId") String executionId,
+            @Parameter(description = ExecutionGet.EXECUTION_ID_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("executionId") String executionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
         return delegate.getExecution(id, versionId, platform, executionId, user);
     }
@@ -377,6 +377,7 @@ public class ToolsExtendedApi {
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String EXECUTION_ID_DESCRIPTION = "The execution ID of the execution to retrieve";
         public static final String OK_RESPONSE = "Execution retrieved successfully.";
         public static final String NOT_FOUND_RESPONSE = "The execution cannot be found.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";

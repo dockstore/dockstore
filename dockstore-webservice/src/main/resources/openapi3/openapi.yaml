@@ -682,7 +682,7 @@ paths:
           - AGC
           - OTHER
           - ALL
-      - description: Platform that the tool was executed on
+      - description: The execution ID of the execution to retrieve
         in: query
         name: executionId
         required: true
@@ -10267,7 +10267,21 @@ components:
         curator:
           type: boolean
         platformPartner:
-          type: boolean
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
     Profile:
       type: object
       properties:
@@ -11319,6 +11333,8 @@ components:
           type: boolean
           description: Indicates whether the user is required to change their username
             before being allowed to do various operations on Dockstore.
+      required:
+      - platformPartner
     UserInfo:
       type: object
       properties:

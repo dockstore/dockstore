@@ -99,6 +99,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static final int ES_BATCH_INSERT_SIZE = 500;
     public static final String INVALID_PLATFORM = "Invalid platform. Please select an individual platform.";
+    public static final String FORBIDDEN_PLATFORM = "You do not have the credentials to access executions for this platform";
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
@@ -479,6 +480,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
         checkActualPlatform(platform);
+        checkPlatformForPlatformPartnerUser(owner, platform);
 
         // Check that the entry and version exists
         Entry<?, ?> entry;
@@ -565,6 +567,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response getExecution(String id, String versionId, Partner platform, String executionId, User user) {
+        checkPlatformForPlatformPartnerUser(user, platform);
+
         Entry<?, ?> entry;
         try {
             entry = getEntry(id, Optional.empty());
@@ -599,6 +603,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response updateExecutionMetrics(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
+        checkPlatformForPlatformPartnerUser(owner, platform);
         final long ownerId = owner.getId();
 
         // Check that the entry and version exists
@@ -687,6 +692,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private void checkActualPlatform(Partner platform) {
         if (!platform.isActualPartner()) {
             throw new CustomWebApplicationException(INVALID_PLATFORM, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Checks if the user is a platform partner and if the platform they're trying to access is the platform they have permissions for.
+     * @param user
+     * @param platform
+     */
+    private void checkPlatformForPlatformPartnerUser(User user, Partner platform) {
+        if (user.isPlatformPartner() && user.getPlatformPartner() != platform) {
+            throw new CustomWebApplicationException(FORBIDDEN_PLATFORM, HttpStatus.SC_FORBIDDEN);
         }
     }
 }

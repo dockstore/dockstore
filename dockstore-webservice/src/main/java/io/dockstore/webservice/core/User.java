@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -32,6 +33,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -162,10 +164,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR)
     private boolean curator;
 
-    @Column(columnDefinition = "boolean default 'false'")
+    @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER, required = true, position = 18)
-    @Schema(description = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER)
-    private boolean platformPartner;
+    @Schema(description = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER, requiredMode = RequiredMode.REQUIRED)
+    private Partner platformPartner;
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
@@ -571,10 +573,14 @@ public class User implements Principal, Comparable<User>, Serializable {
     }
 
     public boolean isPlatformPartner() {
+        return platformPartner != null;
+    }
+
+    public Partner getPlatformPartner() {
         return platformPartner;
     }
 
-    public void setPlatformPartner(boolean platformPartner) {
+    public void setPlatformPartner(Partner platformPartner) {
         this.platformPartner = platformPartner;
     }
 
