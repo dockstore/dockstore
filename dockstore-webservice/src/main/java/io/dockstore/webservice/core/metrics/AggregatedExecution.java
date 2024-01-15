@@ -27,6 +27,7 @@ import java.util.Map;
 
 /**
  * This class is deprecated because a platform partner has expressed that it's preferable to submit individual executions rather than aggregated executions.
+ * @deprecated since 1.15.0
  */
 @Deprecated(since = "1.15.0")
 @Schema(name = "AggregatedExecution", description = "Aggregated metrics of multiple executions on a platform", allOf = Metrics.class, deprecated = true)
