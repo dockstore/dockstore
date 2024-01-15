@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OICR and UCSC
+ * Copyright 2024 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
+/**
+ * This class is deprecated because a platform partner has expressed that it's preferable to submit individual executions rather than aggregated executions.
+ */
 @Deprecated(since = "1.15.0")
 @Schema(name = "AggregatedExecution", description = "Aggregated metrics of multiple executions on a platform", allOf = Metrics.class, deprecated = true)
 public class AggregatedExecution extends Metrics {

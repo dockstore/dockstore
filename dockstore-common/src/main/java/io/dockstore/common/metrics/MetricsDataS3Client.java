@@ -102,27 +102,6 @@ public class MetricsDataS3Client {
         return String.join("/", pathList);
     }
 
-    public boolean doesExecutionExistInS3(String toolId, String versionName, String platform, String executionId) {
-        final String fileName = S3ClientHelper.appendJsonFileTypeToFileName(executionId);
-        String s3Key = MetricsDataS3Client.generateKey(toolId, versionName, platform, fileName);
-        return doesKeyExistInS3(s3Key);
-    }
-
-    /**
-     * Returns a boolean indicating if an S3 key already exists in the metrics bucket
-     * @param s3Key
-     * @return
-     */
-    public boolean doesKeyExistInS3(String s3Key) {
-        HeadObjectRequest request = HeadObjectRequest.builder().bucket(bucketName).key(s3Key).build();
-        try {
-            s3.headObject(request);
-            return true;
-        } catch (NoSuchKeyException exception) {
-            return false;
-        }
-    }
-
     /**
      * Get a list of MetricsData for a GA4GH tool version.
      * Note that the ListObjectsV2Request returns at most 1,000 objects and paginates the rest (<a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">source</a>).
