@@ -21,6 +21,7 @@ import io.dockstore.common.Partner;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
 import io.dockstore.webservice.resources.ResourceConstants;
@@ -286,6 +287,68 @@ public class ToolsExtendedApi {
         return delegate.getAggregatedMetrics(id, versionId, user);
     }
 
+    @GET
+    @UnitOfWork(readOnly = true)
+    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @Path("/{id}/versions/{version_id}/execution")
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "executionGet", summary = ExecutionGet.SUMMARY, description = ExecutionGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                + "", description = ExecutionGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ExecutionsRequestBody.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = ExecutionGet.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = ExecutionGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    public Response executionGet(@Parameter(hidden = true) @Auth User user,
+            @Parameter(description = ExecutionGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+            @Parameter(description = ExecutionGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+            @Parameter(description = ExecutionGet.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+            @Parameter(description = ExecutionGet.EXECUTION_ID_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("executionId") String executionId,
+            @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.getExecution(id, versionId, platform, executionId, user);
+    }
+
+    @PUT
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @Path("/{id}/versions/{version_id}/executions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    @ApiOperation(value = ExecutionMetricsUpdate.SUMMARY, notes = ExecutionMetricsUpdate.DESCRIPTION, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @Operation(operationId = "ExecutionMetricsUpdate", summary = ExecutionMetricsUpdate.SUMMARY, description = ExecutionMetricsUpdate.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_MULTI_STATUS
+                + "", description = ExecutionMetricsUpdate.MULTI_STATUS_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ExecutionsResponseBody.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = ExecutionMetricsUpdate.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Response executionMetricsUpdate(@Parameter(hidden = true) @Auth User user,
+        @Parameter(description = ExecutionMetricsUpdate.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @Parameter(description = ExecutionMetricsUpdate.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @Parameter(description = ExecutionMetricsUpdate.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+        @Parameter(description = ExecutionMetricsUpdate.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
+        @RequestBody(description = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.updateExecutionMetrics(id, versionId, platform, user, description, executions);
+    }
+
+    private static final class ExecutionMetricsUpdate {
+        public static final String SUMMARY = "Update workflow executions that were executed on a platform. Does not update aggregated metrics, which is deprecated.";
+        public static final String DESCRIPTION = "This endpoint updates workflow executions that were executed on a platform. Does not update aggregated metrics, which is deprecated.";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics that are being updated";
+        public static final String EXECUTIONS_DESCRIPTION = "The updated executions";
+        public static final String MULTI_STATUS_RESPONSE = "Executions to update processed. Please view the individual responses.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to update the executions.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
     private static final class AggregatedMetricsPut {
         public static final String SUMMARY = "Add aggregated execution metrics for a workflow that was executed on a platform.";
         public static final String DESCRIPTION = "This endpoint adds aggregated metrics for a workflow that was executed on a platform";
@@ -305,6 +368,18 @@ public class ToolsExtendedApi {
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String OK_RESPONSE = "Aggregated metrics retrieved successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to get aggregated metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
+    private static final class ExecutionGet {
+        public static final String SUMMARY = "Get an execution for a tool by execution ID";
+        public static final String DESCRIPTION = "This endpoint retrieves an execution for a tool by execution ID";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String EXECUTION_ID_DESCRIPTION = "The execution ID of the execution to retrieve";
+        public static final String OK_RESPONSE = "Execution retrieved successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The execution cannot be found.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 

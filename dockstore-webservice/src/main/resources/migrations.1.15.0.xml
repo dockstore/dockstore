@@ -346,4 +346,11 @@
         <!-- Need to add not null constraint after updating the value of existing rows to 0 -->
         <addNotNullConstraint tableName="execution_status" columnName="numberofabortedexecutions"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="specifyPlatformForPlatformPartnerUser">
+        <modifyDataType columnName="platformpartner" newDataType="varchar(255)" tableName="enduser"/>
+        <dropDefaultValue columnDataType="varchar(255)" columnName="platformpartner" tableName="enduser"/>
+        <sql dbms="postgresql">
+            UPDATE enduser SET platformpartner=NULL where platformpartner='false';
+        </sql>
+    </changeSet>
 </databaseChangeLog>

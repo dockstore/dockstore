@@ -20,12 +20,13 @@ package io.dockstore.webservice.core.metrics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A wrapper class that contains a list of tasks executed during a workflow execution
  */
-@Schema(description = "Metrics of individual tasks that were executed during the workflow execution.")
-public class TaskExecutions {
+@Schema(description = "Metrics of individual tasks that were executed during the workflow execution.", allOf = Execution.class)
+public class TaskExecutions extends Execution {
 
     @Schema(description = "Metrics of individual tasks that were executed during the workflow execution.")
     List<RunExecution> taskExecutions = new ArrayList<>();
@@ -36,5 +37,16 @@ public class TaskExecutions {
 
     public void setTaskExecutions(List<RunExecution> taskExecutions) {
         this.taskExecutions = taskExecutions;
+    }
+
+    public void update(TaskExecutions newTaskExecutions) {
+        super.update(newTaskExecutions);
+        for (RunExecution newTaskExecution: newTaskExecutions.getTaskExecutions()) {
+            // Find the same task in the old TaskExecutions set using the execution ID
+            Optional<RunExecution> oldTaskExecution = this.taskExecutions.stream()
+                    .filter(taskExecution -> taskExecution.getExecutionId().equals(newTaskExecution.getExecutionId()))
+                    .findFirst();
+            oldTaskExecution.ifPresent(runExecution -> runExecution.update(newTaskExecution));
+        }
     }
 }

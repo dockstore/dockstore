@@ -34,7 +34,12 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
+import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -65,6 +70,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -93,12 +99,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static final int ES_BATCH_INSERT_SIZE = 500;
     public static final String INVALID_PLATFORM = "Invalid platform. Please select an individual platform.";
+    public static final String FORBIDDEN_PLATFORM = "You do not have the credentials to access executions for this platform";
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
     public static final String SEARCH_QUERY_NOT_PARSED = "Couldn't parse search payload request.";
     public static final String SEARCH_QUERY_REGEX = "([.?+*#@&~\"{}()<>\\[\\]|\\\\])";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
@@ -109,6 +117,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final int TOO_MANY_REQUESTS_429 = 429;
     private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
     public static final String COULD_NOT_SUBMIT_METRICS_DATA = "Could not submit metrics data";
+    public static final String COULD_NOT_UPDATE_EXECUTION = "Could not update execution";
+    public static final String EXECUTION_NOT_FOUND_ERROR = "Execution not found";
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -470,6 +480,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
         checkActualPlatform(platform);
+        checkPlatformForPlatformPartnerUser(owner, platform);
 
         // Check that the entry and version exists
         Entry<?, ?> entry;
@@ -488,16 +499,22 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
+        MetricsDataS3Client metricsDataS3Client;
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            String metricsData = mapper.writeValueAsString(executions);
-            MetricsDataS3Client metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+            metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+        } catch (URISyntaxException e) {
+            throw new CustomWebApplicationException("Error creating S3 client, could not submit executions", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        try {
+            String metricsData = OBJECT_MAPPER.writeValueAsString(executions);
             if (StringUtils.isBlank(metricsData)) {
                 throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
             }
+
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
             return Response.noContent().build();
-        } catch (AwsServiceException | SdkClientException | JsonProcessingException | URISyntaxException e) {
+        } catch (JsonProcessingException | AwsServiceException | SdkClientException e) {
             LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
             throw new CustomWebApplicationException(COULD_NOT_SUBMIT_METRICS_DATA, HttpStatus.SC_BAD_REQUEST);
         }
@@ -548,6 +565,100 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return version.getMetricsByPlatform();
     }
 
+    @Override
+    public Response getExecution(String id, String versionId, Partner platform, String executionId, User user) {
+        checkPlatformForPlatformPartnerUser(user, platform);
+
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        MetricsDataS3Client metricsDataS3Client;
+        try {
+            metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+        } catch (URISyntaxException e) {
+            throw new CustomWebApplicationException("Error creating S3 client, could not get execution", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        ExecutionsRequestBodyS3Handler executionsRequestBodyS3Handler = new ExecutionsRequestBodyS3Handler(id, versionId, platform, metricsDataS3Client);
+        Optional<ExecutionsFromS3> executionsFromS3 = executionsRequestBodyS3Handler.searchS3ForExecutionId(executionId, true);
+        if (executionsFromS3.isPresent()) {
+            return Response.ok(executionsFromS3.get().executionsRequestBody()).build();
+        } else {
+            throw new CustomWebApplicationException(EXECUTION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Response updateExecutionMetrics(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
+        checkPlatformForPlatformPartnerUser(owner, platform);
+        final long ownerId = owner.getId();
+
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        MetricsDataS3Client metricsDataS3Client;
+        try {
+            metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+        } catch (URISyntaxException e) {
+            throw new CustomWebApplicationException("Error creating S3 client", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        ExecutionsRequestBodyS3Handler executionsRequestBodyS3Handler = new ExecutionsRequestBodyS3Handler(id, versionId, platform, metricsDataS3Client);
+        ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
+        // AggregatedExecutions are deprecated and not updated
+        List<? extends Execution> executionsToUpdate = Stream.of(executions.getRunExecutions(), executions.getTaskExecutions(), executions.getValidationExecutions())
+                .flatMap(List::stream)
+                .toList();
+        for (Execution executionToUpdate: executionsToUpdate) {
+            final String executionId = executionToUpdate.getExecutionId();
+            Optional<ExecutionsFromS3> executionsFromS3 = executionsRequestBodyS3Handler.searchS3ForExecutionId(executionId, false);
+            if (executionsFromS3.isPresent()) {
+                ExecutionsRequestBody executionsRequestBody = executionsFromS3.get().executionsRequestBody();
+                executionsRequestBody.updateExecution(executionToUpdate);
+                try {
+                    executionsRequestBodyS3Handler.createS3ObjectForExecutionsRequestBody(executionsFromS3.get().fileName(), ownerId, description,
+                            executionsRequestBody);
+                    executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(executionId, HttpStatus.SC_OK));
+                } catch (AwsServiceException | SdkClientException | JsonProcessingException e) {
+                    LOG.error("{} with ID {}", COULD_NOT_UPDATE_EXECUTION, executionId, e);
+                    executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(executionId, HttpStatus.SC_BAD_REQUEST,
+                            COULD_NOT_UPDATE_EXECUTION + ": " + e.getMessage()));
+                }
+            } else {
+                executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(executionId, HttpStatus.SC_NOT_FOUND, EXECUTION_NOT_FOUND_ERROR));
+            }
+        }
+
+        return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
+    }
+
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
         ToolsApiServiceImpl.ParsedRegistryID parsedID =  new ToolsApiServiceImpl.ParsedRegistryID(id);
         return TOOLS_API_SERVICE_IMPL.getEntry(parsedID, user);
@@ -581,6 +692,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private void checkActualPlatform(Partner platform) {
         if (!platform.isActualPartner()) {
             throw new CustomWebApplicationException(INVALID_PLATFORM, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Checks if the user is a platform partner and if the platform they're trying to access is the platform they have permissions for.
+     * @param user
+     * @param platform
+     */
+    private void checkPlatformForPlatformPartnerUser(User user, Partner platform) {
+        if (user.isPlatformPartner() && user.getPlatformPartner() != platform) {
+            throw new CustomWebApplicationException(FORBIDDEN_PLATFORM, HttpStatus.SC_FORBIDDEN);
         }
     }
 }

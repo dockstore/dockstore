@@ -171,6 +171,10 @@ public final class S3ClientHelper {
      * @return
      */
     public static String createFileName() {
-        return Instant.now().toEpochMilli() + ".json";
+        return appendJsonFileTypeToFileName(String.valueOf(Instant.now().toEpochMilli()));
+    }
+
+    public static String appendJsonFileTypeToFileName(String fileName) {
+        return fileName + ".json";
     }
 }
