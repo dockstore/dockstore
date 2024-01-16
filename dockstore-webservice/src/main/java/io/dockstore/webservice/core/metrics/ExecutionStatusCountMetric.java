@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -62,17 +63,23 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     private Map<ExecutionStatus, Integer> count = new EnumMap<>(ExecutionStatus.class);
 
     @Column(nullable = false)
-    @Schema(description = "Number of successful executions", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Number of successful executions", accessMode = AccessMode.READ_ONLY, example = "5")
     private int numberOfSuccessfulExecutions;
 
     @Column(nullable = false)
-    @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", accessMode = AccessMode.READ_ONLY, example = "2")
     private int numberOfFailedExecutions;
+
+    @Column(nullable = false)
+    @Schema(description = "Number of aborted executions. An execution is aborted if its execution is stopped after it has started", accessMode = AccessMode.READ_ONLY, example = "0")
+    private int numberOfAbortedExecutions;
 
     public ExecutionStatusCountMetric() {
         count.put(ExecutionStatus.SUCCESSFUL, 0);
+        count.put(ExecutionStatus.FAILED, 0);
         count.put(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
         count.put(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0);
+        count.put(ExecutionStatus.ABORTED, 0);
         calculateNumberOfExecutions();
     }
 
@@ -88,7 +95,8 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
 
     public void calculateNumberOfExecutions() {
         this.numberOfSuccessfulExecutions = count.getOrDefault(ExecutionStatus.SUCCESSFUL, 0);
-        this.numberOfFailedExecutions = count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
+        this.numberOfFailedExecutions = count.getOrDefault(ExecutionStatus.FAILED, 0) + count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
+        this.numberOfAbortedExecutions = count.getOrDefault(ExecutionStatus.ABORTED, 0);
     }
 
     public void setCount(Map<ExecutionStatus, Integer> count) {
@@ -112,14 +120,24 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
         this.numberOfFailedExecutions = numberOfFailedExecutions;
     }
 
+    public int getNumberOfAbortedExecutions() {
+        return numberOfAbortedExecutions;
+    }
+
+    public void setNumberOfAbortedExecutions(int numberOfAbortedExecutions) {
+        this.numberOfAbortedExecutions = numberOfAbortedExecutions;
+    }
+
     @JsonIgnore
     public int getNumberOfExecutions() {
-        return numberOfSuccessfulExecutions + numberOfFailedExecutions;
+        return numberOfSuccessfulExecutions + numberOfFailedExecutions + numberOfAbortedExecutions;
     }
 
     public enum ExecutionStatus {
         SUCCESSFUL,
+        FAILED,
         FAILED_SEMANTIC_INVALID,
-        FAILED_RUNTIME_INVALID
+        FAILED_RUNTIME_INVALID,
+        ABORTED
     }
 }

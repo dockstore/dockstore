@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.metrics;
 
+import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.ABORTED;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
@@ -156,6 +157,7 @@ class MetricsIT extends BaseIT {
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
+        assertEquals(0, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         // Add 1 failed workflow run that was runtime invalid
         executionStatusCount.put(FAILED_RUNTIME_INVALID, 1);
         executionStatusCountMetric.setCount(executionStatusCount);
@@ -163,6 +165,7 @@ class MetricsIT extends BaseIT {
         assertEquals(11, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
+        assertEquals(0, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         // Add 1 failed workflow run that was semantically invalid
         executionStatusCount.put(FAILED_SEMANTIC_INVALID, 1);
         executionStatusCountMetric.setCount(executionStatusCount);
@@ -170,6 +173,15 @@ class MetricsIT extends BaseIT {
         assertEquals(12, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(2, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
+        assertEquals(0, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
+        // Add 1 aborted workflow run
+        executionStatusCount.put(ABORTED, 1);
+        executionStatusCountMetric.setCount(executionStatusCount);
+        metrics.setExecutionStatusCount(executionStatusCountMetric);
+        assertEquals(13, metrics.getExecutionStatusCount().getNumberOfExecutions());
+        assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
+        assertEquals(2, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
+        assertEquals(1, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
 
         // Add aggregated information about execution time for the workflow runs.
         // The minimum execution time was 1 minute, the maximum was 5 minutes, and the average was 3 minutes. 10 data points were used to calculate the average

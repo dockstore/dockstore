@@ -22,6 +22,7 @@ import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
 import static io.dockstore.common.metrics.MetricsDataS3Client.generateKey;
+import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.ABORTED;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
@@ -489,7 +490,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
                 .count(Map.of(SUCCESSFUL.name(), 1,
-                        FAILED_SEMANTIC_INVALID.name(), 1));
+                        FAILED_SEMANTIC_INVALID.name(), 1,
+                        ABORTED.name(), 2));
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
@@ -527,6 +529,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         // Verify execution status
         assertEquals(1, platform1Metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, platform1Metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
+        assertEquals(2, platform1Metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         assertFalse(platform1Metrics.getExecutionStatusCount().getCount().containsKey(FAILED_RUNTIME_INVALID.name()), "Should not contain this because no executions had this status");
         // Verify execution time
         assertEquals(min, platform1Metrics.getExecutionTime().getMinimum());
