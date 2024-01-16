@@ -336,4 +336,14 @@
         <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
         <dropColumn tableName="workflowversion_alias" columnName="dbupdatedate"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addNumberOfAbortedExecutions">
+        <addColumn tableName="execution_status">
+            <column name="numberofabortedexecutions" type="int4"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE execution_status SET numberofabortedexecutions=0 WHERE numberofabortedexecutions IS NULL;
+        </sql>
+        <!-- Need to add not null constraint after updating the value of existing rows to 0 -->
+        <addNotNullConstraint tableName="execution_status" columnName="numberofabortedexecutions"/>
+    </changeSet>
 </databaseChangeLog>

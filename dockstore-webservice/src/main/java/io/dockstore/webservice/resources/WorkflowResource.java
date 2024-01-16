@@ -1075,6 +1075,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
+    @Path("/path/{repository}/published")
+    @Operation(operationId = "getAllPublishedWorkflowByPath", summary = "Get a list of published workflows by path.", description = "Do not include workflow name.",
+            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> getAllPublishedWorkflowByPath(@Parameter(description = "repository path", required = true) @PathParam("repository") String path) {
+        List<Workflow> workflows = Optional.ofNullable(workflowDAO.findAllByPath(path, true)).orElse(List.of());
+        workflows.forEach(this::checkNotNullEntry);
+        return workflows;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
     @Operation(operationId = "getPublishedWorkflowByPath", summary = "Get a published workflow by path", description = "Does not require workflow name.")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
