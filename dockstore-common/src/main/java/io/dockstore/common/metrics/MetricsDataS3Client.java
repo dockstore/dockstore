@@ -30,7 +30,9 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -38,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -61,12 +64,13 @@ public class MetricsDataS3Client {
      * @param toolId The GA4GH Tool ID
      * @param versionName The GA4GH ToolVersion name
      * @param platform The platform that the execution metrics data is from
-     * @param fileName The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
+     * @param fileName The file name to use. Should be the execution ID
      * @param ownerUserId The Dockstore user id of the owner (user that sent the metrics data)
      * @param description An optional description for the execution metrics data
      * @param metricsData The metrics data in JSON format
      */
-    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) throws AwsServiceException, SdkClientException {
         String key = generateKey(toolId, versionName, platform, fileName);
         Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
                 ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
@@ -132,6 +136,7 @@ public class MetricsDataS3Client {
             isTruncated = listObjectsV2Response.isTruncated();
         }
 
+        LOG.info("There are {} objects in S3 directory {}", metricsData.size(), keyPrefix);
         return metricsData;
     }
 
@@ -145,7 +150,7 @@ public class MetricsDataS3Client {
      * @throws IOException
      */
     public String getMetricsDataFileContent(String toolId, String versionName, String platform, String filename)
-            throws IOException {
+            throws IOException, NoSuchKeyException {
         String key = generateKey(toolId, versionName, platform, filename);
         GetObjectRequest request = GetObjectRequest.builder().bucket(bucketName).key(key).build();
         ResponseInputStream<GetObjectResponse> object = s3.getObject(request);

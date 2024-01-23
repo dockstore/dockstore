@@ -125,7 +125,8 @@ public final class S3ClientHelper {
     }
 
     public static String getVersionName(String key) {
-        return getElementFromKey(key, VERSION_NAME_INDEX);
+        // Get encoded version name from S3 key and return the decoded version name
+        return URLDecoder.decode(getElementFromKey(key, VERSION_NAME_INDEX), StandardCharsets.UTF_8);
     }
 
     /**
@@ -134,7 +135,8 @@ public final class S3ClientHelper {
      * @return
      */
     public static String getMetricsPlatform(String key) {
-        return getElementFromKey(key, METRICS_PLATFORM_INDEX);
+        // Get encoded platform name from S3 key and return the decoded platform name
+        return URLDecoder.decode(getElementFromKey(key, METRICS_PLATFORM_INDEX), StandardCharsets.UTF_8);
     }
 
     /**
@@ -144,7 +146,8 @@ public final class S3ClientHelper {
      */
     public static String getFileName(String key) {
         final String[] keyComponents = splitKey(key);
-        return keyComponents[keyComponents.length - 1];
+        // Get encoded file name from S3 key and return the decoded file name
+        return URLDecoder.decode(keyComponents[keyComponents.length - 1], StandardCharsets.UTF_8);
     }
 
     /**
@@ -171,6 +174,10 @@ public final class S3ClientHelper {
      * @return
      */
     public static String createFileName() {
-        return Instant.now().toEpochMilli() + ".json";
+        return appendJsonFileTypeToFileName(String.valueOf(Instant.now().toEpochMilli()));
+    }
+
+    public static String appendJsonFileTypeToFileName(String fileName) {
+        return fileName + ".json";
     }
 }
