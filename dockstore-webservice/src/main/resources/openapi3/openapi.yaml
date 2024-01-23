@@ -11506,6 +11506,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidatorVersionInfo'
+          uniqueItems: true
       required:
       - mostRecentVersionName
       - numberOfRuns

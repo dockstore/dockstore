@@ -48,8 +48,8 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -211,7 +211,7 @@ class MetricsIT extends BaseIT {
         miniwdlValidatorVersionInfo.setNumberOfRuns(5);
         miniwdlValidatorVersionInfo.setPassingRate(100d);
         ValidatorInfo miniwdlValidatorInfo = new ValidatorInfo();
-        miniwdlValidatorInfo.setValidatorVersions(List.of(miniwdlValidatorVersionInfo));
+        miniwdlValidatorInfo.setValidatorVersions(Set.of(miniwdlValidatorVersionInfo));
         miniwdlValidatorInfo.setMostRecentVersionName(miniwdlValidatorVersionInfo.getName());
         miniwdlValidatorInfo.setNumberOfRuns(miniwdlValidatorVersionInfo.getNumberOfRuns());
         miniwdlValidatorInfo.setPassingRate(miniwdlValidatorVersionInfo.getPassingRate());

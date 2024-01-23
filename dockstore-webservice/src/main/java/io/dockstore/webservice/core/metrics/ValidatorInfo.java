@@ -32,8 +32,8 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.CreationTimestamp;
@@ -58,7 +58,7 @@ public class ValidatorInfo {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @JoinTable(name = "validator_versions", joinColumns = @JoinColumn(name = "validatorinfoid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validatorversioninfoid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "A list containing validation info for the most recent execution of the validator tool versions")
-    private List<ValidatorVersionInfo> validatorVersions = new ArrayList<>();
+    private Set<ValidatorVersionInfo> validatorVersions = new HashSet<>();
 
     @NotNull
     @Column(nullable = false)
@@ -119,11 +119,11 @@ public class ValidatorInfo {
         this.numberOfRuns = numberOfRuns;
     }
 
-    public List<ValidatorVersionInfo> getValidatorVersions() {
+    public Set<ValidatorVersionInfo> getValidatorVersions() {
         return validatorVersions;
     }
 
-    public void setValidatorVersions(List<ValidatorVersionInfo> validatorVersions) {
+    public void setValidatorVersions(Set<ValidatorVersionInfo> validatorVersions) {
         this.validatorVersions = validatorVersions;
     }
 }
