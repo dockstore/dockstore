@@ -353,4 +353,7 @@
             UPDATE enduser SET platformpartner=NULL where platformpartner='false';
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addValidatorVersionsPrimaryKey">
+        <addPrimaryKey columnNames="validatorinfoid, validatorversioninfoid" constraintName="validator_versions_pkey" tableName="validator_versions"/>
+    </changeSet>
 </databaseChangeLog>
