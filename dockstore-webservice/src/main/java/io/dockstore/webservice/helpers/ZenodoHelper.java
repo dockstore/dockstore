@@ -98,6 +98,7 @@ public final class ZenodoHelper {
                 depositMetadata.prereserveDoi(false);
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
+                // TODO clean this after https://github.com/dockstore/swagger-java-zenodo-client/pull/20/files is merged and released
                 Map<String, String> doiMap = (Map<String, String>)newDeposit.getMetadata().getPrereserveDoi();
                 Map.Entry<String, String> doiEntry = doiMap.entrySet().iterator().next();
                 String doi = doiEntry.getValue();
@@ -129,7 +130,10 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
-                String doi = depositMetadata.getDoi();
+                // TODO clean this after https://github.com/dockstore/swagger-java-zenodo-client/pull/20/files is merged and released
+                Map<String, String> doiMap = (Map<String, String>)depositMetadata.getPrereserveDoi();
+                Map.Entry<String, String> doiEntry = doiMap.entrySet().iterator().next();
+                String doi = doiEntry.getValue();
                 doiAlias = createAliasUsingDoi(doi);
                 setMetadataRelatedIdentifiers(depositMetadata,  dockstoreGA4GHBaseUrl,
                         dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
