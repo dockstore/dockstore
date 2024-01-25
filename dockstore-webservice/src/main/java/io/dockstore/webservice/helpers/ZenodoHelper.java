@@ -129,7 +129,9 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
-                String doi = depositMetadata.getDoi();
+                Map<String, String> doiMap = (Map<String, String>)depositMetadata.getPrereserveDoi();
+                Map.Entry<String, String> doiEntry = doiMap.entrySet().iterator().next();
+                String doi = doiEntry.getValue();
                 doiAlias = createAliasUsingDoi(doi);
                 setMetadataRelatedIdentifiers(depositMetadata,  dockstoreGA4GHBaseUrl,
                         dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
