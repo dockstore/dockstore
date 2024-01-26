@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -303,18 +304,29 @@ public final class ZenodoHelper {
      * @param depositMetadata Metadata for the workflow version
      * @param workflow    workflow for which DOI is registered
      */
-    static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
-        final Stream<Author> authors = workflow.getAuthors().stream().map(ZenodoHelper::fromDockstoreAuthor);
-        final Stream<Author> orcidAuthors = workflow.getOrcidAuthors().stream()
+    static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
+        // prefer authors from the specific workflow version
+        final Set<Author> setOfAuthors = new HashSet<>(getAuthors(workflowVersion.getAuthors(), workflowVersion.getOrcidAuthors()));
+        /// but use the default if necessary
+        if (setOfAuthors.isEmpty()) {
+            final List<Author> zenodoAuthors = getAuthors(workflow.getAuthors(), workflow.getOrcidAuthors());
+            setOfAuthors.addAll(zenodoAuthors);
+        }
+
+        if (setOfAuthors.isEmpty()) {
+            throw new CustomWebApplicationException(AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, HttpStatus.SC_BAD_REQUEST);
+        }
+        depositMetadata.setCreators(setOfAuthors.stream().toList());
+    }
+
+    private static List<Author> getAuthors(Set<io.dockstore.webservice.core.Author> inputAuthors, Set<OrcidAuthor> inputOrcidAuthors) {
+        final Stream<Author> authors = inputAuthors.stream().map(ZenodoHelper::fromDockstoreAuthor);
+        final Stream<Author> orcidAuthors = inputOrcidAuthors.stream()
                 .map(OrcidAuthor::getOrcid)
                 .map(orcidId -> ORCIDHelper.getOrcidAuthorInformation(orcidId, null))
                 .flatMap(Optional::stream)
                 .map(ZenodoHelper::fromOrcidAuthorInfo);
-        final List<Author> zenodoAuthors = Stream.concat(authors, orcidAuthors).toList();
-        if (zenodoAuthors.isEmpty()) {
-            throw new CustomWebApplicationException(AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, HttpStatus.SC_BAD_REQUEST);
-        }
-        depositMetadata.setCreators(zenodoAuthors);
+        return Stream.concat(authors, orcidAuthors).toList();
     }
 
     private static Author fromDockstoreAuthor(io.dockstore.webservice.core.Author dockstoreAuthor) {
@@ -376,7 +388,7 @@ public final class ZenodoHelper {
 
         setMetadataKeywords(depositMetadata, workflow);
 
-        setMetadataCreator(depositMetadata, workflow);
+        setMetadataCreator(depositMetadata, workflow, workflowVersion);
 
         setMetadataCommunities(depositMetadata);
     }
