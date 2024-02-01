@@ -9561,14 +9561,8 @@ components:
         count:
           type: object
           additionalProperties:
-            type: integer
-            format: int32
-            description: A map containing the count for each key
+            $ref: '#/components/schemas/MetricsByStatus'
           description: A map containing the count for each key
-          example:
-            FAILED_RUNTIME_INVALID: 1
-            FAILED_SEMANTIC_INVALID: 1
-            SUCCESSFUL: 5
         id:
           type: integer
           format: int64
@@ -10056,12 +10050,39 @@ components:
       type: object
       description: Aggregated metrics associated with entry versions
       properties:
+        executionStatusCount:
+          $ref: '#/components/schemas/ExecutionStatusMetric'
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the metrics in this webservice
+        validationStatus:
+          $ref: '#/components/schemas/ValidationStatusMetric'
+      required:
+      - executionStatusCount
+    MetricsByStatus:
+      type: object
+      description: Aggregated metrics grouped by execution status
+      properties:
         cost:
           $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
+        executionStatus:
+          type: string
+          description: The status of the executions that these metrics were aggregated
+            from
+          enum:
+          - ALL
+          - SUCCESSFUL
+          - FAILED
+          - FAILED_SEMANTIC_INVALID
+          - FAILED_RUNTIME_INVALID
+          - ABORTED
         executionStatusCount:
-          $ref: '#/components/schemas/ExecutionStatusMetric'
+          type: integer
+          format: int32
+          description: The number of executions for the status
         executionTime:
           $ref: '#/components/schemas/ExecutionTimeMetric'
         id:
@@ -10070,9 +10091,8 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
-        validationStatus:
-          $ref: '#/components/schemas/ValidationStatusMetric'
       required:
+      - executionStatus
       - executionStatusCount
     Notebook:
       type: object
@@ -10410,11 +10430,13 @@ components:
             type: string
             description: The status of the execution
             enum:
+            - ALL
             - SUCCESSFUL
             - FAILED
             - FAILED_SEMANTIC_INVALID
             - FAILED_RUNTIME_INVALID
             - ABORTED
+            example: SUCCESSFUL
           executionTime:
             type: string
             description: The total time it took for the execution to complete in ISO

@@ -77,6 +77,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.ExecutionsResponseBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
+import io.dockstore.openapi.client.model.MetricsByStatus;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.PrivilegeRequest.PlatformPartnerEnum;
 import io.dockstore.openapi.client.model.RunExecution;
@@ -293,7 +294,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setDateExecuted(Instant.now().toString());
 
         AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
-        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 1)));
+        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1))));
 
         ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody()
                 .runExecutions(runExecutions)
@@ -489,9 +490,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
-                .count(Map.of(SUCCESSFUL.name(), 1,
-                        FAILED_SEMANTIC_INVALID.name(), 1,
-                        ABORTED.name(), 2));
+                .count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(1),
+                        FAILED_SEMANTIC_INVALID.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.FAILED_SEMANTIC_INVALID).executionStatusCount(1),
+                        ABORTED.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.ABORTED).executionStatusCount(2)));
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
@@ -501,21 +502,21 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 .maximum(max)
                 .average(average)
                 .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        executionStatusMetric.getCount().get(SUCCESSFUL.name()).setExecutionTime(executionTimeMetric);
         CpuMetric cpuMetric = new CpuMetric()
                 .minimum(min)
                 .maximum(max)
                 .average(average)
                 .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        executionStatusMetric.getCount().get(SUCCESSFUL.name()).setCpu(cpuMetric);
         MemoryMetric memoryMetric = new MemoryMetric()
                 .minimum(min)
                 .maximum(max)
                 .average(average)
                 .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        executionStatusMetric.getCount().get(SUCCESSFUL.name()).setMemory(memoryMetric);
         Metrics metrics = new Metrics()
-                .executionStatusCount(executionStatusMetric)
-                .executionTime(executionTimeMetric)
-                .cpu(cpuMetric)
-                .memory(memoryMetric);
+                .executionStatusCount(executionStatusMetric);
 
         // Put run metrics for platform 1
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform1, workflowId, workflowVersionId);
@@ -532,23 +533,24 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(2, platform1Metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         assertFalse(platform1Metrics.getExecutionStatusCount().getCount().containsKey(FAILED_RUNTIME_INVALID.name()), "Should not contain this because no executions had this status");
         // Verify execution time
-        assertEquals(min, platform1Metrics.getExecutionTime().getMinimum());
-        assertEquals(max, platform1Metrics.getExecutionTime().getMaximum());
-        assertEquals(average, platform1Metrics.getExecutionTime().getAverage());
-        assertEquals(numberOfDataPointsForAverage, platform1Metrics.getExecutionTime().getNumberOfDataPointsForAverage());
-        assertEquals(ExecutionTimeStatisticMetric.UNIT, platform1Metrics.getExecutionTime().getUnit());
+        MetricsByStatus platform1SuccessfulMetrics = platform1Metrics.getExecutionStatusCount().getCount().get(SUCCESSFUL.name());
+        assertEquals(min, platform1SuccessfulMetrics.getExecutionTime().getMinimum());
+        assertEquals(max, platform1SuccessfulMetrics.getExecutionTime().getMaximum());
+        assertEquals(average, platform1SuccessfulMetrics.getExecutionTime().getAverage());
+        assertEquals(numberOfDataPointsForAverage, platform1SuccessfulMetrics.getExecutionTime().getNumberOfDataPointsForAverage());
+        assertEquals(ExecutionTimeStatisticMetric.UNIT, platform1SuccessfulMetrics.getExecutionTime().getUnit());
         // Verify CPU
-        assertEquals(min, platform1Metrics.getCpu().getMinimum());
-        assertEquals(max, platform1Metrics.getCpu().getMaximum());
-        assertEquals(average, platform1Metrics.getCpu().getAverage());
-        assertEquals(numberOfDataPointsForAverage, platform1Metrics.getCpu().getNumberOfDataPointsForAverage());
+        assertEquals(min, platform1SuccessfulMetrics.getCpu().getMinimum());
+        assertEquals(max, platform1SuccessfulMetrics.getCpu().getMaximum());
+        assertEquals(average, platform1SuccessfulMetrics.getCpu().getAverage());
+        assertEquals(numberOfDataPointsForAverage, platform1SuccessfulMetrics.getCpu().getNumberOfDataPointsForAverage());
         assertNull(null, "CPU has no units");
         // Verify memory
-        assertEquals(min, platform1Metrics.getMemory().getMinimum());
-        assertEquals(max, platform1Metrics.getMemory().getMaximum());
-        assertEquals(average, platform1Metrics.getMemory().getAverage());
-        assertEquals(numberOfDataPointsForAverage, platform1Metrics.getMemory().getNumberOfDataPointsForAverage());
-        assertEquals(MemoryStatisticMetric.UNIT, platform1Metrics.getMemory().getUnit());
+        assertEquals(min, platform1SuccessfulMetrics.getMemory().getMinimum());
+        assertEquals(max, platform1SuccessfulMetrics.getMemory().getMaximum());
+        assertEquals(average, platform1SuccessfulMetrics.getMemory().getAverage());
+        assertEquals(numberOfDataPointsForAverage, platform1SuccessfulMetrics.getMemory().getNumberOfDataPointsForAverage());
+        assertEquals(MemoryStatisticMetric.UNIT, platform1SuccessfulMetrics.getMemory().getUnit());
 
         // Put metrics for platform1 again to verify that the old metrics are deleted from the DB and there are no orphans
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform1, workflowId, workflowVersionId);
@@ -635,7 +637,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 1));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
@@ -654,7 +656,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(id, versionId, 1);
         // Test that a platform partner can post aggregated metrics
         AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
-        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)));
+        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(5))));
         List<AggregatedExecution> aggregatedMetrics = List.of(aggregatedExecution);
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(aggregatedMetrics), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 2);
@@ -698,7 +700,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         String versionId = "master";
         String platform = Partner.TERRA.name();
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 1));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
         // Test malformed ID
         ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, "malformedId", "malformedVersionId"));
@@ -764,7 +766,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final AggregatedExecution expectedAggregatedMetrics = new AggregatedExecution()
                 .executionId(generateExecutionId())
                 .additionalAggregatedMetrics(Map.of("cpu_utilization", 50.0));
-        expectedAggregatedMetrics.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)));
+        expectedAggregatedMetrics.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(5))));
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(expectedAggregatedMetrics)), platform1, workflowId, workflowVersionId, description);
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1);
         ExecutionsRequestBody executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedMetrics.getExecutionId());

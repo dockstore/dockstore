@@ -47,7 +47,6 @@ import io.dockstore.webservice.jdbi.MetricsDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.hibernate.Session;
@@ -149,34 +148,29 @@ class MetricsIT extends BaseIT {
         Metrics metrics = new Metrics();
 
         ExecutionStatusCountMetric executionStatusCountMetric = new ExecutionStatusCountMetric();
-        Map<ExecutionStatusCountMetric.ExecutionStatus, Integer> executionStatusCount = new HashMap<>();
         // Add 10 successful workflow runs
-        executionStatusCount.put(SUCCESSFUL, 10);
-        executionStatusCountMetric.setCount(executionStatusCount);
+        executionStatusCountMetric.putCount(SUCCESSFUL, 10);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         // Add 1 failed workflow run that was runtime invalid
-        executionStatusCount.put(FAILED_RUNTIME_INVALID, 1);
-        executionStatusCountMetric.setCount(executionStatusCount);
+        executionStatusCountMetric.putCount(FAILED_RUNTIME_INVALID, 1);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertEquals(11, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         // Add 1 failed workflow run that was semantically invalid
-        executionStatusCount.put(FAILED_SEMANTIC_INVALID, 1);
-        executionStatusCountMetric.setCount(executionStatusCount);
+        executionStatusCountMetric.putCount(FAILED_SEMANTIC_INVALID, 1);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertEquals(12, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(2, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfAbortedExecutions());
         // Add 1 aborted workflow run
-        executionStatusCount.put(ABORTED, 1);
-        executionStatusCountMetric.setCount(executionStatusCount);
+        executionStatusCountMetric.putCount(ABORTED, 1);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertEquals(13, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
@@ -186,21 +180,21 @@ class MetricsIT extends BaseIT {
         // Add aggregated information about execution time for the workflow runs.
         // The minimum execution time was 1 minute, the maximum was 5 minutes, and the average was 3 minutes. 10 data points were used to calculate the average
         ExecutionTimeStatisticMetric executionTimeStatisticMetric = new ExecutionTimeStatisticMetric(60.0, 300.0, 180.12, 10);
-        metrics.setExecutionTime(executionTimeStatisticMetric);
+        executionStatusCountMetric.getMetricsByStatus(SUCCESSFUL).setExecutionTime(executionTimeStatisticMetric);
 
         // Add aggregated information about the CPU used for the workflow runs.
         // The minimum CPU used was 1, the maximum was 4, and the average was 2. 10 data points were used to calculate the average
         CpuStatisticMetric cpuStatisticMetric = new CpuStatisticMetric(1.0, 4.0, 2.0, 10);
-        metrics.setCpu(cpuStatisticMetric);
+        executionStatusCountMetric.getMetricsByStatus(SUCCESSFUL).setCpu(cpuStatisticMetric);
 
         // Add aggregated information about the memory used for the workflow runs.
         // The minimum CPU used was 1GB, the maximum was 4GB, and the average was 2G. 10 data points were used to calculate the average
         MemoryStatisticMetric memoryStatisticMetric = new MemoryStatisticMetric(1.0, 4.0, 2.5, 10);
-        metrics.setMemory(memoryStatisticMetric);
+        executionStatusCountMetric.getMetricsByStatus(SUCCESSFUL).setMemory(memoryStatisticMetric);
 
         // Add aggregated information about the cost of the workflow run
         CostStatisticMetric costStatisticMetric = new CostStatisticMetric(1.00, 4.00, 2.50, 10);
-        metrics.setCost(costStatisticMetric);
+        executionStatusCountMetric.getMetricsByStatus(SUCCESSFUL).setCost(costStatisticMetric);
 
         // Add aggregated information about validation
         // Add a successful miniwdl validation
