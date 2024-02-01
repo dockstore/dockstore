@@ -104,6 +104,7 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
 
     public void putCount(MetricsByStatus metricsByStatus) {
         this.count.put(metricsByStatus.getExecutionStatus(), metricsByStatus);
+        calculateNumberOfExecutions();
     }
 
     public void putCount(ExecutionStatus executionStatus, int executionStatusCount) {
