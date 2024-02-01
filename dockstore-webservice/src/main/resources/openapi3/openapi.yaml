@@ -9562,7 +9562,7 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/MetricsByStatus'
-          description: A map containing the count for each key
+          description: A map containing the metrics for each execution status
         id:
           type: integer
           format: int64
@@ -10068,17 +10068,6 @@ components:
           $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
-        executionStatus:
-          type: string
-          description: The status of the executions that these metrics were aggregated
-            from
-          enum:
-          - ALL
-          - SUCCESSFUL
-          - FAILED
-          - FAILED_SEMANTIC_INVALID
-          - FAILED_RUNTIME_INVALID
-          - ABORTED
         executionStatusCount:
           type: integer
           format: int32
@@ -10092,7 +10081,6 @@ components:
         memory:
           $ref: '#/components/schemas/MemoryMetric'
       required:
-      - executionStatus
       - executionStatusCount
     Notebook:
       type: object

@@ -32,6 +32,7 @@ import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_C
 import static io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds.MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
+import static io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStatus.INVALID_EXECUTION_STATUS_MESSAGE;
 import static io.dockstore.webservice.core.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.FORBIDDEN_PLATFORM;
@@ -414,6 +415,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(duplicateIdExecutions), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if there are duplicate execution IDs provided");
         assertTrue(exception.getMessage().contains(MUST_CONTAIN_UNIQUE_EXECUTION_IDS), "Should throw if there are duplicate execution IDs provided");
+
+        // Verify that user can't submit a RunExecution with the status ALL (meant for internal use)
+        List<RunExecution> executionWithAllStatus = createRunExecutions(1);
+        executionWithAllStatus.forEach(execution -> execution.setExecutionStatus(ExecutionStatusEnum.ALL));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executionWithAllStatus), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if the ALL status is used");
+        assertTrue(exception.getMessage().contains(INVALID_EXECUTION_STATUS_MESSAGE), "Should throw if the ALL status is used");
     }
 
     @Test
@@ -490,9 +498,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
-                .count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(1),
-                        FAILED_SEMANTIC_INVALID.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.FAILED_SEMANTIC_INVALID).executionStatusCount(1),
-                        ABORTED.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.ABORTED).executionStatusCount(2)));
+                .count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1),
+                        FAILED_SEMANTIC_INVALID.name(), new MetricsByStatus().executionStatusCount(1),
+                        ABORTED.name(), new MetricsByStatus().executionStatusCount(2)));
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
@@ -637,7 +645,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
@@ -656,7 +664,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(id, versionId, 1);
         // Test that a platform partner can post aggregated metrics
         AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
-        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(5))));
+        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(5))));
         List<AggregatedExecution> aggregatedMetrics = List.of(aggregatedExecution);
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(aggregatedMetrics), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 2);
@@ -700,7 +708,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         String versionId = "master";
         String platform = Partner.TERRA.name();
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
         // Test malformed ID
         ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, "malformedId", "malformedVersionId"));
@@ -766,7 +774,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final AggregatedExecution expectedAggregatedMetrics = new AggregatedExecution()
                 .executionId(generateExecutionId())
                 .additionalAggregatedMetrics(Map.of("cpu_utilization", 50.0));
-        expectedAggregatedMetrics.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatus(MetricsByStatus.ExecutionStatusEnum.SUCCESSFUL).executionStatusCount(5))));
+        expectedAggregatedMetrics.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(5))));
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(expectedAggregatedMetrics)), platform1, workflowId, workflowVersionId, description);
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1);
         ExecutionsRequestBody executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedMetrics.getExecutionId());

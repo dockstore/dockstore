@@ -36,7 +36,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
-import jakarta.persistence.MapKey;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -53,9 +53,9 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
 
     @NotEmpty
     @MapKeyEnumerated(EnumType.STRING)
-    @MapKey(name = "executionStatus")
-    @ApiModelProperty(value = "A map containing the count for each key")
-    @Schema(description = "A map containing the count for each key", requiredMode = RequiredMode.REQUIRED)
+    @MapKeyColumn(name = "executionStatus")
+    @ApiModelProperty(value = "A map containing the metrics for each execution status")
+    @Schema(description = "A map containing the metrics for each execution status", requiredMode = RequiredMode.REQUIRED)
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "execution_status_count", joinColumns = @JoinColumn(name = "executionstatusid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "metricsbystatusid", referencedColumnName = "id", columnDefinition = "bigint"))
     private Map<ExecutionStatus, MetricsByStatus> count = new EnumMap<>(ExecutionStatus.class);
@@ -92,9 +92,9 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     }
 
     public void calculateNumberOfExecutions() {
-        this.numberOfSuccessfulExecutions = count.getOrDefault(SUCCESSFUL, new MetricsByStatus(SUCCESSFUL)).getExecutionStatusCount();
-        this.numberOfFailedExecutions = count.getOrDefault(FAILED, new MetricsByStatus(FAILED)).getExecutionStatusCount() + count.getOrDefault(FAILED_SEMANTIC_INVALID, new MetricsByStatus(FAILED_SEMANTIC_INVALID)).getExecutionStatusCount() + count.getOrDefault(FAILED_RUNTIME_INVALID, new MetricsByStatus(FAILED_RUNTIME_INVALID)).getExecutionStatusCount();
-        this.numberOfAbortedExecutions = count.getOrDefault(ABORTED, new MetricsByStatus(ABORTED)).getExecutionStatusCount();
+        this.numberOfSuccessfulExecutions = count.getOrDefault(SUCCESSFUL, new MetricsByStatus(0)).getExecutionStatusCount();
+        this.numberOfFailedExecutions = count.getOrDefault(FAILED, new MetricsByStatus(0)).getExecutionStatusCount() + count.getOrDefault(FAILED_SEMANTIC_INVALID, new MetricsByStatus(0)).getExecutionStatusCount() + count.getOrDefault(FAILED_RUNTIME_INVALID, new MetricsByStatus(0)).getExecutionStatusCount();
+        this.numberOfAbortedExecutions = count.getOrDefault(ABORTED, new MetricsByStatus(0)).getExecutionStatusCount();
     }
 
     public void setCount(Map<ExecutionStatus, MetricsByStatus> count) {
@@ -102,13 +102,13 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
         calculateNumberOfExecutions();
     }
 
-    public void putCount(MetricsByStatus metricsByStatus) {
-        this.count.put(metricsByStatus.getExecutionStatus(), metricsByStatus);
+    public void putCount(ExecutionStatus executionStatus, MetricsByStatus metricsByStatus) {
+        this.count.put(executionStatus, metricsByStatus);
         calculateNumberOfExecutions();
     }
 
     public void putCount(ExecutionStatus executionStatus, int executionStatusCount) {
-        putCount(new MetricsByStatus(executionStatus, executionStatusCount));
+        putCount(executionStatus, new MetricsByStatus(executionStatusCount));
     }
 
     public MetricsByStatus getMetricsByStatus(ExecutionStatus executionStatus) {

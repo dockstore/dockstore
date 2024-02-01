@@ -17,15 +17,12 @@
 
 package io.dockstore.webservice.core.metrics;
 
-import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,11 +41,6 @@ public class MetricsByStatus {
     @ApiModelProperty(value = "Implementation specific ID for the metrics in this webservice")
     @Schema(description = "Implementation specific ID for the metrics in this webservice")
     private long id;
-
-    @Enumerated(EnumType.STRING)
-    @NotNull
-    @Schema(description = "The status of the executions that these metrics were aggregated from", requiredMode = RequiredMode.REQUIRED)
-    private ExecutionStatus executionStatus;
 
     @Column(nullable = false)
     @NotNull
@@ -87,13 +79,8 @@ public class MetricsByStatus {
 
     }
 
-    public MetricsByStatus(ExecutionStatus executionStatus, int executionStatusCount) {
-        this.executionStatus = executionStatus;
+    public MetricsByStatus(int executionStatusCount) {
         this.executionStatusCount = executionStatusCount;
-    }
-
-    public MetricsByStatus(ExecutionStatus executionStatus) {
-        this(executionStatus, 0);
     }
 
     public long getId() {
@@ -102,14 +89,6 @@ public class MetricsByStatus {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public ExecutionStatus getExecutionStatus() {
-        return executionStatus;
-    }
-
-    public void setExecutionStatus(ExecutionStatus executionStatus) {
-        this.executionStatus = executionStatus;
     }
 
     public int getExecutionStatusCount() {
