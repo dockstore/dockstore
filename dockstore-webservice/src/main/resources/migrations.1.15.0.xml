@@ -361,9 +361,6 @@
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="metrics_by_status_pkey"/>
             </column>
-            <column name="executionstatus" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
             <column name="executionstatuscount" type="INTEGER">
                 <constraints nullable="false"/>
             </column>
@@ -414,7 +411,7 @@
         </sql>
 
         <dropPrimaryKey tableName="execution_status_count"/>
-        <addPrimaryKey columnNames="executionstatusid, metricsbystatusid" constraintName="execution_status_count_pkey" tableName="execution_status_count"/>
+        <addPrimaryKey columnNames="executionstatusid, executionstatus" constraintName="execution_status_count_pkey" tableName="execution_status_count"/>
 
         <!-- Need to add not null constraint after deleting rows with a null metricsbystatusid -->
         <addNotNullConstraint tableName="execution_status_count" columnName="metricsbystatusid"/>
@@ -428,6 +425,5 @@
         <dropColumn columnName="cpu" tableName="metrics"/>
         <dropColumn columnName="executiontime" tableName="metrics"/>
         <dropColumn columnName="memory" tableName="metrics"/>
-        <dropColumn columnName="executionstatus" tableName="execution_status_count"/>
     </changeSet>
 </databaseChangeLog>
