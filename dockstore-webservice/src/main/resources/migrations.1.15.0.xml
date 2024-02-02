@@ -364,10 +364,10 @@
             <column name="executionstatuscount" type="INTEGER">
                 <constraints nullable="false"/>
             </column>
-            <column name="cost" type="BIGINT"/>
-            <column name="cpu" type="BIGINT"/>
-            <column name="executiontime" type="BIGINT"/>
-            <column name="memory" type="BIGINT"/>
+            <column name="costid" type="BIGINT"/>
+            <column name="cpuid" type="BIGINT"/>
+            <column name="executiontimeid" type="BIGINT"/>
+            <column name="memoryid" type="BIGINT"/>
         </createTable>
         <addColumn tableName="execution_status_count">
             <column name="metricsbystatusid" type="int8">
@@ -377,10 +377,10 @@
 
         <addUniqueConstraint columnNames="metricsbystatusid" constraintName="unique_metricsbystatus_executionstatuscount" tableName="execution_status_count"/>
         <addForeignKeyConstraint baseColumnNames="metricsbystatusid" baseTableName="execution_status_count" constraintName="fk_metricsbystatusid_executionstatuscount" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics_by_status"/>
-        <addForeignKeyConstraint baseColumnNames="executiontime" baseTableName="metrics_by_status" constraintName="fk_executiontime_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
-        <addForeignKeyConstraint baseColumnNames="memory" baseTableName="metrics_by_status" constraintName="fk_memory_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
-        <addForeignKeyConstraint baseColumnNames="cpu" baseTableName="metrics_by_status" constraintName="fk_cpu_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
-        <addForeignKeyConstraint baseColumnNames="cost" baseTableName="metrics_by_status" constraintName="fk_cost_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
+        <addForeignKeyConstraint baseColumnNames="executiontimeid" baseTableName="metrics_by_status" constraintName="fk_executiontimeid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
+        <addForeignKeyConstraint baseColumnNames="memoryid" baseTableName="metrics_by_status" constraintName="fk_memoryid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
+        <addForeignKeyConstraint baseColumnNames="cpuid" baseTableName="metrics_by_status" constraintName="fk_cpuid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
+        <addForeignKeyConstraint baseColumnNames="costid" baseTableName="metrics_by_status" constraintName="fk_costid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
 
         <sql dbms="postgresql">
             <comment>Delete all metrics that have a null metricsbystatusid column in execution_status_count</comment>

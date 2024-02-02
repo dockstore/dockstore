@@ -17,7 +17,6 @@
 
 package io.dockstore.webservice.core.metrics;
 
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
@@ -38,7 +37,6 @@ import jakarta.validation.constraints.NotNull;
 public class MetricsByStatus {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the metrics in this webservice")
     @Schema(description = "Implementation specific ID for the metrics in this webservice")
     private long id;
 
@@ -49,30 +47,26 @@ public class MetricsByStatus {
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "executiontime", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated execution time metrics in seconds")
-    @Schema(description = "Aggregated execution time metrics in seconds")
+    @JoinColumn(name = "executiontimeid", referencedColumnName = "id")
+    @Schema(description = "Aggregated execution time metrics in seconds for the status")
     private ExecutionTimeStatisticMetric executionTime;
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "memory", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated memory metrics in GB")
-    @Schema(description = "Aggregated memory metrics in GB")
+    @JoinColumn(name = "memoryid", referencedColumnName = "id")
+    @Schema(description = "Aggregated memory metrics in GB for the status")
     private MemoryStatisticMetric memory;
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cpu", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated CPU metrics")
-    @Schema(description = "Aggregated CPU metrics")
+    @JoinColumn(name = "cpuid", referencedColumnName = "id")
+    @Schema(description = "Aggregated CPU metrics for the status")
     private CpuStatisticMetric cpu;
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cost", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated cost metrics in USD")
-    @Schema(description = "Aggregated cost metrics in USD")
+    @JoinColumn(name = "costid", referencedColumnName = "id")
+    @Schema(description = "Aggregated cost metrics in USD for the status")
     private CostStatisticMetric cost;
 
     public MetricsByStatus() {
