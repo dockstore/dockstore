@@ -56,34 +56,6 @@ public class Metrics {
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "executiontime", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated execution time metrics in seconds")
-    @Schema(description = "Aggregated execution time metrics in seconds")
-    private ExecutionTimeStatisticMetric executionTime;
-
-    @Valid
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "memory", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated memory metrics in GB")
-    @Schema(description = "Aggregated memory metrics in GB")
-    private MemoryStatisticMetric memory;
-
-    @Valid
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cpu", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated CPU metrics")
-    @Schema(description = "Aggregated CPU metrics")
-    private CpuStatisticMetric cpu;
-
-    @Valid
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cost", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated cost metrics in USD")
-    @Schema(description = "Aggregated cost metrics in USD")
-    private CostStatisticMetric cost;
-
-    @Valid
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "validationstatus", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated validation status metrics")
     @Schema(description = "Aggregated validation status metrics")
@@ -103,10 +75,6 @@ public class Metrics {
     public Metrics() {
     }
 
-    public Metrics(ExecutionStatusCountMetric executionStatusCount) {
-        this.executionStatusCount = executionStatusCount;
-    }
-
     public long getId() {
         return id;
     }
@@ -121,38 +89,6 @@ public class Metrics {
 
     public void setExecutionStatusCount(ExecutionStatusCountMetric executionStatusCount) {
         this.executionStatusCount = executionStatusCount;
-    }
-
-    public ExecutionTimeStatisticMetric getExecutionTime() {
-        return executionTime;
-    }
-
-    public void setExecutionTime(ExecutionTimeStatisticMetric executionTime) {
-        this.executionTime = executionTime;
-    }
-
-    public MemoryStatisticMetric getMemory() {
-        return memory;
-    }
-
-    public void setMemory(MemoryStatisticMetric memory) {
-        this.memory = memory;
-    }
-
-    public CpuStatisticMetric getCpu() {
-        return cpu;
-    }
-
-    public void setCpu(CpuStatisticMetric cpu) {
-        this.cpu = cpu;
-    }
-
-    public CostStatisticMetric getCost() {
-        return cost;
-    }
-
-    public void setCost(CostStatisticMetric cost) {
-        this.cost = cost;
     }
 
     public ValidationStatusCountMetric getValidationStatus() {

@@ -356,4 +356,74 @@
     <changeSet author="ktran (generated)" id="addValidatorVersionsPrimaryKey">
         <addPrimaryKey columnNames="validatorinfoid, validatorversioninfoid" constraintName="validator_versions_pkey" tableName="validator_versions"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="separateMetricsByStatus">
+        <createTable tableName="metrics_by_status">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="metrics_by_status_pkey"/>
+            </column>
+            <column name="executionstatuscount" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="costid" type="BIGINT"/>
+            <column name="cpuid" type="BIGINT"/>
+            <column name="executiontimeid" type="BIGINT"/>
+            <column name="memoryid" type="BIGINT"/>
+        </createTable>
+        <addColumn tableName="execution_status_count">
+            <column name="metricsbystatusid" type="int8">
+                <!-- not null constraint is added after migrating existing data -->
+            </column>
+        </addColumn>
+
+        <addUniqueConstraint columnNames="metricsbystatusid" constraintName="unique_metricsbystatus_executionstatuscount" tableName="execution_status_count"/>
+        <addForeignKeyConstraint baseColumnNames="metricsbystatusid" baseTableName="execution_status_count" constraintName="fk_metricsbystatusid_executionstatuscount" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics_by_status"/>
+        <addForeignKeyConstraint baseColumnNames="executiontimeid" baseTableName="metrics_by_status" constraintName="fk_executiontimeid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
+        <addForeignKeyConstraint baseColumnNames="memoryid" baseTableName="metrics_by_status" constraintName="fk_memoryid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
+        <addForeignKeyConstraint baseColumnNames="cpuid" baseTableName="metrics_by_status" constraintName="fk_cpuid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
+        <addForeignKeyConstraint baseColumnNames="costid" baseTableName="metrics_by_status" constraintName="fk_costid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
+
+        <sql dbms="postgresql">
+            <comment>Delete all metrics that have a null metricsbystatusid column in execution_status_count</comment>
+            <!-- Temporary table that contains metrics that have an execution status metric, but a null metricsbystatusid column -->
+            CREATE TEMPORARY TABLE metricstodelete
+            AS
+            WITH executionstatusmetrics AS (
+            SELECT metrics.id AS metricsid, executionstatusid, executionstatus, count, executiontime, cpu, memory, cost, validationstatus
+            FROM execution_status_count
+            INNER JOIN execution_status ON execution_status_count.executionstatusid = execution_status.id
+            INNER JOIN metrics ON execution_status.id = metrics.executionstatuscount
+            WHERE metrics.executionstatuscount IS NOT NULL AND execution_status_count.metricsbystatusid IS NULL
+            )
+            SELECT * FROM executionstatusmetrics;
+
+            <!-- Delete run execution metrics that are present in the metricstodelete table -->
+            DELETE FROM execution_status_count WHERE execution_status_count.executionstatusid IN (SELECT executionstatusid FROM metricstodelete);
+            UPDATE metrics SET executionstatuscount = NULL, executiontime = NULL, cpu = NULL, memory = NULL, cost = NULL WHERE metrics.id IN (SELECT metricsid FROM metricstodelete);
+            DELETE FROM execution_status WHERE execution_status.id IN (SELECT executionstatusid FROM metricstodelete);
+            DELETE FROM execution_time_metric WHERE execution_time_metric.id IN (SELECT executiontime FROM metricstodelete);
+            DELETE FROM cpu_metric WHERE cpu_metric.id IN (SELECT cpu FROM metricstodelete);
+            DELETE FROM memory_metric WHERE memory_metric.id IN (SELECT memory FROM metricstodelete);
+            DELETE FROM cost_metric WHERE cost_metric.id IN (SELECT cost FROM metricstodelete);
+
+            <!-- Don't delete metrics that still have a validationstatus metric -->
+            DELETE FROM version_metrics WHERE version_metrics.metricsid IN (SELECT metricsid FROM metricstodelete WHERE validationstatus IS NULL);
+            DELETE FROM metrics WHERE metrics.id IN (SELECT metricsid FROM metricstodelete) AND metrics.validationstatus IS NULL;
+        </sql>
+
+        <dropPrimaryKey tableName="execution_status_count"/>
+        <addPrimaryKey columnNames="executionstatusid, executionstatus" constraintName="execution_status_count_pkey" tableName="execution_status_count"/>
+
+        <!-- Need to add not null constraint after deleting rows with a null metricsbystatusid -->
+        <addNotNullConstraint tableName="execution_status_count" columnName="metricsbystatusid"/>
+
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_cost_metrics"/>
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_cpu_metrics"/>
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_executiontime_metrics"/>
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_memory_metrics"/>
+        <dropColumn columnName="cost" tableName="metrics"/>
+        <dropColumn columnName="count" tableName="execution_status_count"/>
+        <dropColumn columnName="cpu" tableName="metrics"/>
+        <dropColumn columnName="executiontime" tableName="metrics"/>
+        <dropColumn columnName="memory" tableName="metrics"/>
+    </changeSet>
 </databaseChangeLog>
