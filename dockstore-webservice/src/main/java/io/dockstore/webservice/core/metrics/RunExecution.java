@@ -20,6 +20,7 @@ package io.dockstore.webservice.core.metrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
 import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime;
+import io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
@@ -31,8 +32,9 @@ import jakarta.validation.constraints.NotNull;
 public class RunExecution extends Execution {
 
     @NotNull
+    @ValidClientExecutionStatus
     @JsonProperty(required = true)
-    @Schema(description = "The status of the execution", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The status of the execution", requiredMode = RequiredMode.REQUIRED, example = "SUCCESSFUL")
     private ExecutionStatus executionStatus;
 
     @ISO8601ExecutionTime
