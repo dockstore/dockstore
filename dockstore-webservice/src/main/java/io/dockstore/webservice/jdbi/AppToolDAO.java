@@ -23,11 +23,11 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.AppToolPath;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 public class AppToolDAO extends EntryDAO<AppTool> {
@@ -42,7 +42,7 @@ public class AppToolDAO extends EntryDAO<AppTool> {
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<AppTool> entryRoot = q.from(AppTool.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot, q);
 
         // apptool is never a checker workflow
         if (checker != null && checker) {
@@ -53,12 +53,12 @@ public class AppToolDAO extends EntryDAO<AppTool> {
         return entryRoot;
     }
     public List<AppToolPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPaths", AppToolPath.class).list();
     }
 
     public List<RSSAppToolPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
-                RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate", RSSAppToolPath.class).setMaxResults(
+                RSS_ENTRY_LIMIT).list();
     }
 
 

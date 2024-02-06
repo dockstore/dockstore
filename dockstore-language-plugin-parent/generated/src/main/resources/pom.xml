@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>dockstore-language-plugin-parent</artifactId>
-  <version>1.14.0-SNAPSHOT</version>
+  <version>1.15.0-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
@@ -30,13 +30,13 @@
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-common</artifactId>
-      <version>1.14.0-SNAPSHOT</version>
+      <version>1.15.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.pf4j</groupId>
       <artifactId>pf4j</artifactId>
-      <version>3.2.0</version>
+      <version>3.10.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -45,6 +45,11 @@
       <id>artifacts.oicr.on.ca</id>
       <name>artifacts.oicr.on.ca</name>
       <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+    </repository>
+    <repository>
+      <id>broad-dependencies.oicr.on.ca</id>
+      <name>broad-dependencies.oicr.on.ca</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/broad-dependencies</url>
     </repository>
     <repository>
       <releases>

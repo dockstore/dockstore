@@ -1,7 +1,7 @@
 package io.dockstore.common.yaml;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * A POJO for version 1.1 of the Dockstore.yaml, which defined the

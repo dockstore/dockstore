@@ -18,8 +18,8 @@
 package io.dockstore.webservice.core.metrics.constraints;
 
 import io.dockstore.webservice.core.metrics.Metrics;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Validates that Metrics has either run metrics or validation metrics.

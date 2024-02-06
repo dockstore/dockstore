@@ -16,8 +16,14 @@
 
 package io.dockstore.webservice.jdbi;
 
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
@@ -29,8 +35,15 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.metamodel.Attribute;
 import java.lang.reflect.ParameterizedType;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,16 +52,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +73,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int orgIndex = 1;
     final int repoIndex = 2;
     final int entryNameIndex = 3;
+    protected static final String ENTRY_IDS = "entryIds";
 
     private Class<T> typeOfT;
+
+    public static final String INVALID_SORTCOL_MESSAGE = "Could not process query due to the invalid sortCol value.";
 
     EntryDAO(SessionFactory factory) {
         super(factory);
@@ -137,8 +150,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         MutablePair<String, Entry> results = null;
         if (pair.size() > 0) {
             String type = (String)(pair.get(0))[0];
-            BigInteger id = (BigInteger)(pair.get(0))[1];
-            Long longId = id.longValue();
+            Long id = (Long)(pair.get(0))[1];
+            Long longId = id;
             if ("workflow".equals(type)) {
                 results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(longId)));
             } else {
@@ -154,28 +167,28 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public void delete(T entry) {
         Session session = currentSession();
-        session.delete(entry);
+        session.remove(entry);
         session.flush();
     }
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryById(long id) {
-        return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryById").setParameter("id", id));
+        return this.currentSession().createNamedQuery("Entry.getGenericEntryById", Entry.class).setParameter("id", id).uniqueResult();
     }
 
     public Entry<? extends Entry, ? extends Version>  getGenericEntryByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
+        return this.currentSession().createNamedQuery("Entry.getGenericEntryByAlias", Entry.class).setParameter("alias", alias).uniqueResult();
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class).setParameter("entryId", entryId).list();
     }
 
     public List<CategorySummary> findCategorySummariesByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", CategorySummary.class).setParameter("entryId", entryId).list();
     }
 
     public List<Category> findCategoriesByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId", Category.class).setParameter("entryId", entryId).list();
     }
 
     /**
@@ -187,7 +200,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
         // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
 
-        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList("entryIds", entryIds));
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList(
+                ENTRY_IDS, entryIds));
 
         // convert the list of entry/category pairs to a map (as described in the javadoc above).
         Map<Entry, List<Category>> entryToCategories = new HashMap<>();
@@ -201,50 +215,91 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public T findPublishedById(long id) {
-        return (T)uniqueResult(
-                this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
+        return (T) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById", Entry.class).setParameter("id", id).uniqueResult();
     }
 
     public List<EntryLite> findEntryVersions(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId").setParameter("userId", userId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId", EntryLite.class).setParameter("userId", userId).list();
     }
     public List<T> findMyEntries(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
+        return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
     public List<T> findMyEntriesPublished(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId").setParameter("userId", userId));
+        return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
 
-    public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionWorkflows").setParameter("collectionId", collectionId));
+    /**
+     * Retrieve a list of all workflow entries contained in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
+     * This includes AppTools, BioWorkflows, Notebooks, and Services.
+     * @param collectionId collection ID
+     * @return a list of all workflow entries in the given collection.
+     */
+    public List<CollectionEntry> getAllCollectionWorkflows(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionBioWorkflows(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionBioWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionAppTools(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionAppTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionNotebooks(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionNotebooks", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
-    public long getWorkflowsLength(long collectionId) {
-        return (long)(this.currentSession().getNamedQuery("Entry.getWorkflowsLength").setParameter("collectionId", collectionId).getSingleResult());
+    public long getBioWorkflowsLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+    public long getAppToolsLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAppToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+    public long getNotebooksLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getNotebooksLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+
+    public long getServicesLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getServicesLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionServices").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionServices", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public long getToolsLength(long collectionId) {
-        return (long)(this.currentSession().getNamedQuery("Entry.getToolsLength").setParameter("collectionId", collectionId).getSingleResult());
+        return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
-    public List<CollectionEntry> getCollectionWorkflowsWithVersions(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionWorkflowsWithVersions").setParameter("collectionId", collectionId));
+    /**
+     * Retrieve a list of all workflow entries that contains versions in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
+     * This includes AppTools, BioWorkflows, Notebooks, and Services.
+     * @param collectionId collection ID
+     * @return a list of all Workflow entries with versions in the given collection.
+     */
+    public List<CollectionEntry> getAllCollectionWorkflowsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionBioWorkflowsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionBioWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public List<CollectionEntry> getCollectionAppToolsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionAppToolsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public List<CollectionEntry> getCollectionNotebooksWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionNotebooksWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionServicesWithVersions(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionServicesWithVersions").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionServicesWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionToolsWithVersions(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionToolsWithVersions").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionToolsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder) {
@@ -262,7 +317,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
      * @return
      */
     public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
         Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
@@ -274,14 +329,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public long countAllHosted(long userid) {
-        return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
+        return ((Long)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult());
     }
 
     // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
     @SuppressWarnings("checkstyle:ParameterNumber")
     public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<Long> q = cb.createQuery(Long.class);
+        final HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final JpaCriteriaQuery<Long> q = cb.createQuery(Long.class);
 
         Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
 
@@ -298,8 +353,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         if (filter.isEmpty()) {
             return countAllPublished();
         }
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        JpaCriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter.get(), "", "", cb, query, entry);
         query.select(cb.count(entry));
@@ -307,11 +362,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     private long countAllPublished() {
-        return (long)this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished", Long.class).getSingleResult();
     }
 
     public List<Label> getLabelByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findLabelByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findLabelByEntryId", Label.class).setParameter("entryId", entryId).list();
     }
 
     public List<String> getToolsDescriptorTypes(long entryId) {
@@ -324,7 +379,25 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
-        return list(this.currentSession().getNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic"));
+        return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
+    }
+
+    public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
+
+        final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
+                entryIds).list();
+        return partnerMetricsToMap(list);
+    }
+
+    public Map<Long, List<Partner>> findValidationPartners(List<Long> entryIds) {
+        final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList(ENTRY_IDS, entryIds).list();
+        return partnerMetricsToMap(list);
+    }
+
+    private Map<Long, List<Partner>> partnerMetricsToMap(List<Entry.EntryIdAndPartner> entryIdAndPartnerMetrics) {
+        final Map<Long, List<Partner>> map = new HashMap<>();
+        entryIdAndPartnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
+        return map;
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
@@ -336,12 +409,15 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             String repoName = toolMode ? "name" : "repository";
             String orgName = toolMode ? "namespace" : "organization";
 
+            Subquery<Author> subQuery = getAuthorSubquery(filter, cb, query);
+
             predicates.add(cb.and(// get published workflows
                 cb.isTrue(entry.get("isPublished")),
                 // ensure we deal with null values and then do like queries on those non-null values
                 cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(cb.upper(entry.get(nameName)), "%" + filter.toUpperCase() + "%")), //
-                    cb.and(cb.isNotNull(entry.get("author")), cb.like(cb.upper(entry.get("author")), "%" + filter.toUpperCase() + "%")), //
                     cb.and(cb.isNotNull(entry.get(repoName)), cb.like(cb.upper(entry.get(repoName)), "%" + filter.toUpperCase() + "%")), //
+                    addAuthorClauseToCriteriaBuilder(cb, entry, subQuery), //
+                    // TODO orcid authors are interesting since we load them dynamically and thus cannot query them from the database
                     cb.and(cb.isNotNull(entry.get(orgName)), cb.like(cb.upper(entry.get(orgName)), "%" + filter.toUpperCase() + "%")))));
 
         } else {
@@ -356,17 +432,36 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                     query.orderBy(cb.asc(cb.size(entry.<Collection>get("starredUsers"))), cb.desc(entry.get("id")));
                 }
             } else {
-                Path<Object> sortPath = entry.get(sortCol);
-                if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
-                    predicates.add(sortPath.isNotNull());
+                boolean hasSortCol = entry.getModel()
+                        .getAttributes()
+                        .stream()
+                        .map(Attribute::getName)
+                        .anyMatch(sortCol::equals);
+
+                if (!hasSortCol) {
+                    LOG.error(INVALID_SORTCOL_MESSAGE);
+                    throw new CustomWebApplicationException(INVALID_SORTCOL_MESSAGE,
+                            HttpStatus.SC_BAD_REQUEST);
+
                 } else {
-                    query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
+                    Path<Object> sortPath = entry.get(sortCol);
+                    if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
+                        query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
+                    } else {
+                        query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
+                    }
                     predicates.add(sortPath.isNotNull());
                 }
             }
         }
         query.where(predicates.toArray(new Predicate[]{}));
+    }
+
+    static Subquery<Author> getAuthorSubquery(String filter, CriteriaBuilder cb, CriteriaQuery<?> query) {
+        Subquery<Author> subQuery = query.subquery(Author.class);
+        Root<Author> author = subQuery.from(Author.class);
+        subQuery.select(author).distinct(true).where(cb.like(cb.upper(author.get("name")), "%" + filter.toUpperCase() + "%"));
+        return subQuery;
     }
 
     protected Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
@@ -382,8 +477,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<T> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, int startIndex, int pageRemaining) {
 
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<T> q = cb.createQuery(typeOfT);
+        final HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final JpaCriteriaQuery<T> q = cb.createQuery(typeOfT);
         final Root<T> tRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
         // order by id
         q.orderBy(cb.asc(tRoot.get("id")));
@@ -398,14 +493,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         CriteriaBuilder cb, CriteriaQuery<?> q);
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot) {
+    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot, CriteriaQuery<?> query) {
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
         predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
         predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
-        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (author != null) {
+            Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
+            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, subQuery);
+        }
 
         if (descriptorLanguage != null) {
             predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
@@ -414,5 +513,12 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
         }
         return predicate;
+    }
+
+    static Predicate addAuthorClauseToCriteriaBuilder(CriteriaBuilder cb, Root<?> entryRoot, Subquery<Author> subQuery) {
+        Root<Author> authorRoot = subQuery.from(Author.class);
+        final Predicate notEmpty = cb.isNotNull(
+                subQuery.select(authorRoot).where(cb.and(cb.equal(authorRoot.get("versionid"), entryRoot.get("actualDefaultVersion")))));
+        return cb.and(cb.isNotNull(entryRoot.get("actualDefaultVersion")), notEmpty);
     }
 }

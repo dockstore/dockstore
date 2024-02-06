@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -42,9 +43,15 @@ public class PopulateEntryListener implements StateListenerInterface {
         // Run a query to determine the Categories containing each specified Entry.
         List<Long> entryIds = entries.stream().map(Entry::getId).collect(Collectors.toList());
         Map<Entry, List<Category>> entryToCategories = entryDAO.findCategoriesByEntryIds(entryIds);
+        final Map<Long, List<Partner>> executionPartners = entryDAO.findExecutionPartners(entryIds);
+        final Map<Long, List<Partner>> validationPartners = entryDAO.findValidationPartners(entryIds);
 
         // Set the Categories property of each Entry, accordingly.
-        entries.forEach(entry -> entry.setCategories(entryToCategories.getOrDefault(entry, Collections.emptyList())));
+        entries.forEach(entry -> {
+            entry.setCategories(entryToCategories.getOrDefault(entry, Collections.emptyList()));
+            entry.setExecutionPartners(executionPartners.getOrDefault(entry.getId(), Collections.emptyList()));
+            entry.setValidationPartners(validationPartners.getOrDefault(entry.getId(), Collections.emptyList()));
+        });
     }
 
     @Override

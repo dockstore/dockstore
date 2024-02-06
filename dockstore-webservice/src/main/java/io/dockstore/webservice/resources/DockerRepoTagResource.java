@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -46,23 +47,23 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -305,5 +306,26 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         return getVersionSourceFiles(containerId, tagId, fileTypes, user, fileDAO, versionDAO);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("{containerId}/tags/{tagId}/description")
+    @Operation(operationId = "getTagDescription", description = "Retrieve a tag's description", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getTagDescription(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
+        @Parameter(name = "tagId", description = "Tag to retrieve the description from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId) {
+        final Tool tool = toolDAO.findById(containerId);
+        checkNotNullEntry(tool);
+        if (!tool.getIsPublished()) {
+            checkCanExamine(user.orElse(null), tool);
+        }
+        final Version<Tag> version = tagDAO.findVersionInEntry(containerId, tagId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Tag " + tagId + " does not exist for container " + containerId, HttpStatus.SC_NOT_FOUND);
+        }
+        return version.getDescription();
     }
 }

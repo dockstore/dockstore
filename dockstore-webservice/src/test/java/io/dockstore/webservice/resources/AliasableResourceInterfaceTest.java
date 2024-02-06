@@ -31,7 +31,7 @@ class AliasableResourceInterfaceTest {
                         user, true);
                 fail("An alias with an invalid prefix " + invalidPrefix + " was reported to be OK.");
             } catch (CustomWebApplicationException ex) {
-                assertTrue(ex.getErrorMessage().contains("Please create aliases without these prefixes"));
+                assertTrue(ex.getMessage().contains("Please create aliases without these prefixes"));
             }
         });
     }
@@ -67,7 +67,7 @@ class AliasableResourceInterfaceTest {
 
                 AliasableResourceInterface.checkAliases(Collections.singleton(zenodoDOI), user, true);
             } catch (CustomWebApplicationException ex) {
-                assertTrue(ex.getErrorMessage().contains("Please create aliases without this format"));
+                assertTrue(ex.getMessage().contains("Please create aliases without this format"));
             }
         });
     }

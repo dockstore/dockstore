@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ProxySelector;
@@ -34,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;

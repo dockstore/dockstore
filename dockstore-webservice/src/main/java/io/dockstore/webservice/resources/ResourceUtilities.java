@@ -16,18 +16,20 @@
 
 package io.dockstore.webservice.resources;
 
+import static org.apache.hc.core5.http.ContentType.APPLICATION_FORM_URLENCODED;
+
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Optional;
-import org.apache.http.client.HttpClient;
+import java.util.concurrent.TimeUnit;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.util.Timeout;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,7 @@ public final class ResourceUtilities {
     }
 
     public static Optional<String> refreshPost(String input, String token, HttpClient client,
-            String payload) throws UnsupportedEncodingException {
+            String payload) {
         return getResponseAsString(buildHttpPost(input, token, payload), client);
     }
 
@@ -59,29 +61,34 @@ public final class ResourceUtilities {
         return httpGet;
     }
 
-    private static HttpPost buildHttpPost(String input, String token, String payload)
-            throws UnsupportedEncodingException {
+    private static HttpPost buildHttpPost(String input, String token, String payload) {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {
             // client ID and the client secret should be passed as parameters
             // in the request body via the payload variable
             // because basic authentication, e.g. "httpPost.addHeader("Authorization", "Basic " + encoding)"
             // is not a secure method and generates a SonarCloud warning
-            StringEntity entity = new StringEntity(payload);
-            entity.setContentType("application/x-www-form-urlencoded");
+            org.apache.hc.core5.http.io.entity.StringEntity entity = new org.apache.hc.core5.http.io.entity.StringEntity(payload, APPLICATION_FORM_URLENCODED);
             httpPost.setEntity(entity);
         }
         return httpPost;
     }
 
-    // Todo: Implement a backoff algorithm for below HTTP calls
-    public static Optional<String> getResponseAsString(HttpRequestBase httpRequest, HttpClient client) {
+
+    /**
+     * Execute a request and return the result as a String while waiting a minute in case of problems.
+     * Todo: Implement a backoff algorithm for below HTTP calls
+     * @param httpRequest
+     * @param client
+     * @return
+     */
+    public static Optional<String> getResponseAsString(HttpUriRequestBase httpRequest, HttpClient client) {
         Optional<String> result = Optional.empty();
         final int waitTime = 60000;
         try {
-            ResponseHandler<String> responseHandler = new BasicResponseHandler();
-            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime)
-                    .setConnectionRequestTimeout(waitTime).build();
+            HttpClientResponseHandler<String> responseHandler = new BasicHttpClientResponseHandler();
+            RequestConfig requestConfig = RequestConfig.custom().setResponseTimeout(waitTime, TimeUnit.MILLISECONDS).setConnectTimeout(Timeout.ofMilliseconds(waitTime))
+                    .setConnectionRequestTimeout(Timeout.ofMilliseconds(waitTime)).build();
             httpRequest.setConfig(requestConfig);
             result = Optional.of(client.execute(httpRequest, responseHandler));
         } catch (HttpResponseException httpResponseException) {
@@ -90,7 +97,8 @@ public final class ResourceUtilities {
         } catch (IOException ioe) {
             LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpRequest, ioe.getMessage());
         } finally {
-            httpRequest.releaseConnection();
+            // note this used to be releaseConenction, but that seems equivalent to reset https://www.javadoc.io/static/org.apache.httpcomponents/httpclient/4.2.5/org/apache/http/client/methods/HttpRequestBase.html#releaseConnection()
+            httpRequest.reset();
         }
         return result;
     }

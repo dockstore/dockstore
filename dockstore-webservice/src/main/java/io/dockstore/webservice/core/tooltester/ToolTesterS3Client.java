@@ -18,7 +18,7 @@
 
 package io.dockstore.webservice.core.tooltester;
 
-import io.dockstore.webservice.helpers.S3ClientHelper;
+import io.dockstore.common.S3ClientHelper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

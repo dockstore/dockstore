@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.14.0-SNAPSHOT"
+  version: "1.15.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3813,7 +3813,7 @@ paths:
         format: "int64"
       - name: "versionName"
         in: "query"
-        description: "Version ID"
+        description: "Version Name"
         required: false
         type: "string"
       responses:
@@ -7005,6 +7005,8 @@ definitions:
         type: "string"
       checkUrlLambdaVersion:
         type: "string"
+      colabImportUrl:
+        type: "string"
       composeSetupVersion:
         type: "string"
       cwlParsingLambdaVersion:
@@ -7054,6 +7056,8 @@ definitions:
       googleClientId:
         type: "string"
       googleScope:
+        type: "string"
+      mybinderImportUrl:
         type: "string"
       nextflowParsingLambdaVersion:
         type: "string"

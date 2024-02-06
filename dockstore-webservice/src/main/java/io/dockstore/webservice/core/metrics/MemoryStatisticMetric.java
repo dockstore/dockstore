@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "memory_metric")
@@ -36,10 +36,16 @@ public class MemoryStatisticMetric extends StatisticMetric {
 
     @JsonCreator
     public MemoryStatisticMetric(
-            @JsonProperty("minimum") Double minimum,
-            @JsonProperty("maximum") Double maximum,
-            @JsonProperty("average") Double average,
+            @JsonProperty("minimum") double minimum,
+            @JsonProperty("maximum") double maximum,
+            @JsonProperty("average") double average,
             @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
         super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
+    }
+
+    @Override
+    @Schema(description = "The unit of the data points", defaultValue = UNIT) // Override schema to provide a default value
+    public String getUnit() {
+        return super.getUnit();
     }
 }

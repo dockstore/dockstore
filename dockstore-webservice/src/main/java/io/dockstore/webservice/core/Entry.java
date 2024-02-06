@@ -16,6 +16,9 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -23,10 +26,38 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.MapKeyEnumerated;
+import jakarta.persistence.NamedNativeQueries;
+import jakarta.persistence.NamedNativeQuery;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,34 +72,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.MapKeyEnumerated;
-import javax.persistence.NamedNativeQueries;
-import javax.persistence.NamedNativeQuery;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
@@ -76,12 +79,21 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Base class for all entries in the dockstore
+ * Base class for all entries in the dockstore.
+ * <p>
+ * When you add properties to Entry or its subclasses or create a new subclass of Entry, you might need to adjust other parts
+ * of the codebase to accommodate them:
+ * <li>
+ *   <ul>If the new properties or entry type should be indexed by ElasticSearch, you will probably need to modify `ElasticListener`,
+ *     typically `ElasticListener.dockstoreEntryToElasticSearchObject` and/or `ElasticListener.detach` and the methods it invokes to
+ *     copy properties into detached entries.</ul>
+ * </li>
  *
  * @author dyuen
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore")
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -91,18 +103,31 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select distinct new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryId", query = "select distinct cat from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds", query = "select distinct entry.entry, cat from Category cat join cat.entries as entry where entry.entry.id in (:entryIds) and cat.deleted = false"),
-    @NamedQuery(name = "Entry.getCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName) from Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook ) and col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getWorkflowsLength", query = "SELECT COUNT(w.id) FROM BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getAllCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName) from Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionBioWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionAppTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName) from AppTool a, Collection col join col.entries as e where col.id = :collectionId and e.version is null and a.id = e.entry.id and a.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionNotebooks", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(n.id, n.dbUpdateDate, 'notebook', n.sourceControl, n.organization, n.repository, n.workflowName) from Notebook n, Collection col join col.entries as e where col.id = :collectionId and e.version is null and n.id = e.entry.id and n.isPublished = true"),
+    @NamedQuery(name = "Entry.getBioWorkflowsLength", query = "SELECT COUNT(w.id) FROM BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getAppToolsLength", query = "SELECT COUNT(a.id) FROM AppTool a, Collection col join col.entries as e where col.id = :collectionId and a.id = e.entry.id and a.isPublished = true"),
+    @NamedQuery(name = "Entry.getServicesLength", query = "SELECT COUNT(s.id) FROM Service s, Collection col join col.entries as e where col.id = :collectionId and s.id = e.entry.id and s.isPublished = true"),
+    @NamedQuery(name = "Entry.getNotebooksLength", query = "SELECT COUNT(n.id) FROM Notebook n, Collection col join col.entries as e where col.id = :collectionId and n.id = e.entry.id and n.isPublished = true"),
     @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
     @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname) from Tool t, Collection col join col.entries as e where col.id = :collectionId and t.id = e.entry.id and e.version is null and t.isPublished = true"),
     @NamedQuery(name = "Entry.getToolsLength", query = "SELECT COUNT(t.id) FROM Tool t, Collection col join col.entries as e where col.id = :collectionId and t.id = e.entry.id and t.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook) and  v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getAllCollectionWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and  v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionBioWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, BioWorkflow w, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionAppToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName, v.name, v.versionMetadata.verified) from Version v, AppTool a, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and a.id = e.entry.id and a.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionNotebooksWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(n.id, n.dbUpdateDate, 'notebook', n.sourceControl, n.organization, n.repository, n.workflowName, v.name, v.versionMetadata.verified) from Version v, Notebook n, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and n.id = e.entry.id and n.isPublished = true"),
     @NamedQuery(name = "Entry.getCollectionServicesWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, Service w, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
     @NamedQuery(name = "Entry.getCollectionToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname, v.name, v.versionMetadata.verified) from Version v, Tool t, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and t.id = e.entry.id and t.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL")
+    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL"),
+    @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
+    @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -121,6 +146,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;")})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
+    public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
+    public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
     private static final int TOPIC_LENGTH = 150;
 
     /**
@@ -132,15 +159,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
-    /**
-     * @deprecated since 1.14.0. Use authors instead.
-     */
-    @Column
-    @Deprecated(since = "1.14.0")
-    @ApiModelProperty(value = "This is the name of the author, retrieved from the default version", position = 1)
-    @Schema(description = "This is the name of the author, retrieved from the default version", deprecated = true)
-    private String author;
-
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
@@ -148,14 +166,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<User> users;
 
@@ -163,18 +179,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
-
-    /**
-     * @deprecated since 1.14.0. Use authors instead, which can contain an email for each Author.
-     */
-    @Column
-    @Deprecated(since = "1.14.0")
-    @ApiModelProperty(value = "This is the email of the author, retrieved from the default version", position = 6)
-    @Schema(description = "This is the email of the author, retrieved from the default version", deprecated = true)
-    private String email;
 
     @Column
     @JsonProperty("is_published")
@@ -200,7 +206,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     @JoinColumn(name = "checkerid", unique = true)
-    @OneToOne(targetEntity = BioWorkflow.class, fetch = FetchType.EAGER)
+    @OneToOne(targetEntity = BioWorkflow.class, fetch = FetchType.LAZY)
     @ApiModelProperty(value = "The id of the associated checker workflow")
     private BioWorkflow checkerWorkflow;
 
@@ -253,7 +259,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 15)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
@@ -261,7 +266,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 16)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
@@ -280,13 +284,25 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
+    @Transient
+    @JsonIgnore
+    private List<Partner> executionPartners = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private List<Partner> validationPartners = new ArrayList<>();
+
     @Column(length = TOPIC_LENGTH)
-    @Schema(description = "Short description of the entry gotten automatically")
+    @Schema(description = "Short description of the entry gotten automatically", maxLength = TOPIC_LENGTH)
     private String topicAutomatic;
 
     @Column(length = TOPIC_LENGTH)
-    @Schema(description = "Short description of the entry manually updated")
+    @Schema(description = "Short description of the entry manually updated", maxLength = TOPIC_LENGTH)
     private String topicManual;
+
+    @Column(length = TOPIC_LENGTH)
+    @Schema(description = "Short description of the entry generated by AI", maxLength = TOPIC_LENGTH)
+    private String topicAI;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "varchar(32) default 'AUTOMATIC'")
@@ -303,8 +319,39 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Transient
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
+    @Column(nullable = false)
+    private boolean wasEverPublic;
+
+    @Column(columnDefinition = "boolean default false", nullable = false)
+    private boolean archived;
+
+    @JsonIgnore
+    @Column(nullable = true, columnDefinition = "varchar(32)")
+    @Enumerated(EnumType.STRING)
+    private GitVisibility gitVisibility;
+
+
+    public enum GitVisibility {
+        /**
+         * There was a failed attempt to determine visibility
+         */
+        UNKNOWN,
+        /**
+         * A private repo
+         */
+        PRIVATE,
+        /**
+         * A public repo
+         */
+        PUBLIC,
+        /**
+         * The Git repo is either private or does not exist, but we cannot tell which.
+         */
+        PRIVATE_OR_NON_EXISTENT
+    }
+
     public enum TopicSelection {
-        AUTOMATIC, MANUAL
+        AUTOMATIC, MANUAL, AI
     }
 
     public Entry() {
@@ -317,6 +364,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
     }
+
+    public abstract Entry<?, ?> createEmptyEntry();
 
     @JsonIgnore
     public abstract String getEntryPath();
@@ -422,13 +471,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.licenseInformation = licenseInformation;
     }
 
-    /**
-     * @deprecated since 1.14.0. Use setAuthors instead.
-     */
-    @Deprecated(since = "1.14.0")
-    public void setAuthor(String newAuthor) {
-        this.author = newAuthor;
-    }
 
     public Set<Label> getLabels() {
         return labels;
@@ -465,18 +507,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
-     * @deprecated since 1.14.0. Use setAuthors instead to set an Author with an email.
-     */
-    @Deprecated(since = "1.14.0")
-    public void setEmail(String newEmail) {
-        this.email = newEmail;
-    }
-
-    /**
      * @param isPublished will the repo be published
      */
     public void setIsPublished(boolean isPublished) {
         this.isPublished = isPublished;
+        if (isPublished) {
+            setWasEverPublic(true);
+        }
     }
 
     /**
@@ -573,17 +610,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setMetadataFromEntry(S entry) {
-        // TODO: remove the setting of author and email when those two fields are removed from this class
-        this.author = entry.getAuthor();
-        this.email = entry.getEmail();
         this.description = entry.getDescription();
         setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
-        // TODO: remove the setting of author and email when those two fields are removed from this class
-        this.author = version.getAuthor();
-        this.email = version.getEmail();
         this.description = version.getDescription();
     }
 
@@ -706,6 +737,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
+    @Transient
     public abstract Event.Builder getEventBuilder();
 
     public Timestamp getDbCreateDate() {
@@ -746,12 +778,43 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.userIdToOrcidPutCode = userIdToOrcidPutCode;
     }
 
+    /**
+     * Returns the list of categories that this entry and/or any of its versions belong to. This field is not eagerly populated
+     * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
+     * @return
+     */
     public List<Category> getCategories() {
         return (categories);
     }
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    /**
+     * Returns the list of partners that have execution metrics on at least one version. This field is not eagerly populated
+     * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
+     * @return
+     */
+    public List<Partner> getExecutionPartners() {
+        return executionPartners;
+    }
+
+    public void setExecutionPartners(List<Partner> executionPartners) {
+        this.executionPartners = executionPartners;
+    }
+
+    /**
+     * Returns the list of partners that have validation metrics on at least one version. This field is not eagerly populated
+     * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
+     * @return
+     */
+    public List<Partner> getValidationPartners() {
+        return validationPartners;
+    }
+
+    public void setValidationPartners(List<Partner> validationPartners) {
+        this.validationPartners = validationPartners;
     }
 
     public String getTopicAutomatic() {
@@ -770,8 +833,20 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.topicManual = topicManual;
     }
 
+    public String getTopicAI() {
+        return topicAI;
+    }
+
+    public void setTopicAI(String topicAI) {
+        this.topicAI = topicAI;
+    }
+
     public String getTopic() {
-        return this.topicSelection == TopicSelection.AUTOMATIC ? this.getTopicAutomatic() : this.getTopicManual();
+        return switch (this.topicSelection) {
+        case AUTOMATIC -> this.getTopicAutomatic();
+        case MANUAL -> this.getTopicManual();
+        case AI -> this.getTopicAI();
+        };
     }
 
     public TopicSelection getTopicSelection() {
@@ -782,6 +857,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.topicSelection = topicSelection;
     }
 
+    @JsonProperty
     public Set<Author> getAuthors() {
         T realDefaultVersion = this.getActualDefaultVersion();
         if (realDefaultVersion != null) {
@@ -795,6 +871,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.authors.addAll(authors);
     }
 
+    @JsonProperty
     public Set<OrcidAuthor> getOrcidAuthors() {
         T realDefaultVersion = this.getActualDefaultVersion();
         if (realDefaultVersion != null) {
@@ -805,5 +882,38 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setOrcidAuthors(Set<OrcidAuthor> orcidAuthors) {
         this.orcidAuthors = orcidAuthors;
+    }
+
+    @JsonIgnore
+    public boolean getWasEverPublic() {
+        return wasEverPublic;
+    }
+
+    public void setWasEverPublic(boolean wasEverPublic) {
+        this.wasEverPublic = wasEverPublic;
+    }
+
+    @JsonProperty
+    public boolean isDeletable() {
+        return !getWasEverPublic() && !hasChecker();
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
+    }
+
+    public GitVisibility getGitVisibility() {
+        return gitVisibility;
+    }
+
+    public void setGitVisibility(final GitVisibility gitVisibility) {
+        this.gitVisibility = gitVisibility;
+    }
+
+    public record EntryIdAndPartner(long entryId, Partner partner) {
     }
 }

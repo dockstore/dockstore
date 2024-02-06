@@ -17,9 +17,9 @@
 
 package io.dockstore.webservice.core.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.ValidationExecution;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import io.dockstore.common.metrics.FormatCheckHelper;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Validates that execution time is in ISO 8601 UTC date format
@@ -31,6 +31,6 @@ public class ISO8601ExecutionDateValidator implements ConstraintValidator<ISO860
         if (executionTime == null) {
             return false;
         }
-        return ValidationExecution.checkExecutionDateISO8601Format(executionTime).isPresent();
+        return FormatCheckHelper.checkExecutionDateISO8601Format(executionTime).isPresent();
     }
 }

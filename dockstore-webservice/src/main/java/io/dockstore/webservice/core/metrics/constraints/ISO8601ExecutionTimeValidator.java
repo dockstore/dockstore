@@ -17,9 +17,10 @@
 
 package io.dockstore.webservice.core.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.RunExecution;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import static io.dockstore.common.metrics.FormatCheckHelper.checkExecutionTimeISO8601Format;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Validates that execution time is in ISO 8601 duration format
@@ -32,6 +33,6 @@ public class ISO8601ExecutionTimeValidator implements ConstraintValidator<ISO860
         if (executionTime == null) {
             return true;
         }
-        return RunExecution.checkExecutionTimeISO8601Format(executionTime).isPresent();
+        return checkExecutionTimeISO8601Format(executionTime).isPresent();
     }
 }

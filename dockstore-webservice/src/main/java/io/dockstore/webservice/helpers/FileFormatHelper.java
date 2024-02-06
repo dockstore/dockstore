@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,7 @@ public final class FileFormatHelper {
             SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
             SortedSet<SourceFile> sourceFiles = tag.getSourceFiles();
             List<SourceFile> cwlFiles = sourceFiles.stream()
-                    .filter(sourceFile -> sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL).collect(Collectors.toList());
+                    .filter(sourceFile -> sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL).toList();
             cwlFiles.stream().filter(cwlFile -> cwlFile.getContent() != null).forEach(cwlFile -> {
                 inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
                 outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
@@ -66,7 +65,7 @@ public final class FileFormatHelper {
     public static void updateEntryLevelFileFormats(Entry entry) {
         SortedSet<FileFormat> entrysInputFileFormats = new TreeSet<>();
         SortedSet<FileFormat> entrysOutputFileFormats = new TreeSet<>();
-        entry.getWorkflowVersions().stream().forEach(version -> {
+        entry.getWorkflowVersions().forEach(version -> {
             entrysInputFileFormats.addAll(((Version)version).getInputFileFormats());
             entrysOutputFileFormats.addAll(((Version)version).getOutputFileFormats());
         });

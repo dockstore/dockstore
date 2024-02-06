@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
+import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -40,7 +41,10 @@ import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -73,6 +77,17 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
@@ -85,16 +100,6 @@ import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -118,6 +123,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE = "Version does not belong to entry";
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
+    public static final String ENTRY_NOT_DELETABLE_MESSAGE = "The specified entry is not deletable.";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
     private static final int PROCESSOR_PAGE_SIZE = 25;
 
@@ -127,6 +133,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private WorkflowDAO workflowDAO;
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
+    private final EventDAO eventDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
@@ -207,10 +214,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
+    public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, EventDAO eventDAO, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
+        this.eventDAO = eventDAO;
         this.workflowDAO = workflowDAO;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
@@ -232,6 +240,83 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         hostName = configuration.getExternalConfig().getHostname();
         isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{alias}/aliases")
+    @Operation(operationId = "getEntryByAlias", description = "Retrieves an entry by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry getEntryByAlias(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Alias", name = "alias", in = ParameterIn.PATH, required = true) @PathParam("alias") String alias) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryByAlias(alias);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return entry;
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{id}")
+    @Operation(operationId = "deleteEntry", description = "Completely remove an entry from Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = ENTRY_NOT_DELETABLE_MESSAGE)
+    public Entry deleteEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @ApiParam(value = "Entry to delete.", required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanWrite(user, entry);
+        throwIf(!entry.isDeletable(), ENTRY_NOT_DELETABLE_MESSAGE, HttpStatus.SC_FORBIDDEN);
+        // Remove the events associated with the entry
+        eventDAO.deleteEventByEntryID(entry.getId());
+        // Delete the entry using an arbitrary EntryDAO, which works, but isn't the "purest" approach.
+        // Later, we may create a helper class to select the appropriate DAO for a given entry, and we should use it here...
+        ((EntryDAO)workflowDAO).delete(entry);
+        LOG.info("Deleted entry {}", entry.getEntryPath());
+        return entry;
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/archive")
+    @Operation(operationId = "archiveEntry", description = "Archive an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully archived the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry archiveEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @ApiParam(value = "Entry to archive.", required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        updateArchived(true, user, entry);
+        Hibernate.initialize(entry.getWorkflowVersions());
+        return entry;
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/unarchive")
+    @Operation(operationId = "unarchiveEntry", description = "Unarchive an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully unarchived the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry unarchiveEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @ApiParam(value = "Entry to unarchive.", required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        updateArchived(false, user, entry);
+        Hibernate.initialize(entry.getWorkflowVersions());
+        return entry;
+    }
+
+    private void updateArchived(boolean archive, User user, Entry<?, ?> entry) {
+        checkNotNullEntry(entry);
+        if (!isAdmin(user)) {
+            checkIsOwner(user, entry);
+        }
+        if (entry.isArchived() != archive) {
+            entry.setArchived(archive);
+            eventDAO.archiveEvent(archive, user, entry);
+            PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+            LOG.info("Set archived = {} on entry {}", archive, entry.getEntryPath());
+        }
     }
 
     @POST
@@ -714,7 +799,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @Override
     public boolean canWrite(User user, Entry entry) {
-        return AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+        return isWritable(entry) && (AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE));
     }
 
     @Override

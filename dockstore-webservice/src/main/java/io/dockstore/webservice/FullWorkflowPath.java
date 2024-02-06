@@ -19,12 +19,13 @@ package io.dockstore.webservice;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.swagger.annotations.ApiModelProperty;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import java.sql.Timestamp;
 
 /**
  * Workflow is broken into three different subclasses: BioWorkflow, Service, and AppTool. All three are in separate tables in our database and there is a unique
@@ -42,6 +43,10 @@ public class FullWorkflowPath implements Serializable {
     @Column(name = "id", unique = true, nullable = false)
     @ApiModelProperty(value = "Implementation specific ID for the full workflow path in this web service.")
     private long id;
+
+    // database timestamps
+    @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
+    private Timestamp dbCreateDate;
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo")

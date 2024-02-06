@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
@@ -28,6 +29,21 @@ import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
@@ -35,21 +51,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.validation.constraints.Size;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -61,7 +62,8 @@ import org.hibernate.annotations.Filter;
  *
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, discriminator = "type")
+@ApiModel(value = "Workflow", description = Workflow.WORKFLOW_DESCRIPTION, subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, discriminator = "type")
+@Schema(name = Workflow.OPENAPI_NAME, description = Workflow.WORKFLOW_DESCRIPTION)
 
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
@@ -93,13 +95,17 @@ import org.hibernate.annotations.Filter;
 @JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
-@JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
-    @JsonSubTypes.Type(value = Service.class, name = "Service"),
-    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool"),
-    @JsonSubTypes.Type(value = Notebook.class, name = "Notebook")})
+@JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = BioWorkflow.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = Service.class, name = Service.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = AppTool.class, name = AppTool.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = Notebook.class, name = Notebook.OPENAPI_NAME)})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
+    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("workflowVersions");
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
+    public static final String WORKFLOW_DESCRIPTION = "This describes one workflow in the dockstore";
+
+    public static final String OPENAPI_NAME = "Workflow";
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)
@@ -144,7 +150,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
-    @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
@@ -167,6 +172,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
+    @Override
+    public abstract Workflow createEmptyEntry();
+
     @JsonProperty
     @Override
     public String getGitUrl() {
@@ -182,9 +190,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.getWorkflowPath();
     }
 
-    public abstract Entry getParentEntry();
+    @OneToOne
+    @Schema(hidden = true)
+    public abstract Entry<?, ?> getParentEntry();
 
-    public abstract void setParentEntry(Entry parentEntry);
+    @Schema(hidden = true)
+    public abstract void setParentEntry(Entry<?, ?> parentEntry);
 
     /**
      * Copies some of the attributes of the source workflow to the target workflow
@@ -213,6 +224,8 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
         targetWorkflow.setMode(getMode());
+        targetWorkflow.setArchived(isArchived());
+        targetWorkflow.setWasEverPublic(getWasEverPublic());
     }
 
     @Override
@@ -376,6 +389,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     public abstract boolean isIsChecker();
 
     public abstract void setIsChecker(boolean isChecker);
+
+    @Override
+    public boolean isDeletable() {
+        return super.isDeletable() && !isIsChecker();
+    }
 
     public static class DescriptorLanguageConverter implements AttributeConverter<DescriptorLanguage, String> {
 

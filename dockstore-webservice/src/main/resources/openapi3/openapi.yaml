@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.14.0-SNAPSHOT
+  version: 1.15.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -40,45 +40,45 @@ tags:
 - description: "Needed for SmartAPI compatibility apparantly, might be cargo cult\
     \ behaviour"
   name: NIHdatacommons
+- description: Interact with entries in Dockstore regardless of whether they are containers
+    or workflows
+  name: entries
 - description: List and register entries in the dockstore (pairs of images + metadata
     (CWL and Dockerfile))
   name: containers
 - description: List and modify tags for containers
   name: containertags
-- description: Interact with entries in Dockstore regardless of whether they are containers
-    or workflows
-  name: entries
-- description: Created and modify hosted entries in the dockstore
-  name: hosted
-- description: Query lambda events triggered by GitHub Apps
-  name: lambdaEvents
-- description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
-    \ etc."
-  name: metadata
-- description: List and modify notifications for users of Dockstore
-  name: curation
-- description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
-  name: workflows
-- description: "List, modify, refresh, and delete tokens for external services"
-  name: tokens
-- description: Interactions with the Dockstore-support's ToolTester application
-  name: toolTester
-- description: "List, modify, and manage end users of the dockstore"
-  name: users
-- description: Optional experimental extensions of the GA4GH API
-  name: extendedGA4GH
-- description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
-  name: GA4GHV20
-- description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
-    \ . Integrators are welcome to use these endpoints but they are subject to change\
-    \ based on community input."
-  name: GA4GH
 - description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
     \ and is considered final (not subject to change)"
   name: GA4GHV1
+- description: "A curated subset of resources proposed as a common standard for tool\
+    \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
+    \ . Integrators are welcome to use these endpoints but they are subject to change\
+    \ based on community input."
+  name: GA4GHV20BETA
+- description: "A curated subset of resources proposed as a common standard for tool\
+    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
+  name: GA4GHV20
+- description: Optional experimental extensions of the GA4GH API
+  name: extendedGA4GH
+- description: "List, modify, refresh, and delete tokens for external services"
+  name: tokens
+- description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
+  name: workflows
+- description: Interactions with the Dockstore-support's ToolTester application
+  name: toolTester
+- description: List and modify notifications for users of Dockstore
+  name: curation
+- description: Created and modify hosted entries in the dockstore
+  name: hosted
+- description: "List, modify, and manage end users of the dockstore"
+  name: users
+- description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
+    \ etc."
+  name: metadata
+- description: Query lambda events triggered by GitHub Apps
+  name: lambdaEvents
 paths:
   /aliases/workflow-versions/{alias}:
     get:
@@ -127,6 +127,28 @@ paths:
       - BEARER: []
       tags:
       - aliases
+  /api/ga4gh/v1/metadata:
+    get:
+      operationId: metadataGet_1
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tool-classes:
+    get:
+      operationId: toolClassesGet_2
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GHV1
   /api/ga4gh/v1/tools:
     get:
       description: This endpoint returns all tools available or a filtered subset
@@ -458,6 +480,10 @@ paths:
       responses:
         "200":
           content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
             text/plain:
               schema:
                 type: integer
@@ -541,6 +567,8 @@ paths:
                 additionalProperties:
                   $ref: '#/components/schemas/Metrics'
           description: default response
+      security:
+      - BEARER: []
       summary: Get aggregated execution metrics for a tool from all platforms
       tags:
       - extendedGA4GH
@@ -615,10 +643,79 @@ paths:
         a platform.
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/execution:
+    get:
+      description: This endpoint retrieves an execution for a tool by execution ID
+      operationId: executionGet
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      - description: The execution ID of the execution to retrieve
+        in: query
+        name: executionId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionsRequestBody'
+          description: Execution retrieved successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The execution cannot be found.
+      security:
+      - BEARER: []
+      summary: Get an execution for a tool by execution ID
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
-      description: This endpoint submits individual or aggregated execution metrics
-        for a tool that was executed on a platform
+      description: This endpoint submits individual execution metrics for a tool that
+        was executed on a platform. Submitting aggregated execution metrics is deprecated.
       operationId: executionMetricsPost
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -665,7 +762,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExecutionsRequestBody'
-        description: Individual or aggregated execution metrics to submit
+        description: Individual execution metrics to submit. Submitting aggregated
+          execution metrics is deprecated.
         required: true
       responses:
         "204":
@@ -684,8 +782,86 @@ paths:
           description: The tool cannot be found to submit execution metrics.
       security:
       - BEARER: []
-      summary: Submit individual or aggregated execution metrics for a tool that was
-        executed on a platform.
+      summary: Submit individual execution metrics for a tool that was executed on
+        a platform. Submitting aggregated execution metrics is deprecated.
+      tags:
+      - extendedGA4GH
+    put:
+      description: "This endpoint updates workflow executions that were executed on\
+        \ a platform. Does not update aggregated metrics, which is deprecated."
+      operationId: ExecutionMetricsUpdate
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      - description: Optional description about the execution metrics that are being
+          updated
+        in: query
+        name: description
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionsRequestBody'
+        description: The updated executions
+        required: true
+      responses:
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionsResponseBody'
+          description: Executions to update processed. Please view the individual
+            responses.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to update the executions.
+      security:
+      - BEARER: []
+      summary: "Update workflow executions that were executed on a platform. Does\
+        \ not update aggregated metrics, which is deprecated."
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -755,6 +931,445 @@ paths:
         on particular platforms plus metadata
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/metadata:
+    get:
+      description: Return some metadata that is useful for describing this registry
+      operationId: metadataGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MetadataV20beta'
+          description: A Metadata object describing this service.
+      summary: Return some metadata that is useful for describing this registry
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/toolClasses:
+    get:
+      description: 'This endpoint returns all tool-classes available '
+      operationId: toolClassesGet_1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClassV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClassV20beta'
+          description: A list of potential tool classes.
+      summary: List all tool types
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools:
+    get:
+      description: 'This endpoint returns all tools available or a filtered subset
+        using metadata query parameters. '
+      operationId: toolsGet_1
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+      - in: query
+        name: alias
+        schema:
+          type: string
+      - in: query
+        name: registry
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: name
+        schema:
+          type: string
+      - in: query
+        name: toolname
+        schema:
+          type: string
+      - in: query
+        name: description
+        schema:
+          type: string
+      - in: query
+        name: author
+        schema:
+          type: string
+      - in: query
+        name: checker
+        schema:
+          type: boolean
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV20beta'
+          description: An array of Tools that match the filter.
+      summary: List all tools
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}:
+    get:
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it)
+      operationId: toolsIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolV20beta'
+          description: A tool.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be found.
+      summary: "List one specific tool, acts as an anchor for self references"
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions:
+    get:
+      description: Returns all versions of the specified tool
+      operationId: toolsIdVersionsGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersionV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersionV20beta'
+          description: An array of tool versions
+      summary: List versions of a tool
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}:
+    get:
+      description: This endpoint returns one specific tool version
+      operationId: toolsIdVersionsVersionIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV20beta'
+          description: A tool version.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be found.
+      summary: "List one specific tool version, acts as an anchor for self references"
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
+    get:
+      description: "Returns the container specifications(s) for the specified image.\
+        \ For example, a CWL CommandlineTool can be associated with one specification\
+        \ for a container, a CWL Workflow can be associated with multiple specifications\
+        \ for containers"
+      operationId: toolsIdVersionsVersionIdContainerfileGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool payload.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: There are no container specifications for this tool
+      summary: Get the container specification(s) for the specified image.
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
+    get:
+      description: "Returns the descriptor for the specified tool (examples include\
+        \ CWL, WDL, or Nextflow documents)."
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool descriptor.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool descriptor can not be found.
+      summary: Get the tool descriptor for the specified tool
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+    get:
+      description: 'Descriptors can often include imports that refer to additional
+        descriptors. This returns additional descriptors for the specified tool in
+        the same or other directories that can be reached as a relative path. This
+        endpoint can be useful for workflow engine implementations like cwltool to
+        programmatically download all the descriptors for a tool and run it. This
+        can optionally include other files described with FileWrappers such as test
+        parameters and containerfiles. '
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: relative_path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool descriptor.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be output in the specified type.
+      summary: Get additional tool descriptor files relative to the main file
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      description: "Get a list of objects that contain the relative path and file\
+        \ type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path\
+        \ : .+} endpoint."
+      operationId: toolsIdVersionsVersionIdTypeFilesGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFileV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFileV20beta'
+          description: The array of File JSON responses.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be output in the specified type.
+      summary: Get a list of objects that contain the relative path and file type
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      description: Get a list of test JSONs (these allow you to execute the tool successfully)
+        suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool test JSON response.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be output in the specified type.
+      summary: Get a list of test JSONs
+      tags:
+      - GA4GHV20BETA
   /auth/tokens/bitbucket.org:
     get:
       description: "Add a new bitbucket.org token, used by quay.io redirect."
@@ -1418,6 +2033,30 @@ paths:
           description: default response
       tags:
       - containers
+  /containers/published/{containerId}:
+    get:
+      description: Get a published tool.
+      operationId: getPublishedContainer
+      parameters:
+      - in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+          description: default response
+      tags:
+      - containers
   /containers/registerManual:
     post:
       description: "Register a tool manually, along with tags."
@@ -1478,27 +2117,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tag'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - containers
-  /containers/{alias}/aliases:
-    get:
-      description: Retrieves a tool by alias.
-      operationId: getToolByAlias
-      parameters:
-      - in: path
-        name: alias
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
       - BEARER: []
@@ -1961,6 +2579,36 @@ paths:
       - BEARER: []
       tags:
       - containertags
+  /containers/{containerId}/tags/{tagId}/description:
+    get:
+      description: Retrieve a tag's description
+      operationId: getTagDescription
+      parameters:
+      - description: Container to retrieve the version from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Tag to retrieve the description from
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - containertags
   /containers/{containerId}/tags/{tagId}/sourcefiles:
     get:
       description: Retrieve sourcefiles for a container's version
@@ -2008,6 +2656,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_DEVCONTAINER
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
@@ -2418,6 +3067,28 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{alias}/aliases:
+    get:
+      description: Retrieves an entry by alias.
+      operationId: getEntryByAlias
+      parameters:
+      - description: Alias
+        in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully retrieved entry
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
@@ -2556,10 +3227,35 @@ paths:
                   - SWL_TEST_JSON
                   - DOCKSTORE_JUPYTER
                   - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_DEVCONTAINER
                   - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
           description: default response
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{id}:
+    delete:
+      description: Completely remove an entry from Dockstore.
+      operationId: deleteEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully deleted the entry
+        "403":
+          description: The specified entry is not deletable.
       security:
       - BEARER: []
       tags:
@@ -2586,6 +3282,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: Successfully added alias to entry
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{id}/archive:
+    post:
+      description: Archive an entry.
+      operationId: archiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully archived the entry
       security:
       - BEARER: []
       tags:
@@ -2657,6 +3375,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{id}/unarchive:
+    post:
+      description: Unarchive an entry.
+      operationId: unarchiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully unarchived the entry
       security:
       - BEARER: []
       tags:
@@ -3324,6 +4064,63 @@ paths:
       summary: Get a list of test JSONs
       tags:
       - GA4GHV20
+  /lambdaEvents/user/{userid}:
+    get:
+      description: Get all of the Lambda Events for the given user.
+      operationId: getUserLambdaEvents
+      parameters:
+      - in: path
+        name: userid
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LambdaEvent'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - lambdaEvents
   /lambdaEvents/{organization}:
     get:
       description: Get all of the Lambda Events for the given GitHub organization.
@@ -3334,17 +4131,39 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
-          type: string
-          default: "0"
-      - in: query
+          type: integer
+          format: int32
+          default: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -4151,9 +4970,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: Version ID.
+      - description: Version Name.
         in: query
-        name: versionId
+        name: versionName
         schema:
           type: string
       responses:
@@ -4866,13 +5685,29 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
+          type: integer
+          format: int32
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:
@@ -5395,6 +6230,7 @@ paths:
           - TOOLS
           - WORKFLOWS
           - SERVICES
+          - NOTEBOOKS
       responses:
         "200":
           content:
@@ -5434,32 +6270,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/OrganizationUpdateTime'
           description: A list of the Dockstore organizations for a user
-      security:
-      - BEARER: []
-      tags:
-      - users
-  /users/{userId}:
-    get:
-      description: Get user by id.
-      operationId: getSpecificUser
-      parameters:
-      - in: path
-        name: userId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: A user with the specified userId
-        "403":
-          description: Forbidden
-        "404":
-          description: User not found
       security:
       - BEARER: []
       tags:
@@ -5956,9 +6766,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: GitHub installation ID
+      - description: GitHub App installation ID
         in: query
         name: installationId
+        schema:
+          type: integer
+          format: int64
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
         required: true
         schema:
           type: string
@@ -5974,26 +6790,20 @@ paths:
       description: Handle the installation of our GitHub app onto a repository or
         organization.
       operationId: handleGitHubInstallation
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              type: object
-              properties:
-                installationId:
-                  type: string
-                  description: GitHub installation ID
-                repositories:
-                  type: string
-                  description: Comma-separated repository paths (ex. dockstore/dockstore-ui2)
-                    for all repositories installed
-                username:
-                  type: string
-                  description: Username of user on GitHub who triggered action
-              required:
-              - installationId
-              - repositories
-              - username
+              $ref: '#/components/schemas/InstallationRepositoriesPayload'
+        description: GitHub App repository installation event payload
+        required: true
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.
@@ -6006,30 +6816,20 @@ paths:
       description: Handle a release of a repository on GitHub. Will create a workflow/service
         and version when necessary.
       operationId: handleGitHubRelease
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              type: object
-              properties:
-                gitReference:
-                  type: string
-                  description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master
-                    or refs/tags/v1.0
-                installationId:
-                  type: string
-                  description: GitHub installation ID
-                repository:
-                  type: string
-                  description: Repository path (ex. dockstore/dockstore-ui2)
-                username:
-                  type: string
-                  description: Username of user on GitHub who triggered action
-              required:
-              - gitReference
-              - installationId
-              - repository
-              - username
+              $ref: '#/components/schemas/PushPayload'
+        description: GitHub push event payload
+        required: true
       responses:
         default:
           content:
@@ -6511,6 +7311,31 @@ paths:
       summary: Get a list of workflows by path.
       tags:
       - workflows
+  /workflows/path/{repository}/published:
+    get:
+      description: Do not include workflow name.
+      operationId: getAllPublishedWorkflowByPath
+      parameters:
+      - description: repository path
+        in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - BEARER: []
+      summary: Get a list of published workflows by path.
+      tags:
+      - workflows
   /workflows/published:
     get:
       description: List all published workflows.
@@ -6601,7 +7426,6 @@ paths:
         schema:
           type: string
           enum:
-          - dockstore.org
           - github.com
           - bitbucket.org
           - gitlab.com
@@ -6700,27 +7524,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - workflows
-  /workflows/{alias}/aliases:
-    get:
-      description: Retrieves a workflow by alias.
-      operationId: getWorkflowByAlias
-      parameters:
-      - in: path
-        name: alias
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -7531,6 +8334,38 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/description:
+    get:
+      description: Retrieve a workflow version's description
+      operationId: getWorkflowVersionDescription
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Retrieve a workflow version's description
+        "400":
+          description: Bad Request
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors:
     get:
       description: Retrieve ORCID author information for a workflow version
@@ -7648,6 +8483,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_DEVCONTAINER
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
@@ -7692,6 +8528,28 @@ paths:
       - workflows
 components:
   schemas:
+    AggregatedExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Metrics'
+      - type: object
+        properties:
+          additionalAggregatedMetrics:
+            type: object
+            additionalProperties:
+              type: object
+              description: Additional aggregated metrics
+            description: Additional aggregated metrics
+          executionId:
+            type: string
+            description: User-provided ID of the execution. Must be unique and not
+              used for previous executions. This ID is used to identify the execution
+              when updating the execution
+      deprecated: true
+      description: Aggregated metrics of multiple executions on a platform
+      required:
+      - executionId
+      - executionStatusCount
     Alias:
       type: object
       properties:
@@ -7701,9 +8559,10 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one app tool in dockstore as a special degenerate
+        case of a workflow
     Author:
       type: object
-      description: "Non-ORCID authors for the entry, retrieved from the default version"
       properties:
         affiliation:
           type: string
@@ -7722,6 +8581,7 @@ components:
           parent_id:
             type: integer
             format: int64
+      description: This describes one workflow in the dockstore
     CLIInfo:
       type: object
       properties:
@@ -7770,11 +8630,19 @@ components:
           maxLength: 39
           minLength: 3
           pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+        notebooksLength:
+          type: integer
+          format: int64
+          description: Number of notebooks inside this collection
         organizationID:
           type: integer
           format: int64
         organizationName:
           type: string
+        servicesLength:
+          type: integer
+          format: int64
+          description: Number of services inside this collection
         toolsLength:
           type: integer
           format: int64
@@ -7883,6 +8751,10 @@ components:
           maxLength: 50
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionEntry'
         id:
           type: integer
           format: int64
@@ -7894,11 +8766,19 @@ components:
           maxLength: 39
           minLength: 3
           pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+        notebooksLength:
+          type: integer
+          format: int64
+          description: Number of notebooks inside this collection
         organizationID:
           type: integer
           format: int64
         organizationName:
           type: string
+        servicesLength:
+          type: integer
+          format: int64
+          description: Number of services inside this collection
         toolsLength:
           type: integer
           format: int64
@@ -7975,7 +8855,7 @@ components:
           type: string
         checkUrlLambdaVersion:
           type: string
-        composeSetupVersion:
+        colabImportUrl:
           type: string
         cwlParsingLambdaVersion:
           type: string
@@ -8007,6 +8887,8 @@ components:
           type: string
         gitHubAuthUrl:
           type: string
+        gitHubCodespacesImportUrl:
+          type: string
         gitHubRedirectPath:
           type: string
         gitHubScope:
@@ -8024,6 +8906,8 @@ components:
         googleClientId:
           type: string
         googleScope:
+          type: string
+        mybinderImportUrl:
           type: string
         nextflowParsingLambdaVersion:
           type: string
@@ -8057,6 +8941,56 @@ components:
           type: string
         zenodoScope:
           type: string
+    Cost:
+      type: object
+      description: Cost represents a monetary amount in USD
+      properties:
+        currency:
+          type: string
+          default: USD
+          description: The currency of the cost value
+          readOnly: true
+        value:
+          type: number
+          format: double
+          description: The numerical value of the cost
+          example: 5.99
+    CostMetric:
+      type: object
+      description: This describes aggregated cost metrics for workflow executions
+        in USD.
+      properties:
+        average:
+          type: number
+          format: double
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: number
+          format: double
+          description: The maximum value from the data points
+        minimum:
+          type: number
+          format: double
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+        unit:
+          type: string
+          default: USD
+          description: The unit of the data points
+          readOnly: true
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     CpuMetric:
       type: object
       description: This describes aggregated CPU metrics for workflow executions.
@@ -8112,16 +9046,18 @@ components:
           type: string
     DockstoreTool:
       type: object
+      description: "This describes one entry in the dockstore. Logically, this currently\
+        \ means one tuple of registry (either quay or docker hub), organization, image\
+        \ name, and toolname which can be associated with CWL and Dockerfile documents"
       properties:
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -8158,6 +9094,8 @@ components:
           type: string
         default_wdl_path:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         descriptorType:
@@ -8166,9 +9104,6 @@ components:
             type: string
         email:
           type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -8272,21 +9207,28 @@ components:
           minLength: 0
         topic:
           type: string
+        topicAI:
+          type: string
+          description: Short description of the entry generated by AI
+          maxLength: 150
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
           enum:
           - AUTOMATIC
           - MANUAL
+          - AI
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8305,16 +9247,16 @@ components:
           uniqueItems: true
     Entry:
       type: object
+      description: This describes one high-level entity in the dockstore
       properties:
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -8336,13 +9278,12 @@ components:
           format: int64
         defaultVersion:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         email:
           type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -8400,21 +9341,28 @@ components:
           uniqueItems: true
         topic:
           type: string
+        topicAI:
+          type: string
+          description: Short description of the entry generated by AI
+          maxLength: 150
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
           enum:
           - AUTOMATIC
           - MANUAL
+          - AI
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8430,135 +9378,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
-          uniqueItems: true
-    EntryObjectObject:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
-        authors:
-          type: array
-          description: "Non-ORCID authors for the entry, retrieved from the default\
-            \ version"
-          items:
-            $ref: '#/components/schemas/Author'
-          readOnly: true
-          uniqueItems: true
-        checker_id:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        dbCreateDate:
-          type: integer
-          format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        defaultVersion:
-          type: string
-        description:
-          type: string
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
-        entryType:
-          $ref: '#/components/schemas/EntryType'
-        entryTypeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        is_published:
-          type: boolean
-        labels:
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-          uniqueItems: true
-        lastUpdated:
-          type: integer
-          format: int64
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: integer
-          format: int64
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          type: object
-          writeOnly: true
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        orcidAuthors:
-          type: array
-          description: "ORCID authors for the entry, retrieved from the default version"
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          readOnly: true
-          uniqueItems: true
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        starredUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        topic:
-          type: string
-        topicAutomatic:
-          type: string
-          description: Short description of the entry gotten automatically
-        topicId:
-          type: integer
-          format: int64
-        topicManual:
-          type: string
-          description: Short description of the entry manually updated
-        topicSelection:
-          type: string
-          description: Which topic to display to the public users
-          enum:
-          - AUTOMATIC
-          - MANUAL
-        userIdToOrcidPutCode:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/OrcidPutCode'
-          description: The presence of the put code for a userid indicates the entry
-            was exported to ORCID for the corresponding Dockstore user.
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        workflowVersions:
-          type: array
-          items:
-            type: object
           uniqueItems: true
     EntryType:
       type: string
@@ -8619,6 +9438,16 @@ components:
           type: string
       required:
       - code
+    ErrorV20beta:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+      - code
     Event:
       type: object
       properties:
@@ -8637,8 +9466,12 @@ components:
           format: int64
         initiatorUser:
           $ref: '#/components/schemas/User'
+        notebook:
+          $ref: '#/components/schemas/Notebook'
         organization:
           $ref: '#/components/schemas/Organization'
+        service:
+          $ref: '#/components/schemas/Service'
         tool:
           $ref: '#/components/schemas/DockstoreTool'
         type:
@@ -8663,6 +9496,8 @@ components:
           - ADD_VERSION_TO_ENTRY
           - PUBLISH_ENTRY
           - UNPUBLISH_ENTRY
+          - ARCHIVE_ENTRY
+          - UNARCHIVE_ENTRY
         user:
           $ref: '#/components/schemas/User'
         version:
@@ -8689,6 +9524,36 @@ components:
             '@context':
               schema: https://schema.org
             schema:actionStatus: CompletedActionStatus
+        dateExecuted:
+          type: string
+          description: The date and time that the execution occurred in ISO 8601 UTC
+            date format
+          example: 2023-03-31T15:06:49.888745366Z
+        executionId:
+          type: string
+          description: User-provided ID of the execution. Must be unique and not used
+            for previous executions. This ID is used to identify the execution when
+            updating the execution
+      required:
+      - dateExecuted
+      - executionId
+    ExecutionResponse:
+      type: object
+      description: Response for a single execution metric as a result of an API
+      properties:
+        error:
+          type: string
+          description: The error message if one exists
+        executionId:
+          type: string
+          description: The ID of the execution that the response is for
+        status:
+          type: integer
+          format: int32
+          description: The response status code of the action for the execution
+      required:
+      - executionId
+      - status
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -8696,31 +9561,34 @@ components:
         count:
           type: object
           additionalProperties:
-            type: integer
-            format: int32
-            description: A map containing the count for each key
-          description: A map containing the count for each key
-          example:
-            FAILED_RUNTIME_INVALID: 1
-            FAILED_SEMANTIC_INVALID: 1
-            SUCCESSFUL: 5
+            $ref: '#/components/schemas/MetricsByStatus'
+          description: A map containing the metrics for each execution status
         id:
           type: integer
           format: int64
           description: Implementation specific ID for the count metrics in this webservice
+        numberOfAbortedExecutions:
+          type: integer
+          format: int32
+          description: Number of aborted executions. An execution is aborted if its
+            execution is stopped after it has started
+          example: 0
+          readOnly: true
         numberOfFailedExecutions:
           type: integer
           format: int32
           description: Number of failed executions. An execution may have failed because
             it was semantically or runtime invalid
+          example: 2
+          readOnly: true
         numberOfSuccessfulExecutions:
           type: integer
           format: int32
           description: Number of successful executions
+          example: 5
+          readOnly: true
       required:
       - count
-      - numberOfFailedExecutions
-      - numberOfSuccessfulExecutions
     ExecutionTimeMetric:
       type: object
       description: This describes aggregated execution time metrics in seconds for
@@ -8749,6 +9617,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: s
           description: The unit of the data points
           readOnly: true
       required:
@@ -8762,14 +9631,21 @@ components:
       properties:
         aggregatedExecutions:
           type: array
+          deprecated: true
           description: List of aggregated executions to submit
           items:
-            $ref: '#/components/schemas/Metrics'
+            $ref: '#/components/schemas/AggregatedExecution'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
           items:
             $ref: '#/components/schemas/RunExecution'
+        taskExecutions:
+          type: array
+          description: List of task run executions to submit. Each TaskExecution represents
+            the tasks executed during a workflow execution.
+          items:
+            $ref: '#/components/schemas/TaskExecutions'
         validationExecutions:
           type: array
           description: List of workflow validation executions to submit
@@ -8778,7 +9654,17 @@ components:
       required:
       - aggregatedExecutions
       - runExecutions
+      - taskExecutions
       - validationExecutions
+    ExecutionsResponseBody:
+      type: object
+      description: Response body model for execution metric APIs
+      properties:
+        executionResponses:
+          type: array
+          description: A list of responses for the executions submitted
+          items:
+            $ref: '#/components/schemas/ExecutionResponse'
     ExtendedUserData:
       type: object
       properties:
@@ -8821,6 +9707,13 @@ components:
           example: "{\"descriptorfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\"\
             },\"containerfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile\"\
             }}"
+    FileWrapperV20beta:
+      type: object
+      properties:
+        content:
+          type: string
+        url:
+          type: string
     HealthCheckResult:
       type: object
       properties:
@@ -8909,6 +9802,40 @@ components:
         updated:
           type: string
           description: Last time the container was updated.
+    Installation:
+      type: object
+      description: The GitHub App installation
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: The installation ID
+      required:
+      - id
+    InstallationRepositoriesPayload:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Payload'
+      - type: object
+        properties:
+          repositories_added:
+            type: array
+            description: "An array of repository objects, which were added to the\
+              \ installation"
+            items:
+              $ref: '#/components/schemas/WebhookRepository'
+      description: A model for a GitHub webhook installation event
+      example:
+        sender:
+          login: string
+        installation:
+          id: 0
+        repositories_added:
+        - full_name: dockstore/dockstore-ui2
+      required:
+      - installation
+      - repositories_added
+      - sender
     Label:
       type: object
       properties:
@@ -8920,6 +9847,14 @@ components:
     LambdaEvent:
       type: object
       properties:
+        deliveryId:
+          type: string
+          description: "The GitHub delivery ID, used to group events that belong to\
+            \ the same GitHub webhook invocation."
+        entryName:
+          type: string
+          description: The name of the entry associated with the event. An empty string
+            indicates an entry with no name specified.
         eventDate:
           type: integer
           format: int64
@@ -8928,6 +9863,9 @@ components:
         id:
           type: integer
           format: int64
+        ignored:
+          type: boolean
+          description: Whether or not the event was ignored.
         message:
           type: string
         organization:
@@ -9086,6 +10024,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: GB
           description: The unit of the data points
           readOnly: true
       required:
@@ -9093,20 +10032,46 @@ components:
       - maximum
       - minimum
       - numberOfDataPointsForAverage
+    MetadataV20beta:
+      type: object
+      properties:
+        api_version:
+          type: string
+        country:
+          type: string
+        friendly_name:
+          type: string
+        version:
+          type: string
+      required:
+      - api_version
+      - version
     Metrics:
       type: object
       description: Aggregated metrics associated with entry versions
       properties:
-        additionalAggregatedMetrics:
-          type: object
-          additionalProperties:
-            type: object
-            description: Additional aggregated metrics
-          description: Additional aggregated metrics
+        executionStatusCount:
+          $ref: '#/components/schemas/ExecutionStatusMetric'
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the metrics in this webservice
+        validationStatus:
+          $ref: '#/components/schemas/ValidationStatusMetric'
+      required:
+      - executionStatusCount
+    MetricsByStatus:
+      type: object
+      description: Aggregated metrics grouped by execution status
+      properties:
+        cost:
+          $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
         executionStatusCount:
-          $ref: '#/components/schemas/ExecutionStatusMetric'
+          type: integer
+          format: int32
+          description: The number of executions for the status
         executionTime:
           $ref: '#/components/schemas/ExecutionTimeMetric'
         id:
@@ -9115,14 +10080,14 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
-        validationStatus:
-          $ref: '#/components/schemas/ValidationStatusMetric'
       required:
       - executionStatusCount
     Notebook:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one notebook in the dockstore as a special degenerate
+        case of a workflow
     Notification:
       type: object
       properties:
@@ -9159,7 +10124,6 @@ components:
         is
     OrcidAuthor:
       type: object
-      description: "ORCID authors for the entry, retrieved from the default version"
       properties:
         id:
           type: integer
@@ -9241,6 +10205,11 @@ components:
           - HIDDEN
         topic:
           type: string
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationUser'
+          uniqueItems: true
     OrganizationUpdateTime:
       type: object
       properties:
@@ -9308,6 +10277,19 @@ components:
           type: boolean
         hasLocalImports:
           type: boolean
+    Payload:
+      type: object
+      description: Describes the common fields of all GitHub webhook payloads
+      properties:
+        installation:
+          $ref: '#/components/schemas/Installation'
+        repository:
+          $ref: '#/components/schemas/WebhookRepository'
+        sender:
+          $ref: '#/components/schemas/Sender'
+      required:
+      - installation
+      - sender
     Permission:
       type: object
       properties:
@@ -9327,7 +10309,21 @@ components:
         curator:
           type: boolean
         platformPartner:
-          type: boolean
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
     Profile:
       type: object
       properties:
@@ -9350,6 +10346,26 @@ components:
       properties:
         publish:
           type: boolean
+    PushPayload:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Payload'
+      - type: object
+        properties:
+          after:
+            type: string
+            description: The SHA of the most recent commit on ref after the push
+            example: 6d96270004515a0486bb7f76196a72b40c55a47f
+          ref:
+            type: string
+            description: The full git ref that was pushed
+            example: refs/heads/master OR refs/tags/v1.0
+      description: A model for a GitHub webhook push event
+      required:
+      - installation
+      - ref
+      - repository
+      - sender
     RegistryBean:
       type: object
       properties:
@@ -9391,6 +10407,8 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
+          cost:
+            $ref: '#/components/schemas/Cost'
           cpuRequirements:
             type: integer
             format: int32
@@ -9400,9 +10418,13 @@ components:
             type: string
             description: The status of the execution
             enum:
+            - ALL
             - SUCCESSFUL
+            - FAILED
             - FAILED_SEMANTIC_INVALID
             - FAILED_RUNTIME_INVALID
+            - ABORTED
+            example: SUCCESSFUL
           executionTime:
             type: string
             description: The total time it took for the execution to complete in ISO
@@ -9413,13 +10435,30 @@ components:
             format: double
             description: Memory requirements for the execution in GB
             example: 2
-      description: Metrics of a workflow execution on a platform
+          region:
+            type: string
+            description: The region the workflow was executed in
+            example: us-central1
+      description: Metrics of an execution on a platform
       required:
+      - dateExecuted
+      - executionId
       - executionStatus
+    Sender:
+      type: object
+      description: The user that triggered the event
+      properties:
+        login:
+          type: string
+          description: GitHub username of the sender of the GitHub webhook event
+      required:
+      - login
     Service:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one service in the dockstore as a special degenerate
+        case of a workflow
     ServiceType:
       type: object
       description: Type of a GA4GH service
@@ -9513,6 +10552,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_DEVCONTAINER
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         verifiedBySource:
@@ -9623,6 +10663,7 @@ components:
       - url
     Tag:
       type: object
+      description: This describes one tag associated with a container.
       properties:
         author:
           type: string
@@ -9640,8 +10681,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -9709,8 +10748,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
@@ -9741,6 +10778,12 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          description: Verified platforms for the version
+          items:
+            type: string
+            description: Verified platforms for the version
         verifiedSource:
           type: string
         verifiedSources:
@@ -9758,6 +10801,23 @@ components:
       required:
       - name
       - reference
+    TaskExecutions:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          taskExecutions:
+            type: array
+            description: Metrics of individual tasks that were executed during the
+              workflow execution.
+            items:
+              $ref: '#/components/schemas/RunExecution'
+      description: Metrics of individual tasks that were executed during the workflow
+        execution.
+      required:
+      - dateExecuted
+      - executionId
     Token_Auth:
       type: object
       properties:
@@ -9883,6 +10943,21 @@ components:
       - versions
     ToolClass:
       type: object
+      description: "Describes a class (type) of tool allowing us to categorize workflows,\
+        \ tasks, and maybe even other entities (such as services) separately."
+      properties:
+        description:
+          type: string
+          description: A longer explanation of what this class is and what it can
+            accomplish.
+        id:
+          type: string
+          description: The unique identifier for the class.
+        name:
+          type: string
+          description: A short friendly name for the class.
+    ToolClassV20beta:
+      type: object
       properties:
         description:
           type: string
@@ -9932,7 +11007,20 @@ components:
         path:
           type: string
           description: "Relative path of the file.  A descriptor's path can be used\
-            \ with the GA4GH .../{type}/descriptor/{relative_path} endpoint."
+            \ with the GA4GH .../{type}/descriptor/{relative_path : .+} endpoint."
+    ToolFileV20beta:
+      type: object
+      properties:
+        file_type:
+          type: string
+          enum:
+          - TEST_FILE
+          - PRIMARY_DESCRIPTOR
+          - SECONDARY_DESCRIPTOR
+          - CONTAINERFILE
+          - OTHER
+        path:
+          type: string
     ToolTesterLog:
       type: object
       properties:
@@ -9978,7 +11066,7 @@ components:
         signed:
           type: boolean
         toolclass:
-          $ref: '#/components/schemas/ToolClass'
+          $ref: '#/components/schemas/ToolClassV20beta'
         toolname:
           type: string
         url:
@@ -9991,6 +11079,54 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ToolVersionV1'
+    ToolV20beta:
+      type: object
+      properties:
+        aliases:
+          type: array
+          items:
+            type: string
+        author:
+          type: string
+        checker_url:
+          type: string
+        contains:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: string
+        meta_version:
+          type: string
+        organization:
+          type: string
+        signed:
+          type: boolean
+        toolclass:
+          $ref: '#/components/schemas/ToolClassV20beta'
+        toolname:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified_source:
+          type: string
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolVersionV20beta'
+      required:
+      - author
+      - id
+      - organization
+      - toolclass
+      - url
+      - versions
     ToolVersion:
       type: object
       description: A tool version describes a particular iteration of a tool as described
@@ -10150,6 +11286,43 @@ components:
           type: boolean
         verified-source:
           type: string
+    ToolVersionV20beta:
+      type: object
+      properties:
+        containerfile:
+          type: boolean
+        descriptor_type:
+          type: array
+          items:
+            type: string
+            enum:
+            - SMK
+            - CWL
+            - WDL
+            - NFL
+            - SERVICE
+            - GXFORMAT2
+        id:
+          type: string
+        image:
+          type: string
+        image_name:
+          type: string
+        meta_version:
+          type: string
+        name:
+          type: string
+        registry_url:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified_source:
+          type: string
+      required:
+      - id
+      - url
     User:
       type: object
       properties:
@@ -10157,19 +11330,36 @@ components:
           type: string
         curator:
           type: boolean
-          description: Indicates whether this user is a curator
+          description: Indicates whether this user is a curator. The value is always
+            false unless requested for oneself or by an admin
         id:
           type: integer
           format: int64
         isAdmin:
           type: boolean
+          description: Indicates whether the user is an admin.  The value is always
+            false unless requested for oneself or by an admin
         name:
           type: string
         orcid:
           type: string
         platformPartner:
-          type: boolean
+          type: string
           description: Indicates whether this account corresponds to a platform partner
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
         privacyPolicyVersion:
           type: string
           enum:
@@ -10245,6 +11435,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_DEVCONTAINER
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
@@ -10255,11 +11446,6 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          dateExecuted:
-            type: string
-            description: The date and time that the validator tool was executed in
-              ISO 8601 UTC date format
-            example: 2023-03-31T15:06:49.888745366Z
           errorMessage:
             type: string
             description: The error message for a failed validation by the validator
@@ -10284,6 +11470,7 @@ components:
       description: Metrics of a workflow validated on a platform
       required:
       - dateExecuted
+      - executionId
       - isValid
       - validatorTool
       - validatorToolVersion
@@ -10329,6 +11516,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidatorVersionInfo'
+          uniqueItems: true
       required:
       - mostRecentVersionName
       - numberOfRuns
@@ -10386,6 +11574,7 @@ components:
           type: boolean
     Version:
       type: object
+      description: This describes a version of an entry in Dockstore
       properties:
         author:
           type: string
@@ -10399,8 +11588,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -10461,8 +11648,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
@@ -10490,6 +11675,12 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          description: Verified platforms for the version
+          items:
+            type: string
+            description: Verified platforms for the version
         verifiedSource:
           type: string
         verifiedSources:
@@ -10508,10 +11699,6 @@ components:
     VersionMetadata:
       type: object
       properties:
-        description:
-          type: string
-          description: "This is a human-readable description of this container and\
-            \ what it is trying to accomplish, required GA4GH"
         descriptorTypeVersions:
           type: array
           items:
@@ -10562,8 +11749,19 @@ components:
         versionId:
           type: integer
           format: int64
+    WebhookRepository:
+      type: object
+      description: The repository where the GitHub webhook event occurred
+      properties:
+        full_name:
+          type: string
+          description: Full name of the GitHub repository
+          example: dockstore/dockstore-ui2
+      required:
+      - full_name
     Workflow:
       type: object
+      description: This describes one workflow in the dockstore
       discriminator:
         propertyName: type
       properties:
@@ -10571,11 +11769,10 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -10599,6 +11796,8 @@ components:
           type: string
         defaultVersion:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         descriptorType:
@@ -10628,9 +11827,6 @@ components:
           - n/a
         email:
           type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -10698,8 +11894,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parentEntry:
-          $ref: '#/components/schemas/Entry'
         path:
           type: string
         repository:
@@ -10720,21 +11914,28 @@ components:
           uniqueItems: true
         topic:
           type: string
+        topicAI:
+          type: string
+          description: Short description of the entry generated by AI
+          maxLength: 150
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
           enum:
           - AUTOMATIC
           - MANUAL
+          - AI
         type:
           type: string
         userIdToOrcidPutCode:
@@ -10770,6 +11971,7 @@ components:
       - NOTEBOOK
     WorkflowVersion:
       type: object
+      description: This describes one workflow version associated with a workflow.
       properties:
         aliases:
           type: object
@@ -10787,8 +11989,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -10857,8 +12057,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
@@ -10888,6 +12086,12 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          description: Verified platforms for the version
+          items:
+            type: string
+            description: Verified platforms for the version
         verifiedSource:
           type: string
         verifiedSources:
@@ -10908,10 +12112,16 @@ components:
     WorkflowVersionPathInfo:
       type: object
       properties:
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         fullWorkflowPath:
           type: string
+          description: Dockstore path to workflow
         tagName:
           type: string
+          description: Name of workflow version tag
   securitySchemes:
     BEARER:
       scheme: bearer

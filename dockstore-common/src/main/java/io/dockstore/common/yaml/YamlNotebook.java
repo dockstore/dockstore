@@ -16,15 +16,16 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.EntryType;
+import io.dockstore.common.yaml.constraints.AbsolutePath;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 
 /**
  * A notebook as described in a .dockstore.yml
@@ -37,6 +38,7 @@ public class YamlNotebook implements Workflowish {
     private String path;
     private String kernel;
     private String readMePath;
+    private String topic;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -154,7 +156,7 @@ public class YamlNotebook implements Workflowish {
         this.authors = authors;
     }
 
-    public List<String> getTestParameterFiles() {
+    public List<@NotNull @AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
 
@@ -179,6 +181,8 @@ public class YamlNotebook implements Workflowish {
         this.otherFiles = otherFiles;
     }
 
+    @NotNull
+    @AbsolutePath
     public String getPrimaryDescriptorPath() {
         return getPath();
     }
@@ -190,5 +194,13 @@ public class YamlNotebook implements Workflowish {
 
     public void setReadMePath(String readMePath) {
         this.readMePath = readMePath;
+    }
+
+    public String getTopic() {
+        return this.topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }

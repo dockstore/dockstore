@@ -10,7 +10,7 @@ import org.apache.commons.validator.routines.EmailValidator;
 
 /**
  * Conditionally removes Strings that look like email addresses
- * Example from https://www.baeldung.com/jackson-serialize-field-custom-criteria
+ * Example from <a href="https://www.baeldung.com/jackson-serialize-field-custom-criteria">...</a>
  */
 public class EmailPropertyFilter extends SimpleBeanPropertyFilter {
     EmailValidator emailValidator = EmailValidator.getInstance();

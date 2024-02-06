@@ -18,8 +18,8 @@ package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Validates a descriptor language short name.

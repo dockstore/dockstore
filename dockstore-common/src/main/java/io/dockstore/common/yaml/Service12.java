@@ -16,8 +16,8 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguageSubclass;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 
 /**
  * A service defined in a 1.2 .dockstore.yml. It differs from 1.1 in that there is a subclass instead of a type property.
@@ -49,6 +49,10 @@ public class Service12 extends AbstractYamlService implements Workflowish {
 
     @Override
     public String getReadMePath() {
+        throw new UnsupportedOperationException();
+    }
+
+    public String getTopic() {
         throw new UnsupportedOperationException();
     }
 }

@@ -17,13 +17,17 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
+import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.EXECUTION_PARTNERS;
+import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.VALIDATION_PARTNERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -34,6 +38,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
+import io.dockstore.webservice.core.metrics.Metrics;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,11 +106,9 @@ class ElasticListenerTest {
     }
 
     private void initEntry(Entry entry) {
-        if (entry instanceof Tool) {
-            Tool toolEntry = (Tool)entry;
+        if (entry instanceof Tool toolEntry) {
             toolEntry.setDescriptorType(List.of(DescriptorLanguage.WDL.toString()));
-        } else if (entry instanceof Workflow) {
-            Workflow workflowOrAppTool = (Workflow)entry;
+        } else if (entry instanceof Workflow workflowOrAppTool) {
             workflowOrAppTool.setDescriptorType(DescriptorLanguage.WDL);
             workflowOrAppTool.setSourceControl(SourceControl.GITHUB);
             workflowOrAppTool.setOrganization("potato");
@@ -130,7 +134,7 @@ class ElasticListenerTest {
     void testNoValidVersions() {
         // If there are no valid versions, the latest version id wins out
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
-            final Entry detachedEntry = ElasticListener.removeIrrelevantProperties(entry);
+            final Entry detachedEntry = ElasticListener.detach(entry);
             validateOnlyOneVersionHasSourceFileContent(detachedEntry, SECOND_VERSION_NAME);
         });
     }
@@ -141,31 +145,31 @@ class ElasticListenerTest {
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
             entry.getWorkflowVersions().clear();
             // Just make sure it doesn't throw an exception
-            ElasticListener.removeIrrelevantProperties(entry);
+            ElasticListener.detach(entry);
         });
     }
 
     @Test
     void testDefaultVersionSet() {
         bioWorkflow.setActualDefaultVersion(firstWorkflowVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(bioWorkflow),
             FIRST_VERSION_NAME);
         bioWorkflow.setActualDefaultVersion(secondWorkflowVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(bioWorkflow),
             SECOND_VERSION_NAME);
 
         tool.setActualDefaultVersion(firstTag);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(tool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(tool),
             FIRST_VERSION_NAME);
         tool.setActualDefaultVersion(secondTag);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(tool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(tool),
             SECOND_VERSION_NAME);
 
         appTool.setActualDefaultVersion(firstAppToolVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(appTool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(appTool),
             FIRST_VERSION_NAME);
         appTool.setActualDefaultVersion(secondAppToolVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(appTool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(appTool),
             SECOND_VERSION_NAME);
     }
 
@@ -175,7 +179,7 @@ class ElasticListenerTest {
         firstTag.setValid(true);
         firstAppToolVersion.setValid(true);
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
-            validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(entry),
+            validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(entry),
                 FIRST_VERSION_NAME);
 
         });
@@ -254,6 +258,26 @@ class ElasticListenerTest {
         entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
         openDataNode = entry.get("openData");
         assertTrue(openDataNode.asBoolean());
+    }
+
+    @Test
+    void testMetrics() throws IOException {
+        assertEquals(0, firstWorkflowVersion.getMetricsByPlatform().size());
+        JsonNode entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        JsonNode executionPartners = entry.get(EXECUTION_PARTNERS);
+        JsonNode validationPartners = entry.get(VALIDATION_PARTNERS);
+        final ObjectMapper objectMapper = new ObjectMapper();
+        assertEquals(List.of(), objectMapper.convertValue(executionPartners, ArrayList.class));
+        assertEquals(List.of(), objectMapper.convertValue(validationPartners, ArrayList.class));
+        Metrics executionMetrics = new Metrics();
+        executionMetrics.setExecutionStatusCount(new ExecutionStatusCountMetric());
+        bioWorkflow.setExecutionPartners(List.of(Partner.AGC));
+        bioWorkflow.setValidationPartners(List.of(Partner.DNA_STACK));
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        executionPartners = entry.get(EXECUTION_PARTNERS);
+        assertEquals(List.of(Partner.AGC.name()), objectMapper.convertValue(executionPartners, ArrayList.class));
+        validationPartners = entry.get(VALIDATION_PARTNERS);
+        assertEquals(List.of(Partner.DNA_STACK.name()), objectMapper.convertValue(validationPartners, ArrayList.class));
     }
 
 

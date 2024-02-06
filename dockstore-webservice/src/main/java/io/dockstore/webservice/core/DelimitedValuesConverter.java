@@ -1,12 +1,12 @@
 package io.dockstore.webservice.core;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;

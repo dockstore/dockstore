@@ -22,7 +22,7 @@ class GitHubHelperTest {
             GitHubHelper.getGitHubAccessToken(CODE, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
             fail("No CustomWebApplicationException thrown");
         } catch (CustomWebApplicationException e) {
-            assertEquals("HTTP 400 Bad Request", e.getMessage());
+            assertEquals("Could not retrieve github.com token based on code", e.getMessage());
         }
     }
 

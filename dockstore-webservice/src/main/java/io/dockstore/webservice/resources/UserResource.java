@@ -20,8 +20,6 @@ import static io.dockstore.webservice.Constants.USERNAME_CONTAINS_KEYWORD_PATTER
 import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -87,7 +85,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -97,6 +94,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -113,22 +125,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.security.RolesAllowed;
-import javax.validation.constraints.NotBlank;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -231,28 +229,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam("Username of user to return") @PathParam("username") @NotBlank String username,
-        @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include) {
+        @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include,
+        // authUser isn't used here, but don't remove; needed to trigger AuthenticatedUserFilter
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> authUser) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
         checkNotNullUser(user);
 
         initializeAdditionalFields(include, user);
-        return user;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}")
-    @Operation(operationId = "getSpecificUser", description = "Get user by id.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user with the specified userId", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUserId(authUser, userId);
-        User user = userDAO.findById(userId);
-        checkNotNullUser(user);
         return user;
     }
 
@@ -430,7 +414,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
     // We don't delete the LambdaEvent because it is useful for other users
     private void deleteSelfFromLambdaEvents(User user) {
-        lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
+        lambdaEventDAO.findByUser(user).forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @PUT
@@ -493,7 +477,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUserId(user, userId);
+        if (!user.isCurator() && !user.getIsAdmin()) {
+            checkUserId(user, userId);
+        }
         User fetchedUser = userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
         return tokenDAO.findByUserId(userId);
@@ -691,6 +677,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             workflow.setMode(myWorkflow.getMode());
             workflow.setGitUrl(myWorkflow.getGitUrl());
             workflow.setDescription(myWorkflow.getDescription());
+            workflow.setArchived(myWorkflow.getArchived());
             workflows.add(workflow);
         });
         return workflows;
@@ -819,6 +806,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
         if (type == null || type == EntrySearchType.SERVICES) {
             entriesLite.addAll(serviceDAO.findEntryVersions(userId));
+        }
+        if (type == null || type == EntrySearchType.NOTEBOOKS) {
+            entriesLite.addAll(notebookDAO.findEntryVersions(userId));
         }
 
         //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
@@ -1068,7 +1058,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
         user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
         // User could be cached by Dockstore or Google token -- invalidate all
-        tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        tokenDAO.findByUserId(user.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         return limits;
     }
 
@@ -1108,13 +1098,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
         }
         // Ignore hosted workflows
-        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
-                Collectors.toList());
+        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).toList();
 
         List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
-                .collect(Collectors.toList());
+                .toList();
 
         scTokens.forEach(token -> {
             final SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
@@ -1189,7 +1178,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Set the new privileges.
         targetUser.setIsAdmin(privilegeRequest.isAdmin());
         targetUser.setCurator(privilegeRequest.isCurator());
-        targetUser.setPlatformPartner(privilegeRequest.isPlatformPartner());
+        targetUser.setPlatformPartner(privilegeRequest.getPlatformPartner());
 
         // Invalidate any tokens corresponding to the target user.
         tokenDAO.findByUserId(targetUser.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
@@ -1206,11 +1195,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of GitHub Events for the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = LambdaEvent.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
-            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+            @QueryParam("offset") Integer offset,
+            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @DefaultValue("") @QueryParam("filter") String filter,
+            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder) {
         final User user = userDAO.findById(authUser.getId());
         checkNotNullUser(user);
-        return lambdaEventDAO.findByUser(user, offset, limit);
+        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
     }
 
     @GET

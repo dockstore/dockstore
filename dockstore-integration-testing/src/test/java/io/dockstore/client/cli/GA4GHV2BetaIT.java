@@ -15,22 +15,27 @@
  */
 package io.dockstore.client.cli;
 
-import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.dockstore.common.FixtureUtility.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.TestUtility;
 import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.ToolVersion;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
@@ -165,6 +170,36 @@ class GA4GHV2BetaIT extends GA4GHIT {
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+    }
+    /*
+    Checks the GA4GHv2 beta endpoints to make sure the CORS header is present
+     */
+    @Test
+    void testV2BetaCorsHeader() {
+        final String origin = "http://mysite.org";
+        String nginxRewrittenPath = TestUtility.mimicNginxRewrite(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json", basePath);
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        Response response = client.target(nginxRewrittenPath).request().headers(headers).get();
+        assertEquals("true", response.getHeaders().getFirst("Access-Control-Allow-Credentials"));
+        assertEquals(origin, response.getHeaders().getFirst("Access-Control-Allow-Origin"));
+    }
+
+    /*
+    Checks to make sure the CORS header is not applied to the extended endpoints
+     */
+
+    @Test
+    void testV2BetaExtendedNoCorsHeader() {
+        final String origin = "http://mysite.org";
+        final List<String> paths = Arrays.asList("extended/organizations", "extended/tools/index");
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        paths.stream().forEach(path -> {
+            Response response = client.target(baseURL + path).request().headers(headers).get();
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Credentials"));
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Origin"));
+        });
     }
 
     @Test

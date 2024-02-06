@@ -37,7 +37,7 @@ public class MetadataV1 {
 
     private String friendlyName = null;
 
-    public MetadataV1(Metadata metadata) {
+    public MetadataV1(MetadataV20beta metadata) {
         try {
             BeanUtils.copyProperties(this, metadata);
         } catch (IllegalAccessException | InvocationTargetException e) {

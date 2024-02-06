@@ -18,16 +18,14 @@ package io.dockstore.webservice.helpers.statelisteners;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.SourceFile;
@@ -43,7 +41,6 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -84,7 +81,6 @@ import org.slf4j.LoggerFactory;
  * Formerly the ElasticManager, this listens for changes that might affect elastic search
  */
 public class ElasticListener implements StateListenerInterface {
-    public static DockstoreWebserviceConfiguration config;
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String NOTEBOOKS_INDEX = "notebooks";
@@ -92,6 +88,8 @@ public class ElasticListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
+    protected static final String EXECUTION_PARTNERS = "execution_partners";
+    protected static final String VALIDATION_PARTNERS = "validation_partners";
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
@@ -179,14 +177,10 @@ public class ElasticListener implements StateListenerInterface {
      * @return Whether or not the entry is valid
      */
     private boolean checkValid(Entry<?, ?> entry, StateManagerMode command) {
-        boolean published = entry.getIsPublished();
         switch (command) {
         case PUBLISH:
         case UPDATE:
-            if (published) {
-                return true;
-            }
-            break;
+            return entry.getIsPublished();
         case DELETE:
             // Try deleting no matter what
             return true;
@@ -194,7 +188,6 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Unrecognized Elasticsearch command.");
             return false;
         }
-        return false;
     }
 
     @Override
@@ -341,104 +334,60 @@ public class ElasticListener implements StateListenerInterface {
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
-        Entry detachedEntry = removeIrrelevantProperties(entry);
+        Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
         final ObjectNode objectNode = (ObjectNode) jsonNode;
         objectNode.put("stars_count", (long) entry.getStarredUsers().size());
         objectNode.put("verified", verified);
         objectNode.put("openData", openData);
-        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
-        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
-        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
-        objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
-        addCategoriesJson(jsonNode, entry);
+        objectNode.set(EXECUTION_PARTNERS, MAPPER.valueToTree(entry.getExecutionPartners()));
+        objectNode.set(VALIDATION_PARTNERS, MAPPER.valueToTree(entry.getValidationPartners()));
+        objectNode.set("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
+        objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
+        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.put("archived", entry.isArchived());
         return jsonNode;
     }
 
 
-    private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
-
-        List<Map<String, Object>> values = new ArrayList<>();
-
-        for (Category category: entry.getCategories()) {
-            Map<String, Object> value = new LinkedHashMap<>();
-            value.put("id", category.getId());
-            value.put("name", category.getName());
-            value.put("description", category.getDescription());
-            value.put("displayName", category.getDisplayName());
-            value.put("topic", category.getTopic());
-            values.add(value);
-        }
-
-        ((ObjectNode)node).put("categories", MAPPER.valueToTree(values));
+    private static List<Map<String, Object>> convertCategories(List<Category> categories) {
+        return categories.stream().map(
+            category -> {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("id", category.getId());
+                map.put("name", category.getName());
+                map.put("description", category.getDescription());
+                map.put("displayName", category.getDisplayName());
+                map.put("topic", category.getTopic());
+                return map;
+            }
+        ).toList();
     }
 
     /**
-     * Remove some stuff that should not be indexed by ES.
-     * This is not ideal, we should be including things we want indexed, not removing.
+     * Create a partial copy of an Entry that is detached from Hibernate and contains only information that should be indexed.
      * @param entry
      */
-    static Entry removeIrrelevantProperties(final Entry entry) {
-        Entry detachedEntry;
+    static Entry detach(final Entry entry) {
+
         if (entry instanceof Tool tool) {
-            Tool detachedTool = new Tool();
-            tool.getWorkflowVersions().forEach(version -> {
-                Hibernate.initialize(version.getSourceFiles());
-            });
+            Tool detachedTool = tool.createEmptyEntry();
+            copyToolProperties(detachedTool, tool);
+            return detachedTool;
 
-            // These are for facets
-            detachedTool.setDescriptorType(tool.getDescriptorType());
-            detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
-            detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
-            detachedTool.setNamespace(tool.getNamespace());
-            detachedTool.setRegistry(tool.getRegistry());
-            detachedTool.setPrivateAccess(tool.isPrivateAccess());
+        } else if (entry instanceof Workflow workflow) {
+            Workflow detachedWorkflow = workflow.createEmptyEntry();
+            copyWorkflowProperties(detachedWorkflow, workflow);
+            return detachedWorkflow;
 
-            // These are for table
-            detachedTool.setGitUrl(tool.getGitUrl());
-            detachedTool.setName(tool.getName());
-            detachedTool.setToolname(tool.getToolname());
-            // This is some weird hack to always use topicAutomatic for search table
-            detachedTool.setTopicAutomatic(tool.getTopic());
-            detachedEntry = detachedTool;
-        } else if (entry instanceof BioWorkflow bioWorkflow) {
-            BioWorkflow detachedBioWorkflow = new BioWorkflow();
-            detachedEntry = detachWorkflow(detachedBioWorkflow, bioWorkflow);
-        } else if (entry instanceof AppTool appTool) {
-            AppTool detachedAppTool = new AppTool();
-            detachedEntry = detachWorkflow(detachedAppTool, appTool);
-        } else if (entry instanceof Notebook notebook) {
-            Notebook detachedNotebook = new Notebook();
-            detachedEntry = detachWorkflow(detachedNotebook, notebook);
         } else {
-            return entry;
+            Entry detachedEntry = entry.createEmptyEntry();
+            copyEntryProperties(detachedEntry, entry);
+            return detachedEntry;
         }
-
-        detachedEntry.setDescription(entry.getDescription());
-        detachedEntry.setAliases(entry.getAliases());
-        detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
-        detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
-        Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
-        detachedEntry.setWorkflowVersions(detachedVersions);
-        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
-        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
-        detachedEntry.setTopicAutomatic(entry.getTopic());
-        detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
-        entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
-        final String defaultVersion = defaultVersionWithFallback(entry);
-        if (defaultVersion != null) {
-            // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
-            Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
-            newWorkflowVersions.forEach(version -> {
-                if (!defaultVersion.equals(version.getReference()) && !defaultVersion.equals(version.getName())) {
-                    version.setDescriptionAndDescriptionSource(null, null);
-                    SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-                    sourceFiles.forEach(sourceFile -> sourceFile.setContent(""));
-                }
-            });
-        }
-        return detachedEntry;
     }
 
     /**
@@ -447,13 +396,12 @@ public class ElasticListener implements StateListenerInterface {
      * @param entry
      * @return
      */
-    private static String defaultVersionWithFallback(Entry entry) {
+    private static Version defaultVersionWithFallback(Entry entry) {
         if (entry.getActualDefaultVersion() != null) {
-            return entry.getActualDefaultVersion().getName();
+            return entry.getActualDefaultVersion();
         }
         final Stream<Version> stream = versionStream(entry.getWorkflowVersions());
-        return stream
-            .max(Comparator.comparing(Version::getId)).map(v -> v.getName()).orElse(null);
+        return stream.max(Comparator.comparing(Version::getId)).orElse(null);
     }
 
     private static Stream<Version> versionStream(Set<Version> versions) {
@@ -464,24 +412,70 @@ public class ElasticListener implements StateListenerInterface {
         }
     }
 
-    private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
+    private static Set<Version> detachVersions(final Set<Version> originalWorkflowVersions, final Version defaultVersion) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detachedVersion = workflowVersion.createEmptyVersion();
-            detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
             detachedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
             detachedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
             detachedVersion.setName(workflowVersion.getName());
             detachedVersion.setReference(workflowVersion.getReference());
-            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
-            detachedVersion.updateVerified();
+            // Only include the description and sourcefiles in the default version
+            if (workflowVersion == defaultVersion) {
+                detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+                SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                // Copy the sourcefiles to the detached version, except for .dockstore.yml, which contains the names
+                // of all entries in the repo, thus clouding the search results for multi-entry repos
+                sourceFiles.forEach(sourceFile -> {
+                    if (sourceFile.getType() != DescriptorLanguage.FileType.DOCKSTORE_YML) {
+                        detachedVersion.addSourceFile(SourceFile.copy(sourceFile));
+                    }
+                });
+            }
             detachedVersions.add(detachedVersion);
         });
         return detachedVersions;
     }
 
-    private static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
+    private static void copyEntryProperties(Entry detachedEntry, Entry entry) {
+        detachedEntry.setDescription(entry.getDescription());
+        detachedEntry.setAliases(entry.getAliases());
+        detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
+        detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
+        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
+        detachedEntry.setTopicAutomatic(entry.getTopic());
+        detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
+        entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
+
+        // Add the detached versions
+        Version defaultVersion = defaultVersionWithFallback(entry);
+        Set<Version> detachedVersions = detachVersions(entry.getWorkflowVersions(), defaultVersion);
+        detachedEntry.setWorkflowVersions(detachedVersions);
+    }
+
+    private static void copyToolProperties(Tool detachedTool, Tool tool) {
+        copyEntryProperties(detachedTool, tool);
+
+        // Copy tool-specified properties
+        // These are for facets
+        detachedTool.setDescriptorType(tool.getDescriptorType());
+        detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
+        detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
+        detachedTool.setNamespace(tool.getNamespace());
+        detachedTool.setRegistry(tool.getRegistry());
+        detachedTool.setPrivateAccess(tool.isPrivateAccess());
+
+        // These are for table
+        detachedTool.setGitUrl(tool.getGitUrl());
+        detachedTool.setName(tool.getName());
+        detachedTool.setToolname(tool.getToolname());
+    }
+
+    private static void copyWorkflowProperties(Workflow detachedWorkflow, Workflow workflow) {
+        copyEntryProperties(detachedWorkflow, workflow);
+
+        // Copy workflow-specific properties
         // These are for facets
         detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
         detachedWorkflow.setSourceControl(workflow.getSourceControl());
@@ -495,20 +489,10 @@ public class ElasticListener implements StateListenerInterface {
         detachedWorkflow.setWorkflowName(workflow.getWorkflowName());
         detachedWorkflow.setRepository(workflow.getRepository());
         detachedWorkflow.setGitUrl(workflow.getGitUrl());
-        return detachedWorkflow;
     }
 
-
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
-        Set<String> platforms = new TreeSet<>();
-        workflowVersions.forEach(workflowVersion -> {
-            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
-                platforms.addAll(verifiedBySource.keySet());
-            });
-        });
-        return platforms;
+        return workflowVersions.stream().map(Version::getVerifiedPlatforms).flatMap(Stream::of).collect(Collectors.toSet());
     }
 
     private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {
@@ -516,15 +500,15 @@ public class ElasticListener implements StateListenerInterface {
         if (entry instanceof Tool tool && tool.getDescriptorType().size() == 1) {
             // Only set descriptor type versions if there's one descriptor type otherwise we can't tell which version belongs to which type without looking at the source files
             language = tool.getDescriptorType().get(0);
-        } else if (entry instanceof BioWorkflow || entry instanceof AppTool) {
-            language = ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(((Workflow) entry).getDescriptorType()).map(DescriptorType::toString).orElse("unsupported language");
+        } else if (entry instanceof Workflow workflow) {
+            language = ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(workflow.getDescriptorType()).map(DescriptorType::toString).orElse("unsupported language");
         } else {
             return List.of();
         }
 
         // Get a list of unique descriptor type versions with the descriptor type prepended. Ex: 'WDL 1.0'
         return workflowVersions.stream()
-                .map(workflowVersion -> (List<String>)workflowVersion.getVersionMetadata().getDescriptorTypeVersions())
+                .map(workflowVersion -> workflowVersion.getVersionMetadata().getDescriptorTypeVersions())
                 .flatMap(List::stream)
                 .distinct()
                 .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))
@@ -573,7 +557,7 @@ public class ElasticListener implements StateListenerInterface {
      * @return          null if checker, entry otherwise
      */
     private static Entry filterCheckerWorkflows(Entry entry) {
-        return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
+        return entry instanceof Workflow workflow && workflow.isIsChecker() ? null : entry;
     }
 
     /**
@@ -582,6 +566,6 @@ public class ElasticListener implements StateListenerInterface {
      * @return          List of entries without checker workflows
      */
     public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
-        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
+        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow workflow && !workflow.isIsChecker())).toList();
     }
 }

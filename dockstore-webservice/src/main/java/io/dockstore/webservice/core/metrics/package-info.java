@@ -13,4 +13,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
+/**
+ * This package contains classes related to Metrics.
+ * The contents of this package are not used by the metrics aggregator in the dockstore-support repository.
+ * If you want to add things that the metrics aggregator will use, add it to the io.dockstore.common.metrics package.
+ */
 package io.dockstore.webservice.core.metrics;

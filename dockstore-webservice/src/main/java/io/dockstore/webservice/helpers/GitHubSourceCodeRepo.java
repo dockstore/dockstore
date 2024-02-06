@@ -43,6 +43,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.GitVisibility;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
@@ -199,6 +200,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
             return null;
+        }
+    }
+
+    /**
+     * Determines the visibility of a GitHub repo.
+     * @param repositoryId
+     * @return
+     */
+    public GitVisibility getGitVisibility(String repositoryId) {
+        try {
+            GHRepository repository = github.getRepository(repositoryId);
+            return repository.isPrivate() ? GitVisibility.PRIVATE : GitVisibility.PUBLIC;
+        } catch (GHFileNotFoundException e) {
+            LOG.error(String.format("Repository %s not found checking for visibility", repositoryId), e);
+            // We don't know if it's not found because it doesn't exist, or because it's private and we don't have access to it
+            return GitVisibility.PRIVATE_OR_NON_EXISTENT;
+        } catch (IOException e) {
+            LOG.error(String.format("Unknown error checking visibility for %s", repositoryId), e);
+            return GitVisibility.UNKNOWN;
         }
     }
 
@@ -556,19 +576,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private void setWorkflowInfo(final String repositoryId, final String type, final String typeSubclass, final String workflowName, final Workflow workflow) {
 
-        workflow.setWorkflowName(workflowName);
-        workflow.setOrganization(repositoryId.split("/")[0]);
-        workflow.setRepository(repositoryId.split("/")[1]);
-        workflow.setSourceControl(SourceControl.GITHUB);
-        workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
-        workflow.setLastUpdated(new Date());
-        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
-        workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        workflow.setTopicAutomatic(this.getTopic(repositoryId));
-        this.setLicenseInformation(workflow, repositoryId);
-
         // The checks/catches in the following blocks are all backups, they should not fail in normal operation.
         // Thus, the error messages are more technical and less user-friendly.
+        //
+        // setDescriptorType() needs to execute before setDefaultWorkflowPath(), because
+        // setDefaultWorkflowPath() is not a simple property setter, but one that adds to map
+        // where the key is getDescriptorType(). #5636
         try {
             DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
             if (descriptorLanguage.getEntryTypes().contains(workflow.getEntryType())) {
@@ -579,6 +592,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (UnsupportedOperationException ex) {
             logAndThrowLambdaFailure(String.format("Type %s is not a valid descriptor language.", type));
         }
+
+        workflow.setWorkflowName(workflowName);
+        workflow.setOrganization(repositoryId.split("/")[0]);
+        workflow.setRepository(repositoryId.split("/")[1]);
+        workflow.setSourceControl(SourceControl.GITHUB);
+        workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
+        workflow.setLastUpdated(new Date());
+        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
+        workflow.setMode(WorkflowMode.DOCKSTORE_YML);
+        workflow.setTopicAutomatic(getTopic(repositoryId));
+        workflow.setGitVisibility(getGitVisibility(repositoryId));
+        this.setLicenseInformation(workflow, repositoryId);
+
 
         try {
             DescriptorLanguageSubclass descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(typeSubclass);
@@ -605,6 +631,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public void updateWorkflowInfo(final Workflow workflow, final String repositoryId) {
         setLicenseInformation(workflow, repositoryId);
         workflow.setTopicAutomatic(getTopic(repositoryId));
+        workflow.setGitVisibility(getGitVisibility(repositoryId));
     }
 
     @Override
@@ -1335,7 +1362,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
-                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                String reference = stripReference(ref.getRef());
                 if (reference.equals(version.getReference())) {
                     return getCommitSHA(ref, repo, reference);
                 }
@@ -1346,6 +1373,33 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // this is not so critical to warrant a http error code
         }
         return null;
+    }
+
+    /**
+     * Get the head commit SHA of a specified reference in a particular repository.
+     * @param repositoryId name of the repository (ex 'svonworl/test-notebooks')
+     * @param reference full GitHub reference (ex 'refs/tags/v1.0')
+     * @return the SHA of the head commit on the reference, or null if the reference does not exist
+     */
+    public String getCommitID(String repositoryId, String reference) {
+        try {
+            GHRepository repo = github.getRepository(repositoryId);
+            GHRef ref = repo.getRef(reference);
+            return getCommitSHA(ref, repo, stripReference(reference));
+        } catch (GHFileNotFoundException e) {
+            LOG.info("Could not find reference '{}' on repository '{}'", reference, repositoryId);
+            return null;
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on getCommitID " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not access GitHub reference", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Remove the 'refs/{type}/' prefix from a GitHub reference.
+     */
+    private String stripReference(String reference) {
+        return StringUtils.removePattern(reference, "refs/.+?/");
     }
 
     private String getEmail(GHMyself myself) throws IOException {

@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
@@ -52,7 +56,12 @@ public class JupyterHandler implements LanguageHandlerInterface {
     public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
 
+    private static final String DOT_DEVCONTAINER_JSON = ".devcontainer.json";
+    private static final String DOT_DEVCONTAINER_DIR = ".devcontainer";
+    private static final String DEVCONTAINER_JSON = "devcontainer.json";
+
     private static final String PYTHON = "python";
+    private static final int FOUR = 4;
 
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -79,13 +88,26 @@ public class JupyterHandler implements LanguageHandlerInterface {
         if (notebook.getMetadata() == null) {
             throw new JsonParseException("Notebook is missing the 'metadata' field");
         }
-        if (notebook.getCells() == null) {
+        if (findCells(notebook) == null) {
             throw new JsonParseException("Notebook is missing the 'cells' field");
         }
         if (notebook.getFormatMajor() == null || notebook.getFormatMinor() == null) {
             throw new JsonParseException("Notebook format fields are missing or malformed");
         }
         return notebook;
+    }
+
+    private List<Nbformat.Cell> findCells(Nbformat notebook) {
+        // Notebooks with major version 4 have a root-level "cells" property.
+        // Older notebooks have a root-level "worksheets" property, consisting of a list of worksheets, each of which contains a "cells" field.
+        // According to this link, older notebook environments had "no UI to support multiple worksheets":
+        // https://github.com/ipython/ipython/wiki/IPEP-17%3a-Notebook-Format-4
+        // So, if the major version < 4 and a list of worksheets exists, return the cells from the first one:
+        if (notebook.getFormatMajor() != null && notebook.getFormatMajor() < FOUR
+            && notebook.getWorksheets() != null && notebook.getWorksheets().size() > 0) {
+            return notebook.getWorksheets().get(0).getCells();
+        }
+        return notebook.getCells();
     }
 
     private void processAuthors(Nbformat notebook, Version version) {
@@ -120,29 +142,59 @@ public class JupyterHandler implements LanguageHandlerInterface {
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
 
-        // To avoid listing the contents of non-existent directories and generating non-cachable requests
-        // https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869
-        // we first determine the contents of '/'
-        Set<String> rootNames = new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference()), List.of()));
+        // The following are some helpers:
+        // listFiles reads the names of the files/directories from the specified path in the repo ref, empty if the path doesn't exist
+        Function<String, Set<String>> listFiles = path ->
+            new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, path, version.getReference()), List.of()));
+        // fileReader reads the file at the specified path in the repo ref, turns it into a sourcefile, and puts it into the result Map
+        BiConsumer<String, DescriptorLanguage.FileType> fileReader = (path, type) ->
+            sourceCodeRepoInterface.readFile(repositoryId, version, type, path)
+                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
 
-        // For each possible REES directory:
+        // To avoid listing the contents of non-existent directories and generating non-cachable requests
+        // (https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869),
+        // the following code tends to list the files in the directories of interest and scan through them,
+        // rather than probing single paths.
+        Set<String> rootNames = listFiles.apply("/");
+
+        // Read any REES configuration files
+        // For each possible REES directory, check to see if it contains any REES files
         for (String reesDir: REES_DIRS) {
             // Confirm the directory [probably] exists.
             if ("/".equals(reesDir) || rootNames.contains(reesDir.replace("/", ""))) {
-                // List the files in the directory.
-                List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
-                if (names != null) {
-                    // Check each file in the directory.
-                    for (String name: names) {
-                        // If it's a REES file, read it into a SourceFile and add it to the map.
-                        if (REES_FILES.contains(name)) {
-                            sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, reesDir + name)
-                                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
-                        }
-                    }
-                }
+                listFiles.apply(reesDir).stream()
+                    .filter(REES_FILES::contains)
+                    .forEach(name -> fileReader.accept(reesDir + name, DOCKSTORE_NOTEBOOK_REES));
             }
         }
+
+        // Read any devcontainer files
+        // Relevant section of devcontainer spec: https://containers.dev/implementors/spec/#devcontainerjson
+        // Per the spec, devcontainers should be stored in one of the following locations:
+        //   /.devcontainer.json
+        //   /.devcontainer/devcontainer.json
+        //   /.devcontainer/<folder>/devcontainer.json
+        // The spec specifies a precedence, but when present, GitHub reads all of the above files, so we do, too
+        if (rootNames.contains(DOT_DEVCONTAINER_JSON)) {
+            // Read /.devcontainer.json
+            fileReader.accept("/" + DOT_DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+        }
+        if (rootNames.contains(DOT_DEVCONTAINER_DIR)) {
+            String path = "/" + DOT_DEVCONTAINER_DIR;
+            listFiles.apply(path).forEach(name -> {
+                String subPath = path + "/" + name;
+                if (name.equals(DEVCONTAINER_JSON)) {
+                    // Read /.devcontainer/devcontainer.json
+                    fileReader.accept(subPath, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                } else {
+                    if (listFiles.apply(subPath).contains(DEVCONTAINER_JSON)) {
+                        // Read /.devcontainer/<folder>/devcontainer.json
+                        fileReader.accept(subPath + "/" + DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                    }
+                }
+            });
+        }
+
         return pathsToFiles;
     }
 
@@ -243,6 +295,9 @@ public class JupyterHandler implements LanguageHandlerInterface {
         @SerializedName("cells")
         private List<Cell> cells;
 
+        @SerializedName("worksheets")
+        private List<Worksheet> worksheets;
+
         public Integer getFormatMajor() {
             return formatMajor;
         }
@@ -251,12 +306,16 @@ public class JupyterHandler implements LanguageHandlerInterface {
             return formatMinor;
         }
 
+        public Metadata getMetadata() {
+            return metadata;
+        }
+
         public List<Cell> getCells() {
             return cells;
         }
 
-        public Metadata getMetadata() {
-            return metadata;
+        public List<Worksheet> getWorksheets() {
+            return worksheets;
         }
 
         public static class Metadata {
@@ -313,6 +372,16 @@ public class JupyterHandler implements LanguageHandlerInterface {
         }
 
         public static class Cell {
+        }
+
+        public static class Worksheet {
+
+            @SerializedName("cells")
+            private List<Cell> cells;
+
+            public List<Cell> getCells() {
+                return cells;
+            }
         }
     }
 }

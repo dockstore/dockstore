@@ -5,22 +5,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import java.sql.Timestamp;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
+import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -80,6 +81,18 @@ public class LambdaEvent {
     @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;
+
+    @Column(columnDefinition = "TEXT")
+    @Schema(description = "The name of the entry associated with the event. An empty string indicates an entry with no name specified.")
+    private String entryName;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    @Schema(description = "The GitHub delivery ID, used to group events that belong to the same GitHub webhook invocation.")
+    private String deliveryId;
+
+    @Column(columnDefinition = "boolean default false", nullable = false)
+    @Schema(description = "Whether or not the event was ignored.")
+    private boolean ignored;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -168,6 +181,34 @@ public class LambdaEvent {
         this.user = user;
     }
 
+    public String getEntryName() {
+        return entryName;
+    }
+
+    public void setEntryName(String entryName) {
+        if (entryName != null && entryName.isBlank()) {
+            this.entryName = null;
+            return;
+        }
+        this.entryName = entryName;
+    }
+
+    public String getDeliveryId() {
+        return deliveryId;
+    }
+
+    public void setDeliveryId(String deliveryId) {
+        this.deliveryId = deliveryId;
+    }
+
+    public boolean isIgnored() {
+        return ignored;
+    }
+
+    public void setIgnored(boolean ignored) {
+        this.ignored = ignored;
+    }
+
     public enum LambdaEventType {
         PUSH,
         DELETE,
@@ -175,4 +216,7 @@ public class LambdaEvent {
         PUBLISH
     }
 
+    public static String createDeliveryId() {
+        return UUID.randomUUID().toString();
+    }
 }

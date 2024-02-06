@@ -18,12 +18,12 @@ package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.Workflowish;
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.ObjectUtils;
 
 /**

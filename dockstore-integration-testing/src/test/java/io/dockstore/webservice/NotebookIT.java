@@ -16,24 +16,29 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
-import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
@@ -44,20 +49,25 @@ import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.CollectionOrganization;
 import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryTypeMetadata;
+import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
-import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.resources.EventSearchType;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -66,6 +76,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -82,7 +93,6 @@ class NotebookIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final String installationId = AppToolHelper.INSTALLATION_ID;
     private final String simpleRepo = "dockstore-testing/simple-notebook";
     private final String simpleRepoPath = SourceControl.GITHUB + "/" + simpleRepo;
 
@@ -137,9 +147,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterSimpleNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
 
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -154,13 +164,14 @@ class NotebookIT extends BaseIT {
         assertEquals(Set.of("Author One", "Author Two"), version.getAuthors().stream().map(Author::getName).collect(Collectors.toSet()));
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+        assertEquals(List.of("4.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 
     @Test
     void testRegisterLessSimpleNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/less-simple-v2", USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
         String path = simpleRepoPath + "/simple";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -171,10 +182,27 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void testRegisterCorruptNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+    void testRegisterOldNotebook() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/corrupt-ipynb-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/old-v1", USER_2_USERNAME);
+        // Check a few fields to make sure we registered successfully
+        String path = simpleRepoPath + "/old";
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
+        assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
+        assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertTrue(version.isValid());
+        assertEquals(List.of("3.0"), version.getVersionMetadata().getDescriptorTypeVersions());
+    }
+
+    @Test
+    void testRegisterCorruptNotebook() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/corrupt-ipynb-v1", USER_2_USERNAME);
         // The update should be "successful" but there should be a negative validation on the notebook file.
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
@@ -182,10 +210,58 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void testUserNotebooks() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+    void testRegisterRootDevcontainerNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/root-devcontainer-v1");
+        assertEquals(Set.of("/.devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterDotdirDevcontainerNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-devcontainer-v1");
+        assertEquals(Set.of("/.devcontainer/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterDotdirFolderDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-folder-devcontainers-v1");
+        assertEquals(Set.of("/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(2, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterAllDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/all-devcontainers-v1");
+        assertEquals(Set.of("/.devcontainer.json", "/.devcontainer/devcontainer.json", "/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(4, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    private List<SourceFile> registerSimpleRepoAndGetSourceFiles(String name, String ref) {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+        String path = simpleRepoPath + "/" + name;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        return workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+    }
+
+    private Set<String> getAbsolutePaths(List<SourceFile> sourceFiles) {
+        return sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet());
+    }
+
+    private long countFileType(List<SourceFile> sourceFiles, DescriptorLanguage.FileType type) {
+        return sourceFiles.stream().filter(file -> type.name().equals(file.getType().getValue())).count();
+    }
+
+    @Test
+    void testUserNotebooks() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
         assertNotNull(notebook);
 
@@ -201,29 +277,67 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testPublishInDockstoreYml() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         assertEquals(0, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
-        workflowsApi.handleGitHubRelease("refs/tags/simple-published-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(1, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
     }
 
     @Test
     void testWithImage() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/with-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/with-kernel-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertEquals("quay.io/seqware/seqware_full/1.1", notebook.getWorkflowVersions().get(0).getKernelImagePath());
     }
 
     @Test
-    void testMetadata() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+    void testUpdate() {
+        final String aiTopic = "An AI made this.";
+        final TopicSelectionEnum aiSelection = TopicSelectionEnum.AI;
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
+        notebook.setTopicSelection(aiSelection);
+        notebook.setTopicAI(aiTopic);
+        workflowsApi.updateWorkflow(notebook.getId(), notebook);
+        Workflow updatedNotebook = workflowsApi.getWorkflow(notebook.getId(), null);
+        assertEquals(aiSelection, updatedNotebook.getTopicSelection());
+        assertEquals(aiTopic, updatedNotebook.getTopicAI());
+    }
+
+    @Test
+    void testSnapshot() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/with-tagged-kernel-v1", USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        // Publish the notebook
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+        workflowsApi.publish1(notebook.getId(), publishRequest);
+        assertFalse(version.isFrozen());
+        assertEquals(0, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
+        // Snapshot the notebook
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(notebook.getId(), List.of(version));
+        // Confirm that the version is frozen and the Image is stored
+        notebook = workflowsApi.getWorkflow(notebook.getId(), null);
+        version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        assertTrue(version.isFrozen());
+        assertEquals(1, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
+    }
+
+    @Test
+    void testMetadata() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
 
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -239,12 +353,25 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testEvents() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-published-v1", USER_2_USERNAME);
+
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+
+        EventsApi eventsApi = new EventsApi(apiClient);
+        List<Event> events = eventsApi.getEvents(EventSearchType.PROFILE.toString(), null, null);
+        assertTrue(events.stream().anyMatch(e -> e.getNotebook() != null && Objects.equals(e.getNotebook().getId(), notebook.getId())));
+    }
+
+    @Test
     void testStarringNotebook() {
-        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         UsersApi usersApi = new UsersApi(openApiClient);
 
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/less-simple-v2", USER_2_USERNAME);
         Long notebookID = workflowsApi.getWorkflowByPath(simpleRepoPath + "/simple", WorkflowSubClass.NOTEBOOK, "versions").getId();
 
         //star notebook
@@ -259,9 +386,10 @@ class NotebookIT extends BaseIT {
         assertEquals(0, notebook.getStarredUsers().size());
         assertEquals(0, usersApi.getStarredNotebooks().size());
     }
+
     @Test
     void testNotebookRSSFeedAndSitemap() {
-        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
         // There should be no notebooks
         assertEquals(0, notebookDAO.findAllPublishedPaths().size());
@@ -280,6 +408,7 @@ class NotebookIT extends BaseIT {
         String sitemap = metadataApi.sitemap();
         assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
     }
+
     @Test
     void testNotebookToCollectionCategory() {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -320,17 +449,18 @@ class NotebookIT extends BaseIT {
         organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
-        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
-
+        assertEquals(1, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //remove notebook from collection
         organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
         assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //add notebook to category
         Set<String> expectedCategoryNames = new HashSet<>();
@@ -339,7 +469,9 @@ class NotebookIT extends BaseIT {
         List<Category> entryCategory = entriesApi.entryCategories(notebookID);
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(1,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
-        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
+
 
         //remove notebook from category
         organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
@@ -348,6 +480,217 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
+    }
+
+    private void shouldThrow(Executable executable, String whyMessage, int expectedCode) {
+        ApiException e = assertThrows(ApiException.class, executable, "Should have thrown an ApiException because: " + whyMessage);
+        assertEquals(expectedCode, e.getCode());
+    }
+
+    @Test
+    void testDeletabilityAndDeletion() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        EntriesApi entriesApi = new EntriesApi(apiClient);
+
+        // Create a new notebook
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
+        Workflow notebookA = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long idA = notebookA.getId();
+
+        // Make sure the initial state is as expected
+        Workflow notebook = workflowsApi.getWorkflow(idA, "");
+        assertFalse(notebook.isIsPublished());
+        assertTrue(notebook.isDeletable());
+
+        // Try to delete the notebook as a user without write access
+        ApiClient otherClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        EntriesApi otherEntriesApi = new EntriesApi(otherClient);
+        shouldThrow(() -> otherEntriesApi.deleteEntry(idA), "the user didn't have write access", HttpStatus.SC_FORBIDDEN);
+
+        // Delete the notebook and confirm that it no longer exists
+        entriesApi.deleteEntry(idA);
+        shouldThrow(() -> workflowsApi.getWorkflow(idA, ""), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
+
+        // Attempt to again delete the now-nonexistent notebook
+        shouldThrow(() -> entriesApi.deleteEntry(idA), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
+
+        // Create the notebook again
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
+        Workflow notebookB = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long idB = notebookB.getId();
+
+        // Unpublish the notebook
+        // Nothing should change, since the notebook is currently unpublished
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertFalse(notebook.isIsPublished());
+        assertTrue(notebook.isDeletable());
+
+        // Publish the notebook
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(true));
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertTrue(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Attempt to delete, which should fail because the notebook was previously published
+        shouldThrow(() -> entriesApi.deleteEntry(idB), "the notebook was previously published", HttpStatus.SC_FORBIDDEN);
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertTrue(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Unpublish
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertFalse(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Attempt to delete, which should fail because the notebook was previously published
+        shouldThrow(() -> entriesApi.deleteEntry(idB), "the notebook was previously published", HttpStatus.SC_FORBIDDEN);
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertFalse(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+    }
+
+    private long countEvents(long notebookId) {
+        return testingPostgres.runSelectStatement(String.format("select count(*) from event where notebookid = %s", notebookId), long.class);
+    }
+
+    private long countEvents(long notebookId, String type) {
+        return testingPostgres.runSelectStatement(String.format("select count(*) from event where notebookid = %s and type = '%s'", notebookId, type), long.class);
+    }
+
+    private long countEvents(String type) {
+        return testingPostgres.runSelectStatement(String.format("select count(*) from event where type = '%s'", type), long.class);
+    }
+
+    @Test
+    void testEventDeletion() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        UsersApi usersApi = new UsersApi(apiClient);
+        EventsApi eventsApi = new EventsApi(apiClient);
+
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long id = notebook.getId();
+
+        // Count the events referencing the notebook
+        long unpublishedCount = countEvents(id);
+
+        // Publish notebook, which will add a PUBLISH_EVENT referencing the notebook
+        workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Count the events referencing the notebook, should be greater than before
+        assertTrue(countEvents(id) > unpublishedCount);
+
+        // Star the notebook, then check that the getEvents endpoint returns the correct number of events
+        // getEvents(STARRED_ENTRIES, ...) uses eventDAO.findEventsByEntryIDs internally, which is what we're trying to test
+        workflowsApi.starEntry1(id, new StarRequest().star(true));
+        assertEquals(countEvents(id), eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null).size());
+
+        // Delete the user, which in the process will delete the Events referencing the notebook
+        workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        usersApi.selfDestruct(1L);
+
+        // Count the events referencing the notebook, there should be none, they should have all been deleted
+        assertEquals(0, countEvents(id));
+    }
+
+    @Test
+    void testArchive() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        EntriesApi entriesApi = new EntriesApi(apiClient);
+        String ref = "refs/tags/simple-v1";
+
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long id = notebook.getId();
+
+        // Archive and unarchive, verifying that the property changes correctly and the appropriate events are created
+        assertFalse(workflowsApi.getWorkflow(id, null).isArchived());
+        assertEquals(0, countEvents(id, "ARCHIVE_ENTRY"));
+        assertEquals(0, countEvents(id, "UNARCHIVE_ENTRY"));
+        entriesApi.archiveEntry(id);
+        assertTrue(workflowsApi.getWorkflow(id, null).isArchived());
+        assertEquals(1, countEvents(id, "ARCHIVE_ENTRY"));
+        assertEquals(0, countEvents(id, "UNARCHIVE_ENTRY"));
+        entriesApi.unarchiveEntry(id);
+        assertFalse(workflowsApi.getWorkflow(id, null).isArchived());
+        assertEquals(1, countEvents(id, "ARCHIVE_ENTRY"));
+        assertEquals(1, countEvents(id, "UNARCHIVE_ENTRY"));
+
+        // Attempting to archive an archived entry should not produce an event
+        // Similarly, unarchiving an unarchive entry...
+        entriesApi.archiveEntry(id);
+        entriesApi.archiveEntry(id);
+        assertEquals(2, countEvents(id, "ARCHIVE_ENTRY"));
+        entriesApi.unarchiveEntry(id);
+        entriesApi.unarchiveEntry(id);
+        assertEquals(2, countEvents(id, "UNARCHIVE_ENTRY"));
+
+        // Make sure an archived entry cannot be pushed to
+        entriesApi.archiveEntry(id);
+        shouldThrow(() -> handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME), "an archived entry should not be pushable", LAMBDA_FAILURE);
+
+        // Make sure an archived entry cannot be published
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+        assertFalse(workflowsApi.getWorkflow(id, null).isIsPublished());
+        shouldThrow(() -> workflowsApi.publish1(id, publishRequest), "an archived entry should not be publishable", HttpStatus.SC_FORBIDDEN);
+        assertFalse(workflowsApi.getWorkflow(id, null).isIsPublished());
+
+        // Make sure an archived entry cannot be modified
+        assertEquals(null, workflowsApi.getWorkflow(id, null).getDefaultVersion());
+        shouldThrow(() -> workflowsApi.updateDefaultVersion1(id, "simple-v1"), "an archived entry should not be modifiable", HttpStatus.SC_FORBIDDEN);
+        assertEquals(null, workflowsApi.getWorkflow(id, null).getDefaultVersion());
+
+        // Make sure an unarchived entry can be pushed to
+        entriesApi.unarchiveEntry(id);
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+
+        // Make sure an unarchived entry can be published
+        assertFalse(workflowsApi.getWorkflow(id, null).isIsPublished());
+        workflowsApi.publish1(id, publishRequest);
+        assertTrue(workflowsApi.getWorkflow(id, null).isIsPublished());
+
+        // Make sure an unarchived entry can be modified
+        assertEquals(null, workflowsApi.getWorkflow(id, null).getDefaultVersion());
+        workflowsApi.updateDefaultVersion1(id, "simple-v1");
+        assertEquals("simple-v1", workflowsApi.getWorkflow(id, null).getDefaultVersion());
+
+        // Non-owner admins should be able to archive/unarchive an entry
+        ApiClient differentAdminApiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        EntriesApi differentAdminEntriesApi = new EntriesApi(differentAdminApiClient);
+        differentAdminEntriesApi.archiveEntry(id);
+        differentAdminEntriesApi.unarchiveEntry(id);
+
+        // Non-owner non-admins should not be able to archive/unarchive an entry
+        ApiClient unprivilegedApiClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        EntriesApi unprivilegedEntriesApi = new EntriesApi(unprivilegedApiClient);
+        shouldThrow(() -> unprivilegedEntriesApi.archiveEntry(id), "unprivileged users should not be able to archive", HttpStatus.SC_FORBIDDEN);
+        shouldThrow(() -> unprivilegedEntriesApi.unarchiveEntry(id), "unprivileged users should not be able to unarchive", HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testTagEventCreation() {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+
+        String tagRef = "refs/tags/simple-v1";
+        String branchRef = "refs/heads/simple";
+        String eventType = "ADD_VERSION_TO_ENTRY";
+
+        long aCount = countEvents(eventType);
+        handleGitHubRelease(workflowsApi, simpleRepo, tagRef, USER_2_USERNAME);
+        long bCount = countEvents(eventType);
+        handleGitHubRelease(workflowsApi, simpleRepo, branchRef, USER_2_USERNAME);
+        long cCount = countEvents(eventType);
+
+        assertEquals(aCount + 1, bCount, "a tagged release should produce an ADD_VERSION_TO_ENTRY Event");
+        assertEquals(bCount, cCount, "an untagged release should not produce an ADD_VERSION_TO_ENTRY Event");
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {

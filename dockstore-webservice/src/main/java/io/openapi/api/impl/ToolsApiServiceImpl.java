@@ -70,6 +70,14 @@ import io.openapi.model.OneOfFileWrapperImageType;
 import io.openapi.model.ToolFile;
 import io.openapi.model.ToolVersion;
 import io.swagger.api.impl.ToolsImplCommon;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -86,17 +94,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +127,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static BioWorkflowDAO bioWorkflowDAO;
     private static PermissionsInterface permissionsInterface;
     private static VersionDAO versionDAO;
+    private static SessionFactory sessionFactory;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -165,6 +167,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setVersionDAO(VersionDAO versionDAO) {
         ToolsApiServiceImpl.versionDAO = versionDAO;
+    }
+
+    public static void setSessionFactory(SessionFactory sessionFactory) {
+        ToolsApiServiceImpl.sessionFactory = sessionFactory;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -373,7 +379,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
-        for (Entry<?, ?> c : all) {
+        for (long entryId: all.stream().map(Entry::getId).toList()) {
+            sessionFactory.getCurrentSession().clear();
+            Entry<?, ?> c = toolDAO.getGenericEntryById(entryId);
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
@@ -559,8 +567,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @SuppressWarnings("checkstyle:ParameterNumber")
     private Entry<?, ?> filterOldSchool(Entry<?, ?> entry, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker) {
-        if (entry instanceof Tool) {
-            Tool tool = (Tool) entry;
+        if (entry instanceof Tool tool) {
             if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
                 return null;
             }
@@ -666,8 +673,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
             Optional<? extends Version<?>> entryVersion;
-            if (entry instanceof Tool) {
-                Tool toolEntry = (Tool)entry;
+            if (entry instanceof Tool toolEntry) {
                 entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                     .findFirst();
             } else {
@@ -783,7 +789,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
         List<Checksum> trsChecksums = new ArrayList<>();
         if (sourceFile.getChecksums() != null && !sourceFile.getChecksums().isEmpty()) {
-            sourceFile.getChecksums().stream().forEach(checksum -> {
+            sourceFile.getChecksums().forEach(checksum -> {
                 Checksum trsChecksum = new Checksum();
                 trsChecksum.setType(DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS);
                 trsChecksum.setChecksum(checksum.getChecksum());
@@ -866,8 +872,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             versionDAO.enableNameFilter(versionId);
 
-            if (entry instanceof Workflow) {
-                Workflow workflow = (Workflow) entry;
+            if (entry instanceof Workflow workflow) {
                 Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
                 Optional<WorkflowVersion> first = workflowVersions.stream()
                     .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
@@ -884,8 +889,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } else {
                     return Response.noContent().build();
                 }
-            } else if (entry instanceof Tool) {
-                Tool tool = (Tool) entry;
+            } else if (entry instanceof Tool tool) {
                 Set<Tag> versions = tool.getWorkflowVersions();
                 Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
                 if (first.isPresent()) {
@@ -949,7 +953,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         // Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL or NFL)
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
         List<SourceFile> filteredSourceFiles = sourceFiles.stream()
-            .filter(sourceFile -> descriptorLanguage.isRelevantFileType(sourceFile.getType())).collect(Collectors.toList());
+            .filter(sourceFile -> descriptorLanguage.isRelevantFileType(sourceFile.getType())).toList();
 
         final Path path = Paths.get("/" + workingDirectory);
         return filteredSourceFiles.stream().map(file -> {

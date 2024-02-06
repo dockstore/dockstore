@@ -20,7 +20,7 @@ class UserResourceTest {
                 UserResource.restrictUsername(username);
                 fail("Should not be able to create a username with a keyword.");
             } catch (CustomWebApplicationException ex) {
-                assertTrue(ex.errorMessage.contains("because it contains one or more of the following keywords:"));
+                assertTrue(ex.getMessage().contains("because it contains one or more of the following keywords:"));
             }
         }
     }

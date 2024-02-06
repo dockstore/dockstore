@@ -27,7 +27,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;

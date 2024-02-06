@@ -350,9 +350,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     static String getPrimaryPath(Entry entry, Version version, DescriptorLanguage.FileType fileType) {
-        if (version instanceof WorkflowVersion) {
+        if (version instanceof WorkflowVersion workflowVersion) {
             final Workflow workflow = (Workflow)entry;
-            final WorkflowVersion workflowVersion = (WorkflowVersion)version;
             return StringUtils.firstNonEmpty(workflowVersion.getWorkflowPath(), workflow.getDefaultWorkflowPath());
         } else {
             final Tool tool = (Tool)entry;

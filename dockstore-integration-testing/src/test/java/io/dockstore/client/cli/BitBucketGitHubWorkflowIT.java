@@ -237,6 +237,8 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
     void testManualRegisterThenPublish() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi =
+            new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         // Make publish request (true)
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
@@ -265,7 +267,7 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         final String tagName = "1.0.0";
 
         Optional<WorkflowVersion> testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
-        assertTrue(testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"),
+        assertTrue(openApiWorkflowsApi.getWorkflowVersionDescription(refreshedWorkflow.getId(), testWDL.get().getId()).contains("test repo for CWL and WDL workflows"),
             "A workflow version with a descriptor that does not have a description should fall back to README");
 
         // Intentionally mess up description to test if refresh fixes it
@@ -275,7 +277,7 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
         testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
-        assertTrue(testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"), "A workflow version that had a README description should get updated");
+        assertTrue(openApiWorkflowsApi.getWorkflowVersionDescription(refreshedWorkflow.getId(), testWDL.get().getId()).contains("test repo for CWL and WDL workflows"), "A workflow version that had a README description should get updated");
 
         // Assert some things
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size(),

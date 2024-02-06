@@ -570,7 +570,7 @@ class SamPermissionsImplTest {
                 janeDoeUserMock, workflowInstance, new Permission("johndoe@example.com", Role.WRITER));
             fail("Expected setPermission to throw exception");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getMessage().contains(" 409 "));
+            assertTrue(ex.getMessage().startsWith("An unexpected error occurred. Please send a private message to"));
         }
     }
 
@@ -602,7 +602,7 @@ class SamPermissionsImplTest {
             samPermissionsImpl.getPermissionsForWorkflow(johnSmithUserMock, workflowInstance);
             fail("Non-owner shouldn't be able to get permissions");
         } catch (CustomWebApplicationException e) {
-            assertEquals("Forbidden", e.getErrorMessage());
+            assertEquals("Forbidden", e.getMessage());
         }
     }
 
@@ -624,13 +624,13 @@ class SamPermissionsImplTest {
             samPermissionsImpl.setPermission(noGoogleUser, workflowInstance, writerPermission);
             fail("Should not be able to set a permission without a Google token");
         } catch (CustomWebApplicationException e) {
-            assertEquals(SamPermissionsImpl.GOOGLE_ACCOUNT_MUST_BE_LINKED, e.getErrorMessage());
+            assertEquals(SamPermissionsImpl.GOOGLE_ACCOUNT_MUST_BE_LINKED, e.getMessage());
         }
         try {
             samPermissionsImpl.removePermission(noGoogleUser, workflowInstance, JOHN_SMITH_GMAIL_COM, Role.OWNER);
             fail("Should not be able to set a permission without a Google token");
         } catch (CustomWebApplicationException e) {
-            assertEquals(SamPermissionsImpl.GOOGLE_ACCOUNT_MUST_BE_LINKED, e.getErrorMessage());
+            assertEquals(SamPermissionsImpl.GOOGLE_ACCOUNT_MUST_BE_LINKED, e.getMessage());
         }
     }
 

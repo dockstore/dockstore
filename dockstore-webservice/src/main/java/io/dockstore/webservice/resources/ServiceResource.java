@@ -3,10 +3,10 @@ package io.dockstore.webservice.resources;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Service;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import org.apache.http.client.HttpClient;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.hibernate.SessionFactory;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

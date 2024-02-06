@@ -1,0 +1,429 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2022 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.15.0">
+    <changeSet author="circleci (generated)" id="jakarta_migration">
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="cloudinstance_supportedlanguages"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="parsed_information"/>
+        <!-- liquibase seems to now care about the order of keys in a primary key index :shrug: -->
+        <dropPrimaryKey tableName="starred_organizations"/>
+        <addPrimaryKey columnNames="organizationid, userid" constraintName="starred_organizations_pkey" tableName="starred_organizations"/>
+        <dropPrimaryKey tableName="starred"/>
+        <addPrimaryKey columnNames="userid, entryid" constraintName="starred_pkey" tableName="starred"/>
+        <dropPrimaryKey tableName="user_entry"/>
+        <addPrimaryKey columnNames="userid, entryid" constraintName="user_entry_pkey" tableName="user_entry"/>
+    </changeSet>
+    <changeSet id="unique_checker_ids" author="coverbeck">
+        <comment>One tool and one workflow in prod currently share the same checker workflow. The constraints later in this migration will
+            disallow that. Null out any duplicate checkers so the constraints can be created. When there are duplicates, prefer the
+            workflow table, then the apptool table, for the table that "keeps" the checker.
+        </comment>
+        <sql dbms="postgresql">
+            UPDATE tool SET checkerid=NULL where checkerid in (SELECT checkerid FROM workflow UNION SELECT checkerid FROM apptool);
+            UPDATE apptool SET checkerid=NULL where checkerid in (SELECT checkerid FROM workflow UNION SELECT checkerid FROM tool);
+        </sql>
+        <sql dbms="postgresql">
+            CREATE OR REPLACE FUNCTION check_apptool_checkerid_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+                RETURN
+                    NOT EXISTS(
+                        SELECT checkerid FROM workflow WHERE checkerid = _checkerid
+                        UNION SELECT checkerid FROM tool WHERE checkerid = _checkerid
+                    );
+            END
+            $$ LANGUAGE PLPGSQL;
+            CREATE OR REPLACE FUNCTION check_tool_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+            RETURN
+                NOT EXISTS(
+                    SELECT checkerid FROM workflow WHERE checkerid = _checkerid
+                    UNION SELECT checkerid FROM apptool WHERE checkerid = _checkerid
+                );
+            END
+            $$ LANGUAGE PLPGSQL;
+            CREATE OR REPLACE FUNCTION check_workflow_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+            RETURN
+                NOT EXISTS(
+                    SELECT checkerid FROM apptool WHERE checkerid = _checkerid
+                    UNION SELECT checkerid FROM tool WHERE checkerid = _checkerid
+                );
+            END
+            $$ LANGUAGE PLPGSQL;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE apptool ADD CONSTRAINT check_apptool_checkerid_globally_unique CHECK(check_apptool_checkerid_is_unique(checkerid));
+            ALTER TABLE tool ADD CONSTRAINT check_tool_checkerid_globally_unique CHECK(check_tool_checker_id_is_unique(checkerid));
+            ALTER TABLE workflow ADD CONSTRAINT check_workflow_checkerid_globally_unique CHECK(check_workflow_checker_id_is_unique(checkerid));
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="drop_old_accepted_column">
+        <sql dbms="postgresql">
+            DROP TRIGGER insert_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION insert_organization_user_sync_status_func;
+        </sql>
+        <sql dbms="postgresql">
+            DROP TRIGGER update_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION update_organization_user_sync_status_func;
+        </sql>
+        <dropColumn columnName="accepted" tableName="organization_user"/>
+    </changeSet>
+    <changeSet author="svonworl" id="fixServiceEvents">
+        <addColumn tableName="event">
+            <column name="serviceid" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="serviceid" baseTableName="event" constraintName="fkServiceId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="service"/>
+    </changeSet>
+    <changeSet id="gitVisibility" author="coverbeck">
+        <addColumn tableName="tool">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="add_waseverpublic">
+        <addColumn tableName="workflow">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE tool ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE apptool ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE service ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE notebook ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+        </sql>
+        <sql dbms="postgresql">
+            <!--
+            For existing workflows, tools, and apptools, we set `waseverpublic` to true, and false otherwise, if:
+            the entry is published, or
+            the entry was created before 1/Apr/2022 (first full day that publish events are present in the prod db), or
+            publish/unpublish events exist for the entry
+            -->
+            UPDATE workflow w SET waseverpublic = (ispublished OR dbcreatedate &lt; '2022-04-01'::timestamp OR EXISTS (SELECT FROM event WHERE workflowid = w.id AND (type = 'PUBLISH_ENTRY' OR type = 'UNPUBLISH_ENTRY')));
+            UPDATE tool t SET waseverpublic = (ispublished OR dbcreatedate &lt; '2022-04-01'::timestamp OR EXISTS (SELECT FROM event WHERE toolid = t.id AND (type = 'PUBLISH_ENTRY' OR type = 'UNPUBLISH_ENTRY')));
+            UPDATE apptool a SET waseverpublic = (ispublished OR dbcreatedate &lt; '2022-04-01'::timestamp OR EXISTS (SELECT FROM event WHERE apptoolid = a.id AND (type = 'PUBLISH_ENTRY' OR type = 'UNPUBLISH_ENTRY')));
+            <!--
+            As of this writing, the `event` table doesn't contain a `serviceid` column, and the webservice is not populating the `notebookid` column correctly 
+            So, for existing services and notebooks, we don't apply the more sophisticated algorithm to determine `waseverpublic` and leave it set to `true`
+            -->
+        </sql>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addCostMetric">
+        <createTable tableName="cost_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="cost_metric_pkey"/>
+            </column>
+            <column name="average" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="maximum" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minimum" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofdatapointsforaverage" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit" type="VARCHAR(255)"/>
+        </createTable>
+        <addColumn tableName="metrics">
+            <column name="cost" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="cost" baseTableName="metrics" constraintName="fk_cost_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addEntryNameAndDeliveryIdToLambdaEvent">
+        <addColumn tableName="lambdaevent">
+            <column name="entryname" type="text"/>
+        </addColumn>
+        <addColumn tableName="lambdaevent">
+            <column name="deliveryid" type="text"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            <comment>Prior to https://github.com/dockstore/dockstore/pull/5611, each lambda event was for one GitHub webhook event, so each lambda event should have its own delivery ID</comment>
+            UPDATE lambdaevent SET deliveryid = gen_random_uuid() WHERE deliveryid IS NULL;
+        </sql>
+        <addNotNullConstraint tableName="lambdaevent" columnName="deliveryid"/>
+    </changeSet>
+    <changeSet author="svonworl" id="removeProblematicCheckConstraints">
+        <sql dbms="postgresql">
+            ALTER TABLE apptool DROP CONSTRAINT check_apptool_checkerid_globally_unique;
+            ALTER TABLE tool DROP CONSTRAINT check_tool_checkerid_globally_unique;
+            ALTER TABLE workflow DROP CONSTRAINT check_workflow_checkerid_globally_unique;
+        </sql>
+        <sql dbms="postgresql">
+            DROP FUNCTION check_apptool_checkerid_is_unique;
+            DROP FUNCTION check_tool_checker_id_is_unique;
+            DROP FUNCTION check_workflow_checker_id_is_unique;
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="addVerifiedPlatformsToVersionMetadata">
+        <addColumn tableName="version_metadata">
+            <column name="verifiedplatforms" type="VARCHAR(255)"/>
+        </addColumn>
+        <!--
+        Extract the verified platform for each version from the
+        sourcefile_verified table and store it as a JSON array in the new
+        verifiedPlatforms column.
+        Theoretically, there could be multiple different platforms per
+        version, but in the current database, there are no such instances.
+        If there were multiple platforms, the below code would arbrarily
+        select one and discard the rest.
+        -->
+        <sql dbms="postgresql">
+            UPDATE version_metadata vm
+            SET verifiedPlatforms = '["' || sv.source || '"]'
+            FROM version_sourcefile vs, sourcefile_verified sv
+            WHERE vm.id = vs.versionid AND sv.id = vs.sourcefileid AND sv.verified;
+        </sql>
+    </changeSet>
+    <changeSet id="updateServiceDefaultPaths" author="coverbeck">
+        <update tableName="entry_defaultpaths">
+            <column name="path" value="/.dockstore.yml"/>
+            <where>filetype = 'DOCKSTORE_SERVICE_YML' AND path = '.dockstore.yml'</where>
+        </update>
+    </changeSet>
+    <changeSet author="svonworl" id="addArchivedEntriesColumns">
+        <addColumn tableName="tool">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="addArchivedEntriesTriggers">
+        <sql dbms="postgresql">
+            CREATE OR REPLACE FUNCTION raise_exception()
+            RETURNS TRIGGER AS $$
+            BEGIN
+            RAISE EXCEPTION 'cannot update archived entry';
+            END
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER update_archived_tool BEFORE UPDATE ON tool FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_workflow BEFORE UPDATE ON workflow FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_apptool BEFORE UPDATE ON apptool FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_service BEFORE UPDATE ON service FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_notebook BEFORE UPDATE ON notebook FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="addIgnoredPropertyToLambdaEvent">
+        <addColumn tableName="lambdaevent">
+            <column name="ignored" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addAITopic">
+        <addColumn tableName="apptool">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="lambdaEntryNameConvertEmptyStringToNull" author="dyuen">
+        <update schemaName="public"
+                tableName="lambdaevent">
+            <column name="entryname"/>
+            <where>entryname = ''</where>
+        </update>
+        <sql dbms="postgresql">
+            ALTER TABLE lambdaevent add constraint lambdaevent_entryname_notempty check (entryname &lt;&gt; '')
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="drop-old-author-email-columns">
+        <dropColumn columnName="author" tableName="apptool"/>
+        <dropColumn columnName="author" tableName="notebook"/>
+        <dropColumn columnName="author" tableName="service"/>
+        <dropColumn columnName="author" tableName="tool"/>
+        <dropColumn columnName="author" tableName="workflow"/>
+        <dropColumn columnName="email" tableName="apptool"/>
+        <dropColumn columnName="email" tableName="notebook"/>
+        <dropColumn columnName="email" tableName="service"/>
+        <dropColumn columnName="email" tableName="tool"/>
+        <dropColumn columnName="email" tableName="workflow"/>
+    </changeSet>
+    <changeSet id="dbdates" author="coverbeck">
+        <addColumn tableName="fullworkflowpath">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValueComputed="now()"/>
+        </addColumn>
+        <dropColumn tableName="cloudinstance_supportedlanguages" columnName="dbupdatedate"/>
+        <dropColumn tableName="parsed_information" columnName="dbupdatedate"/>
+        <dropColumn tableName="sourcefile_verified" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="version_metadata_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="organization_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="workflowversion_alias" columnName="dbupdatedate"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addNumberOfAbortedExecutions">
+        <addColumn tableName="execution_status">
+            <column name="numberofabortedexecutions" type="int4"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE execution_status SET numberofabortedexecutions=0 WHERE numberofabortedexecutions IS NULL;
+        </sql>
+        <!-- Need to add not null constraint after updating the value of existing rows to 0 -->
+        <addNotNullConstraint tableName="execution_status" columnName="numberofabortedexecutions"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="specifyPlatformForPlatformPartnerUser">
+        <modifyDataType columnName="platformpartner" newDataType="varchar(255)" tableName="enduser"/>
+        <dropDefaultValue columnDataType="varchar(255)" columnName="platformpartner" tableName="enduser"/>
+        <sql dbms="postgresql">
+            UPDATE enduser SET platformpartner=NULL where platformpartner='false';
+        </sql>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addValidatorVersionsPrimaryKey">
+        <addPrimaryKey columnNames="validatorinfoid, validatorversioninfoid" constraintName="validator_versions_pkey" tableName="validator_versions"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="separateMetricsByStatus">
+        <createTable tableName="metrics_by_status">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="metrics_by_status_pkey"/>
+            </column>
+            <column name="executionstatuscount" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="costid" type="BIGINT"/>
+            <column name="cpuid" type="BIGINT"/>
+            <column name="executiontimeid" type="BIGINT"/>
+            <column name="memoryid" type="BIGINT"/>
+        </createTable>
+        <addColumn tableName="execution_status_count">
+            <column name="metricsbystatusid" type="int8">
+                <!-- not null constraint is added after migrating existing data -->
+            </column>
+        </addColumn>
+
+        <addUniqueConstraint columnNames="metricsbystatusid" constraintName="unique_metricsbystatus_executionstatuscount" tableName="execution_status_count"/>
+        <addForeignKeyConstraint baseColumnNames="metricsbystatusid" baseTableName="execution_status_count" constraintName="fk_metricsbystatusid_executionstatuscount" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics_by_status"/>
+        <addForeignKeyConstraint baseColumnNames="executiontimeid" baseTableName="metrics_by_status" constraintName="fk_executiontimeid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
+        <addForeignKeyConstraint baseColumnNames="memoryid" baseTableName="metrics_by_status" constraintName="fk_memoryid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
+        <addForeignKeyConstraint baseColumnNames="cpuid" baseTableName="metrics_by_status" constraintName="fk_cpuid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
+        <addForeignKeyConstraint baseColumnNames="costid" baseTableName="metrics_by_status" constraintName="fk_costid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
+
+        <sql dbms="postgresql">
+            <comment>Delete all metrics that have a null metricsbystatusid column in execution_status_count</comment>
+            <!-- Temporary table that contains metrics that have an execution status metric, but a null metricsbystatusid column -->
+            CREATE TEMPORARY TABLE metricstodelete
+            AS
+            WITH executionstatusmetrics AS (
+            SELECT metrics.id AS metricsid, executionstatusid, executionstatus, count, executiontime, cpu, memory, cost, validationstatus
+            FROM execution_status_count
+            INNER JOIN execution_status ON execution_status_count.executionstatusid = execution_status.id
+            INNER JOIN metrics ON execution_status.id = metrics.executionstatuscount
+            WHERE metrics.executionstatuscount IS NOT NULL AND execution_status_count.metricsbystatusid IS NULL
+            )
+            SELECT * FROM executionstatusmetrics;
+
+            <!-- Delete run execution metrics that are present in the metricstodelete table -->
+            DELETE FROM execution_status_count WHERE execution_status_count.executionstatusid IN (SELECT executionstatusid FROM metricstodelete);
+            UPDATE metrics SET executionstatuscount = NULL, executiontime = NULL, cpu = NULL, memory = NULL, cost = NULL WHERE metrics.id IN (SELECT metricsid FROM metricstodelete);
+            DELETE FROM execution_status WHERE execution_status.id IN (SELECT executionstatusid FROM metricstodelete);
+            DELETE FROM execution_time_metric WHERE execution_time_metric.id IN (SELECT executiontime FROM metricstodelete);
+            DELETE FROM cpu_metric WHERE cpu_metric.id IN (SELECT cpu FROM metricstodelete);
+            DELETE FROM memory_metric WHERE memory_metric.id IN (SELECT memory FROM metricstodelete);
+            DELETE FROM cost_metric WHERE cost_metric.id IN (SELECT cost FROM metricstodelete);
+
+            <!-- Don't delete metrics that still have a validationstatus metric -->
+            DELETE FROM version_metrics WHERE version_metrics.metricsid IN (SELECT metricsid FROM metricstodelete WHERE validationstatus IS NULL);
+            DELETE FROM metrics WHERE metrics.id IN (SELECT metricsid FROM metricstodelete) AND metrics.validationstatus IS NULL;
+        </sql>
+
+        <dropPrimaryKey tableName="execution_status_count"/>
+        <addPrimaryKey columnNames="executionstatusid, executionstatus" constraintName="execution_status_count_pkey" tableName="execution_status_count"/>
+
+        <!-- Need to add not null constraint after deleting rows with a null metricsbystatusid -->
+        <addNotNullConstraint tableName="execution_status_count" columnName="metricsbystatusid"/>
+
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_cost_metrics"/>
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_cpu_metrics"/>
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_executiontime_metrics"/>
+        <dropForeignKeyConstraint baseTableName="metrics" constraintName="fk_memory_metrics"/>
+        <dropColumn columnName="cost" tableName="metrics"/>
+        <dropColumn columnName="count" tableName="execution_status_count"/>
+        <dropColumn columnName="cpu" tableName="metrics"/>
+        <dropColumn columnName="executiontime" tableName="metrics"/>
+        <dropColumn columnName="memory" tableName="metrics"/>
+    </changeSet>
+</databaseChangeLog>

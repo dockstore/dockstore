@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -58,31 +57,26 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
-import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.SourceFile.TypeEnum;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tag.DoiStatusEnum;
 import io.swagger.client.model.Workflow;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -102,9 +96,10 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
- *
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIGeneralIT}
  * @author aduncan
  */
+@Deprecated
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
@@ -504,38 +499,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         workflowApi.publish(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         assertEquals(1, versionsVerified.size());
-    }
-
-    @Test
-    void testEditingHostedWorkflowTopics() {
-        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "foo", DescriptorLanguage.WDL.toString(), null, null);
-        hostedWorkflow.setTopicManual("new foo");
-        assertSame(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, hostedWorkflow.getTopicSelection());
-        hostedWorkflow.setTopicSelection(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.AUTOMATIC);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.updateWorkflow(hostedWorkflow.getId(), hostedWorkflow);
-        // topic should change
-        assertEquals("new foo", workflow.getTopic());
-        // but should ignore selection change
-        assertEquals(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
-    }
-
-    @Test
-    void testEditingHostedToolTopics() {
-        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "foo", DescriptorLanguage.WDL.toString(), null, null);
-        hostedTool.setTopicManual("new foo");
-        assertSame(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, hostedTool.getTopicSelection());
-        hostedTool.setTopicSelection(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.AUTOMATIC);
-        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.DockstoreTool dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
-        // topic should change
-        assertEquals("new foo", dockstoreTool.getTopic());
-        // but should ignore selection change
-        assertEquals(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, dockstoreTool.getTopicSelection());
     }
 
     @Test
@@ -1362,38 +1325,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         assertEquals("/test1/Dockerfile", path, "the cwl path should be changed to /test1/Dockerfile");
     }
 
-    /**
-     * Test to update the tool's forum and it should change the in the database
-     *
-     * @throws ApiException
-     */
-    @Test
-    void testUpdateToolForumUrlAndTopic() throws ApiException {
-        final String forumUrl = "hello.com";
-        //setup webservice and get tool api
-        ContainersApi toolsApi = setupWebService();
-
-        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
-        toolsApi.refresh(toolTest.getId());
-
-        assertEquals(TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection(), "Should default to automatic");
-
-        //change the forumurl
-        toolTest.setForumUrl(forumUrl);
-        final String newTopic = "newTopic";
-        toolTest.setTopicManual(newTopic);
-        toolTest.setTopicSelection(TopicSelectionEnum.MANUAL);
-        DockstoreTool dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
-
-        //check the tool's forumurl is updated in the database
-        final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
-        assertEquals(forumUrl, updatedForumUrl, "the forumurl should be hello.com");
-
-        // check the tool's topicManual and topicSelection
-        assertEquals(newTopic, dockstoreTool.getTopicManual());
-        assertEquals(TopicSelectionEnum.MANUAL, toolTest.getTopicSelection());
-    }
-
     @Test
     void testTopicAfterRegisterAndRefresh() throws ApiException {
         ContainersApi toolsApi = setupWebService();
@@ -1562,75 +1493,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
             failed = true;
         }
         assertTrue(failed, "Should throw an exception when not authorized.");
-    }
-
-    /**
-     * This tests that you can retrieve tools by alias (using optional auth)
-     */
-    @Test
-    void testToolAlias() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        ContainersApi containersApi = new ContainersApi(webClient);
-        EntriesApi entryApi = new EntriesApi(webClient);
-
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
-        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
-
-        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
-        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
-
-        // Add tool
-        DockstoreTool tool = containersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
-        DockstoreTool refresh = containersApi.refresh(tool.getId());
-
-        // Add alias
-        Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
-        assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
-
-        // check that dates are present
-        final Timestamp dbDate = testingPostgres.runSelectStatement("select dbcreatedate from entry_alias where id = " + entry.getId(), Timestamp.class);
-        assertNotNull(dbDate);
-        // check that date looks sane
-        final Calendar instance = GregorianCalendar.getInstance();
-        instance.set(2020, Calendar.MARCH, 13);
-        assertTrue(dbDate.after(instance.getTime()));
-
-        // Get unpublished tool by alias as owner
-        DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
-        assertNotNull(aliasTool, "Should retrieve the tool by alias");
-
-        // Cannot get tool by alias as other user
-        try {
-            otherUserContainersApi.getToolByAlias("foobar");
-            fail("Should not be able to retrieve tool.");
-        } catch (ApiException ignored) {
-            assertTrue(true);
-        }
-
-        // Cannot get tool by alias as anon user
-        try {
-            anonContainersApi.getToolByAlias("foobar");
-            fail("Should not be able to retrieve tool.");
-        } catch (ApiException ignored) {
-            assertTrue(true);
-        }
-
-        // Publish tool
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        containersApi.publish(refresh.getId(), publishRequest);
-
-        // Get published tool by alias as owner
-        DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
-        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
-
-        // Cannot get tool by alias as other user
-        publishedAliasTool = otherUserContainersApi.getToolByAlias("foobar");
-        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
-
-        // Cannot get tool by alias as anon user
-        publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
-        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
-
     }
 
     /**

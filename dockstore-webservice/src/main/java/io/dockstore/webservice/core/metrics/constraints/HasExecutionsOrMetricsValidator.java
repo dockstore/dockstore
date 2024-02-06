@@ -18,8 +18,8 @@
 package io.dockstore.webservice.core.metrics.constraints;
 
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Validates that ExecutionsRequestBody has executions or metrics.
@@ -28,6 +28,6 @@ public class HasExecutionsOrMetricsValidator implements ConstraintValidator<HasE
 
     @Override
     public boolean isValid(final ExecutionsRequestBody executionsRequestBody, final ConstraintValidatorContext context) {
-        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
+        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getTaskExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
     }
 }

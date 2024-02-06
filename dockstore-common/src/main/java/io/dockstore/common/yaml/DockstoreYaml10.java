@@ -1,9 +1,9 @@
 package io.dockstore.common.yaml;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 /**
  * A POJO holding data from .dockstore.yml, version 1.0

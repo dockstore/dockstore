@@ -17,12 +17,13 @@ package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.common.yaml.constraints.AbsolutePath;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * A workflow as described in a .dockstore.yml
@@ -40,6 +41,7 @@ public class YamlWorkflow implements Workflowish {
     private String subclass;
     private String primaryDescriptorPath;
     private String readMePath;
+    private String topic;
 
     /**
      * Change the workflow's publish-state, if set.
@@ -79,6 +81,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @NotNull
+    @AbsolutePath
     public String getPrimaryDescriptorPath() {
         return primaryDescriptorPath;
     }
@@ -113,7 +116,7 @@ public class YamlWorkflow implements Workflowish {
         this.authors = authors;
     }
 
-    public List<String> getTestParameterFiles() {
+    public List<@NotNull @AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
 
@@ -136,5 +139,13 @@ public class YamlWorkflow implements Workflowish {
 
     public void setReadMePath(String readMePath) {
         this.readMePath = readMePath;
+    }
+
+    public String getTopic() {
+        return this.topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }

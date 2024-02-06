@@ -19,16 +19,18 @@ package io.dockstore.webservice.jdbi;
 import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.util.List;
 import java.util.Optional;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
@@ -50,15 +52,15 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<ToolPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths", ToolPath.class).list();
     }
 
     public List<RSSToolPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate", RSSToolPath.class).setMaxResults(RSS_ENTRY_LIMIT).list();
     }
 
     public List<String> getAllPublishedNamespaces() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getPublishedNamespaces"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Tool.getPublishedNamespaces", String.class).list();
     }
 
     /**
@@ -199,7 +201,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findAllTools(int offset, int pageSize) {
-        return (List<Tool>) namedQuery("io.dockstore.webservice.core.Tool.findAllTools")
+        return namedTypedQuery("io.dockstore.webservice.core.Tool.findAllTools")
             .setMaxResults(pageSize)
             .setFirstResult(offset)
             .list();
@@ -207,16 +209,21 @@ public class ToolDAO extends EntryDAO<Tool> {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
+            CriteriaBuilder cb, CriteriaQuery<?> query) {
 
-        final Root<Tool> entryRoot = q.from(Tool.class);
+        final Root<Tool> entryRoot = query.from(Tool.class);
 
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("namespace"), Optional.ofNullable(organization));
         predicate = andLike(cb, predicate, entryRoot.get("name"), Optional.ofNullable(name));
         predicate = andLike(cb, predicate, entryRoot.get("toolname"), Optional.ofNullable(toolname));
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
-        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (author != null) {
+            Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
+            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, subQuery);
+        }
+
         if (checker != null && checker) {
             // tools are never checker workflows
             predicate = cb.isFalse(cb.literal(true));
@@ -228,7 +235,7 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
         predicate = andLike(cb, predicate, entryRoot.get("registry"), Optional.ofNullable(registry));
 
-        q.where(predicate);
+        query.where(predicate);
         return entryRoot;
     }
 }

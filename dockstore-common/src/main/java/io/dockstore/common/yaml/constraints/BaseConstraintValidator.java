@@ -15,8 +15,8 @@
 
 package io.dockstore.common.yaml.constraints;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Base class for most ConstraintValidators that has an empty initializer,

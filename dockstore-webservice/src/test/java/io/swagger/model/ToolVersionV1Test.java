@@ -12,7 +12,7 @@ class ToolVersionV1Test {
      */
     @Test
     void checkToolVersionURL() {
-        ToolVersion toolVersion = new ToolVersion();
+        ToolVersionV20beta toolVersion = new ToolVersionV20beta();
         toolVersion.setContainerfile(true);
         toolVersion.setVerified(true);
         toolVersion.setDescriptorType(Collections.emptyList());
@@ -26,7 +26,7 @@ class ToolVersionV1Test {
      */
     @Test
     void checkToolVersionNull() {
-        ToolVersion toolVersion = new ToolVersion();
+        ToolVersionV20beta toolVersion = new ToolVersionV20beta();
         toolVersion.setContainerfile(true);
         toolVersion.setVerified(true);
         toolVersion.setDescriptorType(Collections.emptyList());

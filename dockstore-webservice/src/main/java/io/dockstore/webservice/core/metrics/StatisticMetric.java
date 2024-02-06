@@ -21,16 +21,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.SequenceGenerator;
-import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -48,26 +49,26 @@ public abstract class StatisticMetric {
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The minimum value from the data points", required = true)
-    @Schema(description = "The minimum value from the data points", required = true)
-    private Double minimum;
+    @Schema(description = "The minimum value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double minimum;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The maximum value from the data points", required = true)
-    @Schema(description = "The maximum value from the data points", required = true)
-    private Double maximum;
+    @Schema(description = "The maximum value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double maximum;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The average value from the data points", required = true)
-    @Schema(description = "The average value from the data points", required = true)
-    private Double average;
+    @Schema(description = "The average value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double average;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The number of data points used to calculate the average", required = true)
-    @Schema(description = "The number of data points used to calculate the average", required = true)
-    private Integer numberOfDataPointsForAverage;
+    @Schema(description = "The number of data points used to calculate the average", requiredMode = RequiredMode.REQUIRED)
+    private int numberOfDataPointsForAverage;
 
     @Column
     @ApiModelProperty(value = "The unit of the data points")
@@ -89,11 +90,11 @@ public abstract class StatisticMetric {
     protected StatisticMetric() {
     }
 
-    protected StatisticMetric(Double minimum, Double maximum, Double average, Integer numberOfDataPointsForAverage) {
+    protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage) {
         this(minimum, maximum, average, numberOfDataPointsForAverage, null);
     }
 
-    protected StatisticMetric(Double minimum, Double maximum, Double average, Integer numberOfDataPointsForAverage, String unit) {
+    protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage, String unit) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;
@@ -109,27 +110,27 @@ public abstract class StatisticMetric {
         this.id = id;
     }
 
-    public Double getMinimum() {
+    public double getMinimum() {
         return minimum;
     }
 
-    public void setMinimum(Double minimum) {
+    public void setMinimum(double minimum) {
         this.minimum = minimum;
     }
 
-    public Double getMaximum() {
+    public double getMaximum() {
         return maximum;
     }
 
-    public void setMaximum(Double maximum) {
+    public void setMaximum(double maximum) {
         this.maximum = maximum;
     }
 
-    public Double getAverage() {
+    public double getAverage() {
         return average;
     }
 
-    public void setAverage(Double average) {
+    public void setAverage(double average) {
         this.average = average;
     }
 

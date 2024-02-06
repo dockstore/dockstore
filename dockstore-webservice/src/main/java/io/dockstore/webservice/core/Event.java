@@ -1,25 +1,31 @@
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_COLLECTION_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_VERSION_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_WORKFLOW_FILTER;
+
+import com.fasterxml.jackson.annotation.JsonFilter;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import java.sql.Timestamp;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
@@ -35,14 +41,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
     // workaround for https://ucsc-cgl.atlassian.net/browse/SEAB-5057
     // the clauses that look like "(e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag)))" can be removed once the version ids are consistent
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where ((e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) OR (e.apptool.id in :entryIDs)) and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER by e.id desc"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE from Event e where e.tool.id = :entryId OR e.workflow.id = :entryId OR e.apptool.id = :entryId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE from Event e where e.tool.id = :entryId OR e.workflow.id = :entryId OR e.apptool.id = :entryId OR e.service.id = :entryId OR e.notebook.id = :entryId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE from Event e WHERE e.organization.id = :organizationId"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByUserId", query = "SELECT e FROM Event e where e.user.id = :userId and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByInitiatorUserId", query = "SELECT e FROM Event e where e.initiatorUser.id = :initiatorUser and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where (e.workflow.id = :entryId OR e.tool.id = :entryId OR e.apptool.id = :entryId) and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganization", query = "SELECT e FROM Event e WHERE e.organization.id = :organizationId and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByOrganizationIds", query = "SELECT e FROM Event e WHERE e.organization.id in :organizationIDs and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
     @NamedQuery(name = "io.dockstore.webservice.core.Event.countAllForOrganization", query = "SELECT COUNT(*) FROM Event eve WHERE eve.organization.id = :organizationId")
 })
 public class Event {
@@ -66,31 +66,37 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "toolId", referencedColumnName = "id")
     @ApiModelProperty(value = "Tool that the event is acting on.", position = 3)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private Tool tool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private BioWorkflow workflow;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "apptoolId", referencedColumnName = "id")
     @ApiModelProperty(value = "(github) apps tool that the event is acting on.", position = 9)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private AppTool apptool;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "serviceId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Service that the event is acting on.", position = 11)
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    private Service service;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notebookId", referencedColumnName = "id")
     @ApiModelProperty(value = "Notebook that the event is acting on.", position = 10)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private Notebook notebook;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
-    @JsonIgnoreProperties({ "entries" })
+    @JsonFilter(SLIM_COLLECTION_FILTER)
     private Collection collection;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -100,8 +106,9 @@ public class Event {
 
     @ManyToOne
     @JoinColumn(name = "versionId", referencedColumnName = "id")
+    @NotFound(action = NotFoundAction.IGNORE)
     @ApiModelProperty(value = "Version associated with the event.", position = 8)
-    @JsonIgnoreProperties({"sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"})
+    @JsonFilter(SLIM_VERSION_FILTER)
     private Version version;
 
     @Column
@@ -172,6 +179,22 @@ public class Event {
         this.workflow = workflow;
     }
 
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
+    }
+
+    public Notebook getNotebook() {
+        return notebook;
+    }
+
+    public void setNotebook(Notebook notebook) {
+        this.notebook = notebook;
+    }
+
     public Collection getCollection() {
         return collection;
     }
@@ -235,7 +258,9 @@ public class Event {
         ADD_TO_COLLECTION,
         ADD_VERSION_TO_ENTRY,
         PUBLISH_ENTRY,
-        UNPUBLISH_ENTRY
+        UNPUBLISH_ENTRY,
+        ARCHIVE_ENTRY,
+        UNARCHIVE_ENTRY
     }
 
     public static class Builder {
@@ -273,11 +298,6 @@ public class Event {
             return this;
         }
 
-        public Builder withService(Service service) {
-            this.service = service;
-            return this;
-        }
-
         public Builder withBioWorkflow(BioWorkflow workflow) {
             this.bioWorkflow = workflow;
             return this;
@@ -285,6 +305,11 @@ public class Event {
 
         public Builder withAppTool(AppTool appTool) {
             this.appTool = appTool;
+            return this;
+        }
+
+        public Builder withService(Service service) {
+            this.service = service;
             return this;
         }
 
@@ -313,8 +338,10 @@ public class Event {
             event.user = this.user;
             event.organization = this.organization;
             event.tool = this.tool;
-            event.apptool = this.appTool;
             event.workflow = this.bioWorkflow;
+            event.apptool = this.appTool;
+            event.service = this.service;
+            event.notebook = this.notebook;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;

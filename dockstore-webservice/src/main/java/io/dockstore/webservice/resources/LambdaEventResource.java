@@ -1,5 +1,6 @@
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
@@ -23,17 +24,21 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 
@@ -42,6 +47,8 @@ import org.hibernate.SessionFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "lambdaEvents", description = ResourceConstants.LAMBDAEVENTS)
 public class LambdaEventResource {
+    public static final String X_TOTAL_COUNT = "X-total-count";
+    public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
     private final LambdaEventDAO lambdaEventDAO;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -58,10 +65,15 @@ public class LambdaEventResource {
     @Path("/{organization}")
     @Operation(operationId = "getLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
+    @SuppressWarnings("checkstyle:parameternumber")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
-            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+            @PathParam("organization") String organization,
+            @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") int offset,
+            @Parameter(description = PAGINATION_LIMIT_TEXT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") @Max(MAX_PAGINATION_LIMIT) int limit,
+            @DefaultValue("") @QueryParam("filter") String filter,
+            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+            @Context HttpServletResponse response) {
         final User authUser = userDAO.findById(user.getId());
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
         if (githubTokens.isEmpty()) {
@@ -69,7 +81,34 @@ public class LambdaEventResource {
         }
         final Token githubToken = githubTokens.get(0);
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
-        return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos, filter)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
+        return lambdaEventDAO.findByOrganization(organization, offset, limit, filter, sortCol, sortOrder, authorizedRepos);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @RolesAllowed({ "admin", "curator"})
+    @Path("/user/{userid}")
+    @Operation(operationId = "getUserLambdaEvents", description = "Get all of the Lambda Events for the given user.",
+            security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @SuppressWarnings("checkstyle:parameternumber")
+    public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
+           @PathParam("userid") long userid,
+           @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") int offset,
+           @Parameter(description = PAGINATION_LIMIT_TEXT) @QueryParam("limit") @DefaultValue(PAGINATION_LIMIT)  @Max(MAX_PAGINATION_LIMIT) int limit,
+           @DefaultValue("") @QueryParam("filter") String filter,
+           @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+           @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+           @Context HttpServletResponse response) {
+        final User user = userDAO.findById(userid);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user, filter)));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
+        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
     }
 
     /**

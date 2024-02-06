@@ -23,7 +23,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -32,8 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,46 +81,41 @@ public interface SourceControlResourceInterface {
      */
     default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String payload) {
 
-        try {
-            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, payload);
+        Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, payload);
 
-            if (asString.isPresent()) {
-                String accessToken;
-                String refreshToken;
-                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", refreshUrl);
-                String json = asString.get();
+        if (asString.isPresent()) {
+            String accessToken;
+            String refreshToken;
+            LOG.info(token.getUsername() + ": RESOURCE CALL: {}", refreshUrl);
+            String json = asString.get();
 
-                Gson gson = new Gson();
-                Map<String, ?> map = new HashMap<>();
-                map = (Map<String, ?>)gson.fromJson(json, map.getClass());
+            Gson gson = new Gson();
+            Map<String, ?> map = new HashMap<>();
+            map = (Map<String, ?>)gson.fromJson(json, map.getClass());
 
-                accessToken = (String)map.get("access_token");
-                refreshToken = (String)map.get("refresh_token");
+            accessToken = (String)map.get("access_token");
+            refreshToken = (String)map.get("refresh_token");
 
-                token.setContent(accessToken);
-                token.setRefreshToken(refreshToken);
+            token.setContent(accessToken);
+            token.setRefreshToken(refreshToken);
 
-                Instant instant = Instant.now();
-                instant = instant.plusSeconds(((Double)map.get("expires_in")).longValue());
-                token.setExpirationTime(instant.getEpochSecond());
+            Instant instant = Instant.now();
+            instant = instant.plusSeconds(((Double)map.get("expires_in")).longValue());
+            token.setExpirationTime(instant.getEpochSecond());
 
-                long create = tokenDAO.create(token);
-                return tokenDAO.findById(create);
-            } else {
-                String domain;
-                try {
-                    URI uri = new URI(refreshUrl);
-                    domain = uri.getHost();
-                } catch (URISyntaxException e) {
-                    domain = "web site";
-                    LOG.debug(e.getMessage(), e);
-                }
-                throw new CustomWebApplicationException("Could not retrieve " + domain + " access token using your refresh token. Please re-link your account for " + domain,
-                        HttpStatus.SC_UNAUTHORIZED);
+            long create = tokenDAO.create(token);
+            return tokenDAO.findById(create);
+        } else {
+            String domain;
+            try {
+                URI uri = new URI(refreshUrl);
+                domain = uri.getHost();
+            } catch (URISyntaxException e) {
+                domain = "web site";
+                LOG.debug(e.getMessage(), e);
             }
-        } catch (UnsupportedEncodingException ex) {
-            LOG.info(token.getUsername() + ": " + ex.toString());
-            throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Could not retrieve " + domain + " access token using your refresh token. Please re-link your account for " + domain,
+                    HttpStatus.SC_UNAUTHORIZED);
         }
     }
 

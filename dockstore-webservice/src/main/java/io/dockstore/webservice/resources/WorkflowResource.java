@@ -29,6 +29,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -38,6 +39,7 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -55,6 +57,9 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
+import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -86,7 +91,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.api.impl.ToolsImplCommon;
-import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -98,6 +102,24 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -114,27 +136,10 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -156,6 +161,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String SC_REGISTRY_ACCESS_MESSAGE = "User does not have access to the given source control registry.";
+    public static final String SC_HOSTED_NOT_SUPPORTED_MESSAGE = "This operation is not supported on hosted workflows.";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -462,16 +468,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
         @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkNotNullEntry(workflow);
-        checkCanExamine(user, workflow);
-
-        WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
-        if (workflowVersion == null) {
-            throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
-        }
+        WorkflowVersion workflowVersion =
+            getWorkflowVersion(user, workflowId, workflowVersionId);
         initializeAdditionalFields(include, workflowVersion);
         return workflowVersion;
+    }
+
+    @GET
+    @Path("/{workflowId}/workflowVersions/{workflowVersionId}/description")
+    @Produces(MediaType.TEXT_PLAIN)
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "getWorkflowVersionDescription", description = "Retrieve a workflow version's description", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve a workflow version's description", content = @Content(
+        mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public String getWorkflowVersionDescription(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
+        final WorkflowVersion workflowVersion = getWorkflowVersion(user.orElse(null), workflowId, workflowVersionId);
+        return workflowVersion.getDescription();
     }
 
     @PUT
@@ -556,8 +571,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
+        oldWorkflow.setTopicAI(newWorkflow.getTopicAI());
 
-        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+        // Update topic selection if it's a non-hosted workflow, or if it's a hosted workflow and the new topic selection is not automatic.
+        // Hosted workflows don't have a source control thus cannot have an automatic topic.
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)
+                || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
 
@@ -781,6 +800,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (!isAdmin(user)) {
             checkCanShare(user, workflow);
         }
+        checkNotArchived(workflow);
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
@@ -806,16 +826,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
         @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
-        // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         final Class<Workflow> workflowClass = (Class<Workflow>) workflowSubClass(services, subclass);
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
-            workflowClass);
+                workflowClass);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
-        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
-        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return workflows;
     }
 
@@ -906,7 +925,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @Override
     public boolean canWrite(User user, Entry entry) {
-        return super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+        return isWritable(entry) && (super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE));
     }
 
     /**
@@ -1050,6 +1069,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
         workflows.forEach(this::checkNotNullEntry);
         checkCanRead(user, workflows);
+        return workflows;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/path/{repository}/published")
+    @Operation(operationId = "getAllPublishedWorkflowByPath", summary = "Get a list of published workflows by path.", description = "Do not include workflow name.",
+            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> getAllPublishedWorkflowByPath(@Parameter(description = "repository path", required = true) @PathParam("repository") String path) {
+        List<Workflow> workflows = Optional.ofNullable(workflowDAO.findAllByPath(path, true)).orElse(List.of());
+        workflows.forEach(this::checkNotNullEntry);
         return workflows;
     }
 
@@ -1368,11 +1399,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
 
                     if (toolsJSONTable.isPresent()) {
-                        // Check that a snapshot can occur (all images are referenced by tag or digest)
-                        lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
+                        checkAndAddImages(existingTag, toolsJSONTable.get(), lInterface);
+                    }
 
-                        Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
-                        existingTag.getImages().addAll(images);
+                    // If there is a notebook kernel image, attempt to snapshot it.
+                    if (existingTag.getKernelImagePath() != null) {
+                        checkAndAddImages(existingTag, convertImageToToolsJson(existingTag.getKernelImagePath(), lInterface), lInterface);
                     }
 
                     // store dag
@@ -1391,6 +1423,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
+    }
+
+    private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
+        // Check that a snapshot can occur (all images are referenced by tag or digest).
+        languageHandler.checkSnapshotImages(version.getName(), toolsJson);
+        // Retrieve the images.
+        Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
+        // Add them to the version.
+        version.getImages().addAll(images);
+    }
+
+    private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
+        LanguageHandlerInterface.DockerSpecifier specifier = LanguageHandlerInterface.determineImageSpecifier(image, DockerImageReference.LITERAL);
+        String url = languageHandler.getURLFromEntry(image, toolDAO, specifier);
+        LanguageHandlerInterface.DockerInfo info = new LanguageHandlerInterface.DockerInfo("", image, url, specifier);
+        return languageHandler.getJSONTableToolContent(Map.of("", info));
     }
 
     @GET
@@ -1535,6 +1583,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         return workflowVersion;
     }
+
+    private WorkflowVersion getWorkflowVersion(final User user, final Long workflowId,  final Long workflowVersionId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        if (!workflow.getIsPublished()) {
+            checkCanExamine(user, workflow);
+        }
+
+        WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
+        }
+        return workflowVersion;
+    }
+
 
     /**
      * This method will find the main descriptor file based on the workflow version passed in the parameter
@@ -1710,9 +1773,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         String workflowName;
 
         // Grab information if tool
-        if (entry instanceof Tool) {
+        if (entry instanceof Tool tool) {
             // Get tool
-            Tool tool = (Tool) entry;
 
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
@@ -1749,9 +1811,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // Determine last updated
             lastUpdated = tool.getLastUpdated();
 
-        } else if (entry instanceof Workflow) {
+        } else if (entry instanceof Workflow workflow) {
             // Get workflow
-            Workflow workflow = (Workflow) entry;
 
             // Copy over common attributes
             defaultTestParameterPath = workflow.getDefaultTestParameterFilePath();
@@ -1930,21 +1991,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("{alias}/aliases")
-    @Operation(operationId = "getWorkflowByAlias", description = "Retrieves a workflow by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Retrieves a workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
-        final Workflow workflow = this.workflowDAO.findByAlias(alias);
-        checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
-        return workflow;
-    }
-
     @POST
     @Timed
     @UnitOfWork
@@ -2005,9 +2051,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public void deleteWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
-        @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
+        @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH, schema = @Schema(type = "string", allowableValues = { "github.com", "bitbucket.org", "gitlab.com" })) @PathParam("gitRegistry") SourceControl gitRegistry,
         @Parameter(name = "organization", description = "Git repository organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
         @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
+        if (gitRegistry == SourceControl.DOCKSTORE) {
+            LOG.error(SC_HOSTED_NOT_SUPPORTED_MESSAGE);
+            throw new CustomWebApplicationException(SC_HOSTED_NOT_SUPPORTED_MESSAGE, HttpStatus.SC_BAD_REQUEST);
+        }
+
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
@@ -2054,44 +2105,54 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Path("/github/release")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
-        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+        @RequestBody(description = "GitHub push event payload", required = true) PushPayload payload) {
+
+        final long installationId = payload.getInstallation().getId();
+        final String username = payload.getSender().getLogin();
+        final String repository = payload.getRepository().getFullName();
+        final String gitReference = payload.getRef();
+        final String afterCommit = payload.getAfter();
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-        githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), true);
+
+        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, afterCommit, true);
     }
 
     @POST
     @Path("/github/install")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
     @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, responseContainer = "List")
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "repositories", description = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
-        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
+        final long installationId = payload.getInstallation().getId();
+        final String username = payload.getSender().getLogin();
+        final List<String> repositories = payload.getRepositoriesAdded().stream().map(WebhookRepository::getFullName).toList();
+
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(repositories), Utilities.cleanForLogging(username)));
+            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(String.join(", ", repositories)), Utilities.cleanForLogging(username)));
         }
+
         // record installation event as lambda event
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        Arrays.asList(repositories.split(",")).forEach(repository -> {
+        repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
             String[] splitRepository = repository.split("/");
+            lambdaEvent.setDeliveryId(deliveryId);
             lambdaEvent.setOrganization(splitRepository[0]);
             lambdaEvent.setRepository(splitRepository[1]);
             lambdaEvent.setGithubUsername(username);
@@ -2101,14 +2162,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
         // make some educated guesses whether we should try to retrospectively release some old versions
         // note that for large organizations, this loop could be quite large if many repositories are added at the same time
-        for (String repository: repositories.split(",")) {
-            final Set<String> strings = identifyGitReferencesToRelease(repository, Long.parseLong(installationId));
+        for (String repository: repositories) {
+            final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
             for (String gitReference: strings) {
                 if (LOG.isInfoEnabled()) {
                     LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                         Utilities.cleanForLogging(username)));
                 }
-                githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), false);
+                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
@@ -2126,11 +2187,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
+        @Parameter(name = "installationId", description = "GitHub App installation ID", required = false) @QueryParam("installationId") Long installationId,
+        @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId) {
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
-        githubWebhookDelete(repository, gitReference, username);
+        githubWebhookDelete(repository, gitReference, username, installationId, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 

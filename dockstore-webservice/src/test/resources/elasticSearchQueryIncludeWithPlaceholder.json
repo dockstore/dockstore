@@ -1,0 +1,16 @@
+{
+    "aggs": {
+      "autocomplete": {
+        "terms": {
+          "field": "description",
+          "include": "PLACEHOLDER",
+          "order": {
+            "_count": "desc"
+          },
+          "size": 4
+        }
+      }
+    },
+    "size": 0
+  }
+  

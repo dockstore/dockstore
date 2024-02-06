@@ -24,10 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.common.FixtureUtility;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.yaml.DockstoreYamlHelper.Version;
 import io.dockstore.common.yaml.constraints.HasEntry12;
-import io.dropwizard.testing.FixtureHelpers;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -46,10 +46,10 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 class DockstoreYamlTest {
-    private static final String DOCKSTORE10_YAML = FixtureHelpers.fixture("fixtures/dockstore10.yml");
-    private static final String DOCKSTORE11_YAML = FixtureHelpers.fixture("fixtures/dockstore11.yml");
-    private static final String DOCKSTORE12_YAML = FixtureHelpers.fixture("fixtures/dockstore12.yml");
-    private static final String DOCKSTORE_GALAXY_YAML = FixtureHelpers.fixture("fixtures/dockstoreGalaxy.yml");
+    private static final String DOCKSTORE10_YAML = FixtureUtility.fixture("fixtures/dockstore10.yml");
+    private static final String DOCKSTORE11_YAML = FixtureUtility.fixture("fixtures/dockstore11.yml");
+    private static final String DOCKSTORE12_YAML = FixtureUtility.fixture("fixtures/dockstore12.yml");
+    private static final String DOCKSTORE_GALAXY_YAML = FixtureUtility.fixture("fixtures/dockstoreGalaxy.yml");
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -199,6 +199,32 @@ class DockstoreYamlTest {
     }
 
     @Test
+    void testRelativePrimaryDescriptor() {
+        try {
+            final String content = DOCKSTORE12_YAML.replaceAll("primaryDescriptorPath: /", "primaryDescriptorPath: ");
+            DockstoreYamlHelper.readDockstoreYaml(content, true);
+            fail("Invalid dockstore.yml not caught");
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            // check that the error message contains the name of the property and an appropriate adjective
+            assertTrue(e.getMessage().contains("primaryDescriptor"));
+            assertTrue(e.getMessage().contains("the path must be an absolute path to be valid"));
+        }
+    }
+
+    @Test
+    void testRelativeTestDescriptorPaths() {
+        try {
+            final String content = DOCKSTORE12_YAML.replaceAll("- /", "- ");
+            DockstoreYamlHelper.readDockstoreYaml(content, true);
+            fail("Invalid dockstore.yml not caught");
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            // check that the error message contains the name of the property and an appropriate adjective
+            assertTrue(e.getMessage().contains("testParameterFiles"));
+            assertTrue(e.getMessage().contains("the path must be an absolute path to be valid"));
+        }
+    }
+
+    @Test
     void testInvalidSubclass() {
         final String content = DOCKSTORE12_YAML.replace("DOCKER_COMPOSE", "invalid sub class");
         try {
@@ -255,7 +281,7 @@ class DockstoreYamlTest {
             fail("Dockstore yaml breaking entities should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             // This message is emitted when SafeConstructor is used
-            assertTrue(e.getMessage().contains("could not determine a constructor for the tag"));
+            assertTrue(e.getMessage().contains("Global tag is not allowed"));
         }
     }
 

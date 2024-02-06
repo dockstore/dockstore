@@ -118,7 +118,7 @@ class WDLHandlerTest {
             wdlHandler.checkForRecursiveHTTPImports(s, new HashSet<>());
             Assertions.fail("Should've detected recursive import");
         } catch (CustomWebApplicationException e) {
-            assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
+            assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getMessage());
         }
 
         final File notRecursiveWdl = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
@@ -186,7 +186,7 @@ class WDLHandlerTest {
             Assertions.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
             assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
+            assertThat(e.getMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }
 

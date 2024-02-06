@@ -23,14 +23,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Optional;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -90,7 +90,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
         Workflow workflow = AliasHelper.getWorkflow(workflowDAO, workflowVersionId);
         workflowResource.checkCanRead(user, workflow);
 
-        return new WorkflowVersion.WorkflowVersionPathInfo(workflow.getWorkflowPath(), workflowVersion.getName());
+        return new WorkflowVersion.WorkflowVersionPathInfo(workflow.getWorkflowPath(), workflow.getEntryType(), workflow.getEntryTypeMetadata(), workflowVersion.getName());
     }
 
     @Override

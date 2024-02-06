@@ -22,25 +22,26 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -48,18 +49,22 @@ import org.apache.commons.io.FilenameUtils;
  *
  * @author dyuen
  */
-@ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
+@ApiModel(value = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION)
+@Schema(name = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION)
+
 @Entity
 @Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = {"parentid",
     "name"}))
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
-    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastmodified DESC")
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastModified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion>, Aliasable {
+
+    public static final String WORKFLOW_VERSION_DESCRIPTION = "This describes one workflow version associated with a workflow.";
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "workflowversion_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
@@ -264,18 +269,32 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
             + "contains the Dockstore path to the workflow and the version tag name.")
     public static final class WorkflowVersionPathInfo {
-        @ApiModelProperty(value = "Dockstore path to workflow.")
+        @Schema(description = "Dockstore path to workflow")
         private final String fullWorkflowPath;
-        @ApiModelProperty(value = "Name of workflow version tag")
+        @Schema(description = "Type of the workflow")
+        private final EntryType entryType;
+        @Schema(description = "Metadata about the type of the workflow")
+        private final EntryTypeMetadata entryTypeMetadata;
+        @Schema(description = "Name of workflow version tag")
         private final String tagName;
 
-        public WorkflowVersionPathInfo(String fullWorkflowPath, String tagName) {
+        public WorkflowVersionPathInfo(String fullWorkflowPath, EntryType entryType, EntryTypeMetadata entryTypeMetadata, String tagName) {
             this.fullWorkflowPath = fullWorkflowPath;
+            this.entryType = entryType;
+            this.entryTypeMetadata = entryTypeMetadata;
             this.tagName = tagName;
         }
 
         public String getFullWorkflowPath() {
             return fullWorkflowPath;
+        }
+
+        public EntryType getEntryType() {
+            return entryType;
+        }
+
+        public EntryTypeMetadata getEntryTypeMetadata() {
+            return entryTypeMetadata;
         }
 
         public String getTagName() {

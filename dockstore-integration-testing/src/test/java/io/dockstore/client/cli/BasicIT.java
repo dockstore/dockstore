@@ -35,11 +35,13 @@ import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.resources.EventSearchType;
+import io.openapi.model.DescriptorType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EventsApi;
+import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -48,9 +50,9 @@ import io.swagger.client.model.Event.TypeEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
-import io.swagger.model.DescriptorType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -585,9 +587,14 @@ public class BasicIT extends BaseIT {
         assertEquals(1, count, "the tool should have a default version set");
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
-                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null and author = 'Dockstore Test User'",
-            long.class);
+                        + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null and (select name from author a where a.versionid = actualdefaultversion) = 'Dockstore Test User'",
+                long.class);
         assertEquals(1, count2, "the tool should have any metadata set (author)");
+
+        // check author explicitly for old-style tools
+        Ga4GhApi ga4GhApi = new Ga4GhApi(client);
+        final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, "Dockstore Test User", null, "0", 10);
+        assertFalse(toolsViaAuthor.isEmpty());
 
         // Invalidate tags
         testingPostgres.runUpdateStatement("UPDATE tag SET valid='f'");

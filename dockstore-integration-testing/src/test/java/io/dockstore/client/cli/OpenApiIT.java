@@ -18,7 +18,8 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.CommonTestUtilities.PUBLIC_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -28,11 +29,16 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.DropwizardTestSupport;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,8 +59,8 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 class OpenApiIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
-    protected static javax.ws.rs.client.Client client;
+            DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+    protected static jakarta.ws.rs.client.Client client;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -76,17 +82,35 @@ class OpenApiIT {
     }
 
     @Test
+    @Disabled("no longer generated in 1.15 with transition to jakarta")
     void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
         // To prevent connection leak?
         response.readEntity(String.class);
+    }
+
+    /*
+    Tests to make sure CORS headers are NOT present on a non-GA4GH endpoint
+     */
+
+    @Test
+    void testDockstoreNoCors() {
+        final String origin = "http://mysite.org";
+        final List<String> paths = Arrays.asList("api/categories", "openapi.yaml");
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        paths.stream().forEach(path -> {
+            Response response = client.target(baseURL + path).request().headers(headers).get();
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Credentials"));
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Origin"));
+        });
     }
 
     @Test
     void testOpenApi30() {
         Response response = client.target(baseURL + "openapi.yaml").request().get();
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
         // To prevent connection leak?
         response.readEntity(String.class);
     }

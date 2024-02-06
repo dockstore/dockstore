@@ -23,11 +23,11 @@ import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 /**
@@ -42,12 +42,12 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     @Override
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<BioWorkflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
+            CriteriaBuilder cb, CriteriaQuery<?> q) {
 
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<BioWorkflow> entryRoot = q.from(BioWorkflow.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot, q);
 
         // its tempting to put this in EntryDAO, but something goes wrong with generics/inheritance
         if (checker != null) {
@@ -58,15 +58,15 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", WorkflowPath.class).list();
     }
 
     public List<RSSWorkflowPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
-                RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", RSSWorkflowPath.class).setMaxResults(
+                RSS_ENTRY_LIMIT).list();
     }
 
     public List<MyWorkflows> findUserBioWorkflows(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows").setParameter("userId", userId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", MyWorkflows.class).setParameter("userId", userId).list();
     }
 }

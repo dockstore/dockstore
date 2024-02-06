@@ -73,7 +73,9 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIGeneralWorkflowIT}
  */
+@Deprecated
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
@@ -465,35 +467,6 @@ class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testAddingWorkflowForumUrlAndTopic() throws ApiException {
-        // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-
-        Workflow workflow = workflowsApi
-                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
-                        "test-update-workflow", DescriptorLanguage.CWL.toString(),
-                        "/test.json");
-
-        assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection(), "Should default to automatic");
-        
-        //update the forumUrl to hello.com
-        final String newTopic = "newTopic";
-        workflow.setForumUrl("hello.com");
-        workflow.setTopicManual(newTopic);
-        workflow.setTopicSelection(TopicSelectionEnum.MANUAL);
-        Workflow updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-
-        //check the workflow's forumUrl is hello.com
-        final String updatedForumUrl = testingPostgres
-                .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
-        assertEquals("hello.com", updatedForumUrl, "forumUrl should be updated, it is " + updatedForumUrl);
-
-        assertEquals(newTopic, updatedWorkflow.getTopicManual());
-        assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
-    }
-
-    @Test
     void testTopicAfterRefresh() throws ApiException {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -731,9 +704,10 @@ class GeneralWorkflowIT extends BaseIT {
         String defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("testWDL", defaultVersionName, "the default version should be for the testWDL branch, but is for the branch " + defaultVersionName);
 
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author is null and email is null",
-                long.class);
+        final long count2 = testingPostgres.runSelectStatement(
+                "select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and " + defaultVersionNumber
+                        + " not in (select versionid from version_orcidauthor) and " + defaultVersionNumber
+                        + " not in (select versionid from author)", long.class);
         assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testWDL", workflow.getDefaultVersion());
@@ -898,7 +872,7 @@ class GeneralWorkflowIT extends BaseIT {
 
         // Check a few things
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals(1, count, "there should be 1 workflow, there are " + count);
 
@@ -906,7 +880,7 @@ class GeneralWorkflowIT extends BaseIT {
         assertEquals(2, count2, "there should be 2 valid version, there are " + count2);
 
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals(1, count3, "there should be 1 workflow, there are " + count3);
 
@@ -917,7 +891,7 @@ class GeneralWorkflowIT extends BaseIT {
         // publish
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         final long count4 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
             long.class);
         assertEquals(1, count4, "there should be 1 published workflow, there are " + count4);
@@ -925,15 +899,15 @@ class GeneralWorkflowIT extends BaseIT {
         // unpublish
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count5 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
             long.class);
         assertEquals(0, count5, "there should be 0 published workflows, there are " + count5);
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString()
-                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
+            "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB
+                    + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and actualdefaultversion not in (select versionid from author) and actualdefaultversion not in (select versionid from version_orcidauthor) and description is null",
             long.class);
         assertEquals(1, count6, "The given workflow shouldn't have any contact info");
 
@@ -941,14 +915,14 @@ class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         final long count7 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where actualdefaultversion = 952 and author is null and email is null and description is null",
-            long.class);
+                "select count(*) from workflow where actualdefaultversion = 952 and actualdefaultversion not in (select versionid from author) and actualdefaultversion not in (select versionid from version_orcidauthor) and description is null",
+                long.class);
         assertEquals(0, count7, "The given workflow should now have contact info and description");
 
         // restub
         workflow = workflowsApi.restub(workflow.getId());
         final long count8 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+            "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals(1, count8, "The workflow should now be a stub");
 

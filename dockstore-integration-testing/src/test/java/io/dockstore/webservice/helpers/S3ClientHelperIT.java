@@ -29,6 +29,7 @@ import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import io.dockstore.common.LocalStackTest;
 import io.dockstore.common.LocalStackTestUtilities;
+import io.dockstore.common.S3ClientHelper;
 import java.net.URISyntaxException;
 import java.util.List;
 import org.junit.jupiter.api.Tag;

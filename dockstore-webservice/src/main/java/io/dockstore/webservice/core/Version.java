@@ -18,13 +18,40 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.MapKeyEnumerated;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.SequenceGenerator;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,31 +65,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.MapKeyEnumerated;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SequenceGenerator;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -78,7 +80,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
+@ApiModel(value = "Version", description = Version.VERSION_DESCRIPTION)
+@Schema(name = "Version", description = Version.VERSION_DESCRIPTION)
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.
@@ -93,15 +96,18 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
-@FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = "string"), defaultCondition = "LOWER(:name) = LOWER(name)")
+@FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = String.class), defaultCondition = "LOWER(:name) = LOWER(name)")
 @Filter(name = "versionNameFilter")
-@FilterDef(name = "versionIdFilter", parameters = @ParamDef(name = "id", type = "long"), defaultCondition = ":id = id")
+@FilterDef(name = "versionIdFilter", parameters = @ParamDef(name = "id", type = Long.class), defaultCondition = ":id = id")
 @Filter(name = "versionIdFilter")
 
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
+    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images",
+        "versionEditor");
     private static final Gson GSON = new Gson();
+    public static final String VERSION_DESCRIPTION = "This describes a version of an entry in Dockstore";
 
     /**
      * re-use existing generator for backwards compatibility
@@ -114,17 +120,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1, example = "master")
-    @Schema(description = "git commit/tag/branch", required = true, example = "master")
+    @Schema(description = "git commit/tag/branch", requiredMode = RequiredMode.REQUIRED, example = "master")
     private String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2, example = "latest")
-    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", required = true, example = "latest")
+    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", requiredMode = RequiredMode.REQUIRED, example = "latest")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentid", nullable = false)
     @ApiModelProperty(value = "parent entry id", required = true, position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    @Schema(implementation = Entry.class, hidden = true)
     private Entry<?, ?> parent;
 
 
@@ -147,7 +154,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
-    @OrderBy("path")
     @BatchSize(size = 25)
     private final SortedSet<SourceFile> sourceFiles;
 
@@ -189,14 +195,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
@@ -215,7 +219,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
-    @OrderBy("type")
     @BatchSize(size = 25)
     private final SortedSet<Validation> validations;
 
@@ -265,10 +268,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
-        if (this.getVersionMetadata().verifiedSource == null) {
+        return convertJsonToStringArray(getVersionMetadata().verifiedSource);
+    }
+
+    @Schema(description = "Verified platforms for the version")
+    public String[] getVerifiedPlatforms() {
+        return convertJsonToStringArray(getVersionMetadata().verifiedPlatforms);
+    }
+
+    private static String[] convertJsonToStringArray(String json) {
+        if (json == null) {
             return new String[0];
         } else {
-            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
+            return GSON.fromJson(json, String[].class);
         }
     }
 
@@ -400,6 +412,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void updateVerified() {
         this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
         this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
+        this.getVersionMetadata().verifiedPlatforms = calculateVerifiedPlatforms(this.getSourceFiles());
     }
 
     private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
@@ -418,6 +431,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         });
         // How strange that we're returning an array-like string
         return convertStringSetToString(verifiedSources);
+    }
+
+    private static String calculateVerifiedPlatforms(SortedSet<SourceFile> versionSourceFiles) {
+        Set<String> verifiedPlatforms = new TreeSet<>();
+        versionSourceFiles.forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedPlatforms.add(thing.getKey());
+                }
+            }
+        });
+        return convertStringSetToString(verifiedPlatforms);
     }
 
     private static String convertStringSetToString(Set<String> verifiedSources) {
@@ -455,6 +481,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    @JsonIgnore
     @ApiModelProperty(position = 22)
     public String getDescription() {
         return this.getVersionMetadata().description;
@@ -494,22 +521,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void addAuthor(final Author author) {
         this.authors.add(author);
-    }
-
-    /**
-     * Sets the versions authors using authors from the descriptor.
-     * @param newAuthors
-     */
-    @JsonIgnore
-    public void setAuthorsFromDescriptor(Set<Author> newAuthors) {
-        // If it's a .dockstore.yml workflow, clear authors because it may be from the .dockstore.yml
-        if (this.parent instanceof Workflow workflow && workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
-            this.getOrcidAuthors().clear();
-            this.setAuthors(newAuthors);
-        } else {
-            // Don't need to worry about existing authors if it's not a .dockstore.yml because the authors are always from the descriptor
-            this.authors.addAll(newAuthors);
-        }
     }
 
     public void setAuthors(final Set<Author> authors) {
@@ -614,6 +625,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
+    @Schema(hidden = true)
     public void setParent(Entry<?, ?> parent) {
         this.parent = parent;
     }

@@ -60,6 +60,8 @@ import io.swagger.client.model.ToolFile.FileTypeEnum;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -72,8 +74,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -208,7 +208,8 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openAPIWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
+        refreshByOrganizationReplacement(openAPIWorkflowApi, openAPIWebClient);
 
         List<Workflow> workflows = usersApi.userWorkflows(userId);
 
@@ -681,7 +682,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         }
 
         // Get workflow by alias
-        Workflow aliasWorkflow = workflowApi.getWorkflowByAlias("foobar");
+        io.dockstore.openapi.client.model.Entry aliasWorkflow = new io.dockstore.openapi.client.api.EntriesApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres)).getEntryByAlias("foobar");
         assertNotNull(aliasWorkflow, "Should retrieve the workflow by alias");
     }
 

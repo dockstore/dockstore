@@ -15,9 +15,9 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.dockstore.common.FixtureUtility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,10 +32,10 @@ class DAGHelperTest {
      */
     @Test
     void cleanDAGTest() {
-        String uncleanDAG = fixture("fixtures/uncleanDAG.json");
+        String uncleanDAG = FixtureUtility.fixture("fixtures/uncleanDAG.json");
         String cleanDAG = DAGHelper.cleanDAG(uncleanDAG);
-        assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());
+        assertEquals(FixtureUtility.fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());
         String cleanerDAG = DAGHelper.cleanDAG(cleanDAG);
-        assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.trim());
+        assertEquals(FixtureUtility.fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.trim());
     }
 }

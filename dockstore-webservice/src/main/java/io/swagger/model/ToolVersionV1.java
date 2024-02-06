@@ -50,7 +50,7 @@ public class ToolVersionV1  {
 
     private String verifiedSource = null;
 
-    public ToolVersionV1(ToolVersion toolVersion) {
+    public ToolVersionV1(ToolVersionV20beta toolVersion) {
         try {
             BeanUtils.copyProperties(this, toolVersion);
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
@@ -61,13 +61,13 @@ public class ToolVersionV1  {
                 this.setUrl(this.getUrl().replaceFirst("/ga4gh/v2/", "/ga4gh/v1/"));
             }
             // descriptor type seems to have issues, maybe because nextflow didn't exist
-            List<DescriptorType> newTypes = toolVersion.getDescriptorType();
+            List<DescriptorTypeV20beta> newTypes = toolVersion.getDescriptorType();
             descriptorType.clear();
-            for (DescriptorType type : newTypes) {
-                if (type == DescriptorType.CWL) {
+            for (DescriptorTypeV20beta type : newTypes) {
+                if (type == DescriptorTypeV20beta.CWL) {
                     descriptorType.add(DescriptorTypeEnum.CWL);
                 }
-                if (type == DescriptorType.WDL) {
+                if (type == DescriptorTypeV20beta.WDL) {
                     descriptorType.add(DescriptorTypeEnum.WDL);
                 }
             }

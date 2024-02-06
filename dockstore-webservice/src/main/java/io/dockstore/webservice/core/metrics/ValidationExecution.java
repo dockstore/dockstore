@@ -18,45 +18,33 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
-import javax.validation.constraints.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * This is an object to encapsulate an execution that validates a workflow in an entity. Does not need to be stored in the database.
  */
 @Schema(name = "ValidationExecution", description = "Metrics of a workflow validated on a platform", allOf = Execution.class)
 public class ValidationExecution extends Execution {
-    private static final Logger LOG = LoggerFactory.getLogger(ValidationExecution.class);
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "The validator tool used to validate the workflow", required = true, example = "miniwdl")
+    @Schema(description = "The validator tool used to validate the workflow", requiredMode = RequiredMode.REQUIRED, example = "miniwdl")
     private ValidatorTool validatorTool;
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "The version of the validator tool", required = true)
+    @Schema(description = "The version of the validator tool", requiredMode = RequiredMode.REQUIRED)
     private String validatorToolVersion;
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "Boolean indicating if the workflow was validated successfully", required = true, example = "true")
+    @Schema(description = "Boolean indicating if the workflow was validated successfully", requiredMode = RequiredMode.REQUIRED, example = "true")
     private Boolean isValid;
 
     @Schema(description = "The error message for a failed validation by the validator tool")
     private String errorMessage;
-
-    @NotNull
-    @ISO8601ExecutionDate
-    @JsonProperty(required = true)
-    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", required = true, example = "2023-03-31T15:06:49.888745366Z")
-    private String dateExecuted;
 
     public ValidationExecution() {
     }
@@ -98,28 +86,6 @@ public class ValidationExecution extends Execution {
         this.errorMessage = errorMessage;
     }
 
-    public String getDateExecuted() {
-        return dateExecuted;
-    }
-
-    public void setDateExecuted(String dateExecuted) {
-        this.dateExecuted = dateExecuted;
-    }
-
-    /**
-     * Check that the execution time is in ISO-8601 format by parsing it into a Duration.
-     * @param executionDate ISO 8601 execution date
-     * @return Date parsed from the ISO 8601 execution date
-     */
-    public static Optional<Date> checkExecutionDateISO8601Format(String executionDate) {
-        try {
-            return Optional.of(Date.from(Instant.parse(executionDate)));
-        } catch (Exception e) {
-            LOG.warn("Execution date {} is not in ISO 8601 date format and could not be parsed to a Date", executionDate, e);
-            return Optional.empty();
-        }
-    }
-
     /**
      * Enums for tools that can validate a workflow.
      */
@@ -129,5 +95,11 @@ public class ValidationExecution extends Execution {
         CWLTOOL,
         NF_VALIDATION,
         OTHER // This is meant for validator tools that we may not know about yet, but can add in the future
+    }
+
+    public void update(ValidationExecution newValidationExecution) {
+        // Can only update optional fields
+        super.update(newValidationExecution);
+        this.errorMessage = newValidationExecution.errorMessage;
     }
 }

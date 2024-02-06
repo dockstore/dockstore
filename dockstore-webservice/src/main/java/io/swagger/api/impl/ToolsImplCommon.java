@@ -66,6 +66,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import org.apache.http.HttpStatus;
+import org.hibernate.ObjectNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,10 +143,9 @@ public final class ToolsImplCommon {
             tool.setName(returnName);
             tool.setOrganization(castedContainer.getNamespace());
             inputVersions = castedContainer.getWorkflowVersions();
-        } else if (container instanceof Workflow) {
+        } else if (container instanceof Workflow workflow) {
             isDockstoreTool = false;
             // workflow specific
-            Workflow workflow = (Workflow)container;
 
             // The name is composed of the repository name and then the optional toolname split with a '/'
             String name = workflow.getRepository();
@@ -173,10 +173,15 @@ public final class ToolsImplCommon {
 
             toolVersion.setSigned(false);
 
-            if (!version.getAuthors().isEmpty()) {
-                toolVersion.setAuthor(version.getAuthors().stream().map(Author::getName).toList());
-            } else if (!container.getAuthors().isEmpty()) {
-                toolVersion.setAuthor(container.getAuthors().stream().map(Author::getName).toList());
+            try {
+                if (!version.getAuthors().isEmpty()) {
+                    toolVersion.setAuthor(version.getAuthors().stream().map(Author::getName).toList());
+                } else if (!container.getAuthors().isEmpty()) {
+                    toolVersion.setAuthor(container.getAuthors().stream().map(Author::getName).toList());
+                }
+            } catch (ObjectNotFoundException e) {
+                // TODO the filter interacts poorly with the getAuthors call here (which needs the default version), not sure how it worked before anyway
+                LOG.error("version filter clashed with geetAuthors", e);
             }
 
             toolVersion.setImages(MoreObjects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));

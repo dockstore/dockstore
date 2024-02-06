@@ -16,9 +16,9 @@
 
 package io.dockstore.webservice;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 
 /**
@@ -26,15 +26,8 @@ import org.apache.http.HttpStatus;
  */
 public class CustomWebApplicationException extends WebApplicationException {
 
-    public final String errorMessage;
-
     public CustomWebApplicationException(String message, int status) {
-        super(Response.status(status).entity(message).type(MediaType.TEXT_PLAIN).build());
-        this.errorMessage = message;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
+        super(message, Response.status(status).entity(message).type(MediaType.TEXT_PLAIN).build());
     }
 
     public void rethrowIf5xx() {

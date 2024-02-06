@@ -17,7 +17,7 @@
 package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.yaml.YamlAuthor;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;
 
 /**

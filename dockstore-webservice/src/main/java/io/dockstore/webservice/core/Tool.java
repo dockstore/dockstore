@@ -28,6 +28,21 @@ import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.Size;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -35,22 +50,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.Size;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -66,9 +65,7 @@ import org.hibernate.annotations.Filter;
  * @author xliu
  * @author dyuen
  */
-@ApiModel(value = "DockstoreTool", description =
-    "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-        + " * associated with CWL and Dockerfile documents")
+@ApiModel(value = "DockstoreTool", description = Tool.TOOL_DESCRIPTION, parent = Entry.class)
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = {"registry", "namespace", "name", "toolname"}))
 @NamedQueries({
@@ -104,12 +101,14 @@ import org.hibernate.annotations.Filter;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
-@Schema(name = "DockstoreTool")
+@Schema(name = Tool.OPENAPI_NAME, description = Tool.TOOL_DESCRIPTION)
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
 
     static final String DEFAULT_DESCRIPTOR_TYPE = DescriptorLanguage.CWL.toString();
+    public static final String TOOL_DESCRIPTION = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be associated with CWL and Dockerfile documents";
+    public static final String OPENAPI_NAME = "DockstoreTool";
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
@@ -165,7 +164,6 @@ public class Tool extends Entry<Tool, Tag> {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @JsonAlias({ "tags", "workflowVersions"})
-    @OrderBy("id")
     @Cascade(CascadeType.DETACH)
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
@@ -190,6 +188,11 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public Tool createEmptyEntry() {
+        return new Tool();
     }
 
     @Override
