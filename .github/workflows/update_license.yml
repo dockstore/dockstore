@@ -19,7 +19,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version:  '17.0.4+8'
+          java-version:  '21.0.2+13'
           distribution: 'adopt'
 
       - name: install git secrets

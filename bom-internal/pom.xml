@@ -74,7 +74,7 @@ POM as their parent.
         <jetty-servlet.version>11.0.16</jetty-servlet.version>
         <jersey.version>3.0.11</jersey.version>
         <netty.version>4.1.72.Final</netty.version>
-        <scala.version>2.13.9</scala.version>
+        <scala.version>2.13.11</scala.version>
         <bytebuddy.version>1.14.8</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
         <cromwell.version>85</cromwell.version>
@@ -1085,7 +1085,7 @@ POM as their parent.
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>5.12.1</version>
+                <version>5.13.0</version>
             </dependency>
 
             <dependency>
