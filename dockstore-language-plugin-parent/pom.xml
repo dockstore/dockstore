@@ -45,6 +45,7 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.pf4j</groupId>
