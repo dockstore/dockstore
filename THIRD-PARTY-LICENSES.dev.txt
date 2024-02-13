@@ -31,7 +31,7 @@ Lists of 106 third-party dependencies.
      (Apache License 2.0) Dropwizard Utility Classes (io.dropwizard:dropwizard-util:4.0.2 - http://www.dropwizard.io/4.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
      (Apache License 2.0) Dropwizard Validation Support (io.dropwizard:dropwizard-validation:4.0.2 - http://www.dropwizard.io/4.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
      (The Apache Software License, Version 2.0) FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
-     (Apache-2.0) Gson (com.google.code.gson:gson:2.10.1 - https://github.com/google/gson/gson)
+     (Apache-2.0) Gson (com.google.code.gson:gson:2.9.0 - https://github.com/google/gson/gson)
      (BSD License 3) Hamcrest (org.hamcrest:hamcrest:2.2 - http://hamcrest.org/JavaHamcrest/)
      (New BSD License) Hamcrest Core (org.hamcrest:hamcrest-core:1.3 - https://github.com/hamcrest/JavaHamcrest/hamcrest-core)
      (Apache License 2.0) Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:7.0.5.Final - http://hibernate.org/validator/hibernate-validator)
