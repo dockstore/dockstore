@@ -528,7 +528,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         try {
             // Retrieve the "current" head commit.
-            String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, reference);
+            String currentCommit = getCurrentHash(gitHubSourceCodeRepo, repository, reference);
             LOG.info("afterCommit={}, currentCommit={}", afterCommit, currentCommit);
             // Process the push iff the "current" and "after" commit hashes are equal.
             // If the repo's "current" hash doesn't match the event's "after" hash, the repo has changed since the event was created.
@@ -545,7 +545,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private boolean shouldProcessDelete(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference) {
         try {
             // Process the delete if the reference does not exist (there is no head commit).
-            return getHeadCommit(gitHubSourceCodeRepo, repository, reference) == null;
+            return getCurrentHash(gitHubSourceCodeRepo, repository, reference) == null;
         } catch (CustomWebApplicationException ex) {
             // If there's a problem determining if the delete needs processing, assume it does.
             LOG.info("CustomWebApplicationException determining whether to process delete", ex);
@@ -553,8 +553,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String reference) {
-        return repo.getCommitID(repository, reference);
+    private String getCurrentHash(GitHubSourceCodeRepo repo, String repository, String reference) {
+        if (StringUtils.startsWith(reference, "refs/tags/")) {
+            return repo.getHash(repository, reference);
+        } else {
+            return repo.getCommitID(repository, reference);
+        }
     }
 
     /**
