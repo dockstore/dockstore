@@ -29,6 +29,11 @@ com.fasterxml.jackson.core:jackson-databind:pom:2.15.2 			    = badSig
 com.fasterxml.jackson.core:jackson-annotations:pom:2.15.2		    = badSig
 com.fasterxml.jackson.core:jackson-core:pom:2.15.2 			        = badSig
 com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.15.2  = badSig
+com.fasterxml.jackson.datatype:jackson-datatype-joda:pom:2.15.3     = badSig
+com.fasterxml.jackson.core:jackson-databind:pom:2.15.3 			    = badSig
+com.fasterxml.jackson.core:jackson-annotations:pom:2.15.3		    = badSig
+com.fasterxml.jackson.core:jackson-core:pom:2.15.3 			        = badSig
+com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.15.3  = badSig
 
 org.broadinstitute:wdl-draft3_2.13:pom:84 = badSig
 org.broadinstitute:wdl-biscayne_2.13:pom:84 = badSig
