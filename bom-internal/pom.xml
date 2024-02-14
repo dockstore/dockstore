@@ -46,9 +46,6 @@ POM as their parent.
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- seems to control Intellj auto-import settings for the module when there is no compiler -->
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
         <revision>1.16</revision>
