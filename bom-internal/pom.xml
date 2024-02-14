@@ -1294,6 +1294,11 @@ POM as their parent.
                 <artifactId>jersey-container-servlet-core</artifactId>
                 <version>${jersey.version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>3.1.0</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.dropwizard</groupId>
