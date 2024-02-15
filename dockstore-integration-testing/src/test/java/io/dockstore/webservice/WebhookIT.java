@@ -1867,17 +1867,26 @@ class WebhookIT extends BaseIT {
         // Non-existent tag, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing tag with incorrect "after" SHA, should be ignored
+        // Existing annotated tag with incorrect "after" SHA, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing tag with correct "after" SHA, should succeed
-        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        // Existing annotated tag with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ff797c7dacd8c23a8ef89864ac5c50d9378cbec1");
         assertEquals(1, countVersions());
-        // Existing tag with no "after" SHA supplied, should succeed
+        // Existing annotated tag with no "after" SHA supplied, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(2, countVersions());
-        // There should be two ignored LambdaEvents
-        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10, null, null, null).stream().filter(LambdaEvent::isIgnored).count());
+        // Existing lightweight tag with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/tags/simple-lightweight-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(3, countVersions());
+        // Branch with incorrect "after" SHA, should be ignored
+        handleGitHubRelease(client, repo, "refs/heads/dont-ever-commit-to-this-branch", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(3, countVersions());
+        // Branch with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/heads/dont-ever-commit-to-this-branch", USER_2_USERNAME, "1e11133d732fe7d6e7682b6e4a99eaef5d14244c");
+        assertEquals(4, countVersions());
+        // There should be three ignored LambdaEvents
+        assertEquals(3, new UsersApi(webClient).getUserGitHubEvents(0, 10, null, null, null).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     /**
