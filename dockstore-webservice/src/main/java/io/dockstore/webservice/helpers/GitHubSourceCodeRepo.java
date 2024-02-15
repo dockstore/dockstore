@@ -1366,7 +1366,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error(gitUsername + ": IOException on getHash " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not access GitHub reference", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     @Override
