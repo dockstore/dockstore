@@ -553,6 +553,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
+    /**
+     * Retrieve a hash from GitHub for the specified reference.
+     * If the reference is to a branch, return the branch HEAD commit hash.
+     * If the reference is to a tag, return the hash that the tag refers to, which is either:
+     * A commit hash (if the reference is to a lightweight tag), or
+     * The tag object hash (if the reference is to an annotated tag).
+     * The returned value should match the value of the `after` hash field in a GitHub push event,
+     * if the repository has not changed since the push occurred.
+     */
     private String getCurrentHash(GitHubSourceCodeRepo repo, String repository, String reference) {
         if (StringUtils.startsWith(reference, "refs/tags/")) {
             return repo.getHash(repository, reference);

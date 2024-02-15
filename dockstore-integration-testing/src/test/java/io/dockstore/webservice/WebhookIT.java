@@ -1879,8 +1879,14 @@ class WebhookIT extends BaseIT {
         // Existing lightweight tag with correct "after" SHA, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-lightweight-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
         assertEquals(3, countVersions());
-        // There should be two ignored LambdaEvents
-        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10, null, null, null).stream().filter(LambdaEvent::isIgnored).count());
+        // Branch with incorrect "after" SHA, should be ignored
+        handleGitHubRelease(client, repo, "refs/heads/dont-ever-commit-to-this-branch", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(3, countVersions());
+        // Branch with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/heads/dont-ever-commit-to-this-branch", USER_2_USERNAME, "1e11133d732fe7d6e7682b6e4a99eaef5d14244c");
+        assertEquals(4, countVersions());
+        // There should be three ignored LambdaEvents
+        assertEquals(3, new UsersApi(webClient).getUserGitHubEvents(0, 10, null, null, null).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     /**
