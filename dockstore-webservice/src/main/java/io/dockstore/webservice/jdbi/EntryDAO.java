@@ -409,17 +409,12 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             String repoName = toolMode ? "name" : "repository";
             String orgName = toolMode ? "namespace" : "organization";
 
-            Subquery<Author> subQuery = getAuthorSubquery(filter, cb, query);
-
             predicates.add(cb.and(// get published workflows
                 cb.isTrue(entry.get("isPublished")),
                 // ensure we deal with null values and then do like queries on those non-null values
                 cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(cb.upper(entry.get(nameName)), "%" + filter.toUpperCase() + "%")), //
                     cb.and(cb.isNotNull(entry.get(repoName)), cb.like(cb.upper(entry.get(repoName)), "%" + filter.toUpperCase() + "%")), //
-                    addAuthorClauseToCriteriaBuilder(cb, entry, subQuery), //
-                    // TODO orcid authors are interesting since we load them dynamically and thus cannot query them from the database
                     cb.and(cb.isNotNull(entry.get(orgName)), cb.like(cb.upper(entry.get(orgName)), "%" + filter.toUpperCase() + "%")))));
-
         } else {
             predicates.add(cb.isTrue(entry.get("isPublished")));
         }
