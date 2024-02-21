@@ -219,7 +219,6 @@ public class ToolDAO extends EntryDAO<Tool> {
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
 
         if (author != null) {
-            // Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
             predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, query.subquery(Author.class), author);
         }
 
