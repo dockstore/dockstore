@@ -596,6 +596,11 @@ public class BasicIT extends BaseIT {
         final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, "Dockstore Test User", null, "0", 10);
         assertFalse(toolsViaAuthor.isEmpty());
 
+        // multiple matching authors for a workflow breaks things if they correspond to an 'actualdefaultversion'
+        testingPostgres.runUpdateStatement("INSERT INTO author (name, versionid, email) VALUES ('Dockstore Test User', 5, 'foo@foo.com')");
+        final List<Tool> toolsViaAuthor2 = ga4GhApi.toolsGet(null, null, null, null, null, null, null, "Dockstore", null, "0", 10);
+        assertFalse(toolsViaAuthor.isEmpty());
+
         // Invalidate tags
         testingPostgres.runUpdateStatement("UPDATE tag SET valid='f'");
 
