@@ -28,7 +28,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
@@ -220,8 +219,8 @@ public class ToolDAO extends EntryDAO<Tool> {
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
 
         if (author != null) {
-            Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
-            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, subQuery);
+            // Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
+            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, query.subquery(Author.class), author);
         }
 
         if (checker != null && checker) {
