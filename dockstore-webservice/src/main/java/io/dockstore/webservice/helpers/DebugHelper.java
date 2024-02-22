@@ -1,21 +1,16 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.ExceptionMapper;
-import jakarta.ws.rs.ext.Provider;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.glassfish.jersey.spi.ExtendedExceptionMapper;
+import org.glassfish.jersey.server.monitoring.ApplicationEvent;
+import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +45,7 @@ public final class DebugHelper {
     }
 
     public static String formatThreads() {
-        return join(threadMXBean.dumpAllThreads(true, true));
+        return concat(threadMXBean.dumpAllThreads(true, true));
     }
 
     public static String formatProcesses() {
@@ -62,68 +57,48 @@ public final class DebugHelper {
     }
 
     public static String formatMemory() {
-        return join(nameValue("heap", memoryMXBean.getHeapMemoryUsage()), nameValue("non-heap", memoryMXBean.getNonHeapMemoryUsage()));
+        return nameValue("HEAP", memoryMXBean.getHeapMemoryUsage()) + nameValue("NON-HEAP", memoryMXBean.getNonHeapMemoryUsage());
     }
 
     private static void log(String name, Supplier<String> valueSupplier) {
         if (LOG.isInfoEnabled()) {
-            LOG.info(nameValue("debug:" + name, valueSupplier.get()));
+            LOG.info(String.format("%s:\n%s", name, valueSupplier.get()));
         }
     }
 
     private static String nameValue(String name, Object value) {
-        return String.format("%s = %s", name, value);
+        return String.format("%s: %s\n", name, value);
     }
 
-    private static String join(Object... objects) {
-        return join(Arrays.asList(objects));
+    private static String concat(Object... objects) {
+        return Arrays.asList(objects).stream().map(Object::toString).collect(Collectors.joining());
     }
 
-    private static String join(Collection<?> objects) {
-        return objects.stream().map(Object::toString).collect(Collectors.joining("\n"));
-    }
-
-    public static ContainerRequestFilter getContainerRequestFilter() {
-        return new DebugHelperContainerRequestFilter();
-    }
-
-    public static ContainerResponseFilter getContainerResponseFilter() {
-        return new DebugHelperContainerResponseFilter();
-    }
-
-    public static ExceptionMapper getExceptionMapper() {
-        return new DebugHelperExceptionMapper();
-    }
-
-    @Provider
-    static class DebugHelperContainerRequestFilter implements ContainerRequestFilter {
-        @Override
-        public void filter(ContainerRequestContext requestContext) {
-            LOG.error("XXXXXX before");
-        }
-    }
-
-    @Provider
-    static class DebugHelperContainerResponseFilter implements ContainerResponseFilter {
-        @Override
-        public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-            LOG.error("XXXXXX after");
-        }
-    }
-
-    @Provider
-    static class DebugHelperExceptionMapper implements ExtendedExceptionMapper<Throwable> {
-        @Override
-        public boolean isMappable(Throwable t) {
-            LOG.error("XXXXXX exception");
-            return false;
-        }
-        @Override
-        public Response toResponse(Throwable t) {
-            LOG.error("should not be reachable");
-            throw new RuntimeException("wack");
-        }
+    public static ApplicationEventListener getApplicationEventListener() {
+        return new DebugHelperApplicationEventListener();
     }
 
     // https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/monitoring_tracing.html
+    public static class DebugHelperApplicationEventListener implements ApplicationEventListener {
+        @Override
+        public void onEvent(ApplicationEvent event) {
+            LOG.error("APP onEvent " + event.getType());
+        }
+
+        @Override
+        public RequestEventListener onRequest(RequestEvent event) {
+            LOG.error("APP onRequest " + event.getType() + " " + event.getContainerRequest() + " " + event.getContainerResponse());
+            return new DebugHelperRequestEventListener();
+        }
+    }
+
+    public static class DebugHelperRequestEventListener implements RequestEventListener {
+        @Override
+        public void onEvent(RequestEvent event) {
+            LOG.error("REQUEST onRequest " + event.getType() + " " + event.getContainerRequest() + " " + event.getContainerResponse());
+            if (event.getType() == RequestEvent.Type.FINISHED) {
+                dumpGlobals();
+            }
+        }
+    }
 }

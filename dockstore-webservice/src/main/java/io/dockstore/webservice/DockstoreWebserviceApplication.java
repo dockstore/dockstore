@@ -491,10 +491,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         GoogleHelper.setConfig(configuration);
 
         DebugHelper.setConfig(configuration);
-        environment.jersey().register(DebugHelper.getContainerRequestFilter());
-        environment.jersey().register(DebugHelper.getContainerResponseFilter());
-        environment.jersey().register(DebugHelper.getExceptionMapper());
-        LOG.error("registered interceptors");
+        environment.jersey().register(DebugHelper.getApplicationEventListener());
 
         registerAPIsAndMisc(environment);
 
