@@ -48,7 +48,7 @@ POM as their parent.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.15</revision>
+        <revision>1.16</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <dropwizard.version>4.0.2</dropwizard.version>
@@ -63,7 +63,7 @@ POM as their parent.
         <logback.version>1.4.12</logback.version>
         <aws.version>2.17.186</aws.version>
         <powermock.version>2.0.9</powermock.version>
-        <postgresql.version>42.4.3</postgresql.version>
+        <postgresql.version>42.7.2</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.9</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
@@ -539,7 +539,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.38.0</version>
+                <version>3.42.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
@@ -1085,7 +1085,7 @@ POM as their parent.
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>5.12.1</version>
+                <version>5.13.0</version>
             </dependency>
 
             <dependency>

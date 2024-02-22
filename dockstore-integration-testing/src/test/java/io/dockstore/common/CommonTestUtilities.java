@@ -32,6 +32,7 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
@@ -489,7 +490,7 @@ public final class CommonTestUtilities {
                             "update token set content = '" + cachedToken.getContent() + "', dbUpdateDate = '" + cachedToken.getDbUpdateDate().toLocalDateTime().toString() + "' where id = "
                                 + cachedToken.getId());
                     }
-                } catch (IOException | UncheckedIOException e) {
+                } catch (IOException | UncheckedIOException | JsonSyntaxException e) {
                     // probably ok
                     LOG.debug("could not read bitbucket token", e);
                 }
