@@ -41,7 +41,7 @@ import org.hibernate.annotations.BatchSize;
 @Entity
 @Table(name = "validation_status")
 @ApiModel(value = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
-@Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
+@Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses", allOf = Metric.class)
 @SuppressWarnings("checkstyle:magicnumber")
 public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidatorInfo> {
 

@@ -17,36 +17,49 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.SequenceGenerator;
 
+@Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-@Schema(name = "Metric", description = "Describes an aggregated metric")
+@Schema(name = "Metric", description = "Describes an aggregated metric", subTypes = { ExecutionTimeStatisticMetric.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, CostStatisticMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class })
 public abstract class Metric {
 
-    @Column
-    @Schema(description = "Whether or not invalid executions were skipped during the aggregation", defaultValue = "false")
-    boolean wereExecutionsSkipped = false;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "metric_id_seq")
+    @SequenceGenerator(name = "metric_id_seq", sequenceName = "metric_id_seq", allocationSize = 1)
+    @ApiModelProperty(value = "Implementation specific ID for metrics in this webservice")
+    @Schema(description = "Implementation specific ID for metrics in this webservice")
+    private long id;
 
     @Column
-    @Schema(description = "The number of executions that were aggregated")
-    int numberOfExecutionsAggregated;
+    @Schema(description = "The number of executions that were skipped during aggregation because they were invalid", defaultValue = "0")
+    int numberOfSkippedExecutions = 0;
 
-    public boolean wereExecutionsSkipped() {
-        return wereExecutionsSkipped;
+    protected Metric() {
     }
 
-    public void setWereExecutionsSkipped(boolean wereExecutionsSkipped) {
-        this.wereExecutionsSkipped = wereExecutionsSkipped;
+    public long getId() {
+        return id;
     }
 
-    public int getNumberOfExecutionsAggregated() {
-        return numberOfExecutionsAggregated;
+    public void setId(long id) {
+        this.id = id;
     }
 
-    public void setNumberOfExecutionsAggregated(int numberOfExecutionsAggregated) {
-        this.numberOfExecutionsAggregated = numberOfExecutionsAggregated;
+    public int getNumberOfSkippedExecutions() {
+        return numberOfSkippedExecutions;
+    }
+
+    public void setNumberOfSkippedExecutions(int numberOfSkippedExecutions) {
+        this.numberOfSkippedExecutions = numberOfSkippedExecutions;
     }
 }

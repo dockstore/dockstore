@@ -47,7 +47,7 @@ import java.util.Map;
 @Entity
 @Table(name = "execution_status")
 @ApiModel(value = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
-@Schema(name = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
+@Schema(name = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses", allOf = Metric.class)
 @SuppressWarnings("checkstyle:magicnumber")
 public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus, MetricsByStatus> {
 
@@ -87,6 +87,7 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     }
 
     @Override
+    @Schema(description = "A map containing the metrics for each execution status", requiredMode = RequiredMode.REQUIRED)
     public Map<ExecutionStatus, MetricsByStatus> getCount() {
         return count;
     }

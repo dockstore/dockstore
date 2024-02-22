@@ -18,31 +18,17 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
-import jakarta.persistence.SequenceGenerator;
 import java.sql.Timestamp;
 import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(name = "CountMetric", description = "Describes a metric with counts")
 public abstract class CountMetric<K, V> extends Metric {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "countmetric_id_seq")
-    @SequenceGenerator(name = "countmetric_id_seq", sequenceName = "countmetric_id_seq", allocationSize = 1)
-    @ApiModelProperty(value = "Implementation specific ID for the count metrics in this webservice")
-    @Schema(description = "Implementation specific ID for the count metrics in this webservice")
-    private long id;
 
     // database timestamps
     @Column(updatable = false)
@@ -58,14 +44,6 @@ public abstract class CountMetric<K, V> extends Metric {
     public abstract Map<K, V> getCount();
 
     protected CountMetric() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public Timestamp getDbCreateDate() {

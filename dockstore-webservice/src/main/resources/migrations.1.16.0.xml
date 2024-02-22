@@ -1,0 +1,49 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2024 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.15.0">
+    <changeSet author="ktran (generated)" id="addNumberOfSkippedExecutions">
+        <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="metric_id_seq" startValue="1"/>
+        <sql dbms="postgresql">
+            <comment>Set the value of the metric_id_seq to the greatest value between statisticmetric_id_seq and countmetric_id_seq</comment>
+            select setval('metric_id_seq', (select last_value from statisticmetric_id_seq)) where (select last_value from metric_id_seq) &lt; (select last_value from statisticmetric_id_seq);
+            select setval('metric_id_seq', (select last_value from countmetric_id_seq)) where (select last_value from metric_id_seq) &lt; (select last_value from countmetric_id_seq);
+        </sql>
+        <addColumn tableName="cost_metric">
+            <column name="numberofskippedexecutions" type="int4"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="numberofskippedexecutions" type="int4"/>
+        </addColumn>
+        <addColumn tableName="execution_status">
+            <column name="numberofskippedexecutions" type="int4"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="numberofskippedexecutions" type="int4"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="numberofskippedexecutions" type="int4"/>
+        </addColumn>
+        <addColumn tableName="validation_status">
+            <column name="numberofskippedexecutions" type="int4"/>
+        </addColumn>
+        <dropSequence sequenceName="countmetric_id_seq"/>
+        <dropSequence sequenceName="statisticmetric_id_seq"/>
+    </changeSet>
+</databaseChangeLog>
