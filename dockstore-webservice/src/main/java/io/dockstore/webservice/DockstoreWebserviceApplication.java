@@ -491,6 +491,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         GoogleHelper.setConfig(configuration);
 
         DebugHelper.setConfig(configuration);
+        DebugHelper.setEnvironment(environment);
+        DebugHelper.setSessionFactory(hibernate.getSessionFactory());
         environment.jersey().register(DebugHelper.getApplicationEventListener());
 
         registerAPIsAndMisc(environment);
