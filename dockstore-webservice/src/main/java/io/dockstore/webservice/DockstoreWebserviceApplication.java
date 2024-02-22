@@ -85,6 +85,7 @@ import io.dockstore.webservice.filters.AuthenticatedUserFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
+import io.dockstore.webservice.helpers.DebugHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -488,6 +489,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         DOIGeneratorFactory.setConfig(configuration);
 
         GoogleHelper.setConfig(configuration);
+
+        DebugHelper.setConfig(configuration);
+        environment.jersey().register(DebugHelper.getContainerRequestFilter());
+        environment.jersey().register(DebugHelper.getContainerResponseFilter());
+        environment.jersey().register(DebugHelper.getExceptionMapper());
+        LOG.error("registered interceptors");
 
         registerAPIsAndMisc(environment);
 
