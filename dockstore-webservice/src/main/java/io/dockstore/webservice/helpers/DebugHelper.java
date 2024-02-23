@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Function;
@@ -45,36 +46,40 @@ public final class DebugHelper {
     private DebugHelper() {
     }
 
-    public static void setConfig(DockstoreWebserviceConfiguration config) {
+    public static void init(DockstoreWebserviceConfiguration config, Environment environment, SessionFactory sessionFactory) {
+
         DebugHelper.config = config;
-        init();
-    }
-
-    public static void setEnvironment(Environment environment) {
         DebugHelper.environment = environment;
-    }
-
-    public static void setSessionFactory(SessionFactory sessionFactory) {
         DebugHelper.sessionFactory = sessionFactory;
-    }
 
-    private static void init() {
-        // initialize the beans
+        // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
         memoryMXBean = ManagementFactory.getMemoryMXBean();
         threadMXBean = ManagementFactory.getThreadMXBean();
+
+        // Create a Timer, backed by a daemon thread, and schedule a periodic dump of the global information.
         new Timer("diagnostics", true).scheduleAtFixedRate(
-           new TimerTask() {
-               public void run() {
-                   dumpGlobals();
-               }
-           }, 0, 10000);
+            new TimerTask() {
+                public void run() {
+                    logGlobals();
+                }
+            }, 10000, 10000);
+
+        // Register a Jersey event handler that will field request events and log session and thread-related information.
+        environment.jersey().register(new DebugHelperApplicationEventListener());
     }
 
-    public static void dumpGlobals() {
+    public static void logGlobals() {
         log("threads", () -> formatThreads());
         log("processes", () -> formatProcesses());
         log("database", () -> formatDatabase());
         log("memory", () -> formatMemory());
+    }
+
+    private static void log(String name, Supplier<String> valueSupplier) {
+        if (LOG.isInfoEnabled()) {
+            Thread current = Thread.currentThread();
+            LOG.info(String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get()));
+        }
     }
 
     public static String formatThreads() {
@@ -96,13 +101,18 @@ public final class DebugHelper {
     public static String formatMemory() {
         return nameValue("HEAP", memoryMXBean.getHeapMemoryUsage()) +
             nameValue("NON-HEAP", memoryMXBean.getNonHeapMemoryUsage()) +
-            concat(format(DebugHelper::memoryPoolMXBeanToString, ManagementFactory.getMemoryPoolMXBeans()));
+            concat(format(DebugHelper::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
     }
 
-    public static String formatSession() {
-        Session session = sessionFactory.getCurrentSession();
-        SessionStatistics statistics = session.getStatistics();
-        return statistics.toString();
+    public static String formatSession(Session session) {
+        return session.getStatistics().toString();
+    }
+
+    public static String formatThread(ThreadState startState, ThreadState finishState) {
+        return nameValue("allocated", formatBytes(finishState.allocatedBytes() - startState.allocatedBytes())) +
+            nameValue("cpu-time", formatNanoseconds(finishState.cpuTime() - startState.cpuTime())) +
+            nameValue("user-time", formatNanoseconds(finishState.userTime() - startState.userTime())) +
+            nameValue("elapsed-time", formatNanoseconds(finishState.wallClock() - startState.wallClock()));
     }
 
     public static String formatNanoseconds(long ns) {
@@ -113,18 +123,11 @@ public final class DebugHelper {
         return String.format("%.2f MB", bytes / 1e6);
     }
 
-    private static String memoryPoolMXBeanToString(MemoryPoolMXBean pool) {
+    private static String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
         return nameValue("POOL", pool.getName() + ", " + pool.getType()) +
             nameValue("current", pool.getUsage()) +
             nameValue("peak", pool.getPeakUsage()) +
             nameValue("collection", pool.getCollectionUsage());
-    }
-
-    private static void log(String name, Supplier<String> valueSupplier) {
-        if (LOG.isInfoEnabled()) {
-            Thread current = Thread.currentThread();
-            LOG.info(String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get()));
-        }
     }
 
     private static String nameValue(String name, Object value) {
@@ -143,67 +146,62 @@ public final class DebugHelper {
         long bytes = 0, cpuTime = 0, userTime = 0;
         if (threadMXBean instanceof com.sun.management.ThreadMXBean sunBean) {
             bytes = sunBean.getCurrentThreadAllocatedBytes();
+        } else {
+            LOG.info("sun threadMXBean.getCurrentThreadAllocatedBytes() not supported");
         }
         try {
             cpuTime = threadMXBean.getCurrentThreadCpuTime();
         }
         catch (UnsupportedOperationException e) {
-            LOG.error("threadMXBean.getCurrentThreadCpuTime not supported");
+            LOG.info("threadMXBean.getCurrentThreadCpuTime not supported");
         }
         try {
             userTime = threadMXBean.getCurrentThreadUserTime();
         }
         catch (UnsupportedOperationException e) {
-            LOG.error("threadMXBean.getCurrentThreadUserTime not supported");
+            LOG.info("threadMXBean.getCurrentThreadUserTime not supported");
         }
         long wallClock = System.nanoTime();
         return new ThreadState(bytes, cpuTime, userTime, wallClock);
     }
 
-    private static boolean hasSession() {
+    private static Optional<Session> getCurrentSession() {
         try {
-            sessionFactory.getCurrentSession();
-            return true;
+            // This getCurrentSession() call will throw if there's no current session.
+            return Optional.of(sessionFactory.getCurrentSession());
         }
         catch (Exception e) {
-            return false;
+            return Optional.empty();
         }
     }
 
-    public static ApplicationEventListener getApplicationEventListener() {
-        return new DebugHelperApplicationEventListener();
-    }
-
-    private static String requestToString(ContainerRequest request) {
+    private static String formatRequest(ContainerRequest request) {
         return String.format("%s \"%s\"", request.getMethod(), request.getPath(false));
     }
 
-    private static String requestAndThreadToString(ContainerRequest request) {
-        Thread current = Thread.currentThread();
-        return String.format("%s in thread \"%s\" (%s)", requestToString(request), current.getName(), current.getId());
-    }
-
     private static void handleRequestEvent(RequestEvent event, ThreadState startState) {
-        // log("event", () -> event.getType() + " " + sessionFactory.getCurrentSession());
+
         ContainerRequest request = event.getContainerRequest();
         ContainerResponse response = event.getContainerResponse();
+
         switch (event.getType()) {
+
+            // Request started.
             case START:
-                log("started", () -> requestToString(request));
+                log("started", () -> formatRequest(request));
                 break;
+
+            // Done filtering response.
             case RESP_FILTERS_FINISHED:
-                if (hasSession()) {
-                    log("session", () -> formatSession());
-                }
+                // This is the last stage at which the Hibernate session is bound.
+                // If the session was closed/dissociated during the request, it may not even be available here.
+                getCurrentSession().ifPresent(session -> log("session", () -> formatSession(session)));
                 break;
+
+            // Request finished.
             case FINISHED:
-                log("finished", () -> requestToString(request));
-                log("thread", () ->
-                    nameValue("allocated", formatBytes(getState().allocatedBytes() - startState.allocatedBytes())) +
-                    nameValue("cpu-time", formatNanoseconds(getState().cpuTime() - startState.cpuTime())) +
-                    nameValue("user-time", formatNanoseconds(getState().userTime() - startState.userTime())) +
-                    nameValue("elapsed-time", formatNanoseconds(getState().wallClock() - startState.wallClock()))
-                );
+                log("finished", () -> formatRequest(request));
+                log("thread", () -> formatThread(startState, getState()));
                 break;
         }
     }
