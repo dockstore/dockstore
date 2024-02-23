@@ -1,11 +1,9 @@
 package io.dockstore.webservice.helpers;
 
 import com.codahale.metrics.Gauge;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.common.Utilities;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.core.setup.Environment;
-import java.io.File;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
@@ -28,15 +26,15 @@ import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
-import org.hibernate.SessionFactory;
 import org.hibernate.Session;
-import org.hibernate.stat.SessionStatistics;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class DebugHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(DebugHelper.class);
+    private static final long LOG_PERIOD_MS = 10000L;
 
     private static DockstoreWebserviceConfiguration config;
     private static Environment environment;
@@ -48,11 +46,11 @@ public final class DebugHelper {
     private DebugHelper() {
     }
 
-    public static void init(DockstoreWebserviceConfiguration config, Environment environment, SessionFactory sessionFactory) {
+    public static void init(DockstoreWebserviceConfiguration newConfig, Environment newEnvironment, SessionFactory newSessionFactory) {
 
-        DebugHelper.config = config;
-        DebugHelper.environment = environment;
-        DebugHelper.sessionFactory = sessionFactory;
+        DebugHelper.config = newConfig;
+        DebugHelper.environment = newEnvironment;
+        DebugHelper.sessionFactory = newSessionFactory;
 
         // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
         memoryMXBean = ManagementFactory.getMemoryMXBean();
@@ -64,7 +62,7 @@ public final class DebugHelper {
                 public void run() {
                     logGlobals();
                 }
-            }, 10000, 10000);
+            }, LOG_PERIOD_MS, LOG_PERIOD_MS);
 
         // Register a Jersey event handler that will log session and thread-related information.
         environment.jersey().register(new DebugHelperApplicationEventListener());
@@ -82,7 +80,7 @@ public final class DebugHelper {
     }
 
     public static void logProcesses() {
-        log("processes", () -> formatProcesses());
+        // log("processes", () -> formatProcesses());
     }
 
     public static void logDatabase() {
@@ -136,7 +134,7 @@ public final class DebugHelper {
             String suspect = decapitalize(value.substring(start, end));
             if (hexPattern.matcher(suspect).matches() || isScrambled(suspect)) {
                 for (int i = start; i < end; i++) {
-                   censored.setCharAt(i, 'X');
+                    censored.setCharAt(i, 'X');
                 }
             }
         }
@@ -165,12 +163,16 @@ public final class DebugHelper {
                 adjacents++;
             }
         }
-        return adjacents < (3 * v.length()) / 4;
+        return adjacents < 0.75 * v.length();
     }
 
     private static int characterClass(char c) {
-        if (c >= '0' && c <= '9') return 0;
-        if (c >= 'A' && c <= 'Z') return 1;
+        if (c >= '0' && c <= '9') {
+            return 0;
+        }
+        if (c >= 'A' && c <= 'Z') {
+            return 1;
+        }
         return 2;
     }
 
@@ -185,15 +187,15 @@ public final class DebugHelper {
     // https://metrics.dropwizard.io/4.2.0/
     public static String formatDatabase() {
         Map<String, Gauge> gauges = environment.metrics().getGauges();
-        return nameValue("pool-size", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue()) +
-            nameValue("pool-active", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue()) +
-            nameValue("pool-idle", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue());
+        return nameValue("pool-size", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue())
+            + nameValue("pool-active", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue())
+            + nameValue("pool-idle", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue());
     }
 
     public static String formatMemory() {
-        return nameValue("HEAP", memoryMXBean.getHeapMemoryUsage()) +
-            nameValue("NON-HEAP", memoryMXBean.getNonHeapMemoryUsage()) +
-            concat(format(DebugHelper::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
+        return nameValue("HEAP", memoryMXBean.getHeapMemoryUsage())
+            + nameValue("NON-HEAP", memoryMXBean.getNonHeapMemoryUsage())
+            + concat(format(DebugHelper::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
     }
 
     public static String formatSession(Session session) {
@@ -201,10 +203,10 @@ public final class DebugHelper {
     }
 
     public static String formatThread(ThreadState startState, ThreadState finishState) {
-        return nameValue("allocated", formatBytes(finishState.allocatedBytes() - startState.allocatedBytes())) +
-            nameValue("cpu-time", formatNanoseconds(finishState.cpuTime() - startState.cpuTime())) +
-            nameValue("user-time", formatNanoseconds(finishState.userTime() - startState.userTime())) +
-            nameValue("elapsed-time", formatNanoseconds(finishState.wallClock() - startState.wallClock()));
+        return nameValue("allocated", formatBytes(finishState.allocatedBytes() - startState.allocatedBytes()))
+            + nameValue("cpu-time", formatNanoseconds(finishState.cpuTime() - startState.cpuTime()))
+            + nameValue("user-time", formatNanoseconds(finishState.userTime() - startState.userTime()))
+            + nameValue("elapsed-time", formatNanoseconds(finishState.wallClock() - startState.wallClock()));
     }
 
     public static String formatNanoseconds(long ns) {
@@ -216,10 +218,10 @@ public final class DebugHelper {
     }
 
     private static String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
-        return nameValue("POOL", pool.getName() + ", " + pool.getType()) +
-            nameValue("current", pool.getUsage()) +
-            nameValue("peak", pool.getPeakUsage()) +
-            nameValue("collection", pool.getCollectionUsage());
+        return nameValue("POOL", pool.getName() + ", " + pool.getType())
+            + nameValue("current", pool.getUsage())
+            + nameValue("peak", pool.getPeakUsage())
+            + nameValue("collection", pool.getCollectionUsage());
     }
 
     private static String nameValue(String name, Object value) {
@@ -235,22 +237,22 @@ public final class DebugHelper {
     }
 
     private static ThreadState getState() {
-        long bytes = 0, cpuTime = 0, userTime = 0;
+        long bytes = 0;
         if (threadMXBean instanceof com.sun.management.ThreadMXBean sunBean) {
             bytes = sunBean.getCurrentThreadAllocatedBytes();
         } else {
             LOG.info("sun threadMXBean.getCurrentThreadAllocatedBytes() not supported");
         }
+        long cpuTime = 0;
         try {
             cpuTime = threadMXBean.getCurrentThreadCpuTime();
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             LOG.info("threadMXBean.getCurrentThreadCpuTime not supported");
         }
+        long userTime = 0;
         try {
             userTime = threadMXBean.getCurrentThreadUserTime();
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             LOG.info("threadMXBean.getCurrentThreadUserTime not supported");
         }
         long wallClock = System.nanoTime();
@@ -261,8 +263,7 @@ public final class DebugHelper {
         try {
             // This getCurrentSession() call will throw if there's no current session.
             return Optional.of(sessionFactory.getCurrentSession());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return Optional.empty();
         }
     }
@@ -272,11 +273,11 @@ public final class DebugHelper {
     }
 
     private static void handleRequestEvent(RequestEvent event, ThreadState startState) {
+        try {
+            ContainerRequest request = event.getContainerRequest();
+            ContainerResponse response = event.getContainerResponse();
 
-        ContainerRequest request = event.getContainerRequest();
-        ContainerResponse response = event.getContainerResponse();
-
-        switch (event.getType()) {
+            switch (event.getType()) {
 
             // Request started.
             case START:
@@ -285,7 +286,7 @@ public final class DebugHelper {
 
             // Done filtering response.
             case RESP_FILTERS_FINISHED:
-                // This is the last stage at which the Hibernate session is bound.
+                // This is the last stage at which the Hibernate session could be bound.
                 // If the session was closed/dissociated during the request, it may not even be available here.
                 getCurrentSession().ifPresent(session -> logSession(session));
                 break;
@@ -295,6 +296,10 @@ public final class DebugHelper {
                 logFinished(request);
                 logThread(startState, getState());
                 break;
+            }
+        } catch (Exception e) {
+            // An Exception thrown by this handler will cause the request to fail, so we catch and suppress it.
+            LOG.error("Request handler threw", e);
         }
     }
 
@@ -315,9 +320,11 @@ public final class DebugHelper {
 
     public static class DebugHelperRequestEventListener implements RequestEventListener {
         private final ThreadState startState;
+
         public DebugHelperRequestEventListener(ThreadState startState) {
             this.startState = startState;
         }
+
         @Override
         public void onEvent(RequestEvent event) {
             handleRequestEvent(event, startState);

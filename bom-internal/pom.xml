@@ -556,11 +556,6 @@ POM as their parent.
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>3.0.1</version>
             </dependency>
-            <dependency>
-                <groupId>jakarta.ws.rs</groupId>
-                <artifactId>jakarta.ws.rs-api</artifactId>
-                <version>3.0.0</version>
-            </dependency>
 
             <dependency>
                 <groupId>com.google.j2objc</groupId>
