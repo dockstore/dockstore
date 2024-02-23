@@ -47,6 +47,7 @@
         <postgresql.version>42.2.23</postgresql.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.22.2</maven-failsafe.version>
+        <maven-java.version>17</maven-java.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -189,7 +190,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.12.1</version>
                     <configuration>
-                        <release>17</release>
+                        <release>${maven-java.version}</release>
                         <showDeprecation>true</showDeprecation>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
@@ -378,6 +379,9 @@
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
                     <version>4.8.1</version>
+                    <configuration>
+                        <release>${maven-java.version}</release>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -598,7 +602,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
-                    <release>17</release>
+                    <release>${maven-java.version}</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -690,7 +694,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <compliance>17</compliance>
+                    <compliance>${maven-java.version}</compliance>
                 </configuration>
             </plugin>
             <plugin>
