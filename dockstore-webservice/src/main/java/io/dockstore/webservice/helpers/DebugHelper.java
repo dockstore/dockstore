@@ -44,6 +44,7 @@ public final class DebugHelper {
     private static ThreadMXBean threadMXBean;
 
     private DebugHelper() {
+        // This space intentionally left blank.
     }
 
     public static void init(DockstoreWebserviceConfiguration newConfig, Environment newEnvironment, SessionFactory newSessionFactory) {
