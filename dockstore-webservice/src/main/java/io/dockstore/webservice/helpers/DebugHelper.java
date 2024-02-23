@@ -19,6 +19,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
@@ -64,22 +66,112 @@ public final class DebugHelper {
                 }
             }, 10000, 10000);
 
-        // Register a Jersey event handler that will field request events and log session and thread-related information.
+        // Register a Jersey event handler that will log session and thread-related information.
         environment.jersey().register(new DebugHelperApplicationEventListener());
     }
 
     public static void logGlobals() {
+        logThreads();
+        logProcesses();
+        logDatabase();
+        logMemory();
+    }
+
+    public static void logThreads() {
         log("threads", () -> formatThreads());
+    }
+
+    public static void logProcesses() {
         log("processes", () -> formatProcesses());
+    }
+
+    public static void logDatabase() {
         log("database", () -> formatDatabase());
+    }
+
+    public static void logMemory() {
         log("memory", () -> formatMemory());
+    }
+
+    public static void logStarted(ContainerRequest request) {
+        log("started", () -> formatRequest(request));
+    }
+
+    public static void logFinished(ContainerRequest request) {
+        log("finished", () -> formatRequest(request));
+    }
+
+    public static void logThread(ThreadState startState, ThreadState finishState) {
+        log("thread", () -> formatThread(startState, finishState));
+    }
+
+    public static void logSession(Session session) {
+        log("session", () -> formatSession(session));
     }
 
     private static void log(String name, Supplier<String> valueSupplier) {
         if (LOG.isInfoEnabled()) {
             Thread current = Thread.currentThread();
-            LOG.info(String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get()));
+            String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get());
+            LOG.info(censor(message));
         }
+    }
+
+    private static String censor(String value) {
+        // Censor any continuous run of 40 or more base64-legal non-padding
+        // characters if it's either: a) a hexadecimal string, or b) "scrambled".
+        // In this context, "scrambled" means that there's a typical mix of the
+        // different character classes, indicative of a well-encoded key.
+        // This code will censor all but approximately 1 of 13000 random
+        // 40-character strings made up of base64-legal non-padding characters
+        // with uniform character frequency, but passes most of information we're
+        // logging with no modifications.
+        StringBuilder censored = new StringBuilder(value);
+        Pattern suspectPattern = Pattern.compile("[-_a-zA-Z0-9+/]{40,}");
+        Pattern hexPattern = Pattern.compile("^[a-fA-F0-9]*$");
+        Matcher matcher = suspectPattern.matcher(value);
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            String suspect = decapitalize(value.substring(start, end));
+            if (hexPattern.matcher(suspect).matches() || isScrambled(suspect)) {
+                for (int i = start; i < end; i++) {
+                   censored.setCharAt(i, 'X');
+                }
+            }
+        }
+        return censored.toString();
+    }
+
+    private static String decapitalize(String v) {
+        StringBuilder builder = new StringBuilder(v);
+        for (int i = 1, n = v.length() - 1; i < n; i++) {
+            char before = v.charAt(i - 1);
+            char c = v.charAt(i);
+            char after = v.charAt(i + 1);
+            if (before == '/' && c >= 'A' && c <= 'Z' && after >= 'a' && after <= 'z') {
+                builder.setCharAt(i, (char)('a' + (c - 'A')));
+            }
+        }
+        return builder.toString();
+    }
+
+    private static boolean isScrambled(String v) {
+        int adjacents = 0;
+        for (int i = 0, n = v.length() - 1; i < n; i++) {
+            char a = v.charAt(i);
+            char b = v.charAt(i + 1);
+            if (characterClass(a) == characterClass(b)) {
+                adjacents++;
+            }
+        }
+        return adjacents < (3 * v.length()) / 4;
+    }
+
+    private static int characterClass(char c) {
+        if (c >= '0' && c <= '9') return 0;
+        if (c >= 'A' && c <= 'Z') return 1;
+        return 2;
     }
 
     public static String formatThreads() {
@@ -188,20 +280,20 @@ public final class DebugHelper {
 
             // Request started.
             case START:
-                log("started", () -> formatRequest(request));
+                logStarted(request);
                 break;
 
             // Done filtering response.
             case RESP_FILTERS_FINISHED:
                 // This is the last stage at which the Hibernate session is bound.
                 // If the session was closed/dissociated during the request, it may not even be available here.
-                getCurrentSession().ifPresent(session -> log("session", () -> formatSession(session)));
+                getCurrentSession().ifPresent(session -> logSession(session));
                 break;
 
             // Request finished.
             case FINISHED:
-                log("finished", () -> formatRequest(request));
-                log("thread", () -> formatThread(startState, getState()));
+                logFinished(request);
+                logThread(startState, getState());
                 break;
         }
     }
