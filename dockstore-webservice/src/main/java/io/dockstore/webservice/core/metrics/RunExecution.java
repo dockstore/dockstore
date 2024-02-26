@@ -23,7 +23,9 @@ import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime;
 import io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 /**
  * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
@@ -42,14 +44,17 @@ public class RunExecution extends Execution {
     @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S")
     private String executionTime;
 
+    @PositiveOrZero
     @JsonProperty
     @Schema(description = "Memory requirements for the execution in GB", example = "2")
     private Double memoryRequirementsGB;
 
+    @PositiveOrZero
     @JsonProperty
     @Schema(description = "Number of CPUs required for the execution", example = "2")
     private Integer cpuRequirements;
 
+    @Valid
     @JsonProperty
     @Schema(description = "The cost of the execution in USD")
     private Cost cost;
