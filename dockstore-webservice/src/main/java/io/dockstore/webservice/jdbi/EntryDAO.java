@@ -409,14 +409,12 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             String repoName = toolMode ? "name" : "repository";
             String orgName = toolMode ? "namespace" : "organization";
 
-            Subquery<Author> subQuery = getAuthorSubquery(filter, cb, query);
-
             predicates.add(cb.and(// get published workflows
                 cb.isTrue(entry.get("isPublished")),
                 // ensure we deal with null values and then do like queries on those non-null values
                 cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(cb.upper(entry.get(nameName)), "%" + filter.toUpperCase() + "%")), //
                     cb.and(cb.isNotNull(entry.get(repoName)), cb.like(cb.upper(entry.get(repoName)), "%" + filter.toUpperCase() + "%")), //
-                    addAuthorClauseToCriteriaBuilder(cb, entry, subQuery), //
+                    addAuthorClauseToCriteriaBuilder(cb, entry, query.subquery(Author.class), filter), //
                     // TODO orcid authors are interesting since we load them dynamically and thus cannot query them from the database
                     cb.and(cb.isNotNull(entry.get(orgName)), cb.like(cb.upper(entry.get(orgName)), "%" + filter.toUpperCase() + "%")))));
 
@@ -457,13 +455,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         query.where(predicates.toArray(new Predicate[]{}));
     }
 
-    static Subquery<Author> getAuthorSubquery(String filter, CriteriaBuilder cb, CriteriaQuery<?> query) {
-        Subquery<Author> subQuery = query.subquery(Author.class);
-        Root<Author> author = subQuery.from(Author.class);
-        subQuery.select(author).distinct(true).where(cb.like(cb.upper(author.get("name")), "%" + filter.toUpperCase() + "%"));
-        return subQuery;
-    }
-
     protected Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
         return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
             .orElse(existingPredicate);
@@ -502,8 +493,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
 
         if (author != null) {
-            Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
-            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, subQuery);
+            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, query.subquery(Author.class), author);
         }
 
         if (descriptorLanguage != null) {
@@ -515,10 +505,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return predicate;
     }
 
-    static Predicate addAuthorClauseToCriteriaBuilder(CriteriaBuilder cb, Root<?> entryRoot, Subquery<Author> subQuery) {
+    static Predicate addAuthorClauseToCriteriaBuilder(CriteriaBuilder cb, Root<?> entryRoot, Subquery<Author> subQuery, String author) {
         Root<Author> authorRoot = subQuery.from(Author.class);
-        final Predicate notEmpty = cb.isNotNull(
-                subQuery.select(authorRoot).where(cb.and(cb.equal(authorRoot.get("versionid"), entryRoot.get("actualDefaultVersion")))));
+        final Predicate notEmpty = cb.exists(
+                subQuery.select(authorRoot).where(cb.and(cb.and(cb.equal(authorRoot.get("versionid"), entryRoot.get("actualDefaultVersion")))), (cb.like(cb.upper(authorRoot.get("name")), "%" + author.toUpperCase() + "%"))));
         return cb.and(cb.isNotNull(entryRoot.get("actualDefaultVersion")), notEmpty);
     }
 }
