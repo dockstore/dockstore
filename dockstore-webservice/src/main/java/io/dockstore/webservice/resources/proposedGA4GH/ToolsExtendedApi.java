@@ -20,7 +20,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.common.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.constraints.HasMetrics;

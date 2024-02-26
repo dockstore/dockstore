@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OICR and UCSC
+ * Copyright 2024 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,19 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
-import io.dockstore.common.metrics.FormatCheckHelper;
+import io.dockstore.common.metrics.ExecutionsRequestBody;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 /**
- * Validates that execution time is in ISO 8601 UTC date format
+ * Validates that ExecutionsRequestBody has executions or metrics.
  */
-public class ISO8601ExecutionDateValidator implements ConstraintValidator<ISO8601ExecutionDate, String> {
+public class HasExecutionsOrMetricsValidator implements ConstraintValidator<HasExecutionsOrMetrics, ExecutionsRequestBody> {
 
     @Override
-    public boolean isValid(final String executionTime, final ConstraintValidatorContext context) {
-        if (executionTime == null) {
-            return false;
-        }
-        return FormatCheckHelper.checkExecutionDateISO8601Format(executionTime).isPresent();
+    public boolean isValid(final ExecutionsRequestBody executionsRequestBody, final ConstraintValidatorContext context) {
+        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getTaskExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
     }
 }

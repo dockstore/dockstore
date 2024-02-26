@@ -18,7 +18,7 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.metrics.constraints.ValidExecutionId;
+import io.dockstore.common.metrics.constraints.ValidExecutionId;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;

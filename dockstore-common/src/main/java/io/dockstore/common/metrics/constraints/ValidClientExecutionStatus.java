@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -25,16 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the `HasUniqueExecutionIds` constraint annotation, which
- * checks that ExecutionsRequestBody has unique execution IDs.
+ * Defines the `ValidClientExecutionStatus` constraint annotation, which
+ * checks that the execution status is meant for client use.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = HasUniqueExecutionIdsValidator.class)
-public @interface HasUniqueExecutionIds {
-    String MUST_CONTAIN_UNIQUE_EXECUTION_IDS = "must contain unique execution IDs";
+@Constraint(validatedBy = ValidClientExecutionStatusValidator.class)
+public @interface ValidClientExecutionStatus {
+    String INVALID_EXECUTION_STATUS_MESSAGE = "cannot be ALL";
 
-    String message() default MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
+    String message() default INVALID_EXECUTION_STATUS_MESSAGE;
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OICR and UCSC
+ * Copyright 2024 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,22 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
-import static io.dockstore.common.metrics.FormatCheckHelper.checkExecutionTimeISO8601Format;
-
+import io.dockstore.common.metrics.FormatCheckHelper;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 /**
- * Validates that execution time is in ISO 8601 duration format
+ * Validates that execution time is in ISO 8601 UTC date format
  */
-public class ISO8601ExecutionTimeValidator implements ConstraintValidator<ISO8601ExecutionTime, String> {
+public class ISO8601ExecutionDateValidator implements ConstraintValidator<ISO8601ExecutionDate, String> {
 
     @Override
     public boolean isValid(final String executionTime, final ConstraintValidatorContext context) {
-        // nulls are valid because execution time is optional.
         if (executionTime == null) {
-            return true;
+            return false;
         }
-        return checkExecutionTimeISO8601Format(executionTime).isPresent();
+        return FormatCheckHelper.checkExecutionDateISO8601Format(executionTime).isPresent();
     }
 }

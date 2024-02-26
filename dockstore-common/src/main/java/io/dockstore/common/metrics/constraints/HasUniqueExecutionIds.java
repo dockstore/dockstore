@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OICR and UCSC
+ * Copyright 2024 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -25,16 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the `ISO8601ExecutionTime` constraint annotation, which
- * checks that the execution time is in ISO 8601 duration format.
+ * Defines the `HasUniqueExecutionIds` constraint annotation, which
+ * checks that ExecutionsRequestBody has unique execution IDs.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ISO8601ExecutionTimeValidator.class)
-public @interface ISO8601ExecutionTime {
-    String EXECUTION_TIME_FORMAT_ERROR = "must be in ISO 8601 duration format";
+@Constraint(validatedBy = HasUniqueExecutionIdsValidator.class)
+public @interface HasUniqueExecutionIds {
+    String MUST_CONTAIN_UNIQUE_EXECUTION_IDS = "must contain unique execution IDs";
 
-    String message() default "'${validatedValue}' " + EXECUTION_TIME_FORMAT_ERROR;
-    Class<?>[] groups () default {};
-    Class<? extends Payload>[] payload () default {};
+    String message() default MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
 }

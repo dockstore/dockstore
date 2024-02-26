@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OICR and UCSC
+ * Copyright 2024 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics;
+package io.dockstore.common.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
-import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime;
-import io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStatus;
+import io.dockstore.common.metrics.constraints.ISO8601ExecutionTime;
+import io.dockstore.common.metrics.constraints.ValidClientExecutionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.Valid;
