@@ -632,7 +632,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
         ExecutionsRequestBodyS3Handler executionsRequestBodyS3Handler = new ExecutionsRequestBodyS3Handler(id, versionId, platform, metricsDataS3Client);
         ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
-        // AggregatedExecutions are deprecated and not updated
         List<? extends Execution> executionsToUpdate = Stream.of(executions.getRunExecutions(), executions.getTaskExecutions(), executions.getValidationExecutions())
                 .flatMap(List::stream)
                 .toList();
