@@ -20,7 +20,7 @@ If there are any concerns that require extra attention from the security team, h
 e.g. Does this change...
 * Any user data we collect, or data location?
 * Access control, authentication or authorization?
-* Encryption features
+* Encryption features?
 
 Please make sure that you've checked the following before submitting your pull request. Thanks!
 
