@@ -16,18 +16,3 @@
  */
 
 package io.dockstore.common.metrics.constraints;
-
-import io.dockstore.common.metrics.ExecutionStatus;
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-
-/**
- * Validates that the execution status is meant for client use.
- */
-public class ValidClientExecutionStatusValidator implements ConstraintValidator<ValidClientExecutionStatus, ExecutionStatus> {
-
-    @Override
-    public boolean isValid(final ExecutionStatus executionStatus, final ConstraintValidatorContext context) {
-        return executionStatus != ExecutionStatus.ALL; // ALL is only meant to be used internally
-    }
-}
