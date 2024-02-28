@@ -30,7 +30,7 @@ executors:
     resource_class: medium+
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
-      image: ubuntu-2204:2022.10.1
+      image: ubuntu-2204:2023.10.1
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -122,7 +122,7 @@ jobs:
       TESTING_PROFILE: integration-tests
     steps:
       - setup_remote_docker:
-          version: 20.10.17
+          version: docker24
       - setup_test
       - install-postgres
       - setup_postgres

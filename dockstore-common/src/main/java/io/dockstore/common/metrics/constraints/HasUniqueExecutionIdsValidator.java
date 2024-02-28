@@ -34,7 +34,6 @@ public class HasUniqueExecutionIdsValidator implements ConstraintValidator<HasUn
         executionsRequestBody.getRunExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
         executionsRequestBody.getTaskExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
         executionsRequestBody.getValidationExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
-        executionsRequestBody.getAggregatedExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
         return executionIds.stream().distinct().count() == executionIds.size();
     }
 }

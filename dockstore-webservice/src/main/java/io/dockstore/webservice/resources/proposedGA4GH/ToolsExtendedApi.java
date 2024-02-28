@@ -337,8 +337,8 @@ public class ToolsExtendedApi {
     }
 
     private static final class ExecutionMetricsUpdate {
-        public static final String SUMMARY = "Update workflow executions that were executed on a platform. Does not update aggregated metrics, which is deprecated.";
-        public static final String DESCRIPTION = "This endpoint updates workflow executions that were executed on a platform. Does not update aggregated metrics, which is deprecated.";
+        public static final String SUMMARY = "Update workflow executions that were executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint updates workflow executions that were executed on a platform.";
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
@@ -384,13 +384,13 @@ public class ToolsExtendedApi {
     }
 
     private static final class ExecutionMetricsPost {
-        public static final String SUMMARY = "Submit individual execution metrics for a tool that was executed on a platform. Submitting aggregated execution metrics is deprecated.";
-        public static final String DESCRIPTION = "This endpoint submits individual execution metrics for a tool that was executed on a platform. Submitting aggregated execution metrics is deprecated.";
+        public static final String SUMMARY = "Submit individual execution metrics for a tool that was executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint submits individual execution metrics for a tool that was executed on a platform.";
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
         public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics";
-        public static final String EXECUTIONS_DESCRIPTION = "Individual execution metrics to submit. Submitting aggregated execution metrics is deprecated.";
+        public static final String EXECUTIONS_DESCRIPTION = "Individual execution metrics to submit.";
         public static final String OK_RESPONSE = "Execution metrics submitted successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit execution metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
