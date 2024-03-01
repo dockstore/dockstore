@@ -442,7 +442,7 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
-        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        // This is some weird hack to always set the topic (which is either automatic, AI, or manual) into the ES topicAutomatic property for search table
         // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
         detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setTopicSelection(entry.getTopicSelection());
