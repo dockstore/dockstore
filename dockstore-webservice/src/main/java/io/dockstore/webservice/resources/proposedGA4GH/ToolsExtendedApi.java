@@ -310,7 +310,6 @@ public class ToolsExtendedApi {
     }
 
     @PUT
-    @UnitOfWork
     @RolesAllowed({"curator", "admin", "platformPartner"})
     @Path("/{id}/versions/{version_id}/executions")
     @Consumes(MediaType.APPLICATION_JSON)
