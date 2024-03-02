@@ -667,6 +667,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
+                        setToDefaultVersionIfAppropriate(gitHubSourceCodeRepo, repository, wf, workflow, version);
+
                         // Create some events.
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
 
@@ -1068,6 +1070,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return Version.ReferenceType.TAG;
         } else {
             return Version.ReferenceType.NOT_APPLICABLE;
+        }
+    }
+
+    private void setToDefaultVersionIfAppropriate(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repositoryId, Workflowish wf, Workflow workflow, WorkflowVersion version) {
+        // If the default version isn't set, the latest tag is not the default, the version is a branch,
+        // and the version's name is the same as the GitHub repo's default branch name, use this version
+        /// as the workflow's default version.
+        if (workflow.getActualDefaultVersion() == null &&
+            !Objects.equals(wf.getLatestTagAsDefault(), Boolean.TRUE) &&
+            Objects.equals(version.getReferenceType(), Version.ReferenceType.BRANCH) &&
+            Objects.equals(version.getName(), gitHubSourceCodeRepo.getDefaultBranch(repositoryId))
+        ) {
+            workflow.setActualDefaultVersion(version);
         }
     }
 
