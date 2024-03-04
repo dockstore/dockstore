@@ -1076,7 +1076,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private void setToDefaultVersionIfAppropriate(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repositoryId, Workflowish wf, Workflow workflow, WorkflowVersion version) {
         // If the default version isn't set, the latest tag is not the default, the version is a branch,
         // and the version's name is the same as the GitHub repo's default branch name, use this version
-        /// as the workflow's default version.
+        // as the workflow's default version.
         if (workflow.getActualDefaultVersion() == null
             && !Objects.equals(wf.getLatestTagAsDefault(), Boolean.TRUE)
             && Objects.equals(version.getReferenceType(), Version.ReferenceType.BRANCH)
