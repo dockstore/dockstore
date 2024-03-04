@@ -68,7 +68,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -414,16 +413,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.checkerWorkflow = checkerWorkflow;
     }
 
-    /**
-     * @deprecated since 1.14.0. Use getAuthors instead.
-     */
-    @JsonProperty
-    @Deprecated(since = "1.14.0")
-    public String getAuthor() {
-        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
-        return firstAuthor.map(Author::getName).orElse(null);
-    }
-
     @JsonProperty
     public long getId() {
         return id;
@@ -494,16 +483,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public boolean removeUser(User user) {
         return users.remove(user);
-    }
-
-    /**
-     * @deprecated since 1.14.0. Use getAuthors instead. Each Author may contain an email.
-     */
-    @JsonProperty
-    @Deprecated(since = "1.14.0")
-    public String getEmail() {
-        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
-        return firstAuthor.map(Author::getEmail).orElse(null);
     }
 
     /**
