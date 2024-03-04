@@ -681,37 +681,36 @@ class WebhookIT extends BaseIT {
     }
 
     @Test
-    private void testAutomaticDefaultVersionMustMatchGitHubDefault() {
+    void testAutomaticDefaultVersionMustMatchGitHubDefault() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "manualTopic", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
         Workflow workflow = getFoobarWorkflowDockstoreTesting(client);
         assertNull(workflow.getDefaultVersion());
         assertEquals(1, workflow.getWorkflowVersions().size());
-        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "master", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
         workflow = getFoobarWorkflowDockstoreTesting(client);
         assertEquals("master", workflow.getDefaultVersion());
         assertEquals(2, workflow.getWorkflowVersions().size());
     }
 
     @Test
-    private void testAutomaticDefaultVersionWontOverrideExistingDefault() {
+    void testAutomaticDefaultVersionWontOverrideExistingDefault() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         // This release should not automatically set the default version, because the branch name doesn't
         // match the GitHub default.
-        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "manualTopic", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
         Workflow workflow = getFoobarWorkflowDockstoreTesting(client);
         assertNull(workflow.getDefaultVersion());
         assertEquals(1, workflow.getWorkflowVersions().size());
         // Manually set the default version.
-        workflow.setDefaultVersion("manualTopic");
-        client.updateWorkflow(workflow.getId(), workflow);
+        client.updateDefaultVersion1(workflow.getId(), "manualTopic");
         workflow = getFoobarWorkflowDockstoreTesting(client);
         assertEquals("manualTopic", workflow.getDefaultVersion());
         // This release should not set the default version, because although the branch name matches,
         // the default version is already set.
-        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "master", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
         workflow = getFoobarWorkflowDockstoreTesting(client);
         assertEquals("manualTopic", workflow.getDefaultVersion());
         assertEquals(2, workflow.getWorkflowVersions().size());
