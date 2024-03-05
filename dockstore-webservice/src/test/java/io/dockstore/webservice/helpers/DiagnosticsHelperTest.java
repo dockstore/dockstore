@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 class DiagnosticsHelperTest {
 
     private static final String BASE64_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/+";
+    private static final DiagnosticsHelper helper = new DiagnosticsHelper();
 
     @Test
     void testCensoringWithExamples() {
@@ -34,7 +35,7 @@ class DiagnosticsHelperTest {
         confirmCensored("Lp0+12I8Xlqhi18KDzzdXFUDrSJWV8GxwmivwQf9thRI1/k8Ec3G4t7Hxoz8fEgG");
         confirmCensored("Qz2OJicD0w__J__deT42-DjtfrTG3ZOD0rP0PchWyPQXVpL96sXJQYm");
         confirmCensored("KmqLbmoBq8cuQUu8rwIVXCSyafM+oakMEqf3z75Cr9");
-        Assertions.assertEquals(DiagnosticsHelper.censor("a string with QnDn/5VCnYI7hbeM9Xet9zYSFV2GaiTI7TmXUqE/2ljDtvFVbRB7CRWMqQz+ embedded"),
+        Assertions.assertEquals(helper.censor("a string with QnDn/5VCnYI7hbeM9Xet9zYSFV2GaiTI7TmXUqE/2ljDtvFVbRB7CRWMqQz+ embedded"),
             "a string with XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX embedded");
     }
 
@@ -47,7 +48,7 @@ class DiagnosticsHelperTest {
         /*
         for (int i = 0; i < 100000000; i++) {
             String input = randomBase64(random, 40);
-            if (input.equals(DiagnosticsHelper.censor(input))) {
+            if (input.equals(helper.censor(input))) {
                 System.err.println("FAIL " + input);
             }
         }
@@ -63,12 +64,12 @@ class DiagnosticsHelperTest {
     }
 
     private void confirmPassed(String input) {
-        String output = DiagnosticsHelper.censor(input);
+        String output = helper.censor(input);
         Assertions.assertEquals(input, output);
     }
 
     private void confirmCensored(String input) {
-        String output = DiagnosticsHelper.censor(input);
+        String output = helper.censor(input);
         Assertions.assertEquals("X".repeat(input.length()), output);
     }
 }

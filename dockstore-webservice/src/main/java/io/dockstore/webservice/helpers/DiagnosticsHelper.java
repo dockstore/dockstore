@@ -40,41 +40,25 @@ public final class DiagnosticsHelper {
     private static final double NANOSECONDS_PER_SECOND = 1e9;
     private static final double BYTES_PER_MEGABYTE = 1e6;
 
-    private static DockstoreWebserviceConfiguration config;
-    private static Environment environment;
-    private static SessionFactory sessionFactory;
+    private DockstoreWebserviceConfiguration config;
+    private Environment environment;
+    private SessionFactory sessionFactory;
 
-    private static MemoryMXBean memoryMXBean;
-    private static ThreadMXBean threadMXBean;
+    private CensorHelper censorHelper;
+    private MemoryMXBean memoryMXBean;
+    private ThreadMXBean threadMXBean;
 
-    private static CensorHelper censorHelper;
-
-    static {
-        // Instantiate the censoring support.
+    public DiagnosticsHelper() {
         censorHelper = new CensorHelper(readFrequencies());
-    }
-
-    private DiagnosticsHelper() {
-        // This space intentionally left blank.
-    }
-
-    public static void init(DockstoreWebserviceConfiguration newConfig, Environment newEnvironment, SessionFactory newSessionFactory) {
-
-        // If diagnostic output is not enabled, return without doing anything.
-        if (!newConfig.getDiagnosticsConfig().getEnabled()) {
-            return;
-        }
-
-        DiagnosticsHelper.config = newConfig;
-        DiagnosticsHelper.environment = newEnvironment;
-        DiagnosticsHelper.sessionFactory = newSessionFactory;
-
         // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
         memoryMXBean = ManagementFactory.getMemoryMXBean();
         threadMXBean = ManagementFactory.getThreadMXBean();
+    }
+
+    public void start(DockstoreWebserviceConfiguration config, Environment environment, SessionFactory sessionFactory) {
 
         // Create a daemon-thread-backed Timer and schedule a periodic dump of the global information.
-        long periodMilliseconds = Math.round(newConfig.getDiagnosticsConfig().getPeriodSeconds() * MILLISECONDS_PER_SECOND);
+        long periodMilliseconds = Math.round(config.getDiagnosticsConfig().getPeriodSeconds() * MILLISECONDS_PER_SECOND);
         new Timer("diagnostics", true).scheduleAtFixedRate(
             new TimerTask() {
                 public void run() {
@@ -86,7 +70,7 @@ public final class DiagnosticsHelper {
         environment.jersey().register(new DiagnosticsHelperApplicationEventListener());
     }
 
-    public static void logGlobals() {
+    public void logGlobals() {
         logThreads();
         logProcesses();
         logFilesystems();
@@ -94,43 +78,43 @@ public final class DiagnosticsHelper {
         logMemory();
     }
 
-    public static void logThreads() {
+    public void logThreads() {
         log("threads", () -> formatThreads());
     }
 
-    public static void logProcesses() {
+    public void logProcesses() {
         log("processes", () -> formatProcesses());
     }
 
-    public static void logFilesystems() {
+    public void logFilesystems() {
         log("filesystems", () -> formatFilesystems());
     }
 
-    public static void logDatabase() {
+    public void logDatabase() {
         log("database", () -> formatDatabase());
     }
 
-    public static void logMemory() {
+    public void logMemory() {
         log("memory", () -> formatMemory());
     }
 
-    public static void logStarted(ContainerRequest request) {
+    public void logStarted(ContainerRequest request) {
         log("started", () -> formatRequest(request));
     }
 
-    public static void logFinished(ContainerRequest request, ContainerResponse response) {
+    public void logFinished(ContainerRequest request, ContainerResponse response) {
         log("finished", () -> formatResponse(request, response));
     }
 
-    public static void logThread(ThreadState startState, ThreadState finishState) {
+    public void logThread(ThreadState startState, ThreadState finishState) {
         log("thread", () -> formatThread(startState, finishState));
     }
 
-    public static void logSession(Session session) {
+    public void logSession(Session session) {
         log("session", () -> formatSession(session));
     }
 
-    public static void log(String name, Supplier<String> valueSupplier) {
+    public void log(String name, Supplier<String> valueSupplier) {
         if (LOG.isInfoEnabled()) {
             Thread current = Thread.currentThread();
             String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get());
@@ -138,83 +122,83 @@ public final class DiagnosticsHelper {
         }
     }
 
-    public static String censor(String s) {
+    public String censor(String s) {
         return censorHelper.censor(s);
     }
 
-    public static String formatThreads() {
+    public String formatThreads() {
         return concat(Arrays.asList(threadMXBean.dumpAllThreads(true, true)));
     }
 
-    public static String formatProcesses() {
+    public String formatProcesses() {
         return outputFromCommand("ps -A -O ppid,ruser,pri,pcpu,pmem,rss");
     }
 
-    public static String formatFilesystems() {
+    public String formatFilesystems() {
         return outputFromCommand("df");
     }
 
     // https://metrics.dropwizard.io/4.2.0/
-    public static String formatDatabase() {
+    public String formatDatabase() {
         Map<String, Gauge> gauges = environment.metrics().getGauges();
         return nameValue("pool-size", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue())
             + nameValue("pool-active", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue())
             + nameValue("pool-idle", gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue());
     }
 
-    public static String formatMemory() {
+    public String formatMemory() {
         return nameValue("HEAP", memoryMXBean.getHeapMemoryUsage())
             + nameValue("NON-HEAP", memoryMXBean.getNonHeapMemoryUsage())
-            + concat(format(DiagnosticsHelper::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
+            + concat(format(this::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
     }
 
-    public static String formatSession(Session session) {
+    public String formatSession(Session session) {
         return session.getStatistics().toString();
     }
 
-    public static String formatThread(ThreadState startState, ThreadState finishState) {
+    public String formatThread(ThreadState startState, ThreadState finishState) {
         return nameValue("allocated", formatBytes(finishState.allocatedBytes() - startState.allocatedBytes()))
             + nameValue("cpu-time", formatNanoseconds(finishState.cpuTime() - startState.cpuTime()))
             + nameValue("user-time", formatNanoseconds(finishState.userTime() - startState.userTime()))
             + nameValue("elapsed-time", formatNanoseconds(finishState.wallClock() - startState.wallClock()));
     }
 
-    public static String formatNanoseconds(long ns) {
+    public String formatNanoseconds(long ns) {
         return String.format("%.3f sec", ns / NANOSECONDS_PER_SECOND);
     }
 
-    public static String formatBytes(long bytes) {
+    public String formatBytes(long bytes) {
         return String.format("%.2f MB", bytes / BYTES_PER_MEGABYTE);
     }
 
-    private static String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
+    private String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
         return nameValue("POOL", pool.getName() + ", " + pool.getType())
             + nameValue("current", pool.getUsage())
             + nameValue("peak", pool.getPeakUsage())
             + nameValue("collection", pool.getCollectionUsage());
     }
 
-    private static String formatRequest(ContainerRequest request) {
+    private String formatRequest(ContainerRequest request) {
         return String.format("%s \"%s\"", request.getMethod(), request.getPath(false));
     }
 
-    private static String formatResponse(ContainerRequest request, ContainerResponse response) {
+    private String formatResponse(ContainerRequest request, ContainerResponse response) {
         return formatRequest(request);
     }
 
-    private static String nameValue(String name, Object value) {
+    private String nameValue(String name, Object value) {
         return String.format("%s: %s\n", name, value);
     }
 
-    private static <T> List<String> format(Function<T, String> formatter, Collection<T> objects) {
+    private <T> List<String> format(Function<T, String> formatter, Collection<T> objects) {
         return objects.stream().map(formatter).toList();
     }
 
-    private static String concat(Collection<?> objects) {
+    private String concat(Collection<?> objects) {
         return objects.stream().map(Object::toString).collect(Collectors.joining());
     }
 
-    private static ThreadState getState() {
+    private ThreadState getState() {
         long bytes = 0;
         if (threadMXBean instanceof com.sun.management.ThreadMXBean sunBean) {
             bytes = sunBean.getCurrentThreadAllocatedBytes();
@@ -237,7 +221,7 @@ public final class DiagnosticsHelper {
         return new ThreadState(bytes, cpuTime, userTime, wallClock);
     }
 
-    private static Optional<Session> getCurrentSession() {
+    private Optional<Session> getCurrentSession() {
         try {
             // This getCurrentSession() call will throw if there's no current session.
             return Optional.of(sessionFactory.getCurrentSession());
@@ -246,11 +230,11 @@ public final class DiagnosticsHelper {
         }
     }
 
-    private static String outputFromCommand(String command) {
+    private String outputFromCommand(String command) {
         return Utilities.executeCommand(command).getLeft();
     }
 
-    private static void handleRequestEvent(RequestEvent event, ThreadState startState) {
+    private void handleRequestEvent(RequestEvent event, ThreadState startState) {
         try {
             ContainerRequest request = event.getContainerRequest();
             ContainerResponse response = event.getContainerResponse();
@@ -286,7 +270,7 @@ public final class DiagnosticsHelper {
         }
     }
 
-    private static Map<String, Double> readFrequencies() {
+    private Map<String, Double> readFrequencies() {
         Map<String, Double> tripletToFrequency = new HashMap<>();
         String content;
         try {
@@ -305,7 +289,7 @@ public final class DiagnosticsHelper {
     }
 
     // https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/monitoring_tracing.html
-    public static class DiagnosticsHelperApplicationEventListener implements ApplicationEventListener {
+    public class DiagnosticsHelperApplicationEventListener implements ApplicationEventListener {
         @Override
         public void onEvent(ApplicationEvent event) {
             // This space intentionally left blank.
@@ -319,7 +303,7 @@ public final class DiagnosticsHelper {
         }
     }
 
-    public static class DiagnosticsHelperRequestEventListener implements RequestEventListener {
+    public class DiagnosticsHelperRequestEventListener implements RequestEventListener {
         private final ThreadState startState;
 
         public DiagnosticsHelperRequestEventListener(ThreadState startState) {
