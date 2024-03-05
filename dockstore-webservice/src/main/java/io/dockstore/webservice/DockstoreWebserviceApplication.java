@@ -85,7 +85,7 @@ import io.dockstore.webservice.filters.AuthenticatedUserFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
-import io.dockstore.webservice.helpers.DebugHelper;
+import io.dockstore.webservice.helpers.DiagnosticsHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -490,7 +490,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         GoogleHelper.setConfig(configuration);
 
-        DebugHelper.init(configuration, environment, hibernate.getSessionFactory());
+        DiagnosticsHelper.init(configuration, environment, hibernate.getSessionFactory());
 
         registerAPIsAndMisc(environment);
 

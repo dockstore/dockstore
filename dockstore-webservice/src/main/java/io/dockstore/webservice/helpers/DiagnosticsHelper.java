@@ -1,15 +1,19 @@
 package io.dockstore.webservice.helpers;
 
 import com.codahale.metrics.Gauge;
+import com.google.common.io.Resources;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.core.setup.Environment;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.ThreadMXBean;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,8 +21,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
@@ -31,9 +33,9 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DebugHelper {
+public final class DiagnosticsHelper {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DebugHelper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DiagnosticsHelper.class);
     private static final double MILLISECONDS_PER_SECOND = 1e3;
     private static final double NANOSECONDS_PER_SECOND = 1e9;
     private static final double BYTES_PER_MEGABYTE = 1e6;
@@ -45,7 +47,14 @@ public final class DebugHelper {
     private static MemoryMXBean memoryMXBean;
     private static ThreadMXBean threadMXBean;
 
-    private DebugHelper() {
+    private static CensorHelper censorHelper;
+
+    static {
+        // Instantiate the censoring support.
+        censorHelper = new CensorHelper(readFrequencies());
+    }
+
+    private DiagnosticsHelper() {
         // This space intentionally left blank.
     }
 
@@ -56,9 +65,9 @@ public final class DebugHelper {
             return;
         }
 
-        DebugHelper.config = newConfig;
-        DebugHelper.environment = newEnvironment;
-        DebugHelper.sessionFactory = newSessionFactory;
+        DiagnosticsHelper.config = newConfig;
+        DiagnosticsHelper.environment = newEnvironment;
+        DiagnosticsHelper.sessionFactory = newSessionFactory;
 
         // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
         memoryMXBean = ManagementFactory.getMemoryMXBean();
@@ -74,12 +83,12 @@ public final class DebugHelper {
             }, periodMilliseconds, periodMilliseconds);
 
         // Register a Jersey event handler that will log session and thread-related information.
-        environment.jersey().register(new DebugHelperApplicationEventListener());
+        environment.jersey().register(new DiagnosticsHelperApplicationEventListener());
     }
 
     public static void logGlobals() {
         logThreads();
-        // logProcesses();
+        logProcesses();
         logFilesystems();
         logDatabase();
         logMemory();
@@ -121,7 +130,7 @@ public final class DebugHelper {
         log("session", () -> formatSession(session));
     }
 
-    private static void log(String name, Supplier<String> valueSupplier) {
+    public static void log(String name, Supplier<String> valueSupplier) {
         if (LOG.isInfoEnabled()) {
             Thread current = Thread.currentThread();
             String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get());
@@ -129,65 +138,8 @@ public final class DebugHelper {
         }
     }
 
-    private static String censor(String value) {
-        // Censor any continuous run of 40 or more base64-legal non-padding
-        // characters if it's either: a) a hexadecimal string, or b) "scrambled".
-        // In this context, "scrambled" means that there's a typical mix of the
-        // different character classes, indicative of a well-encoded key.
-        // This code will censor all but approximately 1 of 13000 random
-        // 40-character strings made up of base64-legal non-padding characters
-        // with uniform character frequency, but passes most of information we're
-        // logging with no modifications.
-        StringBuilder censored = new StringBuilder(value);
-        Pattern suspectPattern = Pattern.compile("[-_a-zA-Z0-9+/]{40,}");
-        Pattern hexPattern = Pattern.compile("^[a-fA-F0-9]*$");
-        Matcher matcher = suspectPattern.matcher(value);
-        while (matcher.find()) {
-            int start = matcher.start();
-            int end = matcher.end();
-            String suspect = decapitalize(value.substring(start, end));
-            if (hexPattern.matcher(suspect).matches() || isScrambled(suspect)) {
-                for (int i = start; i < end; i++) {
-                    censored.setCharAt(i, 'X');
-                }
-            }
-        }
-        return censored.toString();
-    }
-
-    private static String decapitalize(String v) {
-        StringBuilder builder = new StringBuilder(v);
-        for (int i = 1, n = v.length() - 1; i < n; i++) {
-            char before = v.charAt(i - 1);
-            char c = v.charAt(i);
-            char after = v.charAt(i + 1);
-            if (before == '/' && c >= 'A' && c <= 'Z' && after >= 'a' && after <= 'z') {
-                builder.setCharAt(i, (char)('a' + (c - 'A')));
-            }
-        }
-        return builder.toString();
-    }
-
-    private static boolean isScrambled(String v) {
-        int adjacents = 0;
-        for (int i = 0, n = v.length() - 1; i < n; i++) {
-            char a = v.charAt(i);
-            char b = v.charAt(i + 1);
-            if (characterClass(a) == characterClass(b)) {
-                adjacents++;
-            }
-        }
-        return adjacents < 0.75 * v.length();
-    }
-
-    private static int characterClass(char c) {
-        if (c >= '0' && c <= '9') {
-            return 0;
-        }
-        if (c >= 'A' && c <= 'Z') {
-            return 1;
-        }
-        return 2;
+    public static String censor(String s) {
+        return censorHelper.censor(s);
     }
 
     public static String formatThreads() {
@@ -213,7 +165,7 @@ public final class DebugHelper {
     public static String formatMemory() {
         return nameValue("HEAP", memoryMXBean.getHeapMemoryUsage())
             + nameValue("NON-HEAP", memoryMXBean.getNonHeapMemoryUsage())
-            + concat(format(DebugHelper::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
+            + concat(format(DiagnosticsHelper::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
     }
 
     public static String formatSession(Session session) {
@@ -334,8 +286,26 @@ public final class DebugHelper {
         }
     }
 
+    private static Map<String, Double> readFrequencies() {
+        Map<String, Double> tripletToFrequency = new HashMap<>();
+        String content;
+        try {
+            content = Resources.toString(Resources.getResource("english_triplet_frequencies.txt"), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading frequency file", e);
+        }
+        for (String line: content.split("\n")) {
+            String[] fields = line.split(",");
+            tripletToFrequency.put(fields[0], Double.parseDouble(fields[1]));
+        }
+        for (String terms: List.of("cwl", "wdl", "nfl")) {
+            tripletToFrequency.put(terms, tripletToFrequency.get("the"));
+        }
+        return tripletToFrequency;
+    }
+
     // https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/monitoring_tracing.html
-    public static class DebugHelperApplicationEventListener implements ApplicationEventListener {
+    public static class DiagnosticsHelperApplicationEventListener implements ApplicationEventListener {
         @Override
         public void onEvent(ApplicationEvent event) {
             // This space intentionally left blank.
@@ -345,14 +315,14 @@ public final class DebugHelper {
         public RequestEventListener onRequest(RequestEvent event) {
             ThreadState startState = getState();
             handleRequestEvent(event, startState);
-            return new DebugHelperRequestEventListener(startState);
+            return new DiagnosticsHelperRequestEventListener(startState);
         }
     }
 
-    public static class DebugHelperRequestEventListener implements RequestEventListener {
+    public static class DiagnosticsHelperRequestEventListener implements RequestEventListener {
         private final ThreadState startState;
 
-        public DebugHelperRequestEventListener(ThreadState startState) {
+        public DiagnosticsHelperRequestEventListener(ThreadState startState) {
             this.startState = startState;
         }
 
