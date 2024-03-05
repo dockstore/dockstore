@@ -34,7 +34,9 @@ import org.slf4j.LoggerFactory;
 public final class DebugHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(DebugHelper.class);
-    private static final long LOG_PERIOD_MS = 10000L;
+    private static final double MILLISECONDS_PER_SECOND = 1e3;
+    private static final double NANOSECONDS_PER_SECOND = 1e9;
+    private static final double BYTES_PER_MEGABYTE = 1e6;
 
     private static DockstoreWebserviceConfiguration config;
     private static Environment environment;
@@ -49,6 +51,11 @@ public final class DebugHelper {
 
     public static void init(DockstoreWebserviceConfiguration newConfig, Environment newEnvironment, SessionFactory newSessionFactory) {
 
+        // If diagnostic output is not enabled, return without doing anything.
+        if (!newConfig.getDiagnosticsConfig().getEnabled()) {
+            return;
+        }
+
         DebugHelper.config = newConfig;
         DebugHelper.environment = newEnvironment;
         DebugHelper.sessionFactory = newSessionFactory;
@@ -57,13 +64,14 @@ public final class DebugHelper {
         memoryMXBean = ManagementFactory.getMemoryMXBean();
         threadMXBean = ManagementFactory.getThreadMXBean();
 
-        // Create a Timer, backed by a daemon thread, and schedule a periodic dump of the global information.
+        // Create a daemon-thread-backed Timer and schedule a periodic dump of the global information.
+        long periodMilliseconds = Math.round(newConfig.getDiagnosticsConfig().getPeriodSeconds() * MILLISECONDS_PER_SECOND);
         new Timer("diagnostics", true).scheduleAtFixedRate(
             new TimerTask() {
                 public void run() {
                     logGlobals();
                 }
-            }, LOG_PERIOD_MS, LOG_PERIOD_MS);
+            }, periodMilliseconds, periodMilliseconds);
 
         // Register a Jersey event handler that will log session and thread-related information.
         environment.jersey().register(new DebugHelperApplicationEventListener());
@@ -71,7 +79,8 @@ public final class DebugHelper {
 
     public static void logGlobals() {
         logThreads();
-        logProcesses();
+        // logProcesses();
+        logFilesystems();
         logDatabase();
         logMemory();
     }
@@ -81,7 +90,11 @@ public final class DebugHelper {
     }
 
     public static void logProcesses() {
-        // log("processes", () -> formatProcesses());
+        log("processes", () -> formatProcesses());
+    }
+
+    public static void logFilesystems() {
+        log("filesystems", () -> formatFilesystems());
     }
 
     public static void logDatabase() {
@@ -96,8 +109,8 @@ public final class DebugHelper {
         log("started", () -> formatRequest(request));
     }
 
-    public static void logFinished(ContainerRequest request) {
-        log("finished", () -> formatRequest(request));
+    public static void logFinished(ContainerRequest request, ContainerResponse response) {
+        log("finished", () -> formatResponse(request, response));
     }
 
     public static void logThread(ThreadState startState, ThreadState finishState) {
@@ -182,7 +195,11 @@ public final class DebugHelper {
     }
 
     public static String formatProcesses() {
-        return Utilities.executeCommand("ps -A -O ppid,ruser,pri,pcpu,pmem,rss").getLeft();
+        return outputFromCommand("ps -A -O ppid,ruser,pri,pcpu,pmem,rss");
+    }
+
+    public static String formatFilesystems() {
+        return outputFromCommand("df");
     }
 
     // https://metrics.dropwizard.io/4.2.0/
@@ -211,11 +228,11 @@ public final class DebugHelper {
     }
 
     public static String formatNanoseconds(long ns) {
-        return String.format("%.3f sec", ns / 1e9);
+        return String.format("%.3f sec", ns / NANOSECONDS_PER_SECOND);
     }
 
     public static String formatBytes(long bytes) {
-        return String.format("%.2f MB", bytes / 1e6);
+        return String.format("%.2f MB", bytes / BYTES_PER_MEGABYTE);
     }
 
     private static String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
@@ -223,6 +240,14 @@ public final class DebugHelper {
             + nameValue("current", pool.getUsage())
             + nameValue("peak", pool.getPeakUsage())
             + nameValue("collection", pool.getCollectionUsage());
+    }
+
+    private static String formatRequest(ContainerRequest request) {
+        return String.format("%s \"%s\"", request.getMethod(), request.getPath(false));
+    }
+
+    private static String formatResponse(ContainerRequest request, ContainerResponse response) {
+        return formatRequest(request);
     }
 
     private static String nameValue(String name, Object value) {
@@ -269,8 +294,8 @@ public final class DebugHelper {
         }
     }
 
-    private static String formatRequest(ContainerRequest request) {
-        return String.format("%s \"%s\"", request.getMethod(), request.getPath(false));
+    private static String outputFromCommand(String command) {
+        return Utilities.executeCommand(command).getLeft();
     }
 
     private static void handleRequestEvent(RequestEvent event, ThreadState startState) {
@@ -287,17 +312,22 @@ public final class DebugHelper {
 
             // Done filtering response.
             case RESP_FILTERS_FINISHED:
-                // This is the last stage at which the Hibernate session could be bound.
-                // If the session was closed/dissociated during the request, it may not even be available here.
+                // Experimentally, we've determined that soon after this, the Hibernate session is dissociated from the thread.
+                // If the session was closed during the request, it may not even be available here.
                 getCurrentSession().ifPresent(session -> logSession(session));
                 break;
 
             // Request finished.
             case FINISHED:
-                logFinished(request);
+                logFinished(request, response);
                 logThread(startState, getState());
                 break;
+
+            // Do nothing for other events.
+            default:
+                break;
             }
+
         } catch (Exception e) {
             // An Exception thrown by this handler will cause the request to fail, so we catch and suppress it.
             LOG.error("Request handler threw", e);

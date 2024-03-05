@@ -55,6 +55,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @Valid
     private MetricsConfig metricsConfig = new MetricsConfig();
 
+    @Valid
+    private DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig();
+
     @NotEmpty
     private String template;
 
@@ -541,6 +544,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return diagnosticsConfig;
+    }
+
+    public void setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
+        this.diagnosticsConfig = diagnosticsConfig;
+    }
+
+    @JsonProperty
     public UIConfig getUiConfig() {
         return uiConfig;
     }
@@ -752,6 +764,28 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setS3EndpointOverride(String s3EndpointOverride) {
             this.s3EndpointOverride = s3EndpointOverride;
+        }
+    }
+
+    public static class DiagnosticsConfig {
+        private boolean enabled = false;
+
+        private long periodSeconds = 60;
+
+        public boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Long getPeriodSeconds() {
+            return periodSeconds;
+        }
+
+        public void setPeriodSeconds(long periodSeconds) {
+            this.periodSeconds = periodSeconds;
         }
     }
 
