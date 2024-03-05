@@ -19,5 +19,10 @@ package io.dockstore.common.metrics;
 
 public enum ExecutionStatus {
     ALL, // Internal use only
-    SUCCESSFUL, FAILED, FAILED_SEMANTIC_INVALID, FAILED_RUNTIME_INVALID, ABORTED
+    // The following statuses are for client use
+    SUCCESSFUL, // Execution completed and was successful
+    FAILED, // Execution failed - use this if it can't be categorized into a semantic or runtime failure
+    FAILED_SEMANTIC_INVALID, // Execution failed because it was semantically invalid
+    FAILED_RUNTIME_INVALID, // Execution failed because it was runtime invalid
+    ABORTED // Execution was aborted and did not complete
 }

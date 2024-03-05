@@ -29,7 +29,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.SequenceGenerator;
 
 @Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Inheritance(strategy = InheritanceType.JOINED)
 @Schema(name = "Metric", description = "Describes an aggregated metric", subTypes = { ExecutionTimeStatisticMetric.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, CostStatisticMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class })
 public abstract class Metric {
 

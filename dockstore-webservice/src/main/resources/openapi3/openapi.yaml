@@ -8931,6 +8931,8 @@ components:
           format: double
           description: The numerical value of the cost
           example: 5.99
+      required:
+      - value
     CostMetric:
       type: object
       allOf:

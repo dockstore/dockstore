@@ -372,11 +372,15 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         // Test that negative values can't be submitted
         List<RunExecution> runExecutionsWithNegativeValues = createRunExecutions(1);
-        // Negative cost value
+        // Negative and null cost value
         runExecutionsWithNegativeValues.forEach(execution -> execution.setCost(new Cost().value(-1.00)));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative cost");
         assertTrue(exception.getMessage().contains("cost.value must be greater than or equal to 0"));
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCost(new Cost().value(null)));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative cost");
+        assertTrue(exception.getMessage().contains("cost.value is missing but required"));
         // Negative CPU requirement
         runExecutionsWithNegativeValues.forEach(execution -> execution.setCpuRequirements(-1));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
