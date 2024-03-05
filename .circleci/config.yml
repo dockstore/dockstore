@@ -47,6 +47,12 @@ common_filters: &common_filters
 workflows:
   version: 2
   everything:
+    when:
+      and:
+        - not:
+            matches:
+              pattern: "^.*\[skip].*$"
+              value: << pipeline.trigger_parameters.github_app.commit_message >>
     jobs:
       - build:
           <<: *common_filters
@@ -99,6 +105,16 @@ workflows:
             - integration-tests
             - regression-integration-tests
           context: sonarcloud
+  skip_tests:
+    when:
+      and:
+        - matches:
+            pattern: "^.*\[skip].*$"
+            value: << pipeline.trigger_parameters.github_app.commit_message >>
+    jobs:
+      - build:
+          <<: *common_filters
+
 jobs:
   regression-integration-tests:
     executor: machine_integration_test_exec
