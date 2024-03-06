@@ -1082,6 +1082,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             && Objects.equals(version.getReferenceType(), Version.ReferenceType.BRANCH)
             && Objects.equals(version.getName(), gitHubSourceCodeRepo.getDefaultBranch(repositoryId))
         ) {
+            LOG.info("default version set to GitHub default branch " + version.getName());
             workflow.setActualDefaultVersion(version);
         }
     }
