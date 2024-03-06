@@ -3,9 +3,6 @@ parameters:
   java-tag:
     type: string
     default: "21.0.2"
-  skip_everything:
-    type: boolean
-    default: true
 
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
@@ -51,41 +48,42 @@ common_filters: &common_filters
 workflows:
   version: 2
   everything:
-    when:
-      and:
-        - equal: [ false, << pipeline.parameters.skip_everything >> ]
     jobs:
       - build:
           <<: *common_filters
+      - skip_check:
+          <<: *common_filters
+          requires:
+            - build
       - unit_test:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
       - workflow-integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
           context: sonarcloud
       - bitbucket-tests:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
       - language-parsing-tests:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
       - localstack-tests:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
       - tool-integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
       - integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - skip_check
       - regression-integration-tests:
           filters:
             branches:
@@ -93,7 +91,7 @@ workflows:
                 - master
                 - /^release.*$/
           requires:
-            - build
+            - skip_check
       - sonar-cloud:
           <<: *common_filters
           requires:
@@ -106,14 +104,9 @@ workflows:
             - integration-tests
             - regression-integration-tests
           context: sonarcloud
-  skip_tests:
-    jobs:
-      - test_skip
-      # - build:
-      #    <<: *common_filters
 
 jobs:
-  test_skip:
+  skip_check:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
@@ -124,11 +117,14 @@ jobs:
             echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
             source $BASH_ENV
       - run:
-          name: echo commit message
+          name: fail if tests should be skipped
           command: |
-            echo "Commit message is $COMMIT_MESSAGE"
+            echo "Commit message: $COMMIT_MESSAGE"
             if [[ $COMMIT_MESSAGE =~ ^.*\[skip\].*$ ]]; then
-              echo "Regex found [skip]"
+              echo "Found [skip]: failing this check to skip subsequent CircleCI tests."
+              exit 1
+            else
+              echo "Did not find [skip]: continue running subsequent CircleCI tests."
             fi
   regression-integration-tests:
     executor: machine_integration_test_exec
