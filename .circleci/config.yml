@@ -124,7 +124,7 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
-      - run: echo "Commit message is << pipeline.parameter.commit_message >>"
+      - run: echo "Commit message is << pipeline.parameters.commit_message >>"
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
