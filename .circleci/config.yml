@@ -6,6 +6,9 @@ parameters:
   skip_everything:
     type: boolean
     default: true
+  commit_msg:
+    type: string
+    default: "ec9afe35921a957707920a07abb671588ace046a test regex [skip]"
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -129,8 +132,8 @@ jobs:
           condition:
             and:
               - matches:
-                  pattern: "^.*skip.*$"
-                  value: $COMMIT_MESSAGE
+                  pattern: "^.*\\[skip\\].*$"
+                  value: << pipeline.parameters.commit_msg >>
           steps:
             - run:
                 name: test condition
