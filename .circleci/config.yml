@@ -129,6 +129,7 @@ jobs:
             echo "Commit message is $COMMIT_MESSAGE"
             if [[ $COMMIT_MESSAGE =~ ^.*\[skip\].*$ ]]; then
               echo "Regex found [skip]"
+            fi
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
