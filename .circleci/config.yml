@@ -3,9 +3,6 @@ parameters:
   java-tag:
     type: string
     default: "21.0.2"
-  commit_message:
-    type: string
-    default: $(git log --format=oneline -n 1 $CIRCLE_SHA1)
   skip_everything:
     type: boolean
     default: true
@@ -109,12 +106,6 @@ workflows:
             - regression-integration-tests
           context: sonarcloud
   skip_tests:
-    when:
-      or:
-        - matches:
-            pattern: "^.*\\[skip\\].*$"
-            value: << pipeline.parameters.commit_message >>
-        - equal: [ true, true ]
     jobs:
       - test_skip
       # - build:
@@ -125,7 +116,13 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
-      - run: echo "Commit message is << pipeline.parameters.commit_message >>"
+      - checkout
+      - run:
+          name: export commit message
+          command: echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> ~/.bashrc
+      - run:
+          name: echo commit message
+          command: echo "Commit message is $COMMIT_MESSAGE"
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
