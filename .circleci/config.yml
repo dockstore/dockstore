@@ -125,6 +125,16 @@ jobs:
       - run:
           name: echo commit message
           command: echo "Commit message is $COMMIT_MESSAGE"
+      - when:
+          condition:
+            and:
+              - matches:
+                  pattern: "^.*\\[skip\\].*$"
+                  value: $COMMIT_MESSAGE
+          steps:
+            - run:
+                name: test condition
+                command: echo "Regex succeeded"
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
