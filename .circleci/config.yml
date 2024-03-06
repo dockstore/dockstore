@@ -129,7 +129,7 @@ jobs:
           condition:
             and:
               - matches:
-                  pattern: "^.*\\[skip\\].*$"
+                  pattern: "^.*skip.*$"
                   value: $COMMIT_MESSAGE
           steps:
             - run:
