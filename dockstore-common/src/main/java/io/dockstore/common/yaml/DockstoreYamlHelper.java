@@ -35,6 +35,7 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.representer.Representer;
@@ -44,6 +45,8 @@ public final class DockstoreYamlHelper {
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
     public static final String UNKNOWN_PROPERTY = "Unknown property: ";
     public static final Pattern WRONG_KEY_PATTERN = Pattern.compile("Unable to find property '(.+)'");
+    public static final String NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE = "No single argument constructor found for interface java.util.List";
+    public static final String BETTER_NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE = "This property must be set to a list of values in YAML format";
     private static final int INVALID_VALUE_ECHO_LIMIT = 80;
 
     enum Version {
@@ -224,12 +227,19 @@ public final class DockstoreYamlHelper {
             final Yaml yaml = new Yaml(constructor, representer, dumperOptions, loaderOptions);
             return yaml.load(content);
         } catch (Exception e) {
-            final String exceptionMsg = e.getMessage();
+            final String exceptionMsg = getFilteredExceptionMessage(e);
             if (LOG.isDebugEnabled()) {
                 LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
             }
             throw new DockstoreYamlException(exceptionMsg);
         }
+    }
+
+    private static String getFilteredExceptionMessage(Exception e) {
+        if (e instanceof YAMLException) {
+            return e.getMessage().replace(NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE, BETTER_NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE);
+        }
+        return e.getMessage();
     }
 
     /**
