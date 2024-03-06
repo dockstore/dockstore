@@ -3,6 +3,9 @@ parameters:
   java-tag:
     type: string
     default: "21.0.2"
+  commit_message:
+    type: string
+    default: $(git log --format=oneline -n 1 $CIRCLE_SHA1)
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -52,7 +55,7 @@ workflows:
         - not:
             matches:
               pattern: "^.*\\[skip\\].*$"
-              value: << pipeline.trigger_parameters.github_app.commit_message >>
+              value: << pipeline.parameters.commit_message >>
     jobs:
       - build:
           <<: *common_filters
@@ -110,7 +113,7 @@ workflows:
       and:
         - matches:
             pattern: "^.*\\[skip\\].*$"
-            value: << pipeline.trigger_parameters.github_app.commit_message >>
+            value: << pipeline.parameters.commit_message >>
     jobs:
       - build:
           <<: *common_filters
