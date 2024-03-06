@@ -658,16 +658,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     transactionHelper.transaction(() -> {
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
-                        final var defaultVersion = wf.getLatestTagAsDefault();
+                        final boolean latestTagAsDefault = wf.getLatestTagAsDefault();
                         final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
                         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
                         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
-                        WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                        WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
 
-                        setToDefaultVersionIfAppropriate(gitHubSourceCodeRepo, repository, wf, workflow, version);
 
                         // Create some events.
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
@@ -990,18 +989,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             // Update verification information.
             updatedWorkflowVersion.updateVerified();
+
             // Update file formats for the version and then the entry.
             // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
-            Set<WorkflowVersion> workflowVersions = new HashSet<>();
-            workflowVersions.add(updatedWorkflowVersion);
-            FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+            FileFormatHelper.updateFileFormats(workflow, Set.of(updatedWorkflowVersion), fileFormatDAO, false);
 
-            // Set the default version, if necessary.
-            boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
-                            .before(updatedWorkflowVersion.getLastModified());
-            if (latestTagAsDefault && Version.ReferenceType.TAG.equals(updatedWorkflowVersion.getReferenceType()) && addedVersionIsNewer) {
-                workflow.setActualDefaultVersion(updatedWorkflowVersion);
-            }
+            // If this version corresponds to the latest tag, make it the default version, if appropriate.
+            setDefaultVersionToLatestTagIfAppropriate(latestTagAsDefault, workflow, updatedWorkflowVersion);
+
+            // If this version corresponds to the GitHub default branch, make it the default version, if appropriate.
+            setDefaultVersionToGitHubDefaultIfAppropriate(latestTagAsDefault, workflow, updatedWorkflowVersion, gitHubSourceCodeRepo, repository);
 
             // Log that we've successfully added the version.
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
@@ -1073,12 +1070,24 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private void setToDefaultVersionIfAppropriate(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repositoryId, Workflowish wf, Workflow workflow, WorkflowVersion version) {
+    private void setDefaultVersionToLatestTagIfAppropriate(boolean latestTagAsDefault, Workflow workflow, WorkflowVersion version) {
+        boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null
+            || workflow.getActualDefaultVersion().getLastModified().before(version.getLastModified());
+        if (latestTagAsDefault
+            && Version.ReferenceType.TAG.equals(version.getReferenceType())
+            && addedVersionIsNewer
+        ) {
+            LOG.info("default version set to latest tag " + version.getName());
+            workflow.setActualDefaultVersion(version);
+        }
+    }
+
+    private void setDefaultVersionToGitHubDefaultIfAppropriate(boolean latestTagAsDefault, Workflow workflow, WorkflowVersion version, GitHubSourceCodeRepo gitHubSourceCodeRepo, String repositoryId) {
         // If the default version isn't set, the latest tag is not the default, the version is a branch,
         // and the version's name is the same as the GitHub repo's default branch name, use this version
         // as the workflow's default version.
         if (workflow.getActualDefaultVersion() == null
-            && !Objects.equals(wf.getLatestTagAsDefault(), Boolean.TRUE)
+            && !latestTagAsDefault
             && Objects.equals(version.getReferenceType(), Version.ReferenceType.BRANCH)
             && Objects.equals(version.getName(), gitHubSourceCodeRepo.getDefaultBranch(repositoryId))
         ) {
