@@ -492,7 +492,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         if (configuration.getDiagnosticsConfig().getEnabled()) {
             LOG.info("enabling diagnostic logging output");
-            new DiagnosticsHelper().start(environment, hibernate.getSessionFactory(), configuration.getDiagnosticsConfig().getPeriodSeconds());
+            new DiagnosticsHelper().start(environment, hibernate.getSessionFactory(), configuration.getDiagnosticsConfig());
         }
 
         registerAPIsAndMisc(environment);

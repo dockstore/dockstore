@@ -113,6 +113,7 @@ public class CensorHelper {
         return index(a) + index(b) * LETTER_COUNT + index(c) * LETTER_COUNT_SQUARED;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private static byte[] createPointArray(Map<String, Double> tripletToFrequency) {
 
         byte[] englishPoints = new byte[LETTER_COUNT_CUBED];

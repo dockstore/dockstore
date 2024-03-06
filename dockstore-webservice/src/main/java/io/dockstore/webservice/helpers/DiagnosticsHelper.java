@@ -40,9 +40,9 @@ public final class DiagnosticsHelper {
     private static final double NANOSECONDS_PER_SECOND = 1e9;
     private static final double BYTES_PER_MEGABYTE = 1e6;
 
-    private DockstoreWebserviceConfiguration config;
     private Environment environment;
     private SessionFactory sessionFactory;
+    private DockstoreWebserviceConfiguration.DiagnosticsConfig config;
 
     private Logger logger;
     private CensorHelper censorHelper;
@@ -61,19 +61,30 @@ public final class DiagnosticsHelper {
         this.threadMXBean = ManagementFactory.getThreadMXBean();
     }
 
-    public void start(Environment environment, SessionFactory sessionFactory, double periodSeconds) {
+    public void start(Environment newEnvironment, SessionFactory newSessionFactory, DockstoreWebserviceConfiguration.DiagnosticsConfig newConfig) {
 
-        // Create a daemon-thread-backed Timer and schedule a periodic dump of the global information.
-        long periodMilliseconds = Math.round(periodSeconds * MILLISECONDS_PER_SECOND);
-        new Timer("diagnostics", true).scheduleAtFixedRate(
-            new TimerTask() {
-                public void run() {
-                    logGlobals();
-                }
-            }, periodMilliseconds, periodMilliseconds);
+        environment = newEnvironment;
+        sessionFactory = newSessionFactory;
+        config = newConfig;
 
-        // Register a Jersey event handler that will log session and thread-related information.
-        environment.jersey().register(new DiagnosticsHelperApplicationEventListener());
+        if (config.getLogPeriodic()) {
+            // Create a daemon-thread-backed Timer and schedule a periodic dump of the global information.
+            long periodSeconds = config.getPeriodSeconds();
+            long periodMilliseconds = Math.round(periodSeconds * MILLISECONDS_PER_SECOND);
+            new Timer("diagnostics", true).scheduleAtFixedRate(
+                new TimerTask() {
+                    public void run() {
+                        logGlobals();
+                    }
+                }, periodMilliseconds, periodMilliseconds);
+            LOG.info(String.format("logging diagnostic information every %d seconds", periodSeconds));
+        }
+
+        if (config.getLogRequests()) {
+            // Register a Jersey event handler that will log session and thread-related information.
+            environment.jersey().register(new DiagnosticsHelperApplicationEventListener());
+            LOG.info("logging diagnostic request information");
+        }
     }
 
     public void logGlobals() {

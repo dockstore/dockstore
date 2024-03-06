@@ -768,16 +768,25 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     public static class DiagnosticsConfig {
-        private boolean enabled = false;
+        private static final long DEFAULT_PERIOD_SECONDS = 60;
+        private boolean logRequests = false;
+        private boolean logPeriodic = false;
+        private long periodSeconds = DEFAULT_PERIOD_SECONDS;
 
-        private long periodSeconds = 60;
-
-        public boolean getEnabled() {
-            return enabled;
+        public boolean getLogPeriodic() {
+            return logPeriodic;
         }
 
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
+        public void setLogPeriodic(boolean logPeriodic) {
+            this.logPeriodic = logPeriodic;
+        }
+
+        public boolean getLogRequests() {
+            return logRequests;
+        }
+
+        public void setLogRequests(boolean logRequests) {
+            this.logRequests = logRequests;
         }
 
         public Long getPeriodSeconds() {
@@ -786,6 +795,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setPeriodSeconds(long periodSeconds) {
             this.periodSeconds = periodSeconds;
+        }
+
+        public boolean getEnabled() {
+            return logRequests || logPeriodic;
         }
     }
 
