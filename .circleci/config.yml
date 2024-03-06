@@ -6,6 +6,9 @@ parameters:
   commit_message:
     type: string
     default: $(git log --format=oneline -n 1 $CIRCLE_SHA1)
+  skip_everything:
+    type: boolean
+    default: true
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -48,14 +51,11 @@ common_filters: &common_filters
 
 
 workflows:
-  version: 2
+  # version: 2
   everything:
     when:
       and:
-        - not:
-            matches:
-              pattern: "^.*\\[skip\\].*$"
-              value: << pipeline.parameters.commit_message >>
+        - equal: [ false, << pipeline.parameters.skip_everything >> ]
     jobs:
       - build:
           <<: *common_filters
@@ -115,10 +115,16 @@ workflows:
             pattern: "^.*\\[skip\\].*$"
             value: << pipeline.parameters.commit_message >>
     jobs:
-      - build:
-          <<: *common_filters
+      - test_skip
+      # - build:
+      #    <<: *common_filters
 
 jobs:
+  test_skip:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+    steps:
+      - run: echo "Commit message is << pipeline.parameter.commit_message >>"
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
