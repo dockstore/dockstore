@@ -51,7 +51,7 @@ workflows:
       and:
         - not:
             matches:
-              pattern: "^.*\[skip].*$"
+              pattern: "^.*\\[skip\\].*$"
               value: << pipeline.trigger_parameters.github_app.commit_message >>
     jobs:
       - build:
@@ -109,7 +109,7 @@ workflows:
     when:
       and:
         - matches:
-            pattern: "^.*\[skip].*$"
+            pattern: "^.*\\[skip\\].*$"
             value: << pipeline.trigger_parameters.github_app.commit_message >>
     jobs:
       - build:
