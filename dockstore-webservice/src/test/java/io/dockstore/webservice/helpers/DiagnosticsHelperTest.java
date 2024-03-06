@@ -19,12 +19,79 @@ package io.dockstore.webservice.helpers;
 
 import java.util.Random;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
+import org.slf4j.helpers.AbstractLogger;
 
 class DiagnosticsHelperTest {
 
     private static final String BASE64_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/+";
-    private static final DiagnosticsHelper helper = new DiagnosticsHelper();
+    private static DiagnosticsHelper helper;
+    private static String output;
+
+    @BeforeAll
+    static void setup() {
+        Logger logger = new AbstractLogger() {
+            @Override
+            protected void handleNormalizedLoggingCall(Level level, Marker marker, String messagePattern, Object[] arguments, Throwable throwable) {
+                if (arguments != null && arguments.length > 0) {
+                    throw new RuntimeException("unexpected arguments");
+                }
+                if (throwable != null) {
+                    throw new RuntimeException("unexpected throwable");
+                }
+                output = messagePattern;
+            }
+            @Override
+            protected String getFullyQualifiedCallerName() {
+                return "";
+            }
+            @Override
+            public boolean isErrorEnabled(Marker marker) {
+                return true;
+            }
+            @Override
+            public boolean isErrorEnabled() {
+                return true;
+            }
+            @Override
+            public boolean isWarnEnabled(Marker marker) {
+                return true;
+            }
+            @Override
+            public boolean isWarnEnabled() {
+                return true;
+            }
+            @Override
+            public boolean isInfoEnabled(Marker marker) {
+                return true;
+            }
+            @Override
+            public boolean isInfoEnabled() {
+                return true;
+            }
+            @Override
+            public boolean isDebugEnabled(Marker marker) {
+                return true;
+            }
+            @Override
+            public boolean isDebugEnabled() {
+                return true;
+            }
+            @Override
+            public boolean isTraceEnabled(Marker marker) {
+                return true;
+            }
+            @Override
+            public boolean isTraceEnabled() {
+                return true;
+            }
+        };
+        helper = new DiagnosticsHelper(logger);
+    }
 
     @Test
     void testCensoringWithExamples() {
@@ -35,16 +102,32 @@ class DiagnosticsHelperTest {
         confirmCensored("Lp0+12I8Xlqhi18KDzzdXFUDrSJWV8GxwmivwQf9thRI1/k8Ec3G4t7Hxoz8fEgG");
         confirmCensored("Qz2OJicD0w__J__deT42-DjtfrTG3ZOD0rP0PchWyPQXVpL96sXJQYm");
         confirmCensored("KmqLbmoBq8cuQUu8rwIVXCSyafM+oakMEqf3z75Cr9");
-        Assertions.assertEquals(helper.censor("a string with QnDn/5VCnYI7hbeM9Xet9zYSFV2GaiTI7TmXUqE/2ljDtvFVbRB7CRWMqQz+ embedded"),
-            "a string with XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX embedded");
+        Assertions.assertTrue(log("a string with QnDn/5VCnYI7hbeM9Xet9zYSFV2GaiTI7TmXUqE/2ljDtvFVbRB7CRWMqQz+ embedded").endsWith(
+            "a string with XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX embedded"));
+        Assertions.assertTrue(log("fYEJEaL4oECNDCwPOwZHqBlC4+3BjF3Xc4XxDhM two! d3MNbsl4ubApX5ZMoWMm4XsH7No7Q/qoBoQym8M").endsWith(
+            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX two! XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"));
     }
 
     @Test
     void testCensoringWithRandomBase64Strings() {
         Random random = new Random(0);
         for (int i = 0; i < 100000; i++) {
-            confirmCensored(randomBase64(random, 40));
+            confirmCensored(randomBase64(random, 24 + random.nextInt(40)));
         }
+    }
+
+    private void confirmPassed(String input) {
+        Assertions.assertTrue(log(input).endsWith(input));
+    }
+
+    private void confirmCensored(String input) {
+        Assertions.assertTrue(log(input).endsWith("X".repeat(input.length())));
+    }
+
+    private String log(String input) {
+        output = null;
+        helper.log("type", () -> input);
+        return output;
     }
 
     private String randomBase64(Random random, int length) {
@@ -53,15 +136,5 @@ class DiagnosticsHelperTest {
             builder.append(BASE64_CHARS.charAt(random.nextInt(BASE64_CHARS.length())));
         }
         return builder.toString();
-    }
-
-    private void confirmPassed(String input) {
-        String output = helper.censor(input);
-        Assertions.assertEquals(input, output);
-    }
-
-    private void confirmCensored(String input) {
-        String output = helper.censor(input);
-        Assertions.assertEquals("X".repeat(input.length()), output);
     }
 }
