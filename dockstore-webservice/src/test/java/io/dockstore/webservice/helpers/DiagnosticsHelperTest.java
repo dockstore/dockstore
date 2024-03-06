@@ -45,14 +45,6 @@ class DiagnosticsHelperTest {
         for (int i = 0; i < 100000; i++) {
             confirmCensored(randomBase64(random, 40));
         }
-        /*
-        for (int i = 0; i < 100000000; i++) {
-            String input = randomBase64(random, 40);
-            if (input.equals(helper.censor(input))) {
-                System.err.println("FAIL " + input);
-            }
-        }
-        */
     }
 
     private String randomBase64(Random random, int length) {

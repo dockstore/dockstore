@@ -491,7 +491,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         GoogleHelper.setConfig(configuration);
 
         if (configuration.getDiagnosticsConfig().getEnabled()) {
-            new DiagnosticsHelper().start(configuration, environment, hibernate.getSessionFactory());
+            LOG.info("enabling diagnostic logging output");
+            new DiagnosticsHelper().start(environment, hibernate.getSessionFactory(), configuration.getDiagnosticsConfig().getPeriodSeconds());
         }
 
         registerAPIsAndMisc(environment);

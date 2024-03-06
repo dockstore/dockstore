@@ -44,21 +44,27 @@ public final class DiagnosticsHelper {
     private Environment environment;
     private SessionFactory sessionFactory;
 
+    private Logger logger;
     private CensorHelper censorHelper;
     private MemoryMXBean memoryMXBean;
     private ThreadMXBean threadMXBean;
 
     public DiagnosticsHelper() {
-        censorHelper = new CensorHelper(readFrequencies());
-        // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
-        memoryMXBean = ManagementFactory.getMemoryMXBean();
-        threadMXBean = ManagementFactory.getThreadMXBean();
+        this(LOG);
     }
 
-    public void start(DockstoreWebserviceConfiguration config, Environment environment, SessionFactory sessionFactory) {
+    public DiagnosticsHelper(Logger logger) {
+        this.logger = logger;
+        this.censorHelper = new CensorHelper(readFrequencies());
+        // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
+        this.memoryMXBean = ManagementFactory.getMemoryMXBean();
+        this.threadMXBean = ManagementFactory.getThreadMXBean();
+    }
+
+    public void start(Environment environment, SessionFactory sessionFactory, double periodSeconds) {
 
         // Create a daemon-thread-backed Timer and schedule a periodic dump of the global information.
-        long periodMilliseconds = Math.round(config.getDiagnosticsConfig().getPeriodSeconds() * MILLISECONDS_PER_SECOND);
+        long periodMilliseconds = Math.round(periodSeconds * MILLISECONDS_PER_SECOND);
         new Timer("diagnostics", true).scheduleAtFixedRate(
             new TimerTask() {
                 public void run() {
@@ -114,11 +120,11 @@ public final class DiagnosticsHelper {
         log("session", () -> formatSession(session));
     }
 
-    public void log(String name, Supplier<String> valueSupplier) {
-        if (LOG.isInfoEnabled()) {
+    public void log(String type, Supplier<String> valueSupplier) {
+        if (logger.isInfoEnabled()) {
             Thread current = Thread.currentThread();
-            String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", name, current.getName(), current.getId(), valueSupplier.get());
-            LOG.info(censor(message));
+            String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
+            logger.info(censor(message));
         }
     }
 
