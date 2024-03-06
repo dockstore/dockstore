@@ -110,10 +110,11 @@ workflows:
           context: sonarcloud
   skip_tests:
     when:
-      and:
+      or:
         - matches:
             pattern: "^.*\\[skip\\].*$"
             value: << pipeline.parameters.commit_message >>
+        - equal: [ true, true ]
     jobs:
       - test_skip
       # - build:
