@@ -40,7 +40,7 @@ public abstract class Metric {
     @Schema(description = "Implementation specific ID for metrics in this webservice")
     private long id;
 
-    @Column
+    @Column(nullable = false, columnDefinition = "integer default 0")
     @Schema(description = "The number of executions that were skipped during aggregation because they were invalid", defaultValue = "0")
     int numberOfSkippedExecutions = 0;
 

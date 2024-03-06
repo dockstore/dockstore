@@ -36,7 +36,9 @@
             <column name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="metric_pkey"/>
             </column>
-            <column name="numberofskippedexecutions" type="INTEGER"/>
+            <column name="numberofskippedexecutions" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <createTable tableName="statisticmetric">
             <column name="average" type="FLOAT8">
