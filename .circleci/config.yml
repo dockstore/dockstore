@@ -119,7 +119,9 @@ jobs:
       - checkout
       - run:
           name: export commit message
-          command: echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> ~/.bashrc
+          command: |
+            echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
+            source $BASH_ENV
       - run:
           name: echo commit message
           command: echo "Commit message is $COMMIT_MESSAGE"
