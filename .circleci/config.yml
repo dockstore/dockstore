@@ -112,13 +112,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: export commit message
+          name: evaluate [skip] condition
           command: |
             echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
             source $BASH_ENV
-      - run:
-          name: fail if tests should be skipped
-          command: |
             echo "Commit message: $COMMIT_MESSAGE"
             if [[ $COMMIT_MESSAGE =~ ^.*\[skip\].*$ ]]; then
               echo "Found [skip]: failing this check to skip subsequent CircleCI tests."
