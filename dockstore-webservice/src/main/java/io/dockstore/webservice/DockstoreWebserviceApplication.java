@@ -511,6 +511,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                     "Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
         });
 
+        LOG.error("line A\nline B\nline C");
+        LOG.error("WARN A\nWARN B\nWARN C");
+        LOG.error("line D\rline E\rline F");
+        LOG.error("WARN D\rWARN E\rWARN F");
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
