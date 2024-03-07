@@ -3,6 +3,9 @@ parameters:
   java-tag:
     type: string
     default: "21.0.2"
+  postgres-tag:
+    type: string
+    default: "16.1"    
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -12,7 +15,7 @@ executors:
         environment:
           JAVA_TOOL_OPTIONS: -Xmx1024m # Nothing to do with surefire plugin, it has its own JVM. The two of these plus ES (1.3 GB) must add up to a bit less than 6GB.
           PGHOST: 127.0.0.1
-      - image: cimg/postgres:13.13
+      - image: cimg/postgres:<< pipeline.parameters.postgres-tag >>
         command: postgres -c max_connections=200 -c jit=off
         environment:
           POSTGRES_USER: postgres
@@ -269,7 +272,7 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
         environment:
           PGHOST: 127.0.0.1
-      - image: cimg/postgres:13.13
+      - image: cimg/postgres:<< pipeline.parameters.postgres-tag >>
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
@@ -490,7 +493,7 @@ commands:
             curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
             echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
             sudo apt update
-            sudo apt install -y postgresql-client-13
+            sudo apt install -y postgresql-client-16
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_postgres_docker:
