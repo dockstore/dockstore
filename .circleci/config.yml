@@ -57,7 +57,7 @@ workflows:
       - unit_test:
           <<: *common_filters
           requires:
-            - skip_check
+            - build
       - workflow-integration-tests:
           <<: *common_filters
           requires:
@@ -111,16 +111,16 @@ jobs:
     steps:
       - checkout
       - run:
-          name: evaluate [skip] condition
+          name: evaluate [skipTests] condition
           command: |
             echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
             source $BASH_ENV
             echo "Commit message: $COMMIT_MESSAGE"
-            if [[ $COMMIT_MESSAGE =~ ^.*\[skip\].*$ ]]; then
-              echo "Found [skip]: failing this check to skip subsequent CircleCI tests."
+            if [[ $COMMIT_MESSAGE =~ ^.*\[skipTests\].*$ ]]; then
+              echo "Found [skipTests]: failing this check to skip subsequent CircleCI tests."
               exit 1
             else
-              echo "Did not find [skip]: continue running subsequent CircleCI tests."
+              echo "Did not find [skipTests]: continue running subsequent CircleCI tests."
             fi
   regression-integration-tests:
     executor: machine_integration_test_exec
