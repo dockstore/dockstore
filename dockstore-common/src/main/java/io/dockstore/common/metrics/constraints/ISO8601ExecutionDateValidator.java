@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
 import io.dockstore.common.metrics.FormatCheckHelper;
 import jakarta.validation.ConstraintValidator;

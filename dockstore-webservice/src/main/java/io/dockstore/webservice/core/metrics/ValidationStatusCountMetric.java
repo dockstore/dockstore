@@ -18,7 +18,7 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool;
+import io.dockstore.common.metrics.ValidationExecution.ValidatorTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,7 +41,7 @@ import org.hibernate.annotations.BatchSize;
 @Entity
 @Table(name = "validation_status")
 @ApiModel(value = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
-@Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
+@Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses", allOf = Metric.class)
 @SuppressWarnings("checkstyle:magicnumber")
 public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidatorInfo> {
 

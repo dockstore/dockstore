@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
 import static io.dockstore.common.metrics.FormatCheckHelper.checkExecutionTimeISO8601Format;
 

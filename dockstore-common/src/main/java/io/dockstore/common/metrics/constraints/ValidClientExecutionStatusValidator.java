@@ -15,9 +15,9 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
+import io.dockstore.common.metrics.ExecutionStatus;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
