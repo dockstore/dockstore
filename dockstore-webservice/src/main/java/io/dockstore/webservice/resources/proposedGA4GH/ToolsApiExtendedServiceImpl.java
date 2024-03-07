@@ -446,11 +446,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         Optional<? extends Version<?>> versionOptional;
 
-        if (entry instanceof Workflow workflow) {
-            versionOptional = Optional.ofNullable(workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionId));
-        } else if (entry instanceof Tool tool) {
-            Set<Tag> versions = tool.getWorkflowVersions();
-            versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+        if (entry instanceof Workflow || entry instanceof Tool) {
+            versionOptional = getVersion(entry, versionId);
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
