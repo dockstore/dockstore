@@ -440,6 +440,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
+        LOG.error("line A\nline B\nline C");
+        LOG.error("WARN A\nWARN B\nWARN C");
+        LOG.error("line D\rline E\rline F");
+        LOG.error("WARN D\rWARN E\rWARN F");
+
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
