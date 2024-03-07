@@ -135,8 +135,12 @@ public final class DiagnosticsHelper {
         if (logger.isInfoEnabled()) {
             Thread current = Thread.currentThread();
             String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
-            logger.info(censorHelper.censor(message));
+            logger.info(lfToCr(censorHelper.censor(message)));
         }
+    }
+
+    public String lfToCr(String s) {
+        return s.replace('\n', '\r');
     }
 
     public String formatThreads() {
