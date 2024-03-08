@@ -6,11 +6,17 @@ import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.core.setup.Environment;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +48,7 @@ public final class DiagnosticsHelper {
     private static final double MILLISECONDS_PER_SECOND = 1e3;
     private static final double NANOSECONDS_PER_SECOND = 1e9;
     private static final double BYTES_PER_MEGABYTE = 1e6;
+    private static final String RESOURCE_METHOD_PROPERTY_NAME = "io.dockstore.webservice.helpers.DiagnosticsHelper.resourceMethod";
     private static final int SEVEN = 7;
 
     private Environment environment;
@@ -87,6 +94,8 @@ public final class DiagnosticsHelper {
         if (config.getLogRequests()) {
             // Register a Jersey event handler that will log session and thread-related information.
             environment.jersey().register(new DiagnosticsHelperApplicationEventListener());
+            // Register a Jersey filter to determine the resource method.
+            environment.jersey().register(new DiagnosticsHelperContainerRequestFilter());
             LOG.info("logging diagnostic request information");
         }
     }
@@ -122,10 +131,11 @@ public final class DiagnosticsHelper {
         log("start", () -> formatRequest(request));
     }
 
-    public void logFinish(ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user) {
+    public void logFinish(ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user, Optional<Method> resourceMethod) {
         log("finish", () -> formatRequest(request)
-            + formatResponse(response)
             + formatUser(user)
+            + formatResourceMethod(resourceMethod)
+            + formatResponse(response)
             + formatThread(startThreadState, finishThreadState)
             + formatSession(sessionState));
     }
@@ -177,6 +187,10 @@ public final class DiagnosticsHelper {
 
     public String formatSession(Optional<SessionState> sessionState) {
         return nameValue("session-statistics", sessionState.orElse(null));
+    }
+
+    public String formatResourceMethod(Optional<Method> resourceMethod) {
+        return nameValue("resource-method", resourceMethod.map(Method::toGenericString).orElse(null));
     }
 
     public String formatThread(ThreadState startState, ThreadState finishState) {
@@ -300,6 +314,7 @@ public final class DiagnosticsHelper {
         private ThreadState startThreadState;
         private Optional<SessionState> sessionState = Optional.empty();
         private Optional<User> user = Optional.empty();
+        private Optional<Method> resourceMethod = Optional.empty();
 
         public DiagnosticsHelperRequestEventListener() {
             startThreadState = getThreadState();
@@ -311,10 +326,15 @@ public final class DiagnosticsHelper {
                 ContainerRequest request = event.getContainerRequest();
                 ContainerResponse response = event.getContainerResponse();
 
+                // Try to save some information if we haven't already.
                 if (!user.isPresent() && request.getSecurityContext().getUserPrincipal() instanceof User requestUser) {
                     user = Optional.of(requestUser);
                 }
+                if (!resourceMethod.isPresent() && request.getProperty(RESOURCE_METHOD_PROPERTY_NAME) instanceof Method requestResourceMethod) {
+                    resourceMethod = Optional.of(requestResourceMethod);
+                }
 
+                // Handle the event.
                 switch (event.getType()) {
 
                 // Request started.
@@ -331,7 +351,7 @@ public final class DiagnosticsHelper {
 
                 // Request finished.
                 case FINISHED:
-                    logFinish(request, response, startThreadState, getThreadState(), sessionState, user);
+                    logFinish(request, response, startThreadState, getThreadState(), sessionState, user, resourceMethod);
                     break;
 
                 // Do nothing for other events.
@@ -342,6 +362,17 @@ public final class DiagnosticsHelper {
                 // An Exception thrown by this handler will cause the request to fail, so we catch and suppress it.
                 LOG.error("exception thrown in DiagnosticsHelperRequestEventListener.onEvent", e);
             }
+        }
+    }
+
+    @Provider
+    public class DiagnosticsHelperContainerRequestFilter implements ContainerRequestFilter {
+        @Context
+        ResourceInfo resourceInfo;
+
+        @Override
+        public void filter(ContainerRequestContext requestContext) {
+            requestContext.setProperty(RESOURCE_METHOD_PROPERTY_NAME, resourceInfo.getResourceMethod());
         }
     }
 
