@@ -212,6 +212,7 @@ public final class DiagnosticsHelper {
         return nameValue("request.method", request.getMethod())
             + nameValue("request.url", request.getRequestUri())
             + nameValue("request.x-session-id-fingerprint", fingerprint(request.getRequestHeader("x-session-id"), SEVEN))
+            + nameValue("request.x-real-ip", request.getRequestHeader("X-Real-IP"))
             + nameValue("request.user-agent", request.getRequestHeader("User-Agent"));
     }
 
