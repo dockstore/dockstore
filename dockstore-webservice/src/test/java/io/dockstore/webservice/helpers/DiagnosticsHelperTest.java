@@ -95,8 +95,10 @@ class DiagnosticsHelperTest {
 
     @Test
     void testCensoringWithExamples() {
-        confirmPassed("/This/Is/A/Test/Of/The/Censoring/System");
-        confirmPassed("a short decimal number: 7236463, a short hex number af081afb609d");
+        confirmPassed("7236463");  // short decimal string
+        confirmPassed("af081afb609d");  // short hex string
+        confirmPassed("K11/sjsbWU3+");  // short base64-ish string
+        confirmPassed("/This/Is/A/Test/Of/The/Censoring/System");  // path that contains only base64 characters
         confirmCensored("f893b559e572f323b5369452752d56743970e39132136aff378b76492c7549dd");
         confirmCensored("039832784664398210947231904282437420197091837413209843");
         confirmCensored("Lp0+12I8Xlqhi18KDzzdXFUDrSJWV8GxwmivwQf9thRI1/k8Ec3G4t7Hxoz8fEgG");
