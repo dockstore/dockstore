@@ -4,6 +4,7 @@ import com.codahale.metrics.Gauge;
 import com.google.common.io.Resources;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.User;
 import io.dropwizard.core.setup.Environment;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -22,6 +23,7 @@ import java.util.TimerTask;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
@@ -30,6 +32,7 @@ import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.stat.SessionStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +42,7 @@ public final class DiagnosticsHelper {
     private static final double MILLISECONDS_PER_SECOND = 1e3;
     private static final double NANOSECONDS_PER_SECOND = 1e9;
     private static final double BYTES_PER_MEGABYTE = 1e6;
+    private static final int SEVEN = 7;
 
     private Environment environment;
     private SessionFactory sessionFactory;
@@ -88,7 +92,6 @@ public final class DiagnosticsHelper {
     }
 
     public void logGlobals() {
-        logThreads();
         logProcesses();
         logFilesystems();
         logDatabase();
@@ -115,26 +118,22 @@ public final class DiagnosticsHelper {
         log("memory", () -> formatMemory());
     }
 
-    public void logStarted(ContainerRequest request) {
-        log("started", () -> formatRequest(request));
+    public void logStart(ContainerRequest request) {
+        log("start", () -> formatRequest(request));
     }
 
-    public void logFinished(ContainerRequest request, ContainerResponse response) {
-        log("finished", () -> formatResponse(request, response));
-    }
-
-    public void logThread(ThreadState startState, ThreadState finishState) {
-        log("thread", () -> formatThread(startState, finishState));
-    }
-
-    public void logSession(Session session) {
-        log("session", () -> formatSession(session));
+    public void logFinish(ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user) {
+        log("finish", () -> formatRequest(request)
+            + formatResponse(response)
+            + formatUser(user)
+            + formatThread(startThreadState, finishThreadState)
+            + formatSession(sessionState));
     }
 
     public void log(String type, Supplier<String> valueSupplier) {
         if (logger.isInfoEnabled()) {
             Thread current = Thread.currentThread();
-            String message = String.format("debug.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
+            String message = String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
             logger.info(censorHelper.censor(message));
         }
     }
@@ -165,8 +164,19 @@ public final class DiagnosticsHelper {
             + concat(format(this::formatMemoryPoolMXBean, ManagementFactory.getMemoryPoolMXBeans()));
     }
 
-    public String formatSession(Session session) {
-        return session.getStatistics().toString();
+    private String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
+        return nameValue("POOL", pool.getName() + ", " + pool.getType())
+            + nameValue("current", pool.getUsage())
+            + nameValue("peak", pool.getPeakUsage())
+            + nameValue("collection", pool.getCollectionUsage());
+    }
+
+    public String formatBytes(long bytes) {
+        return String.format("%.2f MB", bytes / BYTES_PER_MEGABYTE);
+    }
+
+    public String formatSession(Optional<SessionState> sessionState) {
+        return nameValue("session-statistics", sessionState.orElse(null));
     }
 
     public String formatThread(ThreadState startState, ThreadState finishState) {
@@ -180,23 +190,19 @@ public final class DiagnosticsHelper {
         return String.format("%.3f sec", ns / NANOSECONDS_PER_SECOND);
     }
 
-    public String formatBytes(long bytes) {
-        return String.format("%.2f MB", bytes / BYTES_PER_MEGABYTE);
-    }
-
-    private String formatMemoryPoolMXBean(MemoryPoolMXBean pool) {
-        return nameValue("POOL", pool.getName() + ", " + pool.getType())
-            + nameValue("current", pool.getUsage())
-            + nameValue("peak", pool.getPeakUsage())
-            + nameValue("collection", pool.getCollectionUsage());
+    private String formatUser(Optional<User> user) {
+        return nameValue("user", user.orElse(null));
     }
 
     private String formatRequest(ContainerRequest request) {
-        return String.format("%s \"%s\"", request.getMethod(), request.getPath(false));
+        return nameValue("request.method", request.getMethod())
+            + nameValue("request.url", request.getRequestUri())
+            + nameValue("request.x-session-id-fingerprint", fingerprint(request.getRequestHeader("x-session-id"), SEVEN))
+            + nameValue("request.user-agent", request.getRequestHeader("User-Agent"));
     }
 
-    private String formatResponse(ContainerRequest request, ContainerResponse response) {
-        return formatRequest(request);
+    private String formatResponse(ContainerResponse response) {
+        return nameValue("response.status", response.getStatus());
     }
 
     private String nameValue(String name, Object value) {
@@ -211,76 +217,15 @@ public final class DiagnosticsHelper {
         return objects.stream().map(Object::toString).collect(Collectors.joining());
     }
 
-    private ThreadState getState() {
-        long bytes = 0;
-        if (threadMXBean instanceof com.sun.management.ThreadMXBean sunBean) {
-            bytes = sunBean.getCurrentThreadAllocatedBytes();
-        } else {
-            LOG.info("sun threadMXBean.getCurrentThreadAllocatedBytes() not supported");
-        }
-        long cpuTime = 0;
-        try {
-            cpuTime = threadMXBean.getCurrentThreadCpuTime();
-        } catch (UnsupportedOperationException e) {
-            LOG.info("threadMXBean.getCurrentThreadCpuTime not supported");
-        }
-        long userTime = 0;
-        try {
-            userTime = threadMXBean.getCurrentThreadUserTime();
-        } catch (UnsupportedOperationException e) {
-            LOG.info("threadMXBean.getCurrentThreadUserTime not supported");
-        }
-        long wallClock = System.nanoTime();
-        return new ThreadState(bytes, cpuTime, userTime, wallClock);
-    }
-
-    private Optional<Session> getCurrentSession() {
-        try {
-            // This getCurrentSession() call will throw if there's no current session.
-            return Optional.of(sessionFactory.getCurrentSession());
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
     private String outputFromCommand(String command) {
         return Utilities.executeCommand(command).getLeft();
     }
 
-    private void handleRequestEvent(RequestEvent event, ThreadState startState) {
-        try {
-            ContainerRequest request = event.getContainerRequest();
-            ContainerResponse response = event.getContainerResponse();
-
-            switch (event.getType()) {
-
-            // Request started.
-            case START:
-                logStarted(request);
-                break;
-
-            // Done filtering response.
-            case RESP_FILTERS_FINISHED:
-                // Experimentally, we've determined that soon after this, the Hibernate session is dissociated from the thread.
-                // If the session was closed during the request, it may not even be available here.
-                getCurrentSession().ifPresent(session -> logSession(session));
-                break;
-
-            // Request finished.
-            case FINISHED:
-                logFinished(request, response);
-                logThread(startState, getState());
-                break;
-
-            // Do nothing for other events.
-            default:
-                break;
-            }
-
-        } catch (Exception e) {
-            // An Exception thrown by this handler will cause the request to fail, so we catch and suppress it.
-            LOG.error("Request handler threw", e);
+    private String fingerprint(Object s, int length) {
+        if (s == null) {
+            return null;
         }
+        return DigestUtils.sha1Hex(s.toString()).substring(0, length);
     }
 
     private Map<String, Double> readFrequencies() {
@@ -301,6 +246,40 @@ public final class DiagnosticsHelper {
         return tripletToFrequency;
     }
 
+    private ThreadState getThreadState() {
+        long bytes = 0;
+        if (threadMXBean instanceof com.sun.management.ThreadMXBean sunBean) {
+            bytes = sunBean.getCurrentThreadAllocatedBytes();
+        } else {
+            LOG.info("com.sun.management.threadMXBean not available");
+        }
+        long cpuTime = 0;
+        try {
+            cpuTime = threadMXBean.getCurrentThreadCpuTime();
+        } catch (UnsupportedOperationException e) {
+            LOG.info("threadMXBean.getCurrentThreadCpuTime not supported");
+        }
+        long userTime = 0;
+        try {
+            userTime = threadMXBean.getCurrentThreadUserTime();
+        } catch (UnsupportedOperationException e) {
+            LOG.info("threadMXBean.getCurrentThreadUserTime not supported");
+        }
+        long wallClock = System.nanoTime();
+        return new ThreadState(bytes, cpuTime, userTime, wallClock);
+    }
+
+    private Optional<SessionState> getSessionState() {
+        try {
+            // This getCurrentSession() call will throw if there's no current session.
+            Session session = sessionFactory.getCurrentSession();
+            SessionStatistics statistics = session.getStatistics();
+            return Optional.of(new SessionState(statistics.getEntityCount(), statistics.getCollectionCount()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     // https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/monitoring_tracing.html
     public class DiagnosticsHelperApplicationEventListener implements ApplicationEventListener {
         @Override
@@ -310,25 +289,65 @@ public final class DiagnosticsHelper {
 
         @Override
         public RequestEventListener onRequest(RequestEvent event) {
-            ThreadState startState = getState();
-            handleRequestEvent(event, startState);
-            return new DiagnosticsHelperRequestEventListener(startState);
+            DiagnosticsHelperRequestEventListener listener = new DiagnosticsHelperRequestEventListener();
+            listener.onEvent(event);
+            return listener;
         }
     }
 
     public class DiagnosticsHelperRequestEventListener implements RequestEventListener {
-        private final ThreadState startState;
 
-        public DiagnosticsHelperRequestEventListener(ThreadState startState) {
-            this.startState = startState;
+        private ThreadState startThreadState;
+        private Optional<SessionState> sessionState = Optional.empty();
+        private Optional<User> user = Optional.empty();
+
+        public DiagnosticsHelperRequestEventListener() {
+            startThreadState = getThreadState();
         }
 
         @Override
         public void onEvent(RequestEvent event) {
-            handleRequestEvent(event, startState);
+            try {
+                ContainerRequest request = event.getContainerRequest();
+                ContainerResponse response = event.getContainerResponse();
+
+                if (!user.isPresent() && request.getSecurityContext().getUserPrincipal() instanceof User requestUser) {
+                    user = Optional.of(requestUser);
+                }
+
+                switch (event.getType()) {
+
+                // Request started.
+                case START:
+                    logStart(request);
+                    break;
+
+                // Done filtering response.
+                case RESP_FILTERS_FINISHED:
+                    // Experimentally, we've determined that soon after this, the Hibernate session is dissociated from the thread.
+                    // If the session was closed during the request, it may not even be available here.
+                    sessionState = getSessionState();
+                    break;
+
+                // Request finished.
+                case FINISHED:
+                    logFinish(request, response, startThreadState, getThreadState(), sessionState, user);
+                    break;
+
+                // Do nothing for other events.
+                default:
+                    break;
+                }
+            } catch (Exception e) {
+                // An Exception thrown by this handler will cause the request to fail, so we catch and suppress it.
+                LOG.error("exception thrown in DiagnosticsHelperRequestEventListener.onEvent", e);
+            }
         }
     }
 
     private static record ThreadState (long allocatedBytes, long cpuTime, long userTime, long wallClock) {
+    }
+
+    private static record SessionState (long entityCount, long collectionCount) {
     }
 }
