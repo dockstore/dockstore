@@ -120,6 +120,29 @@ class OpenApiCRUDClientIT extends BaseIT {
         assertEquals(workflows.size() + tools.size(), allStuff.size());
     }
 
+    @Test
+    void testGA4GHWeirdFiltering() {
+        ApiClient webClient = new ApiClient();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
+        List<Tool> weirdStuff = ga4Ghv20Api
+            .toolsGet(null, null, null, null, "fuzzString", null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        assertTrue(weirdStuff.isEmpty());
+        ApiException returnException = assertThrows(ApiException.class, () -> ga4Ghv20Api
+            .toolsGet(null, null, null, null, null, null, null, null, null, null, null, "fuzzString", Integer.MAX_VALUE));
+        assertTrue(returnException.getCode() == HttpStatus.SC_BAD_REQUEST);
+        assertTrue(weirdStuff.isEmpty());
+        returnException = assertThrows(ApiException.class, () -> ga4Ghv20Api
+            .toolsGet(null, null, null, "fuzzString", null, null, null, null, null, null, null, null, Integer.MAX_VALUE));
+        assertTrue(returnException.getCode() == HttpStatus.SC_BAD_REQUEST);
+        assertTrue(weirdStuff.isEmpty());
+        weirdStuff = ga4Ghv20Api
+            .toolsGet(null, null, "fuzzString", null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        assertTrue(weirdStuff.isEmpty());
+    }
+
 
     @Test
     void testGA4GHBigPaging() throws IOException {

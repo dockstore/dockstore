@@ -129,6 +129,14 @@ public abstract class GA4GHIT {
     abstract void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception;
 
     /**
+     * This tests the /tools/{id}/versions/{version-id}/{type}/descriptor endpoint
+     */
+    @Test
+    void testToolsIdVersionsVersionIdTypeDescriptorWeirdLanguage() {
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/fuzzstring/descriptor", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} endpoint
      */
 
