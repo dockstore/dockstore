@@ -17,17 +17,15 @@ package io.dockstore.webservice.core.database;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 
-public class AppToolPath {
-    private final AppTool appTool = new AppTool();
-
-    public AppToolPath(SourceControl sourceControl, String organization, String repository, String appToolName) {
-        this.appTool.setSourceControl(sourceControl);
-        this.appTool.setOrganization(organization);
-        this.appTool.setRepository(repository);
-        this.appTool.setWorkflowName(appToolName);
-    }
+public record AppToolPath (SourceControl sourceControl, String organization, String repository, String appToolName) {
 
     public AppTool getAppTool() {
+        AppTool appTool = new AppTool();
+        appTool.setSourceControl(sourceControl);
+        appTool.setOrganization(organization);
+        appTool.setRepository(repository);
+        appTool.setWorkflowName(appToolName);
         return appTool;
+
     }
 }
