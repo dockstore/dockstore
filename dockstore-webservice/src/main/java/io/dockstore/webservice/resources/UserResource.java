@@ -668,16 +668,16 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         List<Workflow> workflows = new ArrayList<>();
         myWorkflows.forEach(myWorkflow -> {
             Workflow workflow = new BioWorkflow();
-            workflow.setOrganization(myWorkflow.getOrganization());
-            workflow.setId(myWorkflow.getId());
-            workflow.setSourceControl(myWorkflow.getSourceControl());
+            workflow.setOrganization(myWorkflow.organization());
+            workflow.setId(myWorkflow.id());
+            workflow.setSourceControl(myWorkflow.sourceControl());
             workflow.setIsPublished(myWorkflow.isPublished());
-            workflow.setWorkflowName(myWorkflow.getWorkflowName());
-            workflow.setRepository(myWorkflow.getRepository());
-            workflow.setMode(myWorkflow.getMode());
-            workflow.setGitUrl(myWorkflow.getGitUrl());
-            workflow.setDescription(myWorkflow.getDescription());
-            workflow.setArchived(myWorkflow.getArchived());
+            workflow.setWorkflowName(myWorkflow.workflowName());
+            workflow.setRepository(myWorkflow.repository());
+            workflow.setMode(myWorkflow.workflowMode());
+            workflow.setGitUrl(myWorkflow.gitUrl());
+            workflow.setDescription(myWorkflow.description());
+            workflow.setArchived(myWorkflow.archived());
             workflows.add(workflow);
         });
         return workflows;
