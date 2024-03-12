@@ -133,7 +133,7 @@ public abstract class GA4GHIT {
      */
     @Test
     void testToolsIdVersionsVersionIdTypeDescriptorWeirdLanguage() {
-        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/fuzzstring/descriptor", HttpStatus.SC_BAD_REQUEST);
+        checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/fuzzstring/descriptor", HttpStatus.SC_BAD_REQUEST);
     }
 
     /**
