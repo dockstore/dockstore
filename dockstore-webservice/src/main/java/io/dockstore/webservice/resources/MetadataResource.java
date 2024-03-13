@@ -99,9 +99,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -117,6 +119,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.kohsuke.github.GHRelease;
@@ -127,6 +130,7 @@ import org.kohsuke.github.PagedIterable;
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 /**
  * @author dyuen
@@ -150,6 +154,7 @@ public class MetadataResource {
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
+    private final SessionFactory sessionFactory;
 
     private HealthCheckRegistry healthCheckRegistry;
 
@@ -165,6 +170,7 @@ public class MetadataResource {
         this.notebookDAO = new NotebookDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
         this.rssListener = PublicStateManager.getInstance().getRSSListener();
+        this.sessionFactory = sessionFactory;
     }
 
     public void setHealthCheckRegistry(HealthCheckRegistry healthCheckRegistry) {
@@ -514,6 +520,35 @@ public class MetadataResource {
                     .collect(Collectors.joining(", "));
             throw new CustomWebApplicationException(String.format("Health checks failed: %s", failedHealthCheckNames), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/liquibase")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Successful response if there are no Liquibase issues", description = "Successful response if there are no Liquibase issues, NO authentication")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "No current issues", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = HealthCheckResult.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "There are one or more Liquibase issues")
+    public Response monitor() {
+        Query query = sessionFactory.getCurrentSession().createNativeQuery("select lockgranted from databasechangeloglock");
+        Object result = query.getSingleResult();
+        if (result == null) {
+            LOG.info("Liquibase lock free");
+            return Response.ok().build();
+        }
+        if (result instanceof Date grantedDate) {
+            long heldSeconds = (new Date().getTime() - grantedDate.getTime()) / 1000L;
+            LOG.info(String.format("Liquibase lock granted at %s, held for %d seconds", grantedDate, heldSeconds));
+            if (heldSeconds > 600L) {
+                LOG.error("Liquibase lock held too long");
+                return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+            } else {
+                return Response.ok().build();
+            }
+        }
+        // unexpected response
+        throw new CustomWebApplicationException("Unexpected result from liquibase query", HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @GET
