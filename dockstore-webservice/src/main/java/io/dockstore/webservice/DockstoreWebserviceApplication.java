@@ -122,6 +122,7 @@ import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.LambdaEventResource;
+import io.dockstore.webservice.resources.LiquibaseLockHealthCheck;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -512,6 +513,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.lifecycle().addServerLifecycleListener(server -> {
             final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            final LiquibaseLockHealthCheck liquibaseLockHealthCheck = new LiquibaseLockHealthCheck(hibernate.getSessionFactory());
+            environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 
