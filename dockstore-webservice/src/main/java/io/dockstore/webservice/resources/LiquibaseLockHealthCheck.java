@@ -29,22 +29,18 @@ public class LiquibaseLockHealthCheck extends HealthCheck  {
         session.close();
 
         if (result == null) {
-            LOG.info("Liquibase lock is free");
             return Result.healthy();
         }
 
         if (result instanceof Date grantedDate) {
             long heldSeconds = (new Date().getTime() - grantedDate.getTime()) / MILLISECONDS_PER_SECOND;
-            LOG.info(String.format("Liquibase lock was granted at %s, held for %d seconds", grantedDate, heldSeconds));
             if (heldSeconds > HELD_TOO_LONG_SECONDS) {
-                LOG.error("Liquibase lock held too long");
-                return Result.unhealthy("Liquibase lock held too long");
+                return Result.unhealthy(String.format("Liquibase lock held too long: granted at %s, held for %d seconds", grantedDate, heldSeconds));
             } else {
                 return Result.healthy();
             }
         }
 
-        LOG.error("Unexpected result from liquibase query");
         return Result.unhealthy("Unexpected result from liquibase query");
     }
 }

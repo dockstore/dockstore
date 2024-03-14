@@ -8,6 +8,7 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.IOException;
+import org.apache.http.HttpStatus;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
@@ -39,7 +40,9 @@ public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
         RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
         CountRequest countRequest = new CountRequest(index);
         CountResponse countResponse = client.count(countRequest, RequestOptions.DEFAULT);
-        // TODO Check for failures.
+        if (countResponse.status().getStatus() != HttpStatus.SC_OK) {
+            throw new RuntimeException("Non-OK response to Elasticsearch request");
+        }
         return countResponse.getCount();
     }
 
@@ -63,20 +66,17 @@ public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
         long esToolCount = countElasticsearchDocuments("tools");
         long esNotebookCount = countElasticsearchDocuments("notebooks");
 
-        // Compare and return the appropriate result.
-        String counts = String.format("esWorkflowCount=%d, dbWorkflowCount=%d, esToolCount=%d, dbToolCount=%d, esNotebookCount=%d, dbNotebookCount=%d",
-            esWorkflowCount,  dbWorkflowCount,
-            esToolCount,  dbToolCount,
-            esNotebookCount,  dbNotebookCount);
-
+        // Return the appropriate result.
         if (esWorkflowCount == dbWorkflowCount
             && esToolCount == dbToolCount
             && esNotebookCount == dbNotebookCount) {
-            LOG.info("Elasticsearch is consistent, " + counts);
             return Result.healthy();
         } else {
-            LOG.error("Elasticsearch is not consistent, " + counts);
-            return Result.unhealthy("Elasticsearch is not consistent");
+            String counts = String.format("esWorkflowCount=%d, dbWorkflowCount=%d, esToolCount=%d, dbToolCount=%d, esNotebookCount=%d, dbNotebookCount=%d",
+                esWorkflowCount,  dbWorkflowCount,
+                esToolCount,  dbToolCount,
+                esNotebookCount,  dbNotebookCount);
+            return Result.unhealthy("Elasticsearch is not consistent with database: " + counts);
         }
     }
 }
