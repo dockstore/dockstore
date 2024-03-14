@@ -84,7 +84,7 @@ public final class S3ClientHelper {
         S3Client s3Client = S3_CLIENT_MAP.get(endpointOverride);
         if (s3Client == null) {
             s3Client = initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
-            s3Client = S3_CLIENT_MAP.putIfAbsent(endpointOverride, s3Client); // Unlikely, but maybe another one got created while creating the first one.
+            S3_CLIENT_MAP.putIfAbsent(endpointOverride, s3Client);
         }
         return s3Client;
     }
