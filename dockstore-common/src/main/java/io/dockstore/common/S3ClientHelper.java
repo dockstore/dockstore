@@ -82,6 +82,7 @@ public final class S3ClientHelper {
     public static S3Client createS3Client(String endpointOverride) throws URISyntaxException {
         LOG.info("Using endpoint override: {}", endpointOverride);
         S3Client s3Client = S3_CLIENT_MAP.get(endpointOverride);
+        // Can't use computeIfAbsent() because new URI throws a checked exception
         if (s3Client == null) {
             s3Client = initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
             S3_CLIENT_MAP.putIfAbsent(endpointOverride, s3Client);
