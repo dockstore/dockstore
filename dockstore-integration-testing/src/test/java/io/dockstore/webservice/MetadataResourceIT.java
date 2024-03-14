@@ -70,12 +70,13 @@ class MetadataResourceIT extends BaseIT {
         tools.forEach(tool -> containersApi.publish(tool.getId(), unpublishRequest));
         workflows.forEach(workflow -> workflowsApi.publish1(workflow.getId(), unpublishRequest));
 
-        // Give the ES server a few seconds to deindex everything
+        // Give the ES server a few seconds to deindex anything that was there
         sleep(5000);
     }
 
     @Test
-    void testCheckHealth() {
+    void testCheckHealth() throws Exception {
+        CommonTestUtilities.restartElasticsearch();
         makeElasticsearchConsistent();
 
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
