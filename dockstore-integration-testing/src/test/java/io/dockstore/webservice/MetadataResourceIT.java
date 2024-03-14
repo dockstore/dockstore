@@ -26,6 +26,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
@@ -55,7 +56,7 @@ class MetadataResourceIT extends BaseIT {
         }
     }
 
-    void makeElasticsearchConsistent() {
+    void makeElasticsearchConsistent() throws Exception {
 
         ApiClient apiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(apiClient);
@@ -70,13 +71,18 @@ class MetadataResourceIT extends BaseIT {
         tools.forEach(tool -> containersApi.publish(tool.getId(), unpublishRequest));
         workflows.forEach(workflow -> workflowsApi.publish1(workflow.getId(), unpublishRequest));
 
-        // Give the ES server a few seconds to deindex anything that was there
+        // Restart Elasticsearch and rebuild the indexes, which should end up containing no documents, because no entries are published
+        CommonTestUtilities.restartElasticsearch();
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(apiClient);
+        extendedGa4GhApi.updateTheWorkflowsAndToolsIndices();
+
+        // Give the ES server a few seconds to finish indexing
         sleep(5000);
     }
 
     @Test
     void testCheckHealth() throws Exception {
-        CommonTestUtilities.restartElasticsearch();
+
         makeElasticsearchConsistent();
 
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
