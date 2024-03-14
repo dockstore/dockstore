@@ -8,7 +8,6 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.IOException;
-import java.util.Date;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
@@ -16,28 +15,27 @@ import org.elasticsearch.client.core.CountResponse;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
     private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchConsistencyHealthCheck.class);
     private final SessionFactory sessionFactory;
-    private BioWorkflowDAO bioWorkflowDAO;
     private ToolDAO toolDAO;
+    private BioWorkflowDAO bioWorkflowDAO;
     private AppToolDAO appToolDAO;
     private NotebookDAO notebookDAO;
 
     public ElasticsearchConsistencyHealthCheck(SessionFactory sessionFactory,
-        BioWorkflowDAO bioWorkflowDAO, ToolDAO toolDAO, AppToolDAO appToolDAO, NotebookDAO notebookDAO) {
+        ToolDAO toolDAO, BioWorkflowDAO bioWorkflowDAO, AppToolDAO appToolDAO, NotebookDAO notebookDAO) {
         this.sessionFactory = sessionFactory;
-        this.bioWorkflowDAO = bioWorkflowDAO;
         this.toolDAO = toolDAO;
+        this.bioWorkflowDAO = bioWorkflowDAO;
         this.appToolDAO = appToolDAO;
         this.notebookDAO = notebookDAO;
     }
 
-    private long countElasticsearchIndex(String index) throws IOException {
+    private long countElasticsearchDocuments(String index) throws IOException {
         RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
         CountRequest countRequest = new CountRequest(index);
         CountResponse countResponse = client.count(countRequest, RequestOptions.DEFAULT);
@@ -60,17 +58,17 @@ public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
         long dbNotebookCount = countAllPublishedNonCheckers(notebookDAO);
         session.close();
 
-        // Retrieve Elasticsearch index counts.
-        long esWorkflowCount = countElasticsearchIndex("workflows");
-        long esToolCount = countElasticsearchIndex("tools");
-        long esNotebookCount = countElasticsearchIndex("notebooks");
+        // Retrieve Elasticsearch document counts.
+        long esWorkflowCount = countElasticsearchDocuments("workflows");
+        long esToolCount = countElasticsearchDocuments("tools");
+        long esNotebookCount = countElasticsearchDocuments("notebooks");
 
         // Compare and return the appropriate result.
         String counts = String.format("esWorkflowCount=%d, dbWorkflowCount=%d, esToolCount=%d, dbToolCount=%d, esNotebookCount=%d, dbNotebookCount=%d",
             esWorkflowCount,  dbWorkflowCount,
             esToolCount,  dbToolCount,
             esNotebookCount,  dbNotebookCount);
-            
+
         if (esWorkflowCount == dbWorkflowCount
             && esToolCount == dbToolCount
             && esNotebookCount == dbNotebookCount) {

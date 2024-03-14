@@ -516,7 +516,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
             final LiquibaseLockHealthCheck liquibaseLockHealthCheck = new LiquibaseLockHealthCheck(hibernate.getSessionFactory());
             environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
-            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = new ElasticsearchConsistencyHealthCheck(hibernate.getSessionFactory(), bioWorkflowDAO, toolDAO, appToolDAO, notebookDAO);
+            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = new ElasticsearchConsistencyHealthCheck(hibernate.getSessionFactory(), toolDAO, bioWorkflowDAO, appToolDAO, notebookDAO);
             environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
