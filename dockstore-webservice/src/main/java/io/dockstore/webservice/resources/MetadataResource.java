@@ -510,7 +510,7 @@ public class MetadataResource {
                     .forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));
             String failedHealthCheckNames = results.entrySet().stream()
                     .filter(result -> !result.getValue().isHealthy())
-                    .map(result -> String.format("'%s'", result))
+                    .map(result -> String.format("'%s'", result.getKey()))
                     .collect(Collectors.joining(", "));
             throw new CustomWebApplicationException(String.format("Health checks failed: %s", failedHealthCheckNames), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
