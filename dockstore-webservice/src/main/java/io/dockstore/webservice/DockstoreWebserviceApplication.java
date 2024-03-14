@@ -117,6 +117,7 @@ import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.ElasticsearchConsistencyHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
@@ -515,6 +516,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
             final LiquibaseLockHealthCheck liquibaseLockHealthCheck = new LiquibaseLockHealthCheck(hibernate.getSessionFactory());
             environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
+            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = new ElasticsearchConsistencyHealthCheck(hibernate.getSessionFactory(), bioWorkflowDAO, toolDAO, appToolDAO, notebookDAO);
+            environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 

@@ -35,8 +35,8 @@ public class LiquibaseLockHealthCheck extends HealthCheck  {
             long heldSeconds = (new Date().getTime() - grantedDate.getTime()) / 1000L;
             LOG.info(String.format("Liquibase lock was granted at %s, held for %d seconds", grantedDate, heldSeconds));
             if (heldSeconds > 600L) {
-                LOG.error("Liquibase lock was held too long");
-                return Result.unhealthy("Liquibase lock was held too long");
+                LOG.error("Liquibase lock held too long");
+                return Result.unhealthy("Liquibase lock held too long");
             } else {
                 return Result.healthy();
             }

@@ -4298,24 +4298,6 @@ paths:
       summary: Successful response if the health checks succeed
       tags:
       - metadata
-  /metadata/liquibase:
-    get:
-      description: "Successful response if there are no Liquibase issues, NO authentication"
-      operationId: monitor
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/HealthCheckResult'
-          description: No current issues
-        "500":
-          description: There are one or more Liquibase issues
-      summary: Successful response if there are no Liquibase issues
-      tags:
-      - metadata
   /metadata/okHttpCachePerformance:
     get:
       description: "Get measures of cache performance, NO authentication"

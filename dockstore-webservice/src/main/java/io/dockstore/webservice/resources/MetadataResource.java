@@ -523,35 +523,6 @@ public class MetadataResource {
     }
 
     @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/liquibase")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Successful response if there are no Liquibase issues", description = "Successful response if there are no Liquibase issues, NO authentication")
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "No current issues", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = HealthCheckResult.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "There are one or more Liquibase issues")
-    public Response monitor() {
-        Query query = sessionFactory.getCurrentSession().createNativeQuery("select lockgranted from databasechangeloglock");
-        Object result = query.getSingleResult();
-        if (result == null) {
-            LOG.info("Liquibase lock free");
-            return Response.ok().build();
-        }
-        if (result instanceof Date grantedDate) {
-            long heldSeconds = (new Date().getTime() - grantedDate.getTime()) / 1000L;
-            LOG.info(String.format("Liquibase lock granted at %s, held for %d seconds", grantedDate, heldSeconds));
-            if (heldSeconds > 600L) {
-                LOG.error("Liquibase lock held too long");
-                return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
-            } else {
-                return Response.ok().build();
-            }
-        }
-        // unexpected response
-        throw new CustomWebApplicationException("Unexpected result from liquibase query", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-    }
-
-    @GET
     @Path("/config.json")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Configuration for UI clients of the API", description = "Configuration, NO authentication")
