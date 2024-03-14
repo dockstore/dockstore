@@ -24,6 +24,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -47,6 +49,10 @@ public final class S3ClientHelper {
     // Constants for Metrics S3 key indices
     private static final int METRICS_PLATFORM_INDEX = 5;
 
+    private static final ConcurrentMap<Object, S3Client> S3_CLIENT_MAP = new ConcurrentHashMap<Object, S3Client>();
+    private static final Object S3_GENERAL_CLIENT_KEY = new Object();
+
+
     private S3ClientHelper() {}
 
     /**
@@ -57,7 +63,7 @@ public final class S3ClientHelper {
      * @return
      */
     public static S3Client createS3Client() {
-        return initS3ClientBuilder().build();
+        return S3_CLIENT_MAP.computeIfAbsent(S3_GENERAL_CLIENT_KEY, k -> initS3ClientBuilder().build());
     }
 
     /**
@@ -67,7 +73,7 @@ public final class S3ClientHelper {
      * @return
      */
     public static S3Client createS3Client(Region region) {
-        return initS3ClientBuilder().region(region).build();
+        return S3_CLIENT_MAP.computeIfAbsent(region, k -> initS3ClientBuilder().region(region).build());
     }
 
     /**
@@ -75,7 +81,12 @@ public final class S3ClientHelper {
      */
     public static S3Client createS3Client(String endpointOverride) throws URISyntaxException {
         LOG.info("Using endpoint override: {}", endpointOverride);
-        return initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
+        S3Client s3Client = S3_CLIENT_MAP.get(endpointOverride);
+        if (s3Client == null) {
+            s3Client = initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
+            s3Client = S3_CLIENT_MAP.putIfAbsent(endpointOverride, s3Client); // Unlikely, but maybe another one got created while creating the first one.
+        }
+        return s3Client;
     }
 
     private static S3ClientBuilder initS3ClientBuilder() {
