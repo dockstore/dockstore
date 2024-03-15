@@ -49,46 +49,50 @@ public final class S3ClientHelper {
     // Constants for Metrics S3 key indices
     private static final int METRICS_PLATFORM_INDEX = 5;
 
+    /**
+     * A map of S3Clients. S3Clients are thread-safe. It's a map instead of a singleton S3Client because we sometimes
+     * instantiate the S3Client with a specific region, and sometimes don't. The map's keys are the region.
+     */
     private static final ConcurrentMap<Object, S3Client> S3_CLIENT_MAP = new ConcurrentHashMap<Object, S3Client>();
-    private static final Object S3_GENERAL_CLIENT_KEY = new Object();
+    /**
+     * A map key for an S3Client instantiated without an explicit region, since null keys are not allowed
+     */
+    private static final Object S3_NO_REGION_CLIENT_KEY = new Object();
 
 
     private S3ClientHelper() {}
 
     /**
-     * Creates an S3Client. Purposely not specifying a region because the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/awscore/client/builder/AwsClientBuilder.html#region(software.amazon.awssdk.regions.Region)">docs</a>
+     * Returns an S3Client, creating it if necessary. Purposely not specifying a region because the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/awscore/client/builder/AwsClientBuilder.html#region(software.amazon.awssdk.regions.Region)">docs</a>
      * say that it will identify according to the listed logic. Since we deploy with Fargate, the AWS_REGION environment variable will automatically be set
      * and the SDK will grab the region from that.
      * This assumes that the bucket being accessed was created in the same region as the region that webservice is running in.
      * @return
      */
-    public static S3Client createS3Client() {
-        return S3_CLIENT_MAP.computeIfAbsent(S3_GENERAL_CLIENT_KEY, k -> initS3ClientBuilder().build());
+    public static S3Client getS3Client() {
+        return S3_CLIENT_MAP.computeIfAbsent(S3_NO_REGION_CLIENT_KEY, k -> initS3ClientBuilder().build());
     }
 
     /**
-     * Creates an S3Client with a specific region specified.
+     * Returns an S3Client with a specific region specified, creating it if necessary.
      * Should only use this if the bucket being accessed was created in a different region from the region that the webservice is running in.
      * @param region
      * @return
      */
-    public static S3Client createS3Client(Region region) {
+    public static S3Client getS3Client(Region region) {
         return S3_CLIENT_MAP.computeIfAbsent(region, k -> initS3ClientBuilder().region(region).build());
     }
 
     /**
-     * This should only be used by tests so that the test can provide a localstack endpoint override
+     * <p>This should only be used by tests so that the test can provide a localstack endpoint override.</p>
+     *
+     * <p>This endpoint has NOT been optimized to use a single S3Client instance. It's only used in tests, and we can't
+     * use the <code>computeIfAbsent</code> pattern from the previous two methods, as <code>new URI()</code> throws a checked exception,
+     * which would make the code a little convoluted.</p>
      */
     public static S3Client createS3Client(String endpointOverride) throws URISyntaxException {
         LOG.info("Using endpoint override: {}", endpointOverride);
-        synchronized (S3_CLIENT_MAP) {
-            final S3Client s3Client = S3_CLIENT_MAP.get(endpointOverride);
-            // Can't use computeIfAbsent() because "new URI()" throws a checked exception
-            if (s3Client == null) {
-                S3_CLIENT_MAP.putIfAbsent(endpointOverride, initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build());
-            }
-        }
-        return S3_CLIENT_MAP.get(endpointOverride);
+        return initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
     }
 
     private static S3ClientBuilder initS3ClientBuilder() {
