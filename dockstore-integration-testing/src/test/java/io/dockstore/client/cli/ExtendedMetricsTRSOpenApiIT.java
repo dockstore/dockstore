@@ -938,6 +938,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             List<RunExecution> actualWorkflowExecutions = getExecution(extendedGa4GhApi, trsId, versionId, platform, expectedWorkflowExecution.getExecutionId()).getRunExecutions();
             assertEquals(1, actualWorkflowExecutions.size());
             assertTrue(expectedWorkflowExecutions.contains(actualWorkflowExecutions.get(0)));
+            assertTrue(actualWorkflowExecutions.stream().allMatch(f -> f.getExecutionTimeSeconds() != null));
         });
     }
 
