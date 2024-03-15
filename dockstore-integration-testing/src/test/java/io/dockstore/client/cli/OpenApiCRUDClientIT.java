@@ -132,11 +132,11 @@ class OpenApiCRUDClientIT extends BaseIT {
         assertTrue(weirdStuff.isEmpty());
         ApiException returnException = assertThrows(ApiException.class, () -> ga4Ghv20Api
             .toolsGet(null, null, null, null, null, null, null, null, null, null, null, "fuzzString", Integer.MAX_VALUE));
-        assertTrue(returnException.getCode() == HttpStatus.SC_BAD_REQUEST);
+        assertEquals(HttpStatus.SC_BAD_REQUEST, returnException.getCode());
         assertTrue(weirdStuff.isEmpty());
         returnException = assertThrows(ApiException.class, () -> ga4Ghv20Api
             .toolsGet(null, null, null, "fuzzString", null, null, null, null, null, null, null, null, Integer.MAX_VALUE));
-        assertTrue(returnException.getCode() == HttpStatus.SC_BAD_REQUEST);
+        assertEquals(HttpStatus.SC_BAD_REQUEST, returnException.getCode());
         assertTrue(weirdStuff.isEmpty());
         weirdStuff = ga4Ghv20Api
             .toolsGet(null, null, "fuzzString", null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
