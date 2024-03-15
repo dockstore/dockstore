@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
 
 /**
  * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
@@ -91,7 +92,11 @@ public class RunExecution extends Execution {
     public void setExecutionTime(String executionTime) {
         this.executionTime = executionTime;
         // make life easier on AWS athena, also store duration in seconds
-        this.executionTimeSeconds = Duration.parse(executionTime).getSeconds();
+        try {
+            this.executionTimeSeconds = Duration.parse(executionTime).getSeconds();
+        } catch (DateTimeParseException e) {
+            // ignore, expecting this to be caught by `ISO8601ExecutionTime` anyway
+        }
     }
 
     public Double getMemoryRequirementsGB() {

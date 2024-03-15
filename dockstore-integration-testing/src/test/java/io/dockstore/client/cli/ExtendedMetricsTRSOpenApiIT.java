@@ -101,7 +101,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -937,8 +939,11 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         expectedWorkflowExecutions.forEach(expectedWorkflowExecution -> {
             List<RunExecution> actualWorkflowExecutions = getExecution(extendedGa4GhApi, trsId, versionId, platform, expectedWorkflowExecution.getExecutionId()).getRunExecutions();
             assertEquals(1, actualWorkflowExecutions.size());
-            assertTrue(expectedWorkflowExecutions.contains(actualWorkflowExecutions.get(0)));
-            assertTrue(actualWorkflowExecutions.stream().allMatch(f -> f.getExecutionTimeSeconds() != null));
+            Assertions.assertThat(expectedWorkflowExecutions).usingElementComparatorIgnoringFields("executionTimeSeconds").containsOnly(actualWorkflowExecutions.get(0));
+            assertTrue(actualWorkflowExecutions.stream().allMatch(f -> f.getExecutionTimeSeconds() != null && f.getExecutionTimeSeconds() > 0),
+                () -> "executionTimes are showing up as " + actualWorkflowExecutions.stream().map(
+                    RunExecution::getExecutionTimeSeconds).collect(
+                    Collectors.toSet()));
         });
     }
 
@@ -950,7 +955,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         expectedTaskExecutions.forEach(expectedTaskExecutionsSet -> {
             List<TaskExecutions> actualTaskExecution = getExecution(extendedGa4GhApi, trsId, versionId, platform, expectedTaskExecutionsSet.getExecutionId()).getTaskExecutions();
             assertEquals(1, actualTaskExecution.size());
-            assertTrue(expectedTaskExecutions.contains(actualTaskExecution.get(0)));
+            Assertions.assertThat(expectedTaskExecutions).usingElementComparatorIgnoringFields("executionTimeSeconds").containsOnly(actualTaskExecution.get(0));
         });
     }
 
