@@ -53,7 +53,7 @@ class MetadataResourceIT extends BaseIT {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
     }
 
-    void sleep(long milliseconds) {
+    private void sleep(long milliseconds) {
         try {
             Thread.sleep(milliseconds);
         } catch (Exception e) {
@@ -61,7 +61,7 @@ class MetadataResourceIT extends BaseIT {
         }
     }
 
-    void removeAllElasticsearchDocuments() throws Exception {
+    private void removeAllElasticsearchDocuments() throws Exception {
         RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
         DeleteByQueryRequest request = new DeleteByQueryRequest("tools", "workflows", "notebooks");
         request.setQuery(QueryBuilders.matchAllQuery());
@@ -70,30 +70,25 @@ class MetadataResourceIT extends BaseIT {
         sleep(5000);
     }
 
-    void makeElasticsearchAndDatabaseConsistent() throws Exception {
-
+    private void removeAllPublishedEntries() {
         ApiClient apiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(apiClient);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
 
-        // Retrieve all the published entries
         List<DockstoreTool> tools = containersApi.allPublishedContainers(null, null, null, null, null);
         List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, null, null, null, false, null);
-
-        // Unpublish the entries
         PublishRequest unpublishRequest = CommonTestUtilities.createOpenAPIPublishRequest(false);
         tools.forEach(tool -> containersApi.publish(tool.getId(), unpublishRequest));
         workflows.forEach(workflow -> workflowsApi.publish1(workflow.getId(), unpublishRequest));
-
-        // Restart Elasticsearch and then remove all documents
-        CommonTestUtilities.restartElasticsearch();
-        removeAllElasticsearchDocuments();
     }
 
     @Test
     void testCheckHealthSuccesses() throws Exception {
 
-        makeElasticsearchAndDatabaseConsistent();
+        // Make the database and Elasticsearch consistent by unpublishing all entries and removing all documents
+        removeAllPublishedEntries();
+        CommonTestUtilities.restartElasticsearch();
+        removeAllElasticsearchDocuments();
 
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
         MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
