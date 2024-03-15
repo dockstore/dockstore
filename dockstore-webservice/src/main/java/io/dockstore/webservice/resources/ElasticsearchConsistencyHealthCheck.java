@@ -24,6 +24,7 @@ import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dropwizard.hibernate.UnitOfWork;
 import java.io.IOException;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.client.RequestOptions;
@@ -67,16 +68,14 @@ public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
         return dao.countAllPublished(null, null, null, null, null, null, null, false);
     }
 
+    @UnitOfWork
     @Override
     protected Result check() throws Exception {
 
         // Retrieve database entry counts.
-        Session session = sessionFactory.openSession();
-        ManagedSessionContext.bind(session);
         long dbWorkflowCount = countAllPublishedNonCheckers(bioWorkflowDAO);
         long dbToolCount = countAllPublishedNonCheckers(toolDAO) + countAllPublishedNonCheckers(appToolDAO);
         long dbNotebookCount = countAllPublishedNonCheckers(notebookDAO);
-        session.close();
 
         // Retrieve Elasticsearch document counts.
         long esWorkflowCount = countElasticsearchDocuments("workflows");

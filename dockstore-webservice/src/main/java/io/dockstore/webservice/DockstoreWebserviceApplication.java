@@ -183,6 +183,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -514,9 +515,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.lifecycle().addServerLifecycleListener(server -> {
             final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
-            final LiquibaseLockHealthCheck liquibaseLockHealthCheck = new LiquibaseLockHealthCheck(hibernate.getSessionFactory());
+            final LiquibaseLockHealthCheck liquibaseLockHealthCheck = new UnitOfWorkAwareProxyFactory(getHibernate()).create(
+                LiquibaseLockHealthCheck.class,
+                new Class[] { SessionFactory.class },
+                new Object[] { hibernate.getSessionFactory() });
             environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
-            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = new ElasticsearchConsistencyHealthCheck(hibernate.getSessionFactory(), toolDAO, bioWorkflowDAO, appToolDAO, notebookDAO);
+            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = new UnitOfWorkAwareProxyFactory(getHibernate()).create(
+                ElasticsearchConsistencyHealthCheck.class,
+                new Class[] { SessionFactory.class, ToolDAO.class, BioWorkflowDAO.class, AppToolDAO.class, NotebookDAO.class },
+                new Object[] { hibernate.getSessionFactory(), toolDAO, bioWorkflowDAO, appToolDAO, notebookDAO });
             environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });

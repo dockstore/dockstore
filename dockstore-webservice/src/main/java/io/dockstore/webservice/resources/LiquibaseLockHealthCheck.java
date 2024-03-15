@@ -18,6 +18,7 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.health.HealthCheck;
+import io.dropwizard.hibernate.UnitOfWork;
 import java.util.Date;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -36,14 +37,13 @@ public class LiquibaseLockHealthCheck extends HealthCheck  {
         this.sessionFactory = sessionFactory;
     }
 
+    @UnitOfWork
     @Override
     protected Result check() throws Exception {
 
-        Session session = sessionFactory.openSession();
-        ManagedSessionContext.bind(session);
+        Session session = sessionFactory.getCurrentSession();
         Query query = session.createNativeQuery("select lockgranted from databasechangeloglock");
         Object result = query.getSingleResult();
-        session.close();
 
         if (result == null) {
             return Result.healthy();
