@@ -505,6 +505,7 @@ public class MetadataResource {
                     .map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy()))
                     .collect(Collectors.toSet());
         } else {
+            // Alarms may depend on the syntax of this logging statement, so make sure to check if you change it.
             results.entrySet().stream()
                     .filter(result -> !result.getValue().isHealthy())
                     .forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));

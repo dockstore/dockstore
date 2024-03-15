@@ -26,16 +26,21 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
-import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.HealthCheckResult;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +61,16 @@ class MetadataResourceIT extends BaseIT {
         }
     }
 
-    void makeElasticsearchConsistent() throws Exception {
+    void removeAllElasticsearchDocuments() throws Exception {
+        RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
+        DeleteByQueryRequest request = new DeleteByQueryRequest("tools", "workflows", "notebooks");
+        request.setQuery(QueryBuilders.matchAllQuery());
+        BulkByScrollResponse response = client.deleteByQuery(request, RequestOptions.DEFAULT);
+        // Give the ES server a few seconds to finish any internal updates.
+        sleep(5000);
+    }
+
+    void makeElasticsearchAndDatabaseConsistent() throws Exception {
 
         ApiClient apiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(apiClient);
@@ -71,19 +85,15 @@ class MetadataResourceIT extends BaseIT {
         tools.forEach(tool -> containersApi.publish(tool.getId(), unpublishRequest));
         workflows.forEach(workflow -> workflowsApi.publish1(workflow.getId(), unpublishRequest));
 
-        // Restart Elasticsearch and rebuild the indexes, which should end up containing no documents, because no entries are published
+        // Restart Elasticsearch and then remove all documents
         CommonTestUtilities.restartElasticsearch();
-        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(apiClient);
-        extendedGa4GhApi.updateTheWorkflowsAndToolsIndices();
-
-        // Give the ES server a few seconds to finish indexing
-        sleep(5000);
+        removeAllElasticsearchDocuments();
     }
 
     @Test
-    void testCheckHealth() throws Exception {
+    void testCheckHealthSuccesses() throws Exception {
 
-        makeElasticsearchConsistent();
+        makeElasticsearchAndDatabaseConsistent();
 
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
         MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
@@ -138,6 +148,23 @@ class MetadataResourceIT extends BaseIT {
         }
 
         assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("foobar")));
+    }
+
+    @Test
+    void testElasticsearchConsistencyFailure() throws Exception {
+        ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
+        MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
+        CommonTestUtilities.restartElasticsearch();
+        removeAllElasticsearchDocuments();
+        assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("elasticsearchConsistency")));
+    }
+
+    @Test
+    void testLiquibaseLockFailure() throws Exception {
+        ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
+        MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
+        testingPostgres.runUpdateStatement("update databasechangeloglock set lockgranted = '1999-01-01'");
+        assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("liquibaseLock")));
     }
 
     @Test
