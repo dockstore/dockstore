@@ -22,7 +22,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import java.util.Date;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.context.internal.ManagedSessionContext;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
