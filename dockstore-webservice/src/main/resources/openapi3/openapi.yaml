@@ -9774,23 +9774,44 @@ components:
       - $ref: '#/components/schemas/Payload'
       - type: object
         properties:
+          action:
+            type: string
+            description: The action which the event describes
           repositories_added:
             type: array
             description: "An array of repository objects, which were added to the\
               \ installation"
             items:
               $ref: '#/components/schemas/WebhookRepository'
+          repositories_removed:
+            type: array
+            description: "An array of repository objects, which were removed from\
+              \ the installation"
+            items:
+              $ref: '#/components/schemas/WebhookRepository'
       description: A model for a GitHub webhook installation event
-      example:
-        sender:
-          login: string
-        installation:
-          id: 0
-        repositories_added:
-        - full_name: dockstore/dockstore-ui2
+      example: |
+        {
+          "sender": {
+            "login": "string"
+          },
+          "action": "added",
+          "installation": {
+            "id": 0
+          },
+          "repositories_added": [
+            {
+              "full_name": "dockstore/dockstore-ui2"
+            }
+          ]
+          "repositories_removed": [
+          ]
+        }
       required:
+      - action
       - installation
       - repositories_added
+      - repositories_removed
       - sender
     Label:
       type: object
@@ -9838,6 +9859,7 @@ components:
           - PUSH
           - DELETE
           - INSTALL
+          - UNINSTALL
           - PUBLISH
     Language:
       type: object

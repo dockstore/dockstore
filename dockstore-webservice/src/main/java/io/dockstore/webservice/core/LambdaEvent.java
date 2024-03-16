@@ -213,6 +213,7 @@ public class LambdaEvent {
         PUSH,
         DELETE,
         INSTALL,
+        UNINSTALL,
         PUBLISH
     }
 

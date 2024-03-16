@@ -34,6 +34,7 @@ public class InstallationRepositoriesPayload extends Payload {
                   "sender": {
                     "login": "string"
                   },
+                  "action": "added",
                   "installation": {
                     "id": 0
                   },
@@ -42,14 +43,33 @@ public class InstallationRepositoriesPayload extends Payload {
                       "full_name": "dockstore/dockstore-ui2"
                     }
                   ]
+                  "repositories_removed": [
+                  ]
                 }
                 """;
+
+    @JsonProperty
+    @Schema(name = "action", description = "The action which the event describes", requiredMode = RequiredMode.REQUIRED)
+    private String action;
 
     @JsonProperty("repositories_added")
     @Schema(name = "repositories_added", description = "An array of repository objects, which were added to the installation", requiredMode = RequiredMode.REQUIRED)
     private List<WebhookRepository> repositoriesAdded;
 
+    @JsonProperty("repositories_removed")
+    @Schema(name = "repositories_removed", description = "An array of repository objects, which were removed from the installation", requiredMode = RequiredMode.REQUIRED)
+    private List<WebhookRepository> repositoriesRemoved;
+
+
     public InstallationRepositoriesPayload() {
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public List<WebhookRepository> getRepositoriesAdded() {
@@ -58,5 +78,13 @@ public class InstallationRepositoriesPayload extends Payload {
 
     public void setRepositoriesAdded(List<WebhookRepository> repositoriesAdded) {
         this.repositoriesAdded = repositoriesAdded;
+    }
+
+    public List<WebhookRepository> getRepositoriesRemoved() {
+        return repositoriesRemoved;
+    }
+
+    public void setRepositoriesRemoved(List<WebhookRepository> repositoriesRemoved) {
+        this.repositoriesRemoved = repositoriesRemoved;
     }
 }
