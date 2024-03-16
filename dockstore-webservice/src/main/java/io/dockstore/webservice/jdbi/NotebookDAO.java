@@ -21,6 +21,7 @@ import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.NotebookPath;
 import io.dockstore.webservice.core.database.RSSNotebookPath;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -60,5 +61,10 @@ public class NotebookDAO extends EntryDAO<Notebook> {
     public List<RSSNotebookPath> findAllPublishedPathsOrderByDbupdatedate() {
         return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate", RSSNotebookPath.class).setMaxResults(
                 RSS_ENTRY_LIMIT).list();
+    }
+
+    public List<MyWorkflows> findUserNotebooks(long userid) {
+        // TODO fill in, create named query
+        return null;
     }
 }

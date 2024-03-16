@@ -22,6 +22,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.AppToolPath;
+import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -61,5 +62,8 @@ public class AppToolDAO extends EntryDAO<AppTool> {
                 RSS_ENTRY_LIMIT).list();
     }
 
-
+    public List<MyWorkflows> findUserAppTools(long userid) {
+        // TODO fill in, create named query
+        return null;
+    }
 }

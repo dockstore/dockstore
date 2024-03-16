@@ -43,6 +43,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -122,6 +123,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -623,7 +625,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
+        return convertMyWorkflowsToWorkflows(bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()), BioWorkflow::new);
     }
 
     @GET
@@ -640,9 +642,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        List<Workflow> appTools = appToolDAO.findMyEntries(fetchedUser.getId()).stream().map(AppTool.class::cast).collect(Collectors.toList());
-        EntryVersionHelper.stripContentFromEntries(appTools, this.userDAO);
-        return appTools;
+        return convertMyWorkflowsToWorkflows(appToolDAO.findUserAppTools(fetchedUser.getId()), AppTool::new);
     }
 
     @GET
@@ -659,15 +659,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        List<Workflow> notebooks = notebookDAO.findMyEntries(fetchedUser.getId()).stream().map(Workflow.class::cast).toList();
-        EntryVersionHelper.stripContentFromEntries(notebooks, this.userDAO);
-        return notebooks;
+        return convertMyWorkflowsToWorkflows(notebookDAO.findUserNotebooks(fetchedUser.getId()), Notebook::new);
     }
 
-    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
+    private List<Workflow> convertMyWorkflowsToWorkflows(List<MyWorkflows> myWorkflows, Supplier<Workflow> workflowCreator) {
         List<Workflow> workflows = new ArrayList<>();
         myWorkflows.forEach(myWorkflow -> {
-            Workflow workflow = new BioWorkflow();
+            Workflow workflow = workflowCreator.get();
             workflow.setOrganization(myWorkflow.organization());
             workflow.setId(myWorkflow.id());
             workflow.setSourceControl(myWorkflow.sourceControl());
@@ -706,6 +704,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     }
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
+        // TODO why initialize workflowversions for services?
         services.forEach(service -> Hibernate.initialize(service.getWorkflowVersions()));
         EntryVersionHelper.stripContentFromEntries(services, this.userDAO);
         return services;
@@ -1111,7 +1110,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             addUserToReposInOrgsWhereUserIsAMember(user, sourceControl, sourceCodeRepo);
             addUserToReposWithRepoLevelMembership(user, sourceControl, sourceCodeRepo);
         });
-        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
+        return convertMyWorkflowsToWorkflows(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()), BioWorkflow::new);
     }
 
     /**
