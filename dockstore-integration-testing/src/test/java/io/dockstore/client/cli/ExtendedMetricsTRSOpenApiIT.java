@@ -784,7 +784,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         ExecutionsRequestBody executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedMetrics.getExecutionId());
         assertEquals(1, executionsRequestBody.getAggregatedExecutions().size());
         AggregatedExecution aggregatedMetrics = executionsRequestBody.getAggregatedExecutions().get(0);
-        Assertions.assertEquals(MINUTES_EXECUTION, aggregatedMetrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
+        assertEquals(5, aggregatedMetrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, aggregatedMetrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("cpu_utilization"), "Should be able to submit additional aggregated metrics");
 
