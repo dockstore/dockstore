@@ -10436,6 +10436,7 @@ components:
             description: "In seconds, automatically calculated from executionTime\
               \ and dateExecuted"
             example: 30
+            readOnly: true
           memoryRequirementsGB:
             type: number
             format: double
