@@ -47,7 +47,7 @@ public class RunExecution extends Execution {
 
     @JsonProperty
     @PositiveOrZero
-    @Schema(description = "In seconds, automatically calculated from executionTime and dateExecuted", example = "30", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "In seconds, automatically calculated from executionTime and dateExecuted", example = "30")
     private Long executionTimeSeconds;
 
     @JsonProperty
