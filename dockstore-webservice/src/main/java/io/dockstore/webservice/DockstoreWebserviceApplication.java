@@ -126,6 +126,7 @@ import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
 import io.dockstore.webservice.resources.ServiceResource;
+import io.dockstore.webservice.resources.TestingResource;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
@@ -454,6 +455,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(new CloudInstanceResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CategoryResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new TestingResource(configuration));
 
         // disable odd extra endpoints showing up
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);

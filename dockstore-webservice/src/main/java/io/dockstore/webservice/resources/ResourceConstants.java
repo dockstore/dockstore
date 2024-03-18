@@ -35,6 +35,7 @@ public final class ResourceConstants {
     public static final String CURATION = "List and modify notifications for users of Dockstore";
     public static final String NIHDATACOMMONS = "Needed for SmartAPI compatibility apparantly, might be cargo cult behaviour";
     public static final String LAMBDAEVENTS = "Query lambda events triggered by GitHub Apps";
+    public static final String TESTING = "Perform testing-related operations";
     public static final String JWT_SECURITY_DEFINITION_NAME = "BEARER";
     public static final String APPEASE_SWAGGER_PATCH = "This is here to appease Swagger. It requires PATCH methods to have a body, even if it is empty. Please leave it empty.";
     public static final String PAGINATION_LIMIT = "100";
