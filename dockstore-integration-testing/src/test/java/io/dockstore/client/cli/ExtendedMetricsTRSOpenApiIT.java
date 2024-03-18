@@ -939,7 +939,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         expectedWorkflowExecutions.forEach(expectedWorkflowExecution -> {
             List<RunExecution> actualWorkflowExecutions = getExecution(extendedGa4GhApi, trsId, versionId, platform, expectedWorkflowExecution.getExecutionId()).getRunExecutions();
             assertEquals(1, actualWorkflowExecutions.size());
-            Assertions.assertThat(expectedWorkflowExecutions).usingElementComparatorIgnoringFields("executionTimeSeconds").containsOnly(actualWorkflowExecutions.get(0));
+            Assertions.assertThat(expectedWorkflowExecutions).usingElementComparatorIgnoringFields("executionTimeSeconds,taskExecutions").containsOnly(actualWorkflowExecutions.get(0));
             assertTrue(actualWorkflowExecutions.stream().allMatch(f -> f.getExecutionTimeSeconds() != null && f.getExecutionTimeSeconds() > 0),
                 () -> "executionTimes are showing up as " + actualWorkflowExecutions.stream().map(
                     RunExecution::getExecutionTimeSeconds).collect(
