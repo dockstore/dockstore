@@ -15,11 +15,11 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics;
+package io.dockstore.common.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics;
-import io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds;
+import io.dockstore.common.metrics.constraints.HasExecutionsOrMetrics;
+import io.dockstore.common.metrics.constraints.HasUniqueExecutionIds;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

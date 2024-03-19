@@ -668,12 +668,56 @@ class WebhookIT extends BaseIT {
         Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
         Workflow workflow = getFoobar1Workflow(client);
-        assertNull(workflow.getDefaultVersion());
+        // The default version should be set to the version named "master" because the branch "master" has
+        // been registered, and the source GitHub repo default branch is set to "master".  For more info, see:
+        // https://github.com/dockstore/dockstore/pull/5829
+        assertEquals("master", workflow.getDefaultVersion());
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.4", USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
         assertEquals("0.4", workflow2.getDefaultVersion(), "The new tag says the latest tag should be the default version");
         workflow = getFoobar1Workflow(client);
+        // See above comment.
+        assertEquals("master", workflow.getDefaultVersion());
+    }
+
+    private Workflow getFoobarWorkflowDockstoreTesting(WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+    }
+
+    @Test
+    void testAutomaticDefaultVersionMustMatchGitHubDefault() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
+        Workflow workflow = getFoobarWorkflowDockstoreTesting(client);
         assertNull(workflow.getDefaultVersion());
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
+        workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertEquals("master", workflow.getDefaultVersion());
+        assertEquals(2, workflow.getWorkflowVersions().size());
+    }
+
+    @Test
+    void testAutomaticDefaultVersionWontOverrideExistingDefault() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        // This release should not automatically set the default version, because the branch name doesn't
+        // match the GitHub default.
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
+        Workflow workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertNull(workflow.getDefaultVersion());
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        // Manually set the default version.
+        client.updateDefaultVersion1(workflow.getId(), "manualTopic");
+        workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertEquals("manualTopic", workflow.getDefaultVersion());
+        // This release should not set the default version, because although the branch name matches,
+        // the default version is already set.
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
+        workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertEquals("manualTopic", workflow.getDefaultVersion());
+        assertEquals(2, workflow.getWorkflowVersions().size());
     }
 
     /**

@@ -20,23 +20,20 @@ import io.dockstore.webservice.core.BioWorkflow;
 import java.util.Date;
 
 /**
- * This class is only used to get data from the database in a more type-safe way
+ * This record is only used to get data from the database in a more type-safe way
  * @author gluu
  * @since 1.8.0
  */
-public class RSSWorkflowPath {
-    private final BioWorkflow bioWorkflow = new BioWorkflow();
-
-    public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
-        this.bioWorkflow.setSourceControl(sourceControl);
-        this.bioWorkflow.setOrganization(organization);
-        this.bioWorkflow.setRepository(repository);
-        this.bioWorkflow.setWorkflowName(entryName);
-        this.bioWorkflow.setLastUpdated(lastUpdated);
-        this.bioWorkflow.setDescription(description);
-    }
+public record RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
 
     public BioWorkflow getBioWorkflow() {
+        BioWorkflow bioWorkflow = new BioWorkflow();
+        bioWorkflow.setSourceControl(sourceControl);
+        bioWorkflow.setOrganization(organization);
+        bioWorkflow.setRepository(repository);
+        bioWorkflow.setWorkflowName(entryName);
+        bioWorkflow.setLastUpdated(lastUpdated);
+        bioWorkflow.setDescription(description);
         return bioWorkflow;
     }
 }

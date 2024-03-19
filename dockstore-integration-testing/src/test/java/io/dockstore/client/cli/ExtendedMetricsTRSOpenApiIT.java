@@ -21,19 +21,19 @@ import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
+import static io.dockstore.common.metrics.ExecutionStatus.ABORTED;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_RUNTIME_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_SEMANTIC_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.SUCCESSFUL;
 import static io.dockstore.common.metrics.MetricsDataS3Client.generateKey;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.ABORTED;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
-import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
-import static io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics.MUST_CONTAIN_EXECUTIONS_OR_METRICS;
+import static io.dockstore.common.metrics.ValidationExecution.ValidatorTool.MINIWDL;
+import static io.dockstore.common.metrics.constraints.HasExecutionsOrMetrics.MUST_CONTAIN_EXECUTIONS_OR_METRICS;
+import static io.dockstore.common.metrics.constraints.HasUniqueExecutionIds.MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
+import static io.dockstore.common.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
+import static io.dockstore.common.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
+import static io.dockstore.common.metrics.constraints.ValidClientExecutionStatus.INVALID_EXECUTION_STATUS_MESSAGE;
+import static io.dockstore.common.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
 import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
-import static io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds.MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
-import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
-import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
-import static io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStatus.INVALID_EXECUTION_STATUS_MESSAGE;
-import static io.dockstore.webservice.core.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.FORBIDDEN_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
@@ -369,6 +369,32 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains(EXECUTION_TIME_FORMAT_ERROR));
         assertTrue(exception.getMessage().contains("1 second")
                 && exception.getMessage().contains("PT 1S"), "Should not be able to submit metrics if ExecutionTime is malformed");
+
+        // Test that negative values can't be submitted
+        List<RunExecution> runExecutionsWithNegativeValues = createRunExecutions(1);
+        // Negative and null cost value
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCost(new Cost().value(-1.00)));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative cost");
+        assertTrue(exception.getMessage().contains("cost.value must be greater than or equal to 0"));
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCost(new Cost().value(null)));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative cost");
+        assertTrue(exception.getMessage().contains("cost.value is missing but required"));
+        // Negative CPU requirement
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCpuRequirements(-1));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative CPU");
+        assertTrue(exception.getMessage().contains("cpuRequirements must be greater than or equal to 0"));
+        // Negative and NaN memory requirement
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setMemoryRequirementsGB(-1.0));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative memory");
+        assertTrue(exception.getMessage().contains("memoryRequirementsGB must be greater than or equal to 0"));
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setMemoryRequirementsGB(Double.NaN));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with NaN memory");
+        assertTrue(exception.getMessage().contains("memoryRequirementsGB must be greater than or equal to 0"));
 
         // Test that the response body must contain the required fields for ValidationExecution
         List<ValidationExecution> validationExecutions = List.of(new ValidationExecution());

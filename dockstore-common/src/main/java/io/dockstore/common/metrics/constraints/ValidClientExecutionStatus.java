@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OICR and UCSC
+ * Copyright 2024 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -25,16 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the `ISO8601ExecutionTime` constraint annotation, which
- * checks that the execution time is in ISO 1806 date format.
+ * Defines the `ValidClientExecutionStatus` constraint annotation, which
+ * checks that the execution status is meant for client use.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ISO8601ExecutionDateValidator.class)
-public @interface ISO8601ExecutionDate {
-    String EXECUTION_DATE_FORMAT_ERROR = "must be in ISO 8601 UTC date format";
+@Constraint(validatedBy = ValidClientExecutionStatusValidator.class)
+public @interface ValidClientExecutionStatus {
+    String INVALID_EXECUTION_STATUS_MESSAGE = "cannot be ALL";
 
-    String message() default "'${validatedValue}' " + EXECUTION_DATE_FORMAT_ERROR;
-    Class<?>[] groups () default {};
-    Class<? extends Payload>[] payload () default {};
+    String message() default INVALID_EXECUTION_STATUS_MESSAGE;
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
 }

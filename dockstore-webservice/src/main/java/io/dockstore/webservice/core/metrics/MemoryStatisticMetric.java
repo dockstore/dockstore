@@ -27,7 +27,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "memory_metric")
 @ApiModel(value = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
-@Schema(name = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
+@Schema(name = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.", allOf = Metric.class)
 public class MemoryStatisticMetric extends StatisticMetric {
     public static final String UNIT = "GB";
 
