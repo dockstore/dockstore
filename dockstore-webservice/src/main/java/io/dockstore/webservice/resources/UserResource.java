@@ -704,7 +704,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     }
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
-        // TODO why initialize workflowversions for services?
         services.forEach(service -> Hibernate.initialize(service.getWorkflowVersions()));
         EntryVersionHelper.stripContentFromEntries(services, this.userDAO);
         return services;
