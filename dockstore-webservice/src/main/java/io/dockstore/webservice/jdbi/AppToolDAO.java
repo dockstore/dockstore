@@ -63,6 +63,6 @@ public class AppToolDAO extends EntryDAO<AppTool> {
     }
 
     public List<MyWorkflows> findUserAppTools(long userId) {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserAppTools", MyWorkflows.class).setParameter("userId", userId).list();
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findUserAppTools", MyWorkflows.class).setParameter("userId", userId).list();
     }
 }
