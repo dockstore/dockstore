@@ -22,8 +22,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.AppToolPath;
-import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
+import io.dockstore.webservice.core.database.WorkflowSummary;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -62,7 +62,7 @@ public class AppToolDAO extends EntryDAO<AppTool> {
                 RSS_ENTRY_LIMIT).list();
     }
 
-    public List<MyWorkflows> findUserAppTools(long userId) {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findUserAppTools", MyWorkflows.class).setParameter("userId", userId).list();
+    public List<WorkflowSummary> findUserAppTools(long userId) {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findUserAppTools", WorkflowSummary.class).setParameter("userId", userId).list();
     }
 }

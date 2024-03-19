@@ -21,9 +21,9 @@ import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceControlConverter;
-import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.NotebookPath;
 import io.dockstore.webservice.core.database.RSSNotebookPath;
+import io.dockstore.webservice.core.database.WorkflowSummary;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -63,7 +63,7 @@ public class NotebookDAO extends EntryDAO<Notebook> {
                 RSS_ENTRY_LIMIT).list();
     }
 
-    public List<MyWorkflows> findUserNotebooks(long userId) {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserNotebooks", MyWorkflows.class).setParameter("userId", userId).list();
+    public List<WorkflowSummary> findUserNotebooks(long userId) {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserNotebooks", WorkflowSummary.class).setParameter("userId", userId).list();
     }
 }

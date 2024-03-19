@@ -56,8 +56,8 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
-import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.UserInfo;
+import io.dockstore.webservice.core.database.WorkflowSummary;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -625,7 +625,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        return convertMyWorkflowsToWorkflows(bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()), BioWorkflow::new);
+        return convertWorkflowSummariesToWorkflows(bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()), BioWorkflow::new);
     }
 
     @GET
@@ -642,7 +642,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        return convertMyWorkflowsToWorkflows(appToolDAO.findUserAppTools(fetchedUser.getId()), AppTool::new);
+        return convertWorkflowSummariesToWorkflows(appToolDAO.findUserAppTools(fetchedUser.getId()), AppTool::new);
     }
 
     @GET
@@ -659,10 +659,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        return convertMyWorkflowsToWorkflows(notebookDAO.findUserNotebooks(fetchedUser.getId()), Notebook::new);
+        return convertWorkflowSummariesToWorkflows(notebookDAO.findUserNotebooks(fetchedUser.getId()), Notebook::new);
     }
 
-    private List<Workflow> convertMyWorkflowsToWorkflows(List<MyWorkflows> myWorkflows, Supplier<Workflow> workflowCreator) {
+    private List<Workflow> convertWorkflowSummariesToWorkflows(List<WorkflowSummary> myWorkflows, Supplier<Workflow> workflowCreator) {
         List<Workflow> workflows = new ArrayList<>();
         myWorkflows.forEach(myWorkflow -> {
             Workflow workflow = workflowCreator.get();
@@ -1110,7 +1110,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             addUserToReposInOrgsWhereUserIsAMember(user, sourceControl, sourceCodeRepo);
             addUserToReposWithRepoLevelMembership(user, sourceControl, sourceCodeRepo);
         });
-        return convertMyWorkflowsToWorkflows(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()), BioWorkflow::new);
+        return convertWorkflowSummariesToWorkflows(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()), BioWorkflow::new);
     }
 
     /**
