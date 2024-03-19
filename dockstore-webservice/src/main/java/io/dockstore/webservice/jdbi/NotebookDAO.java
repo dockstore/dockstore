@@ -63,7 +63,7 @@ public class NotebookDAO extends EntryDAO<Notebook> {
                 RSS_ENTRY_LIMIT).list();
     }
 
-    public List<MyWorkflows> findUserNotebooks(long userid) {
+    public List<MyWorkflows> findUserNotebooks(long userId) {
         return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserNotebooks", MyWorkflows.class).setParameter("userId", userId).list();
     }
 }

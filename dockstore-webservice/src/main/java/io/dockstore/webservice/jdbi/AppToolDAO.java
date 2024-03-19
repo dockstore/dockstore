@@ -62,7 +62,7 @@ public class AppToolDAO extends EntryDAO<AppTool> {
                 RSS_ENTRY_LIMIT).list();
     }
 
-    public List<MyWorkflows> findUserAppTools(long userid) {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserAppTools", AppTool.class).setParameter("userId", userId).list();
+    public List<MyWorkflows> findUserAppTools(long userId) {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserAppTools", MyWorkflows.class).setParameter("userId", userId).list();
     }
 }
