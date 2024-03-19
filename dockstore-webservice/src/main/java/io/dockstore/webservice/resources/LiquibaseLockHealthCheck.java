@@ -23,11 +23,8 @@ import java.util.Date;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LiquibaseLockHealthCheck extends HealthCheck  {
-    private static final Logger LOG = LoggerFactory.getLogger(LiquibaseLockHealthCheck.class);
     private static final long MILLISECONDS_PER_SECOND = 1000L;
     private static final long HELD_TOO_LONG_SECONDS = 600L;
     private final SessionFactory sessionFactory;
@@ -41,22 +38,15 @@ public class LiquibaseLockHealthCheck extends HealthCheck  {
     protected Result check() throws Exception {
 
         Session session = sessionFactory.getCurrentSession();
-        Query query = session.createNativeQuery("select lockgranted from databasechangeloglock");
-        Object result = query.getSingleResult();
+        Query<Date> query = session.createNativeQuery("select lockgranted from databasechangeloglock", Date.class);
+        Date grantedDate = query.getSingleResult();
 
-        if (result == null) {
-            return Result.healthy();
-        }
-
-        if (result instanceof Date grantedDate) {
+        if (grantedDate != null) {
             long heldSeconds = (new Date().getTime() - grantedDate.getTime()) / MILLISECONDS_PER_SECOND;
             if (heldSeconds > HELD_TOO_LONG_SECONDS) {
                 return Result.unhealthy(String.format("Liquibase lock held too long: granted at %s, held for %d seconds", grantedDate, heldSeconds));
-            } else {
-                return Result.healthy();
             }
         }
-
-        return Result.unhealthy("Unexpected result from liquibase query");
+        return Result.healthy();
     }
 }

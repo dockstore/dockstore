@@ -31,11 +31,8 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
-    private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchConsistencyHealthCheck.class);
     private ToolDAO toolDAO;
     private BioWorkflowDAO bioWorkflowDAO;
     private AppToolDAO appToolDAO;
