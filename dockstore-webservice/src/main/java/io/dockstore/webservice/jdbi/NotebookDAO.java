@@ -64,7 +64,6 @@ public class NotebookDAO extends EntryDAO<Notebook> {
     }
 
     public List<MyWorkflows> findUserNotebooks(long userid) {
-        // TODO fill in, create named query
-        return null;
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findUserNotebooks", MyWorkflows.class).setParameter("userId", userId).list();
     }
 }

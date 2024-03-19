@@ -41,7 +41,8 @@ import jakarta.persistence.Transient;
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.NotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName) from Notebook n where n.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate",
             query = "SELECT new io.dockstore.webservice.core.database.RSSNotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName, n.lastUpdated, n.description) "
-                    + "from Notebook n where n.isPublished = true and n.dbUpdateDate is not null ORDER BY n.dbUpdateDate desc")
+                    + "from Notebook n where n.isPublished = true and n.dbUpdateDate is not null ORDER BY n.dbUpdateDate desc"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findUserNotebooks", query = "SELECT new io.dockstore.webservice.core.database.MyWorkflows(c.organization, c.id, c.sourceControl, c.isPublished, c.workflowName, c.repository, c.mode, c.gitUrl, c.description, c.archived) from Notebook c where c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
 })
 
 public class Notebook extends Workflow {
