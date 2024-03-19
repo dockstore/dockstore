@@ -107,6 +107,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -401,6 +402,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
         final BioWorkflowDAO bioWorkflowDAO = new BioWorkflowDAO(hibernate.getSessionFactory());
+        final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO((hibernate.getSessionFactory()));
 
         publicStateManager.insertListener(new PopulateEntryListener(toolDAO), publicStateManager.getElasticListener());
 
@@ -482,6 +484,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiExtendedServiceImpl.setNotebookDAO(notebookDAO);
+        ToolsApiExtendedServiceImpl.setWorkflowVersionDAO(workflowVersionDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
