@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 public class CensorHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(CensorHelper.class);
-    private static final Pattern BASE64_PATTERN = Pattern.compile("[-_a-zA-Z0-9+/]{24,}");
+    private static final Pattern BASE64_PATTERN = Pattern.compile("[-_a-zA-Z0-9+/]{22,}");
     private static final Pattern HEX_PATTERN = Pattern.compile("^[a-fA-F0-9]*$");
     private static final int LETTER_COUNT = 26;
     private static final int LETTER_COUNT_SQUARED = LETTER_COUNT * LETTER_COUNT;
