@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -65,7 +64,7 @@ class MetadataResourceIT extends BaseIT {
         RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
         DeleteByQueryRequest request = new DeleteByQueryRequest("tools", "workflows", "notebooks");
         request.setQuery(QueryBuilders.matchAllQuery());
-        BulkByScrollResponse response = client.deleteByQuery(request, RequestOptions.DEFAULT);
+        client.deleteByQuery(request, RequestOptions.DEFAULT);
         // Give the ES server a few seconds to finish any internal updates.
         sleep(5000);
     }

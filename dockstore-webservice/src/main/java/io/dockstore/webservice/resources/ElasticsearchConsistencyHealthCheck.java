@@ -63,7 +63,7 @@ public class ElasticsearchConsistencyHealthCheck extends HealthCheck  {
     @Override
     protected Result check() throws Exception {
 
-        // Retrieve database entry counts.
+        // Retrieve database entry counts.  Checkers aren't indexed on Elasticsearch so don't include them.
         long dbWorkflowCount = countAllPublishedNonCheckers(bioWorkflowDAO);
         long dbToolCount = countAllPublishedNonCheckers(toolDAO) + countAllPublishedNonCheckers(appToolDAO);
         long dbNotebookCount = countAllPublishedNonCheckers(notebookDAO);
