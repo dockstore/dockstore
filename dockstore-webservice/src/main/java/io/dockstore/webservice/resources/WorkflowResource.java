@@ -2140,9 +2140,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
             @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
         final String action = payload.getAction();
+        // Currently, the action can be either "added" or "removed".
+        // This check is not necessary, but will detect if github adds another type of action to the event.
         if (!List.of("added", "removed").contains(action)) {
-            LOG.error("Unknown action in installation payload");
-            return Response.status(HttpStatus.SC_NOT_FOUND).build(); // TODO pick correct status
+            LOG.error("Unexpected action in installation payload");
+            return Response.status(HttpStatus.SC_BAD_REQUEST).build();
         }
 
         final long installationId = payload.getInstallation().getId();
@@ -2152,8 +2154,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .stream().map(WebhookRepository::getFullName).toList();
 
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app %s on the repositories %s (%s)",
-                added ? "installed" : "uninstalled",
+            LOG.info(String.format("GitHub app %s the repositories %s (%s)",
+                added ? "installed on" : "uninstalled from",
                 Utilities.cleanForLogging(String.join(", ", repositories)),
                 Utilities.cleanForLogging(username)));
         }

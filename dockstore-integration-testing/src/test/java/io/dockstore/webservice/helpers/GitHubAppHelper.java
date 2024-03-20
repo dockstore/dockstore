@@ -56,6 +56,16 @@ public final class GitHubAppHelper {
     public static void handleGitHubInstallation(WorkflowsApi workflowsApi, List<String> repositories, String gitHubUsername) {
         InstallationRepositoriesPayload payload = new InstallationRepositoriesPayload()
                 .repositoriesAdded(repositories.stream().map(repo -> new WebhookRepository().fullName(repo)).toList());
+        payload.setAction("added");
+        payload.setInstallation(new Installation().id(INSTALLATION_ID));
+        payload.setSender(new Sender().login(gitHubUsername));
+        workflowsApi.handleGitHubInstallation(payload, generateXGitHubDelivery());
+    }
+
+    public static void handleGitHubUninstallation(WorkflowsApi workflowsApi, List<String> repositories, String gitHubUsername) {
+        InstallationRepositoriesPayload payload = new InstallationRepositoriesPayload()
+                .repositoriesRemoved(repositories.stream().map(repo -> new WebhookRepository().fullName(repo)).toList());
+        payload.setAction("removed");
         payload.setInstallation(new Installation().id(INSTALLATION_ID));
         payload.setSender(new Sender().login(gitHubUsername));
         workflowsApi.handleGitHubInstallation(payload, generateXGitHubDelivery());
