@@ -55,7 +55,7 @@ public class MetricsDataS3Client {
     }
 
     public MetricsDataS3Client(String bucketName, String endpointOverride) throws URISyntaxException {
-        this(bucketName, endpointOverride == null ? S3ClientHelper.createS3Client() : S3ClientHelper.createS3Client(endpointOverride));
+        this(bucketName, endpointOverride == null ? S3ClientHelper.getS3Client() : S3ClientHelper.createS3Client(endpointOverride));
     }
 
     /**
