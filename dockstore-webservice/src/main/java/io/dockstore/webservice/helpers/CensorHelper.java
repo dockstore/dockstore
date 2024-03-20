@@ -11,44 +11,47 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Provides support for removing potentially secret text from strings. Useful for logging
- * purposes.
+ * Inspects input Strings for long runs of base64 characters and X's them out if they appear to
+ * be keys.  Useful for logging purposes.
  *
- * CensorHelper censors input strings by replacing potential secrets with inert characters.
  * CensorHelper identifies potential secrets as longer substrings composed of non-padding base64
- * characters.  Such strings could be keys (AWS keys and GitHub tokens are 40-character base64
- * encoded strings) or other sensitive quantities, but they could also be things like file paths,
- * which are often made up of the same characters.  For example, the path "/MyStuff/data/input123"
- * is composed entirely of non-padding base64 characters, but should not be censored.
+ * characters.  Such substrings could be keys (AWS keys and GitHub tokens are 40-character base64
+ * encoded strings) or other sensitive information, but they could also be other information made
+ * up of the same characters, like file paths, that should be logged.  For example, the path
+ * "/MyStuff/data/input123" is composed entirely of non-padding base64 characters, but is not a
+ * secret and should not be censored.
  *
  * So, when CensorHelper finds a longer base64-ish substring, it censors it if all the characters
- * are hex/decimal digits, and otherwise performs a statistical analysis on the substring to
- * determine if it's likely an encoded key versus something else.  The current implementation
- * combines two measures of the substring:
+ * are hex/decimal digits, and otherwise performs a statistical analysis to determine if the
+ * substring is an encoded key versus something else.  The current implementation combines two
+ * measures of the substring:
  *
  * 1. The number of adjacent characters of the same class, where "class" is either a) decimal
  *    digits, b) uppercase letters, c) lowercase letters + punctuation.
- * 2. The number of "English points", where higher values represent more frequent English
- *    constructions, currently derived from letter-triplet frequencies as calculated from an
- *    English text corpus.  Passages that resemble English text will score 1-2 points per
- *    character, and sequences of random letters will usually score negatively.
+ *
+ * 2. The number of "English points", where higher values represent sequences of characters more
+ *    characteristic of English language sequences, currently derived from letter-triplet
+ *    frequencies as calculated from an English text corpus.  Passages that resemble English text
+ *    will score 1-2 points per character, and sequences of random letters will usually score
+ *    negatively.
  *
  * For example, substrings like "/jkLLIiRn6+1ZwUNf1jJYCjIM/tTnp2K3Rg8PUAF6tbZ3r//Umw" score low,
  * and substrings like "/System/Library/CoreServices/SystemUIServer" score high.  Low-scoring
  * substrings are censored, and high-scoring substrings are not.
  *
- * The underlying assumptions are that keys have high information density, and are often
- * compressed and/or randomized, and because the incentive is to keep the encoded key as short as
- * possible, the base64 encoding of a key will share the same qualities.
+ * The underlying assumption is that a key will have high information density and be efficiently
+ * encoded, and thus be a random jumble of characters, whereas a path (or other structured
+ * non-key data) will contain longer runs of the same character classes, and/or statistically
+ * resemble English text.
  *
- * The system is not 100% perfect, but it does pretty well.  Experiments show that it fails to
- * censor less than one in 50,000,000 randomly-generated 40-character strings composed of
- * non-padding base64 characters.  It does censor a few things that are not actually secrets, but
- * for the current use case, that's ok.
+ * The system is not perfect, but it does pretty well.  Experiments show that it fails to censor
+ * less than one in 50,000,000 randomly-generated 40-character strings composed of non-padding
+ * base64 characters.  It does censor the occasional non-secret thing, but for the current use
+ * case, that's ok.
  *
- * The advantage of this scheme over a scheme like git secrets is that it will censor secrets
- * that are floating by themselves in a string, without adjacent identifying markings or other
- * cues.
+ * The advantage of this scheme over something like git secrets is that it censors secrets that
+ * are floating by themselves, having previously been separated from adjacent identifying
+ * markings or other cues.
  */
 
 public class CensorHelper {
@@ -70,8 +73,8 @@ public class CensorHelper {
 
         StringBuilder censored = new StringBuilder(raw);
 
-        // Censor each longer base64-ish string if it's either all hex or is "scrambled".
-        // See the class description above for the definition of "scrambled".
+        // Censor each longer base64-ish string if it's either all hex or is a "jumble" of characters.
+        // See the class description for more information about what we consider a "jumble".
         Matcher matcher = BASE64_PATTERN.matcher(raw);
         while (matcher.find()) {
 
@@ -79,7 +82,7 @@ public class CensorHelper {
             int end = matcher.end();
             String suspect = raw.substring(start, end);
 
-            if (HEX_PATTERN.matcher(suspect).matches() || isScrambled(suspect)) {
+            if (HEX_PATTERN.matcher(suspect).matches() || isJumbled(suspect)) {
                 for (int i = start; i < end; i++) {
                     censored.setCharAt(i, 'X');
                 }
@@ -89,7 +92,7 @@ public class CensorHelper {
         return censored.toString();
     }
 
-    private boolean isScrambled(String s) {
+    private boolean isJumbled(String s) {
         double length = s.length();
         double adjacentsPerChar = calculateAdjacents(s) / length;
         double englishPointsPerChar = calculateEnglishPoints(s) / length;
@@ -161,9 +164,13 @@ public class CensorHelper {
 
         byte[] englishPoints = new byte[LETTER_COUNT_CUBED];
 
+        // Compute the list of triplets, ordered by descending frequency.
         List<String> triplets = new ArrayList<>(tripletToFrequency.keySet());
         Collections.sort(triplets, Comparator.comparingDouble(s -> tripletToFrequency.get(s)).reversed());
 
+        // Assign a number of points for each triplet, skewing the point distribution
+        // so that triplets that frequently appear in English text will score highest,
+        // and that a random triplet will score negatively, on average.
         for (int i = 0; i < triplets.size(); i++) {
 
             String triplet = triplets.get(i);

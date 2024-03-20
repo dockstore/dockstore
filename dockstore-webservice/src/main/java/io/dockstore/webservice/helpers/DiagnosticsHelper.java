@@ -240,7 +240,7 @@ public final class DiagnosticsHelper {
         if (s == null) {
             return null;
         }
-        return DigestUtils.sha1Hex(s.toString()).substring(0, length);
+        return DigestUtils.sha256Hex(s.toString()).substring(0, length);
     }
 
     private Map<String, Double> readFrequencies() {
@@ -255,6 +255,7 @@ public final class DiagnosticsHelper {
             String[] fields = line.split(",");
             tripletToFrequency.put(fields[0], Double.parseDouble(fields[1]));
         }
+        // Adjust the frequencies for some Dockstore-related terms.
         for (String term: List.of("cwl", "wdl", "nfl", "trs")) {
             tripletToFrequency.put(term, tripletToFrequency.get("the"));
         }
@@ -345,7 +346,7 @@ public final class DiagnosticsHelper {
 
                 // Done filtering response.
                 case RESP_FILTERS_FINISHED:
-                    // Experimentally, we've determined that soon after this, the Hibernate session is dissociated from the thread.
+                    // Experimentally, we've determined that soon after the RESP_FILTERS_FINISHED event fires, the Hibernate session is dissociated from the thread.
                     // If the session was closed during the request, it may not even be available here.
                     sessionState = getSessionState();
                     break;
@@ -373,6 +374,7 @@ public final class DiagnosticsHelper {
 
         @Override
         public void filter(ContainerRequestContext requestContext) {
+            // Save the resource Method in the request context, so we can later extract and log it.
             requestContext.setProperty(RESOURCE_METHOD_PROPERTY_NAME, resourceInfo.getResourceMethod());
         }
     }
