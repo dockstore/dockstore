@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>dockstore-integration-testing</artifactId>
-  <version>1.11.12-SNAPSHOT</version>
+  <version>1.11.12</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
@@ -54,37 +54,37 @@
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-client</artifactId>
-      <version>1.11.12-SNAPSHOT</version>
+      <version>1.11.12</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-common</artifactId>
-      <version>1.11.12-SNAPSHOT</version>
+      <version>1.11.12</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>liquibase-core</artifactId>
           <groupId>org.liquibase</groupId>
+          <artifactId>liquibase-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-webservice</artifactId>
-      <version>1.11.12-SNAPSHOT</version>
+      <version>1.11.12</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>liquibase-core</artifactId>
           <groupId>org.liquibase</groupId>
+          <artifactId>liquibase-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>openapi-java-client</artifactId>
-      <version>1.11.12-SNAPSHOT</version>
+      <version>1.11.12</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -141,7 +141,7 @@
       </snapshots>
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
-      <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
+      <url>https://broadinstitute.jfrog.io/artifactory/libs-release/</url>
     </repository>
   </repositories>
 </project>
