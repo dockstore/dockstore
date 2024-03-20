@@ -91,7 +91,7 @@ class QuayImageRegistryTest {
     @Test
     void testGetQuayTag() throws ApiException {
         final String repo = "calico/node";
-        final String tag = "master";
+        final String tag = "v3.28.0-0.dev-493-gad6e818087f8";
         QuayImageRegistry quayImageRegistry = new QuayImageRegistry();
         Optional<QuayTag> quayTag = quayImageRegistry.getQuayTag(repo, tag);
         assertTrue(quayTag.isPresent());
