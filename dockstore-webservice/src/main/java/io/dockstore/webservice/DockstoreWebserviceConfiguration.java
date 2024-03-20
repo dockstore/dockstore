@@ -768,7 +768,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     public static class DiagnosticsConfig {
-        private static final long DEFAULT_PERIOD_SECONDS = 60;
+        private static final long DEFAULT_PERIOD_SECONDS = 600L;
         private boolean logRequests = false;
         private boolean logPeriodic = false;
         private long periodSeconds = DEFAULT_PERIOD_SECONDS;
