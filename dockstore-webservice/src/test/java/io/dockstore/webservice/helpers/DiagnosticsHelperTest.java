@@ -118,6 +118,20 @@ class DiagnosticsHelperTest {
         }
     }
 
+    @Test
+    void testCensoringFuzz() {
+        Random random = new Random(1);
+        for (int i = 0; i < 10000; i++) {
+            log(buildString(random, 1000, 127));
+        }
+        for (int i = 0; i < 10000; i++) {
+            log(buildString(random, 1000, 255));
+        }
+        for (int i = 0; i < 10000; i++) {
+            log(buildString(random, 1000, 65535));
+        }
+    }
+
     private void confirmPassed(String input) {
         Assertions.assertTrue(log(input).endsWith(input));
     }
@@ -136,6 +150,15 @@ class DiagnosticsHelperTest {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < length; i++) {
             builder.append(BASE64_CHARS.charAt(random.nextInt(BASE64_CHARS.length())));
+        }
+        return builder.toString();
+    }
+
+    private String buildString(Random random, int maxLength, int maxChar) {
+        StringBuilder builder = new StringBuilder();
+        int length = random.nextInt(maxLength + 1);
+        for (int i = 0; i < length; i++) {
+            builder.append((char)random.nextInt(maxChar + 1));
         }
         return builder.toString();
     }

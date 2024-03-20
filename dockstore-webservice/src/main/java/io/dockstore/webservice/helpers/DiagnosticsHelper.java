@@ -255,8 +255,8 @@ public final class DiagnosticsHelper {
             String[] fields = line.split(",");
             tripletToFrequency.put(fields[0], Double.parseDouble(fields[1]));
         }
-        for (String terms: List.of("cwl", "wdl", "nfl")) {
-            tripletToFrequency.put(terms, tripletToFrequency.get("the"));
+        for (String term: List.of("cwl", "wdl", "nfl", "trs")) {
+            tripletToFrequency.put(term, tripletToFrequency.get("the"));
         }
         return tripletToFrequency;
     }
