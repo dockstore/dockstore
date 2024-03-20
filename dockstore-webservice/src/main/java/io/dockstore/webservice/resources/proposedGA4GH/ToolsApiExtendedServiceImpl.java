@@ -28,6 +28,7 @@ import io.dockstore.common.metrics.ExecutionsRequestBody;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.UpdateAITopicRequest;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -489,10 +490,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
-
-        if (entry == null) {
-            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntryNotNull(entry);
 
         Optional<? extends Version<?>> version = getVersion(entry, versionId);
         if (version.isEmpty()) {
@@ -529,10 +527,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
-
-        if (entry == null) {
-            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntryNotNull(entry);
 
         Version<?> version = getVersion(entry, versionId).orElse(null);
         if (version == null) {
@@ -552,10 +547,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
         }
-
-        if (entry == null) {
-            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntryNotNull(entry);
 
         Version<?> version = getVersion(entry, versionId).orElse(null);
         if (version == null) {
@@ -575,10 +567,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
         }
-
-        if (entry == null) {
-            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntryNotNull(entry);
 
         Version<?> version = getVersion(entry, versionId).orElse(null);
         if (version == null) {
@@ -613,10 +602,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
-
-        if (entry == null) {
-            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntryNotNull(entry);
 
         Version<?> version = getVersion(entry, versionId).orElse(null);
         if (version == null) {
@@ -658,9 +644,30 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
     }
 
+    @Override
+    public Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty()); // Not providing user to ensure entry is public
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+        checkEntryNotNull(entry);
+
+        entry.setTopicAI(updateAITopicRequest.getAiTopic());
+        return Response.noContent().build();
+    }
+
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
         ToolsApiServiceImpl.ParsedRegistryID parsedID =  new ToolsApiServiceImpl.ParsedRegistryID(id);
         return TOOLS_API_SERVICE_IMPL.getEntry(parsedID, user);
+    }
+
+    private void checkEntryNotNull(Entry<?, ?> entry) {
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
     }
 
     private Optional<? extends Version<?>> getVersion(Entry<?, ?> entry, String versionId) {

@@ -538,6 +538,32 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/updateAITopic:
+    put:
+      description: Update a tool's AI topic.
+      operationId: updateAITopic
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAITopicRequest'
+        description: The update AI topic request
+        required: true
+      responses:
+        "204":
+          description: Successfully updated the tool's AI topic
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
     get:
       description: This endpoint retrieves aggregated metrics for a tool from all
@@ -11291,6 +11317,15 @@ components:
       required:
       - id
       - url
+    UpdateAITopicRequest:
+      type: object
+      description: The AI topic update request
+      properties:
+        aiTopic:
+          type: string
+          description: The AI topic
+      required:
+      - aiTopic
     User:
       type: object
       properties:
