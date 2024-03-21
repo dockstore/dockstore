@@ -50,7 +50,7 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-      - skip_check:
+      - run_full_build:
           <<: *common_filters
           requires:
             - build
@@ -61,28 +61,28 @@ workflows:
       - workflow-integration-tests:
           <<: *common_filters
           requires:
-            - skip_check
+            - run_full_build
           context: sonarcloud
       - bitbucket-tests:
           <<: *common_filters
           requires:
-            - skip_check
+            - run_full_build
       - language-parsing-tests:
           <<: *common_filters
           requires:
-            - skip_check
+            - run_full_build
       - localstack-tests:
           <<: *common_filters
           requires:
-            - skip_check
+            - run_full_build
       - tool-integration-tests:
           <<: *common_filters
           requires:
-            - skip_check
+            - run_full_build
       - integration-tests:
           <<: *common_filters
           requires:
-            - skip_check
+            - run_full_build
       - regression-integration-tests:
           filters:
             branches:
@@ -90,7 +90,7 @@ workflows:
                 - master
                 - /^release.*$/
           requires:
-            - skip_check
+            - run_full_build
       - sonar-cloud:
           <<: *common_filters
           requires:
@@ -105,7 +105,7 @@ workflows:
           context: sonarcloud
 
 jobs:
-  skip_check:
+  run_full_build:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
