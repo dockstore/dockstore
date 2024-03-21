@@ -79,8 +79,6 @@ tags:
   name: metadata
 - description: Query lambda events triggered by GitHub Apps
   name: lambdaEvents
-- description: Perform testing-related operations
-  name: testing
 paths:
   /aliases/workflow-versions/{alias}:
     get:
@@ -5476,31 +5474,6 @@ paths:
       summary: Retrieve a collection by name.
       tags:
       - organizations
-  /testing/consume/memory/{byteCount}/{durationSeconds}:
-    post:
-      description: Consume the specified amount of heap memory for the specified duration.
-      operationId: consumeResource
-      parameters:
-      - in: path
-        name: byteCount
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - in: path
-        name: durationSeconds
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          description: A description of what was done
-        "400":
-          description: Bad request
-      summary: Consume the specified amount of heap memory for the specified duration.
-      tags:
-      - testing
   /toolTester/logs:
     get:
       operationId: getToolTesterLog

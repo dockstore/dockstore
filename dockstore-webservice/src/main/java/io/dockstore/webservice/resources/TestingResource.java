@@ -22,6 +22,7 @@ import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 @Path("/testing")
 @Api("testing")
+@Hidden
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = JWT_SECURITY_DEFINITION_NAME, scheme = "bearer") })
 @Tag(name = "testing", description = ResourceConstants.TESTING)
 public class TestingResource {
