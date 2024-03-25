@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.ExtendedMetricsTRSOpenApiIT.DOCKSTORE_WORKFLOW_CNV_REPO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.UpdateAITopicRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
@@ -153,6 +155,9 @@ class ExtendedTRSApiIT extends BaseIT {
                 DescriptorLanguage.CWL.toString(), "/test.json");
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         assertNull(workflow.getTopicAI());
+        assertNull(workflow.getTopicManual());
+        assertNotNull(workflow.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
 
         // Should not be able to submit AI topic for unpublished workflow
         ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.updateAITopic(updateAITopicRequest, trsId));
@@ -161,13 +166,19 @@ class ExtendedTRSApiIT extends BaseIT {
         // Publish the workflow
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // Should be able to submit AI topic for published workflow
-        extendedGa4GhApi.updateAITopic(updateAITopicRequest, trsId);
-        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        assertEquals(aiTopic, workflow.getTopicAI());
-
         // Non-admin user should not be able to submit AI topic
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.updateAITopic(updateAITopicRequest, trsId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
+
+        // Admin should be able to submit AI topic for published workflow
+        extendedGa4GhApi.updateAITopic(updateAITopicRequest, trsId);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertEquals(aiTopic, workflow.getTopicAI());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection()); // Topic selection is unchanged because an automatic topic exists
+        // Set topic automatic to null and update AI topic again. The topic selection should automatically be AI
+        testingPostgres.runUpdateStatement("update workflow set topicautomatic = null where id = " + workflow.getId());
+        extendedGa4GhApi.updateAITopic(updateAITopicRequest, trsId);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertEquals(TopicSelectionEnum.AI, workflow.getTopicSelection());
     }
 }

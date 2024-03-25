@@ -570,8 +570,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
+        // Only manual topics can be updated by users. Automatic and AI topics are not submitted by users
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
-        oldWorkflow.setTopicAI(newWorkflow.getTopicAI());
 
         // Update topic selection if it's a non-hosted workflow, or if it's a hosted workflow and the new topic selection is not automatic.
         // Hosted workflows don't have a source control thus cannot have an automatic topic.

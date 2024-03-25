@@ -421,8 +421,8 @@ public class DockerRepoResource
         }
 
         originalTool.setForumUrl(newTool.getForumUrl());
+        // Only manual topics can be updated by users. Automatic and AI topics are not submitted by users
         originalTool.setTopicManual(newTool.getTopicManual());
-        originalTool.setTopicAI(newTool.getTopicAI());
         // Update topic selection if it's a non-hosted tool, or if it's a hosted tool and the new topic selection is not automatic.
         // Hosted tools don't have a source control thus cannot have an automatic topic.
         if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED) || (Objects.equals(originalTool.getMode(), ToolMode.HOSTED) && newTool.getTopicSelection() != TopicSelection.AUTOMATIC)) {

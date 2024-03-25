@@ -30,6 +30,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.UpdateAITopicRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -657,6 +658,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         checkEntryNotNull(entry);
 
         entry.setTopicAI(updateAITopicRequest.getAiTopic());
+        // Set topic selection to AI if the manual and automatic topics are empty
+        if (StringUtils.isEmpty(entry.getTopicManual()) && StringUtils.isEmpty(entry.getTopicAutomatic())) {
+            entry.setTopicSelection(TopicSelection.AI);
+        }
         return Response.noContent().build();
     }
 
