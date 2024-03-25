@@ -118,11 +118,13 @@ import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.ElasticsearchConsistencyHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.LambdaEventResource;
+import io.dockstore.webservice.resources.LiquibaseLockHealthCheck;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -182,6 +184,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -409,7 +412,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
-        SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate())
+        UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory = new UnitOfWorkAwareProxyFactory(getHibernate());
+        SimpleAuthenticator authenticator = unitOfWorkAwareProxyFactory
                 .create(SimpleAuthenticator.class, new Class[] { TokenDAO.class, UserDAO.class }, new Object[] { tokenDAO, userDAO });
         CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
                 configuration.getAuthenticationCachePolicy());
@@ -515,6 +519,16 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.lifecycle().addServerLifecycleListener(server -> {
             final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            final LiquibaseLockHealthCheck liquibaseLockHealthCheck = unitOfWorkAwareProxyFactory.create(
+                LiquibaseLockHealthCheck.class,
+                new Class[] { SessionFactory.class },
+                new Object[] { hibernate.getSessionFactory() });
+            environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
+            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = unitOfWorkAwareProxyFactory.create(
+                ElasticsearchConsistencyHealthCheck.class,
+                new Class[] { ToolDAO.class, BioWorkflowDAO.class, AppToolDAO.class, NotebookDAO.class },
+                new Object[] { toolDAO, bioWorkflowDAO, appToolDAO, notebookDAO });
+            environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 
