@@ -44,6 +44,7 @@ import jakarta.persistence.Transient;
     @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate",
             query = "SELECT new io.dockstore.webservice.core.database.RSSAppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) "
                     + "from AppTool c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findUserAppTools", query = "SELECT new io.dockstore.webservice.core.database.WorkflowSummary(c.organization, c.id, c.sourceControl, c.isPublished, c.workflowName, c.repository, c.mode, c.gitUrl, c.description, c.archived) from AppTool c where c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
 
 })
 public class AppTool extends Workflow {

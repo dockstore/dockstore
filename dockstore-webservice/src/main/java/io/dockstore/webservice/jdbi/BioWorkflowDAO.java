@@ -20,9 +20,9 @@ import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceControlConverter;
-import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
+import io.dockstore.webservice.core.database.WorkflowSummary;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -66,7 +66,7 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
                 RSS_ENTRY_LIMIT).list();
     }
 
-    public List<MyWorkflows> findUserBioWorkflows(long userId) {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", MyWorkflows.class).setParameter("userId", userId).list();
+    public List<WorkflowSummary> findUserBioWorkflows(long userId) {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", WorkflowSummary.class).setParameter("userId", userId).list();
     }
 }
