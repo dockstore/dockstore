@@ -128,7 +128,7 @@ class OpenAPIGeneralIT extends BaseIT {
         assertEquals(DockstoreTool.TopicSelectionEnum.MANUAL, dockstoreTool.getTopicSelection());
 
         // Should allow AI selection change
-        testingPostgres.runUpdateStatement("update tool set topicai = 'AI topic' where id = " + hostedTool.getTopicAI());
+        testingPostgres.runUpdateStatement("update tool set topicai = 'AI topic' where id = " + hostedTool.getId());
         hostedTool.setTopicSelection(DockstoreTool.TopicSelectionEnum.AI);
         dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
