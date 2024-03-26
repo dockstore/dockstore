@@ -255,7 +255,7 @@ jobs:
           command: |
             if [[ $(git diff --name-only | grep "\.java$") != '' ]]; then
               echo "At least one Java file didn't have its imports sorted"
-              git diff
+              git diff --stat
               exit 1
             fi
 
