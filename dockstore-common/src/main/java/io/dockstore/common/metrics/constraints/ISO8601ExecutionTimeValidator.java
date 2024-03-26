@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OICR and UCSC
+ * Copyright 2023 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,24 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
+import static io.dockstore.common.metrics.FormatCheckHelper.checkExecutionTimeISO8601Format;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 /**
- * Validates that the execution status is meant for client use.
+ * Validates that execution time is in ISO 8601 duration format
  */
-public class ValidClientExecutionStatusValidator implements ConstraintValidator<ValidClientExecutionStatus, ExecutionStatus> {
+public class ISO8601ExecutionTimeValidator implements ConstraintValidator<ISO8601ExecutionTime, String> {
 
     @Override
-    public boolean isValid(final ExecutionStatus executionStatus, final ConstraintValidatorContext context) {
-        return executionStatus != ExecutionStatus.ALL; // ALL is only meant to be used internally
+    public boolean isValid(final String executionTime, final ConstraintValidatorContext context) {
+        // nulls are valid because execution time is optional.
+        if (executionTime == null) {
+            return true;
+        }
+        return checkExecutionTimeISO8601Format(executionTime).isPresent();
     }
 }

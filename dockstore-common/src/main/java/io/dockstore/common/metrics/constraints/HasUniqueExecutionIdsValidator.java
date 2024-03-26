@@ -15,9 +15,9 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.common.metrics.ExecutionsRequestBody;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.ArrayList;
@@ -34,7 +34,6 @@ public class HasUniqueExecutionIdsValidator implements ConstraintValidator<HasUn
         executionsRequestBody.getRunExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
         executionsRequestBody.getTaskExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
         executionsRequestBody.getValidationExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
-        executionsRequestBody.getAggregatedExecutions().forEach(execution -> executionIds.add(execution.getExecutionId()));
         return executionIds.stream().distinct().count() == executionIds.size();
     }
 }

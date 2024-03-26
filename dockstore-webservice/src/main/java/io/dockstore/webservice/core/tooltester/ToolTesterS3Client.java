@@ -50,7 +50,7 @@ public class ToolTesterS3Client {
     public ToolTesterS3Client(String bucketName) {
         this.bucketName = bucketName;
         // Purposely hardcoding the region because the ToolTester bucket is always in us-east-1
-        this.s3 = S3ClientHelper.createS3Client(TOOLTESTER_BUCKET_REGION);
+        this.s3 = S3ClientHelper.getS3Client(TOOLTESTER_BUCKET_REGION);
     }
 
     public ToolTesterS3Client(String bucketName, S3Client s3Client) {

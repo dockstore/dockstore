@@ -20,19 +20,16 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 import java.util.Date;
 
-public class RSSAppToolPath {
-    private final AppTool appTool = new AppTool();
-
-    public RSSAppToolPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
-        this.appTool.setSourceControl(sourceControl);
-        this.appTool.setOrganization(organization);
-        this.appTool.setRepository(repository);
-        this.appTool.setWorkflowName(entryName);
-        this.appTool.setLastUpdated(lastUpdated);
-        this.appTool.setDescription(description);
-    }
+public record RSSAppToolPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
 
     public AppTool getAppTool() {
+        AppTool appTool = new AppTool();
+        appTool.setSourceControl(sourceControl);
+        appTool.setOrganization(organization);
+        appTool.setRepository(repository);
+        appTool.setWorkflowName(entryName);
+        appTool.setLastUpdated(lastUpdated);
+        appTool.setDescription(description);
         return appTool;
     }
 }

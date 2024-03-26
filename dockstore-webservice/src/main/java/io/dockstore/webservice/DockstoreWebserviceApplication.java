@@ -69,7 +69,6 @@ import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.CostStatisticMetric;
-import io.dockstore.webservice.core.metrics.CountMetric;
 import io.dockstore.webservice.core.metrics.CpuStatisticMetric;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
@@ -108,6 +107,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -118,11 +118,13 @@ import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.ElasticsearchConsistencyHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.LambdaEventResource;
+import io.dockstore.webservice.resources.LiquibaseLockHealthCheck;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -182,6 +184,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -236,7 +239,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class, CostStatisticMetric.class,
-            CountMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class) {
+            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -402,13 +405,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
         final BioWorkflowDAO bioWorkflowDAO = new BioWorkflowDAO(hibernate.getSessionFactory());
+        final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO((hibernate.getSessionFactory()));
 
         publicStateManager.insertListener(new PopulateEntryListener(toolDAO), publicStateManager.getElasticListener());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
-        SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate())
+        UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory = new UnitOfWorkAwareProxyFactory(getHibernate());
+        SimpleAuthenticator authenticator = unitOfWorkAwareProxyFactory
                 .create(SimpleAuthenticator.class, new Class[] { TokenDAO.class, UserDAO.class }, new Object[] { tokenDAO, userDAO });
         CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
                 configuration.getAuthenticationCachePolicy());
@@ -483,6 +488,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiExtendedServiceImpl.setNotebookDAO(notebookDAO);
+        ToolsApiExtendedServiceImpl.setWorkflowVersionDAO(workflowVersionDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
@@ -513,6 +519,16 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.lifecycle().addServerLifecycleListener(server -> {
             final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            final LiquibaseLockHealthCheck liquibaseLockHealthCheck = unitOfWorkAwareProxyFactory.create(
+                LiquibaseLockHealthCheck.class,
+                new Class[] { SessionFactory.class },
+                new Object[] { hibernate.getSessionFactory() });
+            environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
+            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = unitOfWorkAwareProxyFactory.create(
+                ElasticsearchConsistencyHealthCheck.class,
+                new Class[] { ToolDAO.class, BioWorkflowDAO.class, AppToolDAO.class, NotebookDAO.class },
+                new Object[] { toolDAO, bioWorkflowDAO, appToolDAO, notebookDAO });
+            environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 

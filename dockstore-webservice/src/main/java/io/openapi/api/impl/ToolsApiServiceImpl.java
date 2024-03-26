@@ -299,6 +299,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String id, DescriptorTypeWithPlain type, String versionId, SecurityContext securityContext, ContainerRequestContext value,
         Optional<User> user) {
+        if (type == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
         final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
@@ -362,7 +365,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         int offsetInteger = 0;
         if (offset != null) {
-            offsetInteger = Integer.parseInt(offset);
+            try {
+                offsetInteger = Integer.parseInt(offset);
+            } catch (NumberFormatException e) {
+                return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
+            }
             offsetInteger = Math.max(offsetInteger, 0);
         }
         // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set

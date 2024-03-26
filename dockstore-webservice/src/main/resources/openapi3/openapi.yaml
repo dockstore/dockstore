@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.15.0-SNAPSHOT
+  version: 1.16.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -715,7 +715,7 @@ paths:
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
       description: This endpoint submits individual execution metrics for a tool that
-        was executed on a platform. Submitting aggregated execution metrics is deprecated.
+        was executed on a platform.
       operationId: executionMetricsPost
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -762,8 +762,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExecutionsRequestBody'
-        description: Individual execution metrics to submit. Submitting aggregated
-          execution metrics is deprecated.
+        description: Individual execution metrics to submit.
         required: true
       responses:
         "204":
@@ -783,12 +782,12 @@ paths:
       security:
       - BEARER: []
       summary: Submit individual execution metrics for a tool that was executed on
-        a platform. Submitting aggregated execution metrics is deprecated.
+        a platform.
       tags:
       - extendedGA4GH
     put:
-      description: "This endpoint updates workflow executions that were executed on\
-        \ a platform. Does not update aggregated metrics, which is deprecated."
+      description: This endpoint updates workflow executions that were executed on
+        a platform.
       operationId: ExecutionMetricsUpdate
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -860,8 +859,7 @@ paths:
           description: The tool cannot be found to update the executions.
       security:
       - BEARER: []
-      summary: "Update workflow executions that were executed on a platform. Does\
-        \ not update aggregated metrics, which is deprecated."
+      summary: Update workflow executions that were executed on a platform.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -8528,28 +8526,6 @@ paths:
       - workflows
 components:
   schemas:
-    AggregatedExecution:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/Metrics'
-      - type: object
-        properties:
-          additionalAggregatedMetrics:
-            type: object
-            additionalProperties:
-              type: object
-              description: Additional aggregated metrics
-            description: Additional aggregated metrics
-          executionId:
-            type: string
-            description: User-provided ID of the execution. Must be unique and not
-              used for previous executions. This ID is used to identify the execution
-              when updating the execution
-      deprecated: true
-      description: Aggregated metrics of multiple executions on a platform
-      required:
-      - executionId
-      - executionStatusCount
     Alias:
       type: object
       properties:
@@ -8955,37 +8931,37 @@ components:
           format: double
           description: The numerical value of the cost
           example: 5.99
+      required:
+      - value
     CostMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            default: USD
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated cost metrics for workflow executions
         in USD.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: USD
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -8993,33 +8969,31 @@ components:
       - numberOfDataPointsForAverage
     CpuMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated CPU metrics for workflow executions.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -9056,8 +9030,6 @@ components:
             $ref: '#/components/schemas/Alias'
         archived:
           type: boolean
-        author:
-          type: string
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -9102,8 +9074,6 @@ components:
           type: array
           items:
             type: string
-        email:
-          type: string
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9255,8 +9225,6 @@ components:
             $ref: '#/components/schemas/Alias'
         archived:
           type: boolean
-        author:
-          type: string
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -9281,8 +9249,6 @@ components:
         deletable:
           type: boolean
         description:
-          type: string
-        email:
           type: string
         entryType:
           $ref: '#/components/schemas/EntryType'
@@ -9556,70 +9522,67 @@ components:
       - status
     ExecutionStatusMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          count:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/MetricsByStatus'
+            description: A map containing the metrics for each execution status
+          numberOfAbortedExecutions:
+            type: integer
+            format: int32
+            description: Number of aborted executions. An execution is aborted if
+              its execution is stopped after it has started
+            example: 0
+            readOnly: true
+          numberOfFailedExecutions:
+            type: integer
+            format: int32
+            description: Number of failed executions. An execution may have failed
+              because it was semantically or runtime invalid
+            example: 2
+            readOnly: true
+          numberOfSuccessfulExecutions:
+            type: integer
+            format: int32
+            description: Number of successful executions
+            example: 5
+            readOnly: true
       description: Aggregated metrics about workflow execution statuses
-      properties:
-        count:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/MetricsByStatus'
-          description: A map containing the metrics for each execution status
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the count metrics in this webservice
-        numberOfAbortedExecutions:
-          type: integer
-          format: int32
-          description: Number of aborted executions. An execution is aborted if its
-            execution is stopped after it has started
-          example: 0
-          readOnly: true
-        numberOfFailedExecutions:
-          type: integer
-          format: int32
-          description: Number of failed executions. An execution may have failed because
-            it was semantically or runtime invalid
-          example: 2
-          readOnly: true
-        numberOfSuccessfulExecutions:
-          type: integer
-          format: int32
-          description: Number of successful executions
-          example: 5
-          readOnly: true
       required:
       - count
     ExecutionTimeMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            default: s
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated execution time metrics in seconds for
         workflow executions.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: s
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -9629,12 +9592,6 @@ components:
       type: object
       description: Request body model for executionMetricsPost
       properties:
-        aggregatedExecutions:
-          type: array
-          deprecated: true
-          description: List of aggregated executions to submit
-          items:
-            $ref: '#/components/schemas/AggregatedExecution'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
@@ -9652,7 +9609,6 @@ components:
           items:
             $ref: '#/components/schemas/ValidationExecution'
       required:
-      - aggregatedExecutions
       - runExecutions
       - taskExecutions
       - validationExecutions
@@ -9998,35 +9954,33 @@ components:
           format: int32
     MemoryMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            default: GB
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated memory metrics for workflow executions
         in GB.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: GB
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -10046,6 +10000,20 @@ components:
       required:
       - api_version
       - version
+    Metric:
+      type: object
+      description: Describes an aggregated metric
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for metrics in this webservice
+        numberOfSkippedExecutions:
+          type: integer
+          format: int32
+          default: 0
+          description: The number of executions that were skipped during aggregation
+            because they were invalid
     Metrics:
       type: object
       description: Aggregated metrics associated with entry versions
@@ -11476,18 +11444,17 @@ components:
       - validatorToolVersion
     ValidationStatusMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          validatorTools:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/ValidatorInfo'
+            description: A map containing key-value pairs indicating whether the validator
+              tool successfully validated the workflow
       description: Aggregated metrics about workflow validation statuses
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the count metrics in this webservice
-        validatorTools:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ValidatorInfo'
-          description: A map containing key-value pairs indicating whether the validator
-            tool successfully validated the workflow
       required:
       - validatorTools
     ValidatorInfo:
@@ -11771,8 +11738,6 @@ components:
             $ref: '#/components/schemas/Alias'
         archived:
           type: boolean
-        author:
-          type: string
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -11825,8 +11790,6 @@ components:
           - Julia
           - other
           - n/a
-        email:
-          type: string
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:

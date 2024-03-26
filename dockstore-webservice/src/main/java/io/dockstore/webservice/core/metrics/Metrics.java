@@ -39,7 +39,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "metrics")
 @ApiModel(value = "Metrics", description = "Aggregated metrics associated with entry versions")
-@Schema(name = "Metrics", description = "Aggregated metrics associated with entry versions", subTypes = { AggregatedExecution.class })
+@Schema(name = "Metrics", description = "Aggregated metrics associated with entry versions")
 public class Metrics {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OICR and UCSC
+ * Copyright 2023 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -25,16 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the `ValidExecutionId` constraint annotation, which
- * checks that execution ID is valid.
+ * Defines the `HasExecutions` constraint annotation, which
+ * checks that ExecutionsRequestBody has executions or metrics.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidExecutionIdValidator.class)
-public @interface ValidExecutionId {
-    String INVALID_EXECUTION_ID_MESSAGE = "must only consist of alphanumerics and internal underscores and hyphens, and be less than 100 characters";
+@Constraint(validatedBy = HasExecutionsOrMetricsValidator.class)
+public @interface HasExecutionsOrMetrics {
+    String MUST_CONTAIN_EXECUTIONS_OR_METRICS = "must contain executions, like RunExecutions or ValidationExecutions, or it must contain Metrics";
 
-    String message() default INVALID_EXECUTION_ID_MESSAGE;
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
+    String message() default MUST_CONTAIN_EXECUTIONS_OR_METRICS;
+    Class<?>[] groups () default {};
+    Class<? extends Payload>[] payload () default {};
 }

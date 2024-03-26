@@ -15,11 +15,13 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics;
+package io.dockstore.common.metrics;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @Schema(name = "Cost", description = "Cost represents a monetary amount in USD")
 public class Cost {
@@ -31,6 +33,8 @@ public class Cost {
     private String currency = DEFAULT_CURRENCY;
 
     @Schema(description = "The numerical value of the cost", example = "5.99")
+    @NotNull
+    @PositiveOrZero
     private Double value;
 
     @JsonCreator

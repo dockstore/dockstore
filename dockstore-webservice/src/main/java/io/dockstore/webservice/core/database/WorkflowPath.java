@@ -19,22 +19,17 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 
 /**
- * This class is only used to get data from the database in a more type-safe way
+ * This record is only used to get data from the database in a more type-safe way
  * @author gluu
  * @since 1.8.0
  */
-public class WorkflowPath {
-    private final BioWorkflow bioWorkflow = new BioWorkflow();
-
-    public WorkflowPath(SourceControl sourceControl, String organization, String repository, String workflowName) {
-        this.bioWorkflow.setSourceControl(sourceControl);
-        this.bioWorkflow.setOrganization(organization);
-        this.bioWorkflow.setRepository(repository);
-        this.bioWorkflow.setWorkflowName(workflowName);
-    }
-
+public record WorkflowPath(SourceControl sourceControl, String organization, String repository, String workflowName) {
     public BioWorkflow getBioWorkflow() {
+        final BioWorkflow bioWorkflow = new BioWorkflow();
+        bioWorkflow.setSourceControl(sourceControl);
+        bioWorkflow.setOrganization(organization);
+        bioWorkflow.setRepository(repository);
+        bioWorkflow.setWorkflowName(workflowName);
         return bioWorkflow;
     }
-
 }

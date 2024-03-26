@@ -15,19 +15,22 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics.constraints;
+package io.dockstore.common.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.common.metrics.FormatCheckHelper;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 /**
- * Validates that ExecutionsRequestBody has executions or metrics.
+ * Validates that execution time is in ISO 8601 UTC date format
  */
-public class HasExecutionsOrMetricsValidator implements ConstraintValidator<HasExecutionsOrMetrics, ExecutionsRequestBody> {
+public class ISO8601ExecutionDateValidator implements ConstraintValidator<ISO8601ExecutionDate, String> {
 
     @Override
-    public boolean isValid(final ExecutionsRequestBody executionsRequestBody, final ConstraintValidatorContext context) {
-        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getTaskExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
+    public boolean isValid(final String executionTime, final ConstraintValidatorContext context) {
+        if (executionTime == null) {
+            return false;
+        }
+        return FormatCheckHelper.checkExecutionDateISO8601Format(executionTime).isPresent();
     }
 }

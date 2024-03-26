@@ -668,12 +668,56 @@ class WebhookIT extends BaseIT {
         Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
         Workflow workflow = getFoobar1Workflow(client);
-        assertNull(workflow.getDefaultVersion());
+        // The default version should be set to the version named "master" because the branch "master" has
+        // been registered, and the source GitHub repo default branch is set to "master".  For more info, see:
+        // https://github.com/dockstore/dockstore/pull/5829
+        assertEquals("master", workflow.getDefaultVersion());
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.4", USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
         assertEquals("0.4", workflow2.getDefaultVersion(), "The new tag says the latest tag should be the default version");
         workflow = getFoobar1Workflow(client);
+        // See above comment.
+        assertEquals("master", workflow.getDefaultVersion());
+    }
+
+    private Workflow getFoobarWorkflowDockstoreTesting(WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+    }
+
+    @Test
+    void testAutomaticDefaultVersionMustMatchGitHubDefault() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
+        Workflow workflow = getFoobarWorkflowDockstoreTesting(client);
         assertNull(workflow.getDefaultVersion());
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
+        workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertEquals("master", workflow.getDefaultVersion());
+        assertEquals(2, workflow.getWorkflowVersions().size());
+    }
+
+    @Test
+    void testAutomaticDefaultVersionWontOverrideExistingDefault() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        // This release should not automatically set the default version, because the branch name doesn't
+        // match the GitHub default.
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
+        Workflow workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertNull(workflow.getDefaultVersion());
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        // Manually set the default version.
+        client.updateDefaultVersion1(workflow.getId(), "manualTopic");
+        workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertEquals("manualTopic", workflow.getDefaultVersion());
+        // This release should not set the default version, because although the branch name matches,
+        // the default version is already set.
+        handleGitHubRelease(client, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
+        workflow = getFoobarWorkflowDockstoreTesting(client);
+        assertEquals("manualTopic", workflow.getDefaultVersion());
+        assertEquals(2, workflow.getWorkflowVersions().size());
     }
 
     /**
@@ -1867,17 +1911,26 @@ class WebhookIT extends BaseIT {
         // Non-existent tag, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing tag with incorrect "after" SHA, should be ignored
+        // Existing annotated tag with incorrect "after" SHA, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing tag with correct "after" SHA, should succeed
-        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        // Existing annotated tag with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ff797c7dacd8c23a8ef89864ac5c50d9378cbec1");
         assertEquals(1, countVersions());
-        // Existing tag with no "after" SHA supplied, should succeed
+        // Existing annotated tag with no "after" SHA supplied, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(2, countVersions());
-        // There should be two ignored LambdaEvents
-        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10, null, null, null).stream().filter(LambdaEvent::isIgnored).count());
+        // Existing lightweight tag with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/tags/simple-lightweight-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(3, countVersions());
+        // Branch with incorrect "after" SHA, should be ignored
+        handleGitHubRelease(client, repo, "refs/heads/dont-ever-commit-to-this-branch", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(3, countVersions());
+        // Branch with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/heads/dont-ever-commit-to-this-branch", USER_2_USERNAME, "1e11133d732fe7d6e7682b6e4a99eaef5d14244c");
+        assertEquals(4, countVersions());
+        // There should be three ignored LambdaEvents
+        assertEquals(3, new UsersApi(webClient).getUserGitHubEvents(0, 10, null, null, null).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     /**

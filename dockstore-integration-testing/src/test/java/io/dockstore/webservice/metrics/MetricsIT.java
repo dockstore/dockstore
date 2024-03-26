@@ -17,11 +17,11 @@
 
 package io.dockstore.webservice.metrics;
 
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.ABORTED;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
-import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
+import static io.dockstore.common.metrics.ExecutionStatus.ABORTED;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_RUNTIME_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_SEMANTIC_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.SUCCESSFUL;
+import static io.dockstore.common.metrics.ValidationExecution.ValidatorTool.MINIWDL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

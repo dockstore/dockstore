@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import io.dockstore.common.Partner;
 import io.dockstore.common.S3ClientHelper;
+import io.dockstore.common.metrics.Execution;
+import io.dockstore.common.metrics.ExecutionsRequestBody;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -33,10 +35,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.metrics.Execution;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
-import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
@@ -50,6 +49,7 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -124,6 +124,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static WorkflowDAO workflowDAO = null;
     private static AppToolDAO appToolDAO = null;
     private static NotebookDAO notebookDAO = null;
+    private static WorkflowVersionDAO workflowVersionDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
     private static PublicStateManager publicStateManager = null;
@@ -147,6 +148,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setNotebookDAO(NotebookDAO notebookDAO) {
         ToolsApiExtendedServiceImpl.notebookDAO = notebookDAO;
+    }
+
+    public static void setWorkflowVersionDAO(WorkflowVersionDAO workflowVersionDAO) {
+        ToolsApiExtendedServiceImpl.workflowVersionDAO = workflowVersionDAO;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -440,12 +445,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         Optional<? extends Version<?>> versionOptional;
 
-        if (entry instanceof Workflow workflow) {
-            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
-            versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
-        } else if (entry instanceof Tool tool) {
-            Set<Tag> versions = tool.getWorkflowVersions();
-            versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+        if (entry instanceof Workflow || entry instanceof Tool) {
+            versionOptional = getVersion(entry, versionId);
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
@@ -632,7 +633,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
         ExecutionsRequestBodyS3Handler executionsRequestBodyS3Handler = new ExecutionsRequestBodyS3Handler(id, versionId, platform, metricsDataS3Client);
         ExecutionsResponseBody executionsResponseBody = new ExecutionsResponseBody();
-        // AggregatedExecutions are deprecated and not updated
         List<? extends Execution> executionsToUpdate = Stream.of(executions.getRunExecutions(), executions.getTaskExecutions(), executions.getValidationExecutions())
                 .flatMap(List::stream)
                 .toList();
@@ -667,8 +667,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private Optional<? extends Version<?>> getVersion(Entry<?, ?> entry, String versionId) {
         Optional<? extends Version<?>> versionOptional = Optional.empty();
         if (entry instanceof Workflow workflow) {
-            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
-            versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+            versionOptional = Optional.ofNullable(workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionId));
         } else if (entry instanceof Tool tool) {
             Set<Tag> versions = tool.getWorkflowVersions();
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();

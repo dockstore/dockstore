@@ -1,0 +1,177 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2024 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.15.0">
+    <changeSet author="ktran (generated)" id="addNumberOfSkippedExecutions">
+        <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="metric_id_seq" startValue="1"/>
+        <sql dbms="postgresql">
+            <comment>Set the value of the metric_id_seq to the greatest value between statisticmetric_id_seq and countmetric_id_seq</comment>
+            SELECT setval('metric_id_seq', (SELECT last_value FROM statisticmetric_id_seq)) WHERE (SELECT last_value FROM metric_id_seq) &lt; (SELECT last_value FROM statisticmetric_id_seq);
+            SELECT setval('metric_id_seq', (SELECT last_value FROM countmetric_id_seq)) WHERE (SELECT last_value FROM metric_id_seq) &lt; (SELECT last_value FROM countmetric_id_seq);
+        </sql>
+        <createTable tableName="countmetric">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="countmetric_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="metric_pkey"/>
+            </column>
+            <column name="numberofskippedexecutions" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="statisticmetric">
+            <column name="average" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="maximum" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minimum" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofdatapointsforaverage" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit" type="VARCHAR(255)"/>
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="statisticmetric_pkey"/>
+            </column>
+        </createTable>
+        <sql dbms="postgresql">
+            INSERT INTO metric(id) SELECT id FROM validation_status;
+            INSERT INTO countmetric(id) SELECT id FROM validation_status;
+            INSERT INTO metric(id) SELECT id FROM execution_status;
+            INSERT INTO countmetric(id) SELECT id FROM execution_status;
+        </sql>
+        <!-- Migrate columns from cpu_metric to statisticmetric -->
+        <dropForeignKeyConstraint baseTableName="metrics_by_status" constraintName="fk_cpuid_metricsbystatus"/>
+        <sql dbms="postgresql">
+            CREATE TEMPORARY TABLE cpu_metric_ids_to_update AS
+            WITH cpu_metric_ids AS (
+                SELECT id AS oldid, nextval('metric_id_seq') AS newid
+                FROM cpu_metric
+            )
+            SELECT * FROM cpu_metric_ids;
+
+            UPDATE cpu_metric SET id = (SELECT newid FROM cpu_metric_ids_to_update WHERE id = oldid);
+            UPDATE metrics_by_status SET cpuid = (SELECT newid FROM cpu_metric_ids_to_update WHERE cpuid = oldid);
+            INSERT INTO statisticmetric(id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate) SELECT id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate FROM cpu_metric;
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="cpuid" baseTableName="metrics_by_status" constraintName="fk_cpuid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
+        <!-- Migrate columns from cost_metric to statisticmetric -->
+        <dropForeignKeyConstraint baseTableName="metrics_by_status" constraintName="fk_costid_metricsbystatus"/>
+        <sql dbms="postgresql">
+            CREATE TEMPORARY TABLE cost_metric_ids_to_update AS
+            WITH cost_metric_ids AS (
+                SELECT id AS oldid, nextval('metric_id_seq') AS newid
+                FROM cost_metric
+            )
+            SELECT * FROM cost_metric_ids;
+
+            UPDATE cost_metric SET id = (SELECT newid FROM cost_metric_ids_to_update WHERE id = oldid);
+            UPDATE metrics_by_status SET costid = (SELECT newid FROM cost_metric_ids_to_update WHERE costid = oldid);
+            INSERT INTO statisticmetric(id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate) SELECT id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate FROM cost_metric;
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="costid" baseTableName="metrics_by_status" constraintName="fk_costid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
+        <!-- Migrate columns from execution_time_metric to statisticmetric -->
+        <dropForeignKeyConstraint baseTableName="metrics_by_status" constraintName="fk_executiontimeid_metricsbystatus"/>
+        <sql dbms="postgresql">
+            CREATE TEMPORARY TABLE execution_time_metric_ids_to_update AS
+            WITH execution_time_metric_ids AS (
+                SELECT id AS oldid, nextval('metric_id_seq') AS newid
+                FROM execution_time_metric
+            )
+            SELECT * FROM execution_time_metric_ids;
+
+            UPDATE execution_time_metric SET id = (SELECT newid FROM execution_time_metric_ids_to_update WHERE id = oldid);
+            UPDATE metrics_by_status SET executiontimeid = (SELECT newid FROM execution_time_metric_ids_to_update WHERE executiontimeid = oldid);
+            INSERT INTO statisticmetric(id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate) SELECT id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate FROM execution_time_metric;
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="executiontimeid" baseTableName="metrics_by_status" constraintName="fk_executiontimeid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
+        <!-- Migrate columns from memory_metric to statisticmetric -->
+        <dropForeignKeyConstraint baseTableName="metrics_by_status" constraintName="fk_memoryid_metricsbystatus"/>
+        <sql dbms="postgresql">
+            CREATE TEMPORARY TABLE memory_metric_ids_to_update AS
+            WITH memory_metric_ids AS (
+                SELECT id AS oldid, nextval('metric_id_seq') AS newid
+                FROM memory_metric
+            )
+            SELECT * FROM memory_metric_ids;
+
+            UPDATE memory_metric SET id = (SELECT newid FROM memory_metric_ids_to_update WHERE id = oldid);
+            UPDATE metrics_by_status SET memoryid = (SELECT newid FROM memory_metric_ids_to_update WHERE memoryid = oldid);
+            INSERT INTO statisticmetric(id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate) SELECT id, average, maximum, minimum, numberofdatapointsforaverage, unit, dbcreatedate, dbupdatedate FROM memory_metric;
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="memoryid" baseTableName="metrics_by_status" constraintName="fk_memoryid_metricsbystatus" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
+        <sql dbms="postgresql">
+            INSERT INTO metric(id) SELECT id FROM statisticmetric;
+        </sql>
+
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="countmetric" constraintName="fk_countmetric_metric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="validation_status" constraintName="fk_validationstatus_countmetric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="countmetric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="execution_status" constraintName="fk_executionstatus_countmetric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="countmetric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="statisticmetric" constraintName="fk_statisticmetric_metric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="cpu_metric" constraintName="fk_cpumetric_statisticmetric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="statisticmetric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="memory_metric" constraintName="fk_memorymetric_statisticmetric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="statisticmetric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="cost_metric" constraintName="fk_costmetric_statisticmetric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="statisticmetric"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="execution_time_metric" constraintName="fk_executiontimemetric_statisticmetric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="statisticmetric"/>
+
+        <dropColumn columnName="average" tableName="cost_metric"/>
+        <dropColumn columnName="average" tableName="cpu_metric"/>
+        <dropColumn columnName="average" tableName="execution_time_metric"/>
+        <dropColumn columnName="average" tableName="memory_metric"/>
+        <dropColumn columnName="dbcreatedate" tableName="cost_metric"/>
+        <dropColumn columnName="dbcreatedate" tableName="cpu_metric"/>
+        <dropColumn columnName="dbcreatedate" tableName="execution_status"/>
+        <dropColumn columnName="dbcreatedate" tableName="execution_time_metric"/>
+        <dropColumn columnName="dbcreatedate" tableName="memory_metric"/>
+        <dropColumn columnName="dbcreatedate" tableName="validation_status"/>
+        <dropColumn columnName="dbupdatedate" tableName="cost_metric"/>
+        <dropColumn columnName="dbupdatedate" tableName="cpu_metric"/>
+        <dropColumn columnName="dbupdatedate" tableName="execution_status"/>
+        <dropColumn columnName="dbupdatedate" tableName="execution_time_metric"/>
+        <dropColumn columnName="dbupdatedate" tableName="memory_metric"/>
+        <dropColumn columnName="dbupdatedate" tableName="validation_status"/>
+        <dropColumn columnName="maximum" tableName="cost_metric"/>
+        <dropColumn columnName="maximum" tableName="cpu_metric"/>
+        <dropColumn columnName="maximum" tableName="execution_time_metric"/>
+        <dropColumn columnName="maximum" tableName="memory_metric"/>
+        <dropColumn columnName="minimum" tableName="cost_metric"/>
+        <dropColumn columnName="minimum" tableName="cpu_metric"/>
+        <dropColumn columnName="minimum" tableName="execution_time_metric"/>
+        <dropColumn columnName="minimum" tableName="memory_metric"/>
+        <dropColumn columnName="numberofdatapointsforaverage" tableName="cost_metric"/>
+        <dropColumn columnName="numberofdatapointsforaverage" tableName="cpu_metric"/>
+        <dropColumn columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
+        <dropColumn columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
+        <dropColumn columnName="unit" tableName="cost_metric"/>
+        <dropColumn columnName="unit" tableName="cpu_metric"/>
+        <dropColumn columnName="unit" tableName="execution_time_metric"/>
+        <dropColumn columnName="unit" tableName="memory_metric"/>
+        <dropSequence sequenceName="countmetric_id_seq"/>
+        <dropSequence sequenceName="statisticmetric_id_seq"/>
+    </changeSet>
+</databaseChangeLog>

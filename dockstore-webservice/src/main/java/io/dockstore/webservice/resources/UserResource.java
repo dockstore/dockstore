@@ -43,6 +43,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -55,8 +56,8 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
-import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.UserInfo;
+import io.dockstore.webservice.core.database.WorkflowSummary;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -122,6 +123,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -623,7 +625,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
+        return convertWorkflowSummariesToWorkflows(bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()), BioWorkflow::new);
     }
 
     @GET
@@ -640,9 +642,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        List<Workflow> appTools = appToolDAO.findMyEntries(fetchedUser.getId()).stream().map(AppTool.class::cast).collect(Collectors.toList());
-        EntryVersionHelper.stripContentFromEntries(appTools, this.userDAO);
-        return appTools;
+        return convertWorkflowSummariesToWorkflows(appToolDAO.findUserAppTools(fetchedUser.getId()), AppTool::new);
     }
 
     @GET
@@ -659,25 +659,23 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        List<Workflow> notebooks = notebookDAO.findMyEntries(fetchedUser.getId()).stream().map(Workflow.class::cast).toList();
-        EntryVersionHelper.stripContentFromEntries(notebooks, this.userDAO);
-        return notebooks;
+        return convertWorkflowSummariesToWorkflows(notebookDAO.findUserNotebooks(fetchedUser.getId()), Notebook::new);
     }
 
-    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
+    private List<Workflow> convertWorkflowSummariesToWorkflows(List<WorkflowSummary> myWorkflows, Supplier<Workflow> workflowCreator) {
         List<Workflow> workflows = new ArrayList<>();
         myWorkflows.forEach(myWorkflow -> {
-            Workflow workflow = new BioWorkflow();
-            workflow.setOrganization(myWorkflow.getOrganization());
-            workflow.setId(myWorkflow.getId());
-            workflow.setSourceControl(myWorkflow.getSourceControl());
+            Workflow workflow = workflowCreator.get();
+            workflow.setOrganization(myWorkflow.organization());
+            workflow.setId(myWorkflow.id());
+            workflow.setSourceControl(myWorkflow.sourceControl());
             workflow.setIsPublished(myWorkflow.isPublished());
-            workflow.setWorkflowName(myWorkflow.getWorkflowName());
-            workflow.setRepository(myWorkflow.getRepository());
-            workflow.setMode(myWorkflow.getMode());
-            workflow.setGitUrl(myWorkflow.getGitUrl());
-            workflow.setDescription(myWorkflow.getDescription());
-            workflow.setArchived(myWorkflow.getArchived());
+            workflow.setWorkflowName(myWorkflow.workflowName());
+            workflow.setRepository(myWorkflow.repository());
+            workflow.setMode(myWorkflow.workflowMode());
+            workflow.setGitUrl(myWorkflow.gitUrl());
+            workflow.setDescription(myWorkflow.description());
+            workflow.setArchived(myWorkflow.archived());
             workflows.add(workflow);
         });
         return workflows;
@@ -1111,7 +1109,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             addUserToReposInOrgsWhereUserIsAMember(user, sourceControl, sourceCodeRepo);
             addUserToReposWithRepoLevelMembership(user, sourceControl, sourceCodeRepo);
         });
-        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
+        return convertWorkflowSummariesToWorkflows(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()), BioWorkflow::new);
     }
 
     /**

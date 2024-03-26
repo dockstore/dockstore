@@ -528,7 +528,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         try {
             // Retrieve the "current" head commit.
-            String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, reference);
+            String currentCommit = getCurrentHash(gitHubSourceCodeRepo, repository, reference);
             LOG.info("afterCommit={}, currentCommit={}", afterCommit, currentCommit);
             // Process the push iff the "current" and "after" commit hashes are equal.
             // If the repo's "current" hash doesn't match the event's "after" hash, the repo has changed since the event was created.
@@ -545,7 +545,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private boolean shouldProcessDelete(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference) {
         try {
             // Process the delete if the reference does not exist (there is no head commit).
-            return getHeadCommit(gitHubSourceCodeRepo, repository, reference) == null;
+            return getCurrentHash(gitHubSourceCodeRepo, repository, reference) == null;
         } catch (CustomWebApplicationException ex) {
             // If there's a problem determining if the delete needs processing, assume it does.
             LOG.info("CustomWebApplicationException determining whether to process delete", ex);
@@ -553,8 +553,21 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String reference) {
-        return repo.getCommitID(repository, reference);
+    /**
+     * Retrieve a hash from GitHub for the specified reference.
+     * If the reference is to a branch, return the branch HEAD commit hash.
+     * If the reference is to a tag, return the hash that the tag refers to, which is either:
+     * A commit hash (if the reference is to a lightweight tag), or
+     * The tag object hash (if the reference is to an annotated tag).
+     * The returned value should match the value of the `after` hash field in a GitHub push event,
+     * if the repository has not changed since the push occurred.
+     */
+    private String getCurrentHash(GitHubSourceCodeRepo repo, String repository, String reference) {
+        if (StringUtils.startsWith(reference, "refs/tags/")) {
+            return repo.getHash(repository, reference);
+        } else {
+            return repo.getCommitID(repository, reference);
+        }
     }
 
     /**
@@ -645,14 +658,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     transactionHelper.transaction(() -> {
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
-                        final var defaultVersion = wf.getLatestTagAsDefault();
+                        final boolean latestTagAsDefault = wf.getLatestTagAsDefault();
                         final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
                         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
                         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
-                        WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                        WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
+
 
                         // Create some events.
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
@@ -975,18 +989,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             // Update verification information.
             updatedWorkflowVersion.updateVerified();
+
             // Update file formats for the version and then the entry.
             // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
-            Set<WorkflowVersion> workflowVersions = new HashSet<>();
-            workflowVersions.add(updatedWorkflowVersion);
-            FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+            FileFormatHelper.updateFileFormats(workflow, Set.of(updatedWorkflowVersion), fileFormatDAO, false);
 
-            // Set the default version, if necessary.
-            boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
-                            .before(updatedWorkflowVersion.getLastModified());
-            if (latestTagAsDefault && Version.ReferenceType.TAG.equals(updatedWorkflowVersion.getReferenceType()) && addedVersionIsNewer) {
-                workflow.setActualDefaultVersion(updatedWorkflowVersion);
-            }
+            // If this version corresponds to the latest tag, make it the default version, if appropriate.
+            setDefaultVersionToLatestTagIfAppropriate(latestTagAsDefault, workflow, updatedWorkflowVersion);
+
+            // If this version corresponds to the GitHub default branch, make it the default version, if appropriate.
+            setDefaultVersionToGitHubDefaultIfAppropriate(latestTagAsDefault, workflow, updatedWorkflowVersion, gitHubSourceCodeRepo, repository);
 
             // Log that we've successfully added the version.
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
@@ -1055,6 +1067,32 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return Version.ReferenceType.TAG;
         } else {
             return Version.ReferenceType.NOT_APPLICABLE;
+        }
+    }
+
+    private void setDefaultVersionToLatestTagIfAppropriate(boolean latestTagAsDefault, Workflow workflow, WorkflowVersion version) {
+        boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null
+            || workflow.getActualDefaultVersion().getLastModified().before(version.getLastModified());
+        if (latestTagAsDefault
+            && Version.ReferenceType.TAG.equals(version.getReferenceType())
+            && addedVersionIsNewer
+        ) {
+            LOG.info("default version set to latest tag " + version.getName());
+            workflow.setActualDefaultVersion(version);
+        }
+    }
+
+    private void setDefaultVersionToGitHubDefaultIfAppropriate(boolean latestTagAsDefault, Workflow workflow, WorkflowVersion version, GitHubSourceCodeRepo gitHubSourceCodeRepo, String repositoryId) {
+        // If the default version isn't set, the latest tag is not the default, the version is a branch,
+        // and the version's name is the same as the GitHub repo's default branch name, use this version
+        // as the workflow's default version.
+        if (workflow.getActualDefaultVersion() == null
+            && !latestTagAsDefault
+            && Objects.equals(version.getReferenceType(), Version.ReferenceType.BRANCH)
+            && Objects.equals(version.getName(), gitHubSourceCodeRepo.getDefaultBranch(repositoryId))
+        ) {
+            LOG.info("default version set to GitHub default branch " + version.getName());
+            workflow.setActualDefaultVersion(version);
         }
     }
 

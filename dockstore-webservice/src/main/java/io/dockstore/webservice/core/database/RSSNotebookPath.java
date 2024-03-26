@@ -20,19 +20,16 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Notebook;
 import java.util.Date;
 
-public class RSSNotebookPath {
-    private final Notebook notebook = new Notebook();
-
-    public RSSNotebookPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
-        this.notebook.setSourceControl(sourceControl);
-        this.notebook.setOrganization(organization);
-        this.notebook.setRepository(repository);
-        this.notebook.setWorkflowName(entryName);
-        this.notebook.setLastUpdated(lastUpdated);
-        this.notebook.setDescription(description);
-    }
+public record RSSNotebookPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
 
     public Notebook getNotebook() {
+        Notebook notebook = new Notebook();
+        notebook.setSourceControl(sourceControl);
+        notebook.setOrganization(organization);
+        notebook.setRepository(repository);
+        notebook.setWorkflowName(entryName);
+        notebook.setLastUpdated(lastUpdated);
+        notebook.setDescription(description);
         return notebook;
     }
 }

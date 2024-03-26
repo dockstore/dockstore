@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.dockstore.common.Partner;
+import io.dockstore.common.metrics.ExecutionsRequestBody;
 import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.common.metrics.MetricsDataS3Client;
 import java.io.IOException;

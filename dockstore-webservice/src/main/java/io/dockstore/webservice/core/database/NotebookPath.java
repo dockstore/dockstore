@@ -17,17 +17,14 @@ package io.dockstore.webservice.core.database;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Notebook;
 
-public class NotebookPath {
-    private final Notebook notebook = new Notebook();
-
-    public NotebookPath(SourceControl sourceControl, String organization, String repository, String notebookName) {
-        this.notebook.setSourceControl(sourceControl);
-        this.notebook.setOrganization(organization);
-        this.notebook.setRepository(repository);
-        this.notebook.setWorkflowName(notebookName);
-    }
+public record NotebookPath (SourceControl sourceControl, String organization, String repository, String notebookName) {
 
     public Notebook getNotebook() {
+        Notebook notebook = new Notebook();
+        notebook.setSourceControl(sourceControl);
+        notebook.setOrganization(organization);
+        notebook.setRepository(repository);
+        notebook.setWorkflowName(notebookName);
         return notebook;
     }
 }

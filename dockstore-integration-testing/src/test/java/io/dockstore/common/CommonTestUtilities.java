@@ -32,6 +32,7 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
@@ -90,7 +91,7 @@ public final class CommonTestUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
     public static final String OLD_DOCKSTORE_VERSION = "1.13.0";
     public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
-            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0");
+            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstore.yml").orElse(null);
@@ -489,7 +490,7 @@ public final class CommonTestUtilities {
                             "update token set content = '" + cachedToken.getContent() + "', dbUpdateDate = '" + cachedToken.getDbUpdateDate().toLocalDateTime().toString() + "' where id = "
                                 + cachedToken.getId());
                     }
-                } catch (IOException | UncheckedIOException e) {
+                } catch (IOException | UncheckedIOException | JsonSyntaxException e) {
                     // probably ok
                     LOG.debug("could not read bitbucket token", e);
                 }
