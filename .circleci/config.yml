@@ -243,7 +243,6 @@ jobs:
           name: build
           command: ./mvnw -B clean install -DskipTests
       - run:
-      - run:
           name: validate openapi
           command: |
             wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
