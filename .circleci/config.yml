@@ -253,7 +253,7 @@ jobs:
           name: Check Java imports sorted
           # A dirty Java file after a build probably means it was committed without building, and its imports are out of order
           command: |
-            if [[ $(git diff --name-only | grep "\.java$) != '' ]]; then
+            if [[ $(git diff --name-only | grep "\.java$") != '' ]]; then
               echo "At least one Java file didn't have its imports sorted"
               git diff
               exit 1
