@@ -34,6 +34,7 @@ class DiagnosticsHelperTest {
 
     @BeforeAll
     static void setup() {
+        // Create a logger that saves the `messagePattern` argument to the `output` field, so we can examine its value.
         Logger logger = new AbstractLogger() {
             @Override
             protected void handleNormalizedLoggingCall(Level level, Marker marker, String messagePattern, Object[] arguments, Throwable throwable) {
@@ -95,10 +96,11 @@ class DiagnosticsHelperTest {
 
     @Test
     void testCensoringWithExamples() {
-        confirmPassed("7236463");  // short decimal string
-        confirmPassed("af081afb609d");  // short hex string
-        confirmPassed("K11/sjsbWU3+");  // short base64-ish string
-        confirmPassed("/This/Is/A/Test/Of/The/Censoring/System");  // path that contains only base64 characters
+        // All of the secrets below are fake, they are not actual keys/tokens/etc.
+        confirmPassed("7236463");  // Short decimal string.
+        confirmPassed("af081afb609d");  // Short hex string.
+        confirmPassed("K11/sjsbWU3+");  // Short base64-ish string.
+        confirmPassed("/This/Is/A/Test/Of/The/Censoring/System");  // Path that contains only base64 characters.
         confirmCensored("f893b559e572f323b5369452752d56743970e39132136aff378b76492c7549dd");
         confirmCensored("039832784664398210947231904282437420197091837413209843");
         confirmCensored("Lp0+12I8Xlqhi18KDzzdXFUDrSJWV8GxwmivwQf9thRI1/k8Ec3G4t7Hxoz8fEgG");
