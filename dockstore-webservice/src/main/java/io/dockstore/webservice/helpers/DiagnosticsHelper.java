@@ -158,7 +158,7 @@ public final class DiagnosticsHelper {
     }
 
     public void log(String type, Supplier<String> valueSupplier) {
-        if (logger.isInfoEnabled()) {
+        if (logger.isDebugEnabled()) {
             Thread current = Thread.currentThread();
             String message = String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
             logger.debug(censorHelper.censor(message));
