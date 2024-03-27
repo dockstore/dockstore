@@ -104,10 +104,9 @@ class DiagnosticsHelperTest {
         confirmCensored("Lp0+12I8Xlqhi18KDzzdXFUDrSJWV8GxwmivwQf9thRI1/k8Ec3G4t7Hxoz8fEgG");
         confirmCensored("Qz2OJicD0w__J__deT42-DjtfrTG3ZOD0rP0PchWyPQXVpL96sXJQYm");
         confirmCensored("KmqLbmoBq8cuQUu8rwIVXCSyafM+oakMEqf3z75Cr9");
-        Assertions.assertTrue(log("a string with QnDn/5VCnYI7hbeM9Xet9zYSFV2GaiTI7TmXUqE/2ljDtvFVbRB7CRWMqQz+ embedded").endsWith(
-            "a string with XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX embedded"));
-        Assertions.assertTrue(log("fYEJEaL4oECNDCwPOwZHqBlC4+3BjF3Xc4XxDhM two! d3MNbsl4ubApX5ZMoWMm4XsH7No7Q/qoBoQym8M").endsWith(
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX two! XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"));
+        Assertions.assertTrue(log("a string with QnDn/5VCnYI7hbeM9Xet9zYSFV2GaiTI7TmXUqE/2ljDtvFVbRB7CRWMqQz+ embedded").endsWith("a string with XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX embedded"), "should censor embedded secret");
+        Assertions.assertTrue(log("fYEJEaL4oECNDCwPOwZHqBlC4+3BjF3Xc4XxDhM two! d3MNbsl4ubApX5ZMoWMm4XsH7No7Q/qoBoQym8M").endsWith("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX two! XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"), "should censor multiple secrets");
+        Assertions.assertTrue(log("line 1\nline 2 LGC1ocepkOTQp48MkI5CF64xbMlSU5Efud/2UUCca8Lzycwq04QgGZIsi8cACp4VO9YsUEkV\nline 3").endsWith("line 1\nline 2 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\nline 3"), "should censor a secret in a multiline string");
     }
 
     @Test
