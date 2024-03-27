@@ -551,6 +551,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return (Workflow) updateDefaultVersionHelper(version, workflowId, user);
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/defaultVersion2")
+    @Operation(operationId = "updateDefaultVersion", description = "Update the default version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Update the default version of a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
+    public Workflow updateDefaultVersion2(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "Version name to set as default", required = true) String version) {
+        return (Workflow) updateDefaultVersionHelper(version, workflowId, user);
+    }
+
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
