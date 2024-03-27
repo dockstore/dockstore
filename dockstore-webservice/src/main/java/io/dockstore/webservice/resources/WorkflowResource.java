@@ -2139,17 +2139,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
             @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
+        final String addedAction = InstallationRepositoriesPayload.Action.ADDED.toString();
+        final String removedAction = InstallationRepositoriesPayload.Action.REMOVED.toString();
         final String action = payload.getAction();
         // Currently, the action can be either "added" or "removed".
+        // https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#installation_repositories
         // This check is not necessary, but will detect if github adds another type of action to the event.
-        if (!List.of("added", "removed").contains(action)) {
+        if (!List.of(addedAction, removedAction).contains(action)) {
             LOG.error("Unexpected action in installation payload");
             return Response.status(HttpStatus.SC_BAD_REQUEST).build();
         }
 
         final long installationId = payload.getInstallation().getId();
         final String username = payload.getSender().getLogin();
-        final boolean added = "added".equals(action);
+        final boolean added = addedAction.equals(action);
         final List<String> repositories = (added ? payload.getRepositoriesAdded() : payload.getRepositoriesRemoved())
             .stream().map(WebhookRepository::getFullName).toList();
 
