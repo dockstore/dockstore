@@ -17,6 +17,11 @@
 
 package io.dockstore.webservice.helpers;
 
+import static org.apache.commons.lang3.CharSet.ASCII_ALPHA;
+import static org.apache.commons.lang3.CharSet.ASCII_ALPHA_LOWER;
+import static org.apache.commons.lang3.CharSet.ASCII_ALPHA_UPPER;
+import static org.apache.commons.lang3.CharSet.ASCII_NUMERIC;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -130,10 +135,10 @@ public class CensorHelper {
     }
 
     private int characterClass(char c) {
-        if (c >= '0' && c <= '9') {
+        if (ASCII_NUMERIC.contains(c)) {
             return 0;
         }
-        if (c >= 'A' && c <= 'Z') {
+        if (ASCII_ALPHA_UPPER.contains(c)) {
             return 1;
         }
         return 2;
@@ -159,14 +164,14 @@ public class CensorHelper {
     }
 
     private static boolean isAlpha(char c) {
-        return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
+        return ASCII_ALPHA.contains(c);
     }
 
     private static int index(char c) {
-        if (c >= 'a' && c <= 'z') {
+        if (ASCII_ALPHA_LOWER.contains(c)) {
             return c - 'a';
         }
-        if (c >= 'A' && c <= 'Z') {
+        if (ASCII_ALPHA_UPPER.contains(c)) {
             return c - 'A';
         }
         return 0;
