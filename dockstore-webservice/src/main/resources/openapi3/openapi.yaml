@@ -7680,33 +7680,6 @@ paths:
       - BEARER: []
       tags:
       - workflows
-  /workflows/{workflowId}/defaultVersion2:
-    put:
-      description: Update the default version of a workflow.
-      operationId: updateDefaultVersion_2
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - workflows
   /workflows/{workflowId}/descriptor/{relative-path}:
     get:
       description: Get the corresponding descriptor file from source control.
