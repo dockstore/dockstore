@@ -124,7 +124,7 @@ public class CensorHelper {
 
     private long calculateEnglishPoints(String s) {
 
-        int points = 0;
+        long points = 0;
         for (int i = 0, n = s.length() - 2; i < n; i++) {
             char a = s.charAt(i);
             char b = s.charAt(i + 1);
