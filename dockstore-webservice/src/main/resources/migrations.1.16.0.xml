@@ -174,4 +174,21 @@
         <dropSequence sequenceName="countmetric_id_seq"/>
         <dropSequence sequenceName="statisticmetric_id_seq"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="allowLongerTopics">
+        <modifyDataType columnName="topicai" newDataType="varchar(250)" tableName="apptool"/>
+        <modifyDataType columnName="topicai" newDataType="varchar(250)" tableName="notebook"/>
+        <modifyDataType columnName="topicai" newDataType="varchar(250)" tableName="service"/>
+        <modifyDataType columnName="topicai" newDataType="varchar(250)" tableName="tool"/>
+        <modifyDataType columnName="topicai" newDataType="varchar(250)" tableName="workflow"/>
+        <modifyDataType columnName="topicautomatic" newDataType="varchar(250)" tableName="apptool"/>
+        <modifyDataType columnName="topicautomatic" newDataType="varchar(250)" tableName="notebook"/>
+        <modifyDataType columnName="topicautomatic" newDataType="varchar(250)" tableName="service"/>
+        <modifyDataType columnName="topicautomatic" newDataType="varchar(250)" tableName="tool"/>
+        <modifyDataType columnName="topicautomatic" newDataType="varchar(250)" tableName="workflow"/>
+        <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="apptool"/>
+        <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="notebook"/>
+        <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="service"/>
+        <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="tool"/>
+        <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="workflow"/>
+    </changeSet>
 </databaseChangeLog>

@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import io.dockstore.common.Partner;
 import io.dockstore.common.metrics.ExecutionsRequestBody;
+import io.dockstore.webservice.api.UpdateAITopicRequest;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.api.NotFoundException;
@@ -49,4 +50,5 @@ public abstract class ToolsExtendedApiService {
     public abstract Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) throws NotFoundException;
     public abstract Response getExecution(String id, String versionId, Partner platform, String executionId, User user) throws NotFoundException;
     public abstract Response updateExecutionMetrics(String id, String versionId, Partner platform, User user, String description, ExecutionsRequestBody executionId);
+    public abstract Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest);
 }

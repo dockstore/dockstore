@@ -302,8 +302,8 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
+        testingPostgres.runUpdateStatement(String.format("update notebook set topicai = '%s' where id = %s", aiTopic, notebook.getId()));
         notebook.setTopicSelection(aiSelection);
-        notebook.setTopicAI(aiTopic);
         workflowsApi.updateWorkflow(notebook.getId(), notebook);
         Workflow updatedNotebook = workflowsApi.getWorkflow(notebook.getId(), null);
         assertEquals(aiSelection, updatedNotebook.getTopicSelection());

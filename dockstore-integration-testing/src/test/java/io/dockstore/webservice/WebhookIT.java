@@ -2034,8 +2034,8 @@ class WebhookIT extends BaseIT {
         assertEquals(TopicSelectionEnum.MANUAL, foobar2.getTopicSelection(), "Topic selection should still be manual");
 
         // Update topic selection to AI for workflow 'foobar'.
+        testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + foobar.getId());
         foobar.setTopicSelection(TopicSelectionEnum.AI);
-        foobar.setTopicAI("AI topic");
         workflowClient.updateWorkflow(foobar.getId(), foobar);
 
         // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
