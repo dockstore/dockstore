@@ -494,6 +494,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.15</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-core</artifactId>
       <version>1.6.8</version>
