@@ -2139,12 +2139,28 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
             @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
+        final String addedAction = InstallationRepositoriesPayload.Action.ADDED.toString();
+        final String removedAction = InstallationRepositoriesPayload.Action.REMOVED.toString();
+        final String action = payload.getAction();
+        // Currently, the action can be either "added" or "removed".
+        // https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#installation_repositories
+        // This check is not necessary, but will detect if github adds another type of action to the event.
+        if (!List.of(addedAction, removedAction).contains(action)) {
+            LOG.error("Unexpected action in installation payload");
+            return Response.status(HttpStatus.SC_BAD_REQUEST).build();
+        }
+
         final long installationId = payload.getInstallation().getId();
         final String username = payload.getSender().getLogin();
-        final List<String> repositories = payload.getRepositoriesAdded().stream().map(WebhookRepository::getFullName).toList();
+        final boolean added = addedAction.equals(action);
+        final List<String> repositories = (added ? payload.getRepositoriesAdded() : payload.getRepositoriesRemoved())
+            .stream().map(WebhookRepository::getFullName).toList();
 
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(String.join(", ", repositories)), Utilities.cleanForLogging(username)));
+            LOG.info(String.format("GitHub app %s the repositories %s (%s)",
+                added ? "installed on" : "uninstalled from",
+                Utilities.cleanForLogging(String.join(", ", repositories)),
+                Utilities.cleanForLogging(username)));
         }
 
         // record installation event as lambda event
@@ -2156,20 +2172,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             lambdaEvent.setOrganization(splitRepository[0]);
             lambdaEvent.setRepository(splitRepository[1]);
             lambdaEvent.setGithubUsername(username);
-            lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
+            lambdaEvent.setType(added ? LambdaEvent.LambdaEventType.INSTALL : LambdaEvent.LambdaEventType.UNINSTALL);
             triggerUser.ifPresent(lambdaEvent::setUser);
             lambdaEventDAO.create(lambdaEvent);
         });
-        // make some educated guesses whether we should try to retrospectively release some old versions
-        // note that for large organizations, this loop could be quite large if many repositories are added at the same time
-        for (String repository: repositories) {
-            final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
-            for (String gitReference: strings) {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                        Utilities.cleanForLogging(username)));
+
+        if (added) {
+            // make some educated guesses whether we should try to retrospectively release some old versions
+            // note that for large organizations, this loop could be quite large if many repositories are added at the same time
+            for (String repository: repositories) {
+                final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
+                for (String gitReference: strings) {
+                    if (LOG.isInfoEnabled()) {
+                        LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                            Utilities.cleanForLogging(username)));
+                    }
+                    githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
                 }
-                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
