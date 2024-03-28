@@ -53,6 +53,10 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
+      - run_full_build:
+          <<: *common_filters
+          requires:
+            - build
       - unit_test:
           <<: *common_filters
           requires:
@@ -60,28 +64,28 @@ workflows:
       - workflow-integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - run_full_build
           context: sonarcloud
       - bitbucket-tests:
           <<: *common_filters
           requires:
-            - build
+            - run_full_build
       - language-parsing-tests:
           <<: *common_filters
           requires:
-            - build
+            - run_full_build
       - localstack-tests:
           <<: *common_filters
           requires:
-            - build
+            - run_full_build
       - tool-integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - run_full_build
       - integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - run_full_build
       - regression-integration-tests:
           filters:
             branches:
@@ -89,7 +93,7 @@ workflows:
                 - master
                 - /^release.*$/
           requires:
-            - build
+            - run_full_build
       - sonar-cloud:
           <<: *common_filters
           requires:
@@ -102,7 +106,25 @@ workflows:
             - integration-tests
             - regression-integration-tests
           context: sonarcloud
+
 jobs:
+  run_full_build:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+    steps:
+      - checkout
+      - run:
+          name: evaluate [skipTests] condition
+          command: |
+            echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
+            source $BASH_ENV
+            echo "Commit message: $COMMIT_MESSAGE"
+            if [[ $COMMIT_MESSAGE =~ ^.*\[skipTests\].*$ ]]; then
+              echo "Found [skipTests]: failing this check to skip subsequent CircleCI tests."
+              exit 1
+            else
+              echo "Did not find [skipTests]: continue running subsequent CircleCI tests."
+            fi
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
