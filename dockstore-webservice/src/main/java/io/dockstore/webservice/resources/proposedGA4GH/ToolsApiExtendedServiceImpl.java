@@ -662,6 +662,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         if (StringUtils.isEmpty(entry.getTopicManual()) && StringUtils.isEmpty(entry.getTopicAutomatic())) {
             entry.setTopicSelection(TopicSelection.AI);
         }
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+
         return Response.noContent().build();
     }
 
