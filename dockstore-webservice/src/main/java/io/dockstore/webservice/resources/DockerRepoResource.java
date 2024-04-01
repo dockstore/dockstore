@@ -816,6 +816,7 @@ public class DockerRepoResource
     public List<Tool> getPublishedContainerByPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, true);
+        checkNotNull(tools, "Invalid repository path");
         filterContainersForHiddenTags(tools);
         checkCanRead(null, tools);
         return tools;
@@ -832,6 +833,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
+        checkNotNull(tools, "Invalid repository path");
         tools.forEach(tool -> checkCanExamine(user, tool));
         return tools;
     }
@@ -951,7 +953,7 @@ public class DockerRepoResource
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor language", required = true) @QueryParam("language") DescriptorLanguage language) {
-        checkNotNullParameter(language, "Language is required");
+        checkNotNull(language, "Language is required");
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
@@ -966,15 +968,9 @@ public class DockerRepoResource
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
-        checkNotNullParameter(descriptorLanguage, "DescriptorLanguage is required");
+        checkNotNull(descriptorLanguage, "DescriptorLanguage is required");
         final FileType testParameterType = descriptorLanguage.getTestParamType();
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
-    }
-
-    private void checkNotNullParameter(Object parameter, String nullMessage) {
-        if (parameter == null) {
-            throw new CustomWebApplicationException(nullMessage, HttpStatus.SC_BAD_REQUEST);
-        }
     }
 
     @Override
