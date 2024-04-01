@@ -949,7 +949,9 @@ public class DockerRepoResource
     @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @ApiParam(value = "Descriptor language", required = true) @QueryParam("language") DescriptorLanguage language) {
+        checkNotNullParameter(language, "Language is required");
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
@@ -964,8 +966,15 @@ public class DockerRepoResource
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+        checkNotNullParameter(descriptorLanguage, "DescriptorLanguage is required");
         final FileType testParameterType = descriptorLanguage.getTestParamType();
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
+    }
+
+    private void checkNotNullParameter(Object parameter, String nullMessage) {
+        if (parameter == null) {
+            throw new CustomWebApplicationException(nullMessage, HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @Override
