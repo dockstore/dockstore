@@ -116,6 +116,10 @@ jobs:
             echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
             source $BASH_ENV
             echo "Commit message: $COMMIT_MESSAGE"
+            if [[ $CIRCLE_BRANCH == "develop" ]]; then
+              echo "On develop branch: ignoring [skipTests] check to ensure the full build is run."
+              exit 0
+            fi
             if [[ $COMMIT_MESSAGE =~ ^.*\[skipTests\].*$ ]]; then
               echo "Found [skipTests]: failing this check to skip subsequent CircleCI tests."
               exit 1
