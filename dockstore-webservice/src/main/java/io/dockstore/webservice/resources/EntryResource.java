@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -35,6 +36,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
@@ -45,6 +47,7 @@ import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -134,6 +137,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
+    private final LambdaEventDAO lambdaEventDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
@@ -224,6 +228,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -308,9 +313,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private void updateArchived(boolean archive, User user, Entry<?, ?> entry) {
         checkNotNullEntry(entry);
-        if (!isAdmin(user)) {
-            checkIsOwner(user, entry);
-        }
+        checkIsOwnerOrAdmin(user, entry);
+
         if (entry.isArchived() != archive) {
             entry.setArchived(archive);
             eventDAO.archiveEvent(archive, user, entry);
@@ -379,6 +383,27 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
+    }
+
+    @GET
+    @Path("/{entryId}/syncing")
+    @UnitOfWork
+    @Operation(operationId = "isSyncing", description = "Is this entry being updated automatically when the source repository changes?", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public boolean isSyncing(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+        checkNotNullEntry(entry);
+        checkIsOwnerOrAdmin(user, entry);
+
+        // If the entry is not a .dockstore.yml-based Workflow, it's not being automatically updated.
+        if (!(entry instanceof Workflow workflow) || workflow.getMode() != WorkflowMode.DOCKSTORE_YML) {
+            return false;
+        }
+
+        List<LambdaEvent> latest = lambdaEventDAO.findByOrganization(workflow.getOrganization(), 0, 1, null, "", "", Optional.of(List.of(workflow.getRepository())));
+        // If the Workflow exists in our database, the GitHub App must have been installed previously.
+        // Return false only when the last LambdaEvent is an UNINSTALL, conclusively indicating that the GitHub App has been uninstalled and not since reinstalled.
+        return latest.isEmpty() || latest.get(0).getType() != LambdaEvent.LambdaEventType.UNINSTALL;
     }
 
     @GET

@@ -3148,6 +3148,30 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{entryId}/syncing:
+    get:
+      description: Is this entry being updated automatically when the source repository
+        changes?
+      operationId: isSyncing
+      parameters:
+      - description: id of the entry
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/verifiedPlatforms:
     get:
       description: Get the verified platforms for each version of an entry.

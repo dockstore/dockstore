@@ -183,6 +183,14 @@ public interface AuthenticatedResourceInterface {
         throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if the specified user owns an entry or is an admin.
+     * If not, throw a {@link CustomWebApplicationException}.
+     */
+    default void checkIsOwnerOrAdmin(User user, Entry<?, ?> entry) {
+        throwIf(!(isOwner(user, entry) || isAdmin(user)), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
     default void checkNotArchived(Entry<?, ?> entry) {
         throwIf(entry.isArchived(), FORBIDDEN_WRITE_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
