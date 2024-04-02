@@ -2101,28 +2101,6 @@ paths:
       - BEARER: []
       tags:
       - containers
-  /containers/schema/{containerId}/published:
-    get:
-      description: Get a published tool's schema by ID.
-      operationId: getPublishedContainerSchema
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-          description: default response
-      tags:
-      - containers
   /containers/tags:
     get:
       description: List the tags for a tool.
