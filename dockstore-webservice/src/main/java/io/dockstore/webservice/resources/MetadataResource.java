@@ -339,6 +339,9 @@ public class MetadataResource {
             @Parameter(name = "output", description = "Response type", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "text", allowableValues = {"json", "text"}))
             @ApiParam(value = "Response type", allowableValues = "json, text") @DefaultValue("text") @QueryParam("output") String output,
             @Context ContainerRequestContext containerRequestContext) {
+        if (clientVersion == null) {
+            throw new CustomWebApplicationException("client_version is required", HttpStatus.SC_BAD_REQUEST);
+        }
         if (!("cwltool").equals(runner)) {
             return Response.noContent().build();
         }
