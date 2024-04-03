@@ -76,6 +76,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -951,9 +952,8 @@ public class DockerRepoResource
     @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public List<SourceFile> secondaryDescriptors(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @Parameter(description = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @Parameter(description = "Descriptor language", required = true) @QueryParam("language") DescriptorLanguage language) {
-        checkNotNull(language, "Descriptor language is required");
+        @Parameter(description = "Tool id") @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @Parameter(description = "Descriptor language") @NotNull @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
@@ -966,9 +966,8 @@ public class DockerRepoResource
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public List<SourceFile> getTestParameterFiles(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @Parameter(description = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @Parameter(description = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
-        checkNotNull(descriptorLanguage, "Descriptor Type is required");
+        @Parameter(description = "Tool id") @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @Parameter(description = "Descriptor Type") @NotNull @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
         final FileType testParameterType = descriptorLanguage.getTestParamType();
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
     }
