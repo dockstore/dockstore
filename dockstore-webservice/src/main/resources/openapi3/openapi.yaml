@@ -4362,6 +4362,7 @@ paths:
       - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
+        required: true
         schema:
           type: string
           pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
