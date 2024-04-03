@@ -100,7 +100,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -500,7 +499,9 @@ public class MetadataResource {
                 LOG.error(errorMessage);
                 throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
             }
-            results = new HashSet<>(include).stream().collect(Collectors.toMap(name -> name, name -> healthCheckRegistry.runHealthCheck(name)));
+            // Run each of the health checks, making sure that if a duplicate name is specified, the corresponding
+            // health check is only run once, to avoid the toMap Collector from throwing due to a duplicate key.
+            results = include.stream().distinct().collect(Collectors.toMap(name -> name, name -> healthCheckRegistry.runHealthCheck(name)));
         }
 
         allHealthy = results.values().stream().allMatch(HealthCheck.Result::isHealthy);
