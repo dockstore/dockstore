@@ -950,10 +950,10 @@ public class DockerRepoResource
     @Operation(operationId = "secondaryDescriptors", description = "Get a list of secondary descriptor files.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @ApiParam(value = "Descriptor language", required = true) @QueryParam("language") DescriptorLanguage language) {
-        checkNotNull(language, "Language is required");
+    public List<SourceFile> secondaryDescriptors(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @Parameter(description = "Descriptor language", required = true) @QueryParam("language") DescriptorLanguage language) {
+        checkNotNull(language, "Descriptor language is required");
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
@@ -965,10 +965,10 @@ public class DockerRepoResource
     @Operation(operationId = "getTestParameterFiles", description = "Get the corresponding test parameter files.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
-        checkNotNull(descriptorLanguage, "DescriptorLanguage is required");
+    public List<SourceFile> getTestParameterFiles(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @Parameter(description = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+        checkNotNull(descriptorLanguage, "Descriptor Type is required");
         final FileType testParameterType = descriptorLanguage.getTestParamType();
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
     }
