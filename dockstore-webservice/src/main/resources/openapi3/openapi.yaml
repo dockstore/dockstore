@@ -7317,7 +7317,8 @@ paths:
       description: Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
-      - in: path
+      - description: repository path
+        in: path
         name: repository
         required: true
         schema:
@@ -7712,7 +7713,8 @@ paths:
       description: Get the corresponding descriptor file from source control.
       operationId: secondaryDescriptorPath_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7729,6 +7731,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -7824,7 +7827,8 @@ paths:
       description: Get the primary descriptor file.
       operationId: primaryDescriptor_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7836,8 +7840,18 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
+          enum:
+          - SMK
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+          - jupyter
       responses:
         default:
           content:
@@ -8026,7 +8040,8 @@ paths:
       description: Get the corresponding descriptor documents from source control.
       operationId: secondaryDescriptors_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -8038,6 +8053,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:

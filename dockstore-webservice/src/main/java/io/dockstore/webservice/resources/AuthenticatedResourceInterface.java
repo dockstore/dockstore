@@ -176,6 +176,16 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if the specified value is not null.
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param value value to be checked
+     * @param nullMessage message to be used in thrown Exception
+     */
+    default void checkNotNull(Object value, String nullMessage) {
+        throwIf(value == null, nullMessage, HttpStatus.SC_BAD_REQUEST);
+    }
+
+    /**
      * Check if the specified user owns an entry.
      * If not, throw a {@link CustomWebApplicationException}.
      */

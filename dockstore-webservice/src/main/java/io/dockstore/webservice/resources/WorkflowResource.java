@@ -104,6 +104,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -1064,10 +1065,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getAllWorkflowByPath", value = "Get a list of workflows by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Do not include workflow name.", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public List<Workflow> getAllWorkflowByPath(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "repository path") @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
-        workflows.forEach(this::checkNotNullEntry);
+        checkNotNull(workflows, "Invalid repository path");
         checkCanRead(user, workflows);
         return workflows;
     }
@@ -1078,9 +1079,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/path/{repository}/published")
     @Operation(operationId = "getAllPublishedWorkflowByPath", summary = "Get a list of published workflows by path.", description = "Do not include workflow name.",
             security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<Workflow> getAllPublishedWorkflowByPath(@Parameter(description = "repository path", required = true) @PathParam("repository") String path) {
-        List<Workflow> workflows = Optional.ofNullable(workflowDAO.findAllByPath(path, true)).orElse(List.of());
-        workflows.forEach(this::checkNotNullEntry);
+    public List<Workflow> getAllPublishedWorkflowByPath(@Parameter(description = "repository path") @PathParam("repository") String path) {
+        List<Workflow> workflows = workflowDAO.findAllByPath(path, true);
+        checkNotNull(workflows, "Invalid repository path");
         return workflows;
     }
 
@@ -1126,10 +1127,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "primaryDescriptor", description = "Get the primary descriptor file.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "primaryDescriptor", value = "Get the primary descriptor file.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-        @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+    public SourceFile primaryDescriptor(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Workflow id") @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag,
+        @NotNull @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getSourceFile(workflowId, tag, fileType, user, fileDAO, versionDAO);
     }
 
@@ -1140,9 +1143,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "secondaryDescriptorPath", description = "Get the corresponding descriptor file from source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptorPath", value = "Get the corresponding descriptor file from source control.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path, @QueryParam("language") DescriptorLanguage language) {
+    public SourceFile secondaryDescriptorPath(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Workflow id") @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag,
+        @PathParam("relative-path") String path,
+        @NotNull @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO, versionDAO);
     }
@@ -1154,8 +1160,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "secondaryDescriptors", description = "Get the corresponding descriptor documents from source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptors", value = "Get the corresponding descriptor documents from source control.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+    public List<SourceFile> secondaryDescriptors(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Workflow id") @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag,
+        @NotNull @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO, versionDAO);
     }
