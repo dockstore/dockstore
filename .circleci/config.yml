@@ -121,7 +121,7 @@ jobs:
             echo "$(git log --format=oneline -n 1 $CIRCLE_SHA1)"
             echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1 | sed 's/\"/\\\"/g')\"" >> $BASH_ENV
             source $BASH_ENV
-            echo "Commit message: $COMMIT_MESSAGE"
+            echo "Commit message $COMMIT_MESSAGE"
             if [[ $CIRCLE_BRANCH == "develop" ]]; then
               echo "On develop branch: ignoring [skipTests] check to ensure the full build is run."
               exit 0
