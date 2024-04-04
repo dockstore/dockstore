@@ -53,12 +53,10 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-          requires:
-            - full_build_check # testing purposes
       - full_build_check:
           <<: *common_filters
-          # requires:
-          #   - build
+          requires:
+            - build
       - unit_test:
           <<: *common_filters
           requires:
@@ -118,7 +116,6 @@ jobs:
       - run:
           name: evaluate [skipTests] condition
           command: |
-            echo "$(git log --format=oneline -n 1 $CIRCLE_SHA1)"
             echo "export COMMIT_MESSAGE=\"$(git log --format=oneline -n 1 $CIRCLE_SHA1 | sed 's/\"/\\\"/g')\"" >> $BASH_ENV
             source $BASH_ENV
             echo "Commit message: $COMMIT_MESSAGE"
