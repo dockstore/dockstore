@@ -2427,7 +2427,8 @@ paths:
       description: Get a list of secondary descriptor files.
       operationId: secondaryDescriptors
       parameters:
-      - in: path
+      - description: Tool id
+        in: path
         name: containerId
         required: true
         schema:
@@ -2437,8 +2438,10 @@ paths:
         name: tag
         schema:
           type: string
-      - in: query
+      - description: Descriptor language
+        in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -2740,7 +2743,8 @@ paths:
       description: Get the corresponding test parameter files.
       operationId: getTestParameterFiles
       parameters:
-      - in: path
+      - description: Tool id
+        in: path
         name: containerId
         required: true
         schema:
@@ -2750,8 +2754,10 @@ paths:
         name: tag
         schema:
           type: string
-      - in: query
+      - description: Descriptor Type
+        in: query
         name: descriptorType
+        required: true
         schema:
           type: string
           enum:
