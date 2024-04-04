@@ -392,7 +392,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "False if the entry is conclusively not being updated, true otherwise.",
         content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Boolean.class)))
     public boolean isSyncing(
-        @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "id of the entry") @PathParam("entryId") Long entryId) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(entryId);
         checkNotNullEntry(entry);
