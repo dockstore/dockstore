@@ -403,7 +403,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             return false;
         }
 
-        List<LambdaEvent> latest = lambdaEventDAO.findByOrganization(workflow.getOrganization(), 0, 1, null, "", "", Optional.of(List.of(workflow.getRepository())));
+        List<LambdaEvent> latest = lambdaEventDAO.findByOrganization(workflow.getOrganization(), 0, 1, null, "dbCreateDate", "desc", Optional.of(List.of(workflow.getRepository())));
         // If the Workflow exists in our database, the GitHub App must have been installed at some point.
         // If the last LambdaEvent is an UNINSTALL, the GitHub App has been uninstalled and not since reinstalled.
         // Otherwise, either: a) the GitHub App is installed, or b) the last uninstall happened before we started logging uninstalls.
