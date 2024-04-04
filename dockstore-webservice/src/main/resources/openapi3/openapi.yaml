@@ -3162,12 +3162,13 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: boolean
-          description: default response
+          description: "False if the entry is conclusively not being updated, true\
+            \ otherwise."
       security:
       - BEARER: []
       tags:

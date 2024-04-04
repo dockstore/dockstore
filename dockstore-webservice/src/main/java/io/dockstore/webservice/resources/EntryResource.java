@@ -389,9 +389,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{entryId}/syncing")
     @UnitOfWork
     @Operation(operationId = "isSyncing", description = "Is this entry being updated automatically when the source repository changes?", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public boolean isSyncing(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
-        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "False if the entry is conclusively not being updated, true otherwise.",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Boolean.class)))
+    public boolean isSyncing(
+        @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(description = "id of the entry") @PathParam("entryId") Long entryId) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(entryId);
         checkNotNullEntry(entry);
         checkIsOwnerOrAdmin(user, entry);
 
@@ -401,8 +404,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         List<LambdaEvent> latest = lambdaEventDAO.findByOrganization(workflow.getOrganization(), 0, 1, null, "", "", Optional.of(List.of(workflow.getRepository())));
-        // If the Workflow exists in our database, the GitHub App must have been installed previously.
-        // Return false only when the last LambdaEvent is an UNINSTALL, conclusively indicating that the GitHub App has been uninstalled and not since reinstalled.
+        // If the Workflow exists in our database, the GitHub App must have been installed at some point.
+        // If the last LambdaEvent is an UNINSTALL, the GitHub App has been uninstalled and not since reinstalled.
+        // Otherwise, either: a) the GitHub App is installed, or b) the last uninstall happened before we started logging uninstalls.
         return latest.isEmpty() || latest.get(0).getType() != LambdaEvent.LambdaEventType.UNINSTALL;
     }
 
