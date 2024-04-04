@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public final class ValidationConstants {
 
-    public static final String ENTRY_NAME_REGEX = "[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*+";
+    public static final String ENTRY_NAME_REGEX = "[a-zA-Z0-9]++([-_]{1,2}+[a-zA-Z0-9]++)*+";
     public static final Pattern ENTRY_NAME_PATTERN = Pattern.compile(ENTRY_NAME_REGEX);
     public static final String ENTRY_NAME_REGEX_MESSAGE = "must only consist of alphanumerics and internal underscores and hyphens";
     public static final int ENTRY_NAME_LENGTH_MIN = 1;

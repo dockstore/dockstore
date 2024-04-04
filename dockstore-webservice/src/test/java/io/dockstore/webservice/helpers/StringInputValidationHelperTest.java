@@ -37,6 +37,13 @@ class StringInputValidationHelperTest {
         }
 
         try {
+            StringInputValidationHelper.checkEntryName(BioWorkflow.class, "foo---bar");
+            fail("Entry name with three successive hyphens should fail validation.");
+        } catch (CustomWebApplicationException ex) {
+            assertTrue(ex.getMessage().contains("Invalid workflow name"));
+        }
+
+        try {
             StringInputValidationHelper.checkEntryName(Service.class, "_foo_");
             fail("Entry name with external underscores should fail validation.");
         } catch (CustomWebApplicationException ex) {
@@ -62,6 +69,12 @@ class StringInputValidationHelperTest {
             StringInputValidationHelper.checkEntryName(BioWorkflow.class, "foo-bar_1");
         } catch (CustomWebApplicationException ex) {
             fail("Name with alphanumeric characters, internal hyphens and internal underscores should pass validation");
+        }
+
+        try {
+            StringInputValidationHelper.checkEntryName(BioWorkflow.class, "foo--bar__1");
+        } catch (CustomWebApplicationException ex) {
+            fail("Name with alphanumeric characters, pairs of internal hyphens and internal underscores should pass validation");
         }
     }
 }
