@@ -1,5 +1,5 @@
 
-Lists of 332 third-party dependencies.
+Lists of 327 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -25,10 +25,6 @@ Lists of 332 third-party dependencies.
      (The Apache Software License, Version 2.0) Apache HTTP transport v2 for the Google HTTP Client Library for Java. (com.google.http-client:google-http-client-apache-v2:1.41.8 - https://github.com/googleapis/google-http-java-client/google-http-client-apache-v2)
      (Apache License, Version 2.0) Apache HttpAsyncClient (org.apache.httpcomponents:httpasyncclient:4.1.4 - http://hc.apache.org/httpcomponents-asyncclient)
      (Apache License, Version 2.0) Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.14 - http://hc.apache.org/httpcomponents-client-ga)
-     (Apache License, Version 2.0) Apache HttpClient Cache (org.apache.httpcomponents:httpclient-cache:4.5.2 - http://hc.apache.org/httpcomponents-client)
-     (Apache License, Version 2.0) Apache HttpClient Fluent API (org.apache.httpcomponents:fluent-hc:4.5.2 - http://hc.apache.org/httpcomponents-client)
-     (Apache License, Version 2.0) Apache HttpClient Mime (org.apache.httpcomponents:httpmime:4.5.2 - http://hc.apache.org/httpcomponents-client)
-     (Apache License, Version 2.0) Apache HttpClient OSGi bundle (org.apache.httpcomponents:httpclient-osgi:4.5.2 - http://hc.apache.org/httpcomponents-client)
      (Apache License, Version 2.0) Apache HttpComponents Core HTTP/1.1 (org.apache.httpcomponents.core5:httpcore5:5.2.3 - https://hc.apache.org/httpcomponents-core-5.2.x/5.2.3/httpcore5/)
      (Apache License, Version 2.0) Apache HttpComponents Core HTTP/2 (org.apache.httpcomponents.core5:httpcore5-h2:5.2 - https://hc.apache.org/httpcomponents-core-5.2.x/5.2/httpcore5-h2/)
      (Apache License, Version 2.0) Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
@@ -235,7 +231,6 @@ Lists of 332 third-party dependencies.
      (The BSD License) JLine Bundle (org.jline:jline:3.21.0 - http://nexus.sonatype.org/oss-repository-hosting.html/jline-parent/jline)
      (Apache License, Version 2.0) Joda-Time (joda-time:joda-time:2.12.5 - https://www.joda.org/joda-time/)
      (Public Domain) JSON in Java (org.json:json:20231013 - https://github.com/douglascrockford/JSON-java)
-     (Revised BSD License) JSONLD Java :: Core (com.github.jsonld-java:jsonld-java:0.8.3 - http://github.com/jsonld-java/jsonld-java/jsonld-java/)
      (Apache License, Version 2.0) JSR 354 (Money and Currency API) (javax.money:money-api:1.1 - https://javamoney.github.io/)
      (MIT License) JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.9 - http://www.slf4j.org)
      (Apache License 2.0) JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.19 - https://metrics.dropwizard.io/metrics-jvm)

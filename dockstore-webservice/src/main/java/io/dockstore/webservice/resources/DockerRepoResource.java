@@ -514,16 +514,6 @@ public class DockerRepoResource
         return tools;
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/schema/{containerId}/published")
-    @Operation(operationId = "getPublishedContainerSchema", description = "Get a published tool's schema by ID.")
-    @ApiOperation(value = "Get a published tool's schema by ID.", notes = "NO authentication", responseContainer = "List")
-    public List getPublishedContainerSchema(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
-        return toolDAO.findPublishedSchemaById(containerId);
-    }
-
     @POST
     @Timed
     @UnitOfWork
