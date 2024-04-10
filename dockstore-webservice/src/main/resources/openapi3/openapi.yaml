@@ -538,6 +538,32 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/updateAITopic:
+    put:
+      description: Update a tool's AI topic.
+      operationId: updateAITopic
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAITopicRequest'
+        description: The update AI topic request
+        required: true
+      responses:
+        "204":
+          description: Successfully updated the tool's AI topic
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
     get:
       description: This endpoint retrieves aggregated metrics for a tool from all
@@ -1999,12 +2025,15 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+          minimum: 1
       - in: query
         name: filter
         schema:
@@ -2073,28 +2102,6 @@ paths:
           description: default response
       security:
       - BEARER: []
-      tags:
-      - containers
-  /containers/schema/{containerId}/published:
-    get:
-      description: Get a published tool's schema by ID.
-      operationId: getPublishedContainerSchema
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-          description: default response
       tags:
       - containers
   /containers/tags:
@@ -2401,7 +2408,8 @@ paths:
       description: Get a list of secondary descriptor files.
       operationId: secondaryDescriptors
       parameters:
-      - in: path
+      - description: Tool id
+        in: path
         name: containerId
         required: true
         schema:
@@ -2411,8 +2419,10 @@ paths:
         name: tag
         schema:
           type: string
-      - in: query
+      - description: Descriptor language
+        in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -2714,7 +2724,8 @@ paths:
       description: Get the corresponding test parameter files.
       operationId: getTestParameterFiles
       parameters:
-      - in: path
+      - description: Tool id
+        in: path
         name: containerId
         required: true
         schema:
@@ -2724,8 +2735,10 @@ paths:
         name: tag
         schema:
           type: string
-      - in: query
+      - description: Descriptor Type
+        in: query
         name: descriptorType
+        required: true
         schema:
           type: string
           enum:
@@ -4336,6 +4349,7 @@ paths:
       - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
+        required: true
         schema:
           type: string
           pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
@@ -7290,7 +7304,8 @@ paths:
       description: Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
-      - in: path
+      - description: repository path
+        in: path
         name: repository
         required: true
         schema:
@@ -7345,12 +7360,15 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+          minimum: 1
       - in: query
         name: filter
         schema:
@@ -7685,7 +7703,8 @@ paths:
       description: Get the corresponding descriptor file from source control.
       operationId: secondaryDescriptorPath_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7702,6 +7721,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -7797,7 +7817,8 @@ paths:
       description: Get the primary descriptor file.
       operationId: primaryDescriptor_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7809,8 +7830,18 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
+          enum:
+          - SMK
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+          - jupyter
       responses:
         default:
           content:
@@ -7999,7 +8030,8 @@ paths:
       description: Get the corresponding descriptor documents from source control.
       operationId: secondaryDescriptors_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -8011,6 +8043,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -9180,18 +9213,18 @@ components:
         topicAI:
           type: string
           description: Short description of the entry generated by AI
-          maxLength: 150
+          maxLength: 250
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
-          maxLength: 150
+          maxLength: 250
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
-          maxLength: 150
+          maxLength: 250
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -9310,18 +9343,18 @@ components:
         topicAI:
           type: string
           description: Short description of the entry generated by AI
-          maxLength: 150
+          maxLength: 250
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
-          maxLength: 150
+          maxLength: 250
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
-          maxLength: 150
+          maxLength: 250
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -9774,23 +9807,44 @@ components:
       - $ref: '#/components/schemas/Payload'
       - type: object
         properties:
+          action:
+            type: string
+            description: The action which the event describes
           repositories_added:
             type: array
             description: "An array of repository objects, which were added to the\
               \ installation"
             items:
               $ref: '#/components/schemas/WebhookRepository'
+          repositories_removed:
+            type: array
+            description: "An array of repository objects, which were removed from\
+              \ the installation"
+            items:
+              $ref: '#/components/schemas/WebhookRepository'
       description: A model for a GitHub webhook installation event
-      example:
-        sender:
-          login: string
-        installation:
-          id: 0
-        repositories_added:
-        - full_name: dockstore/dockstore-ui2
+      example: |
+        {
+          "sender": {
+            "login": "string"
+          },
+          "action": "added",
+          "installation": {
+            "id": 0
+          },
+          "repositories_added": [
+            {
+              "full_name": "dockstore/dockstore-ui2"
+            }
+          ]
+          "repositories_removed": [
+          ]
+        }
       required:
+      - action
       - installation
       - repositories_added
+      - repositories_removed
       - sender
     Label:
       type: object
@@ -9838,6 +9892,7 @@ components:
           - PUSH
           - DELETE
           - INSTALL
+          - UNINSTALL
           - PUBLISH
     Language:
       type: object
@@ -11291,6 +11346,15 @@ components:
       required:
       - id
       - url
+    UpdateAITopicRequest:
+      type: object
+      description: The AI topic update request
+      properties:
+        aiTopic:
+          type: string
+          description: The AI topic
+      required:
+      - aiTopic
     User:
       type: object
       properties:
@@ -11880,18 +11944,18 @@ components:
         topicAI:
           type: string
           description: Short description of the entry generated by AI
-          maxLength: 150
+          maxLength: 250
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
-          maxLength: 150
+          maxLength: 250
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
-          maxLength: 150
+          maxLength: 250
         topicSelection:
           type: string
           description: Which topic to display to the public users

@@ -102,6 +102,14 @@ The Swagger UI is reachable while the Dockstore webservice is running. This allo
 
 1. Browse to [http://localhost:8080/static/swagger-ui/index.html](http://localhost:8080/static/swagger-ui/index.html)
 
+### Commits using `[skipTests]`
+If you would like to save build minutes on CircleCI (particularly for changes that do not affect code), consider adding 
+the `[skipTests]` tag to your commit message. When included in the most recent commit, a partial CI pipeline will be run,
+consisting of only the build and unit tests.
+
+`[skipTests]` acts as an alternative to `[skip ci]`, which is provided by CircleCI. This is because our automatic 
+deployment process requires a build to be run on every tag.
+
 
 ## Development
 

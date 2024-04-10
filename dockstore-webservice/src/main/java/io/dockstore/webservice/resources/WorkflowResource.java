@@ -104,6 +104,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -166,6 +169,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
+    private static final long MAX_PAGINATION_LIMIT = 100;
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
@@ -570,8 +574,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
+        // Only manual topics can be updated by users. Automatic and AI topics are not submitted by users
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
-        oldWorkflow.setTopicAI(newWorkflow.getTopicAI());
 
         // Update topic selection if it's a non-hosted workflow, or if it's a hosted workflow and the new topic selection is not automatic.
         // Hosted workflows don't have a source control thus cannot have an automatic topic.
@@ -817,9 +821,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         "workflows"}, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows(
         @ApiParam(value = "Start index of paging. If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.",
-                defaultValue = "0") @DefaultValue("0") @QueryParam("offset") Integer offset,
+                defaultValue = "0") @Min(0) @DefaultValue("0") @QueryParam("offset") Integer offset,
         @ApiParam(value = "Amount of records to return in a given page, limited to "
-            + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
@@ -1064,10 +1068,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getAllWorkflowByPath", value = "Get a list of workflows by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Do not include workflow name.", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public List<Workflow> getAllWorkflowByPath(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "repository path") @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
-        workflows.forEach(this::checkNotNullEntry);
+        checkNotNull(workflows, "Invalid repository path");
         checkCanRead(user, workflows);
         return workflows;
     }
@@ -1078,9 +1082,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/path/{repository}/published")
     @Operation(operationId = "getAllPublishedWorkflowByPath", summary = "Get a list of published workflows by path.", description = "Do not include workflow name.",
             security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<Workflow> getAllPublishedWorkflowByPath(@Parameter(description = "repository path", required = true) @PathParam("repository") String path) {
-        List<Workflow> workflows = Optional.ofNullable(workflowDAO.findAllByPath(path, true)).orElse(List.of());
-        workflows.forEach(this::checkNotNullEntry);
+    public List<Workflow> getAllPublishedWorkflowByPath(@Parameter(description = "repository path") @PathParam("repository") String path) {
+        List<Workflow> workflows = workflowDAO.findAllByPath(path, true);
+        checkNotNull(workflows, "Invalid repository path");
         return workflows;
     }
 
@@ -1126,10 +1130,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "primaryDescriptor", description = "Get the primary descriptor file.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "primaryDescriptor", value = "Get the primary descriptor file.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-        @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+    public SourceFile primaryDescriptor(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Workflow id") @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag,
+        @NotNull @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getSourceFile(workflowId, tag, fileType, user, fileDAO, versionDAO);
     }
 
@@ -1140,9 +1146,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "secondaryDescriptorPath", description = "Get the corresponding descriptor file from source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptorPath", value = "Get the corresponding descriptor file from source control.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path, @QueryParam("language") DescriptorLanguage language) {
+    public SourceFile secondaryDescriptorPath(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Workflow id") @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag,
+        @PathParam("relative-path") String path,
+        @NotNull @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO, versionDAO);
     }
@@ -1154,8 +1163,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "secondaryDescriptors", description = "Get the corresponding descriptor documents from source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptors", value = "Get the corresponding descriptor documents from source control.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+    public List<SourceFile> secondaryDescriptors(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Workflow id") @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag,
+        @NotNull @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO, versionDAO);
     }
@@ -2139,12 +2151,28 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
             @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
+        final String addedAction = InstallationRepositoriesPayload.Action.ADDED.toString();
+        final String removedAction = InstallationRepositoriesPayload.Action.REMOVED.toString();
+        final String action = payload.getAction();
+        // Currently, the action can be either "added" or "removed".
+        // https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#installation_repositories
+        // This check is not necessary, but will detect if github adds another type of action to the event.
+        if (!List.of(addedAction, removedAction).contains(action)) {
+            LOG.error("Unexpected action in installation payload");
+            return Response.status(HttpStatus.SC_BAD_REQUEST).build();
+        }
+
         final long installationId = payload.getInstallation().getId();
         final String username = payload.getSender().getLogin();
-        final List<String> repositories = payload.getRepositoriesAdded().stream().map(WebhookRepository::getFullName).toList();
+        final boolean added = addedAction.equals(action);
+        final List<String> repositories = (added ? payload.getRepositoriesAdded() : payload.getRepositoriesRemoved())
+            .stream().map(WebhookRepository::getFullName).toList();
 
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(String.join(", ", repositories)), Utilities.cleanForLogging(username)));
+            LOG.info(String.format("GitHub app %s the repositories %s (%s)",
+                added ? "installed on" : "uninstalled from",
+                Utilities.cleanForLogging(String.join(", ", repositories)),
+                Utilities.cleanForLogging(username)));
         }
 
         // record installation event as lambda event
@@ -2156,20 +2184,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             lambdaEvent.setOrganization(splitRepository[0]);
             lambdaEvent.setRepository(splitRepository[1]);
             lambdaEvent.setGithubUsername(username);
-            lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
+            lambdaEvent.setType(added ? LambdaEvent.LambdaEventType.INSTALL : LambdaEvent.LambdaEventType.UNINSTALL);
             triggerUser.ifPresent(lambdaEvent::setUser);
             lambdaEventDAO.create(lambdaEvent);
         });
-        // make some educated guesses whether we should try to retrospectively release some old versions
-        // note that for large organizations, this loop could be quite large if many repositories are added at the same time
-        for (String repository: repositories) {
-            final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
-            for (String gitReference: strings) {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                        Utilities.cleanForLogging(username)));
+
+        if (added) {
+            // make some educated guesses whether we should try to retrospectively release some old versions
+            // note that for large organizations, this loop could be quite large if many repositories are added at the same time
+            for (String repository: repositories) {
+                final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
+                for (String gitReference: strings) {
+                    if (LOG.isInfoEnabled()) {
+                        LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                            Utilities.cleanForLogging(username)));
+                    }
+                    githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
                 }
-                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();

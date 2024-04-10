@@ -147,7 +147,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
     public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
-    private static final int TOPIC_LENGTH = 150;
+    private static final int TOPIC_LENGTH = 250;
 
     /**
      * re-use existing generator for backwards compatibility
@@ -801,7 +801,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicAutomatic(String topicAutomatic) {
-        this.topicAutomatic = StringUtils.abbreviate(topicAutomatic, TOPIC_LENGTH);
+        this.topicAutomatic = abbreviateTopic(topicAutomatic);
     }
 
     public String getTopicManual() {
@@ -809,7 +809,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicManual(String topicManual) {
-        this.topicManual = topicManual;
+        this.topicManual = abbreviateTopic(topicManual);
     }
 
     public String getTopicAI() {
@@ -817,7 +817,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicAI(String topicAI) {
-        this.topicAI = topicAI;
+        this.topicAI = abbreviateTopic(topicAI);
+    }
+
+    /**
+     * Abbreviates the topic string using ellipses if it exceeds the maximum topic length allowed.
+     * @param topic
+     * @return
+     */
+    public String abbreviateTopic(String topic) {
+        return StringUtils.abbreviate(topic, TOPIC_LENGTH);
     }
 
     public String getTopic() {

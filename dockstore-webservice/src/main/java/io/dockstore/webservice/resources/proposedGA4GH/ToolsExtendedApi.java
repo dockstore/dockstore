@@ -20,6 +20,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 import io.dockstore.common.Partner;
 import io.dockstore.common.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.api.UpdateAITopicRequest;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
@@ -334,6 +335,21 @@ public class ToolsExtendedApi {
         @RequestBody(description = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.updateExecutionMetrics(id, versionId, platform, user, description, executions);
+    }
+
+    @PUT
+    @UnitOfWork
+    @Path("/{id}/updateAITopic")
+    @RolesAllowed({"curator", "admin"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "updateAITopic", description = "Update a tool's AI topic.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully updated the tool's AI topic")
+    public Response updateAITopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @Parameter(description = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true, in = ParameterIn.PATH) @PathParam("id") String id,
+            @RequestBody(description = "The update AI topic request", required = true, content = @Content(schema = @Schema(implementation = UpdateAITopicRequest.class))) UpdateAITopicRequest updateAITopicRequest,
+            @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+
+        return delegate.updateAITopic(id, updateAITopicRequest);
     }
 
     private static final class ExecutionMetricsUpdate {

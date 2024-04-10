@@ -8,6 +8,7 @@ import static io.dockstore.webservice.helpers.GitHubAppHelper.LAMBDA_ERROR;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubBranchDeletion;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstallation;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubUninstallation;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -423,6 +424,14 @@ class WebhookIT extends BaseIT {
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, workflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, toolName, false);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Track uninstall event
+        handleGitHubUninstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.UNINSTALL, true); // There should be no entry name
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
     }
 
     /**
@@ -2034,8 +2043,8 @@ class WebhookIT extends BaseIT {
         assertEquals(TopicSelectionEnum.MANUAL, foobar2.getTopicSelection(), "Topic selection should still be manual");
 
         // Update topic selection to AI for workflow 'foobar'.
+        testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + foobar.getId());
         foobar.setTopicSelection(TopicSelectionEnum.AI);
-        foobar.setTopicAI("AI topic");
         workflowClient.updateWorkflow(foobar.getId(), foobar);
 
         // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
