@@ -143,7 +143,7 @@ class DiagnosticsHelperTest {
 
     private String log(String input) {
         output = null;
-        helper.log("type", () -> input);
+        helper.log(Level.INFO, "type", () -> input);
         return output;
     }
 

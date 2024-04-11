@@ -58,6 +58,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.SessionStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 public final class DiagnosticsHelper {
 
@@ -100,7 +101,7 @@ public final class DiagnosticsHelper {
             new Timer("diagnostics", true).scheduleAtFixedRate(
                 new TimerTask() {
                     public void run() {
-                        logGlobals();
+                        logGlobals(Level.DEBUG);
                     }
                 }, periodMilliseconds, periodMilliseconds);
             LOG.info(String.format("logging diagnostic information every %d seconds", periodSeconds));
@@ -115,34 +116,34 @@ public final class DiagnosticsHelper {
         }
     }
 
-    public void logGlobals() {
-        logFilesystems();
-        logDatabase();
-        logMemory();
+    public void logGlobals(Level level) {
+        logFilesystems(level);
+        logDatabase(level);
+        logMemory(level);
     }
 
-    public void logThreads() {
-        log("threads", () -> formatThreads());
+    public void logThreads(Level level) {
+        log(level, "threads", () -> formatThreads());
     }
 
-    public void logFilesystems() {
-        log("filesystems", () -> formatFilesystems());
+    public void logFilesystems(Level level) {
+        log(level, "filesystems", () -> formatFilesystems());
     }
 
-    public void logDatabase() {
-        log("database", () -> formatDatabase());
+    public void logDatabase(Level level) {
+        log(level, "database", () -> formatDatabase());
     }
 
-    public void logMemory() {
-        log("memory", () -> formatMemory());
+    public void logMemory(Level level) {
+        log(level, "memory", () -> formatMemory());
     }
 
-    public void logStart(ContainerRequest request) {
-        log("start", () -> formatRequest(request));
+    public void logStart(Level level, ContainerRequest request) {
+        log(level, "start", () -> formatRequest(request));
     }
 
-    public void logFinish(ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user, Optional<Method> resourceMethod) {
-        log("finish", () -> formatRequest(request)
+    public void logFinish(Level level, ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user, Optional<Method> resourceMethod) {
+        log(level, "finish", () -> formatRequest(request)
             + formatUser(user)
             + formatResourceMethod(resourceMethod)
             + formatResponse(response)
@@ -150,12 +151,10 @@ public final class DiagnosticsHelper {
             + formatSession(sessionState));
     }
 
-    public void log(String type, Supplier<String> valueSupplier) {
-        if (logger.isDebugEnabled()) {
-            Thread current = Thread.currentThread();
-            String message = String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
-            logger.debug(message);
-        }
+    public void log(Level level, String type, Supplier<String> valueSupplier) {
+        Thread current = Thread.currentThread();
+        Supplier<String> messageSupplier = () -> String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
+        logger.atLevel(level).log(messageSupplier);
     }
 
     public String formatThreads() {
@@ -347,7 +346,7 @@ public final class DiagnosticsHelper {
 
                 // Request started.
                 case START:
-                    logStart(request);
+                    logStart(Level.INFO, request);
                     break;
 
                 // Done filtering response.
@@ -359,7 +358,7 @@ public final class DiagnosticsHelper {
 
                 // Request finished.
                 case FINISHED:
-                    logFinish(request, response, startThreadState, getThreadState(), sessionState, user, resourceMethod);
+                    logFinish(Level.INFO, request, response, startThreadState, getThreadState(), sessionState, user, resourceMethod);
                     break;
 
                 // Do nothing for other events.
