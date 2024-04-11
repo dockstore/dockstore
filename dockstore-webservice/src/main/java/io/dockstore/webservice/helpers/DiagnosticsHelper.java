@@ -73,7 +73,6 @@ public final class DiagnosticsHelper {
     private DockstoreWebserviceConfiguration.DiagnosticsConfig config;
 
     private Logger logger;
-    private CensorHelper censorHelper;
     private MemoryMXBean memoryMXBean;
     private ThreadMXBean threadMXBean;
 
@@ -83,7 +82,6 @@ public final class DiagnosticsHelper {
 
     public DiagnosticsHelper(Logger logger) {
         this.logger = logger;
-        this.censorHelper = new CensorHelper(readFrequencies());
         // Initialize the beans that we know are singletons, just in case there are performance issues with repeatedly retrieving them.
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
         this.threadMXBean = ManagementFactory.getThreadMXBean();
@@ -118,7 +116,6 @@ public final class DiagnosticsHelper {
     }
 
     public void logGlobals() {
-        logProcesses();
         logFilesystems();
         logDatabase();
         logMemory();
@@ -126,10 +123,6 @@ public final class DiagnosticsHelper {
 
     public void logThreads() {
         log("threads", () -> formatThreads());
-    }
-
-    public void logProcesses() {
-        log("processes", () -> formatProcesses());
     }
 
     public void logFilesystems() {
@@ -161,16 +154,12 @@ public final class DiagnosticsHelper {
         if (logger.isDebugEnabled()) {
             Thread current = Thread.currentThread();
             String message = String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
-            logger.debug(censorHelper.censor(message));
+            logger.debug(message);
         }
     }
 
     public String formatThreads() {
         return concat(Arrays.asList(threadMXBean.dumpAllThreads(true, true)));
-    }
-
-    public String formatProcesses() {
-        return outputFromCommand("ps -A -O ppid,ruser,pri,pcpu,pmem,rss");
     }
 
     public String formatFilesystems() {
