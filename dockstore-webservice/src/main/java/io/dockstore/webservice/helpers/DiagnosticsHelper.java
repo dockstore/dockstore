@@ -153,7 +153,7 @@ public final class DiagnosticsHelper {
 
     public void log(Level level, String type, Supplier<String> valueSupplier) {
         Thread current = Thread.currentThread();
-        Supplier<String> messageSupplier = () -> String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getId(), valueSupplier.get());
+        Supplier<String> messageSupplier = () -> String.format("diagnostics.%s by thread \"%s\" (%s):\n%s", type, current.getName(), current.getName(), valueSupplier.get());
         logger.atLevel(level).log(messageSupplier);
     }
 
@@ -246,25 +246,6 @@ public final class DiagnosticsHelper {
             return null;
         }
         return DigestUtils.sha256Hex(s.toString()).substring(0, length);
-    }
-
-    private Map<String, Double> readFrequencies() {
-        Map<String, Double> tripletToFrequency = new HashMap<>();
-        String content;
-        try {
-            content = Resources.toString(Resources.getResource("english_triplet_frequencies.txt"), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading frequency file", e);
-        }
-        for (String line: content.split("\n")) {
-            String[] fields = line.split(",");
-            tripletToFrequency.put(fields[0], Double.parseDouble(fields[1]));
-        }
-        // Adjust the frequencies for some Dockstore-related terms.
-        for (String term: List.of("cwl", "wdl", "nfl", "trs")) {
-            tripletToFrequency.put(term, tripletToFrequency.get("the"));
-        }
-        return tripletToFrequency;
     }
 
     private ThreadState getThreadState() {
