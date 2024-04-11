@@ -2121,30 +2121,30 @@ class WebhookIT extends BaseIT {
         final long id = workflow.getId();
 
         // Should indicate that the entry is syncing
-        assertTrue(entriesApi.isSyncing(id));
+        assertTrue(entriesApi.syncStatus(id).isGitHubAppInstalled());
 
         // Uninstall GitHub App
         handleGitHubUninstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
 
         // Should indicate that the entry is not syncing
-        assertFalse(entriesApi.isSyncing(id));
+        assertFalse(entriesApi.syncStatus(id).isGitHubAppInstalled());
 
         // Install GitHub app
         handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
 
         // Should indicate that the entry is syncing
-        assertTrue(entriesApi.isSyncing(id));
+        assertTrue(entriesApi.syncStatus(id).isGitHubAppInstalled());
 
         // Should indicate that a non-.dockstore.yml entry is not syncing
-        assertFalse(entriesApi.isSyncing(1L));
+        assertFalse(entriesApi.syncStatus(1L).isGitHubAppInstalled());
 
         // Should error appropriately when querying nonexistent Entry
-        assertThrowsApiException(() -> entriesApi.isSyncing(0x123456789abcdefL), HttpStatus.SC_NOT_FOUND);
+        assertThrowsApiException(() -> entriesApi.syncStatus(0x123456789abcdefL).isGitHubAppInstalled(), HttpStatus.SC_NOT_FOUND);
 
         // Should not be accessible to general public
-        assertThrowsApiException(() -> new EntriesApi(getAnonymousOpenAPIWebClient()).isSyncing(id), HttpStatus.SC_UNAUTHORIZED);
+        assertThrowsApiException(() -> new EntriesApi(getAnonymousOpenAPIWebClient()).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
 
         // Should not be accessible to non-owner user
-        assertThrowsApiException(() -> new EntriesApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres)).isSyncing(id), HttpStatus.SC_UNAUTHORIZED);
+        assertThrowsApiException(() -> new EntriesApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres)).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
     }
 }

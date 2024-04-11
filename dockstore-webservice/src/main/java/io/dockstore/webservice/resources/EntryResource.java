@@ -23,6 +23,7 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.SyncStatus;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
@@ -386,12 +387,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @GET
-    @Path("/{entryId}/syncing")
+    @Path("/{entryId}/syncStatus")
     @UnitOfWork
-    @Operation(operationId = "isSyncing", description = "Is this entry being updated automatically when the source repository changes?", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "False if the entry is conclusively not being updated, true otherwise.",
-        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Boolean.class)))
-    public boolean isSyncing(
+    @Operation(operationId = "syncStatus", description = "Get information about automatic updates to the entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Information about automatic updates to the entry",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SyncStatus.class)))
+    public SyncStatus syncStatus(
         @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "id of the entry") @PathParam("entryId") Long entryId) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(entryId);
@@ -400,14 +401,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         // If the entry is not a .dockstore.yml-based Workflow, it's not being automatically updated.
         if (!(entry instanceof Workflow workflow) || workflow.getMode() != WorkflowMode.DOCKSTORE_YML) {
-            return false;
+            return new SyncStatus(false);
         }
 
         List<LambdaEvent> latest = lambdaEventDAO.findByOrganization(workflow.getOrganization(), 0, 1, null, "dbCreateDate", "desc", Optional.of(List.of(workflow.getRepository())));
         // If the Workflow exists in our database, the GitHub App must have been installed at some point.
         // If the last LambdaEvent is an UNINSTALL, the GitHub App has been uninstalled and not since reinstalled.
         // Otherwise, either: a) the GitHub App is installed, or b) the last uninstall happened before we started logging uninstalls.
-        return latest.isEmpty() || latest.get(0).getType() != LambdaEvent.LambdaEventType.UNINSTALL;
+        return new SyncStatus(latest.isEmpty() || latest.get(0).getType() != LambdaEvent.LambdaEventType.UNINSTALL);
     }
 
     @GET

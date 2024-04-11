@@ -3135,11 +3135,10 @@ paths:
       - BEARER: []
       tags:
       - entries
-  /entries/{entryId}/syncing:
+  /entries/{entryId}/syncStatus:
     get:
-      description: Is this entry being updated automatically when the source repository
-        changes?
-      operationId: isSyncing
+      description: Get information about automatic updates to the entry
+      operationId: syncStatus
       parameters:
       - description: id of the entry
         in: path
@@ -3153,9 +3152,8 @@ paths:
           content:
             application/json:
               schema:
-                type: boolean
-          description: "False if the entry is conclusively not being updated, true\
-            \ otherwise."
+                $ref: '#/components/schemas/SyncStatus'
+          description: Information about automatic updates to the entry
       security:
       - BEARER: []
       tags:
@@ -10627,6 +10625,14 @@ components:
       properties:
         star:
           type: boolean
+    SyncStatus:
+      type: object
+      description: Information about automatic updates to the entry
+      properties:
+        gitHubAppInstalled:
+          type: boolean
+          description: "False if the GitHub App is conclusively not installed, true\
+            \ otherwise."
     TRSService:
       type: object
       description: GA4GH service
