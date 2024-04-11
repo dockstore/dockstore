@@ -101,7 +101,7 @@ public final class DiagnosticsHelper {
             new Timer("diagnostics", true).scheduleAtFixedRate(
                 new TimerTask() {
                     public void run() {
-                        logGlobals(Level.DEBUG);
+                        logGlobals();
                     }
                 }, periodMilliseconds, periodMilliseconds);
             LOG.info(String.format("logging diagnostic information every %d seconds", periodSeconds));
@@ -116,34 +116,34 @@ public final class DiagnosticsHelper {
         }
     }
 
-    public void logGlobals(Level level) {
-        logFilesystems(level);
-        logDatabase(level);
-        logMemory(level);
+    public void logGlobals() {
+        logFilesystems();
+        logDatabase();
+        logMemory();
     }
 
-    public void logThreads(Level level) {
-        log(level, "threads", () -> formatThreads());
+    public void logThreads() {
+        log(Level.DEBUG, "threads", () -> formatThreads());
     }
 
-    public void logFilesystems(Level level) {
-        log(level, "filesystems", () -> formatFilesystems());
+    public void logFilesystems() {
+        log(Level.DEBUG, "filesystems", () -> formatFilesystems());
     }
 
-    public void logDatabase(Level level) {
-        log(level, "database", () -> formatDatabase());
+    public void logDatabase() {
+        log(Level.DEBUG, "database", () -> formatDatabase());
     }
 
-    public void logMemory(Level level) {
-        log(level, "memory", () -> formatMemory());
+    public void logMemory() {
+        log(Level.DEBUG, "memory", () -> formatMemory());
     }
 
-    public void logStart(Level level, ContainerRequest request) {
-        log(level, "start", () -> formatRequest(request));
+    public void logStart(ContainerRequest request) {
+        log(Level.INFO, "start", () -> formatRequest(request));
     }
 
-    public void logFinish(Level level, ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user, Optional<Method> resourceMethod) {
-        log(level, "finish", () -> formatRequest(request)
+    public void logFinish(ContainerRequest request, ContainerResponse response, ThreadState startThreadState, ThreadState finishThreadState, Optional<SessionState> sessionState, Optional<User> user, Optional<Method> resourceMethod) {
+        log(Level.INFO, "finish", () -> formatRequest(request)
             + formatUser(user)
             + formatResourceMethod(resourceMethod)
             + formatResponse(response)
@@ -346,7 +346,7 @@ public final class DiagnosticsHelper {
 
                 // Request started.
                 case START:
-                    logStart(Level.INFO, request);
+                    logStart(request);
                     break;
 
                 // Done filtering response.
@@ -358,7 +358,7 @@ public final class DiagnosticsHelper {
 
                 // Request finished.
                 case FINISHED:
-                    logFinish(Level.INFO, request, response, startThreadState, getThreadState(), sessionState, user, resourceMethod);
+                    logFinish(request, response, startThreadState, getThreadState(), sessionState, user, resourceMethod);
                     break;
 
                 // Do nothing for other events.
