@@ -274,6 +274,8 @@ jobs:
             # skip swagger validation because of difficult-to-fix operationId duplications
             # java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
             java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+          when:
+
       - run:
           name: Check Java imports sorted and OpenAPI
           # A dirty Java file after a build probably means it was committed without building, and its imports are out of order
@@ -283,10 +285,13 @@ jobs:
               git diff --stat | grep "\.java$"
               exit 1
             fi
-            if [[ $(git diff --name-only | grep "openapi.yaml") != '' ]]; then
-              echo "openapi.yaml is out of sync"
-              git diff --stat | grep "openapi.yaml"
-              exit 1
+            # SEAB-6379, openapi check will fail on build of a tag
+            if [[ -z "${CIRCLE_TAG}" ]]; then
+              if [[ $(git diff --name-only | grep "openapi.yaml") != '' ]]; then
+                echo "openapi.yaml is out of sync"
+                git diff --stat | grep "openapi.yaml"
+                exit 1
+              fi
             fi
 
       - persist_to_workspace:
