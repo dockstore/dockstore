@@ -23,7 +23,6 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
-import io.dockstore.webservice.helpers.JsonLdRetriever;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -182,17 +181,6 @@ public class ToolDAO extends EntryDAO<Tool> {
 
     public List<Tool> findPublishedByNamespace(String namespace) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
-    }
-
-    /**
-     * Return map containing schema.org info retrieved from the specified tool's descriptor cwl
-     *
-     * @param id of specified tool
-     * @return map containing schema.org info to be used as json-ld data
-     */
-    public List findPublishedSchemaById(long id) {
-        Tool tool = findPublishedById(id);
-        return JsonLdRetriever.getSchema(tool);
     }
 
     public Tool findByAlias(String alias) {

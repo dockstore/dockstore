@@ -2025,12 +2025,15 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+          minimum: 1
       - in: query
         name: filter
         schema:
@@ -2099,28 +2102,6 @@ paths:
           description: default response
       security:
       - BEARER: []
-      tags:
-      - containers
-  /containers/schema/{containerId}/published:
-    get:
-      description: Get a published tool's schema by ID.
-      operationId: getPublishedContainerSchema
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-          description: default response
       tags:
       - containers
   /containers/tags:
@@ -4393,6 +4374,7 @@ paths:
       - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
+        required: true
         schema:
           type: string
           pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
@@ -7347,7 +7329,8 @@ paths:
       description: Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
-      - in: path
+      - description: repository path
+        in: path
         name: repository
         required: true
         schema:
@@ -7402,12 +7385,15 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+          minimum: 1
       - in: query
         name: filter
         schema:
@@ -7742,7 +7728,8 @@ paths:
       description: Get the corresponding descriptor file from source control.
       operationId: secondaryDescriptorPath_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7759,6 +7746,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -7854,7 +7842,8 @@ paths:
       description: Get the primary descriptor file.
       operationId: primaryDescriptor_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7866,8 +7855,18 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
+          enum:
+          - SMK
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+          - jupyter
       responses:
         default:
           content:
@@ -8056,7 +8055,8 @@ paths:
       description: Get the corresponding descriptor documents from source control.
       operationId: secondaryDescriptors_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -8068,6 +8068,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
