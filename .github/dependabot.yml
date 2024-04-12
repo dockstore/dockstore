@@ -28,11 +28,3 @@ updates:
     open-pull-requests-limit: 0
     reviewers:
       - "dockstore/dockstore"   
-
-  # Maintain dependencies for cwltool
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    reviewers:
-      - "dockstore/dockstore"
