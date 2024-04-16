@@ -283,10 +283,14 @@ jobs:
               git diff --stat | grep "\.java$"
               exit 1
             fi
-            if [[ $(git diff --name-only | grep "openapi.yaml") != '' ]]; then
-              echo "openapi.yaml is out of sync"
-              git diff --stat | grep "openapi.yaml"
-              exit 1
+            # SEAB-6379, openapi check will fail on build of a tag
+            if [[ -z "${CIRCLE_TAG}" ]]; then
+              echo "Checking openapi.yaml"
+              if [[ $(git diff --name-only | grep "openapi.yaml") != '' ]]; then
+                echo "openapi.yaml is out of sync"
+                git diff --stat | grep "openapi.yaml"
+                exit 1
+              fi
             fi
 
       - persist_to_workspace:
