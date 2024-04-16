@@ -16,7 +16,7 @@ workflows so that they are  machine readable as well as runnable in a variety of
 Dockstore is focused on serving researchers in the biosciences, the combination of Docker + workflow languages can be used by 
 anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  
 Dockstore is also a leading implementor of the GA4GH API standard for container registries, [TRS](https://www.ga4gh.org/news/tool-registry-service-api-enabling-an-interoperable-library-of-genomics-analysis-tools/). The usage of this is to enumerate the docker containers 
-(from quay.io and hopefully docker hub) and the workflows (from github/bitbucket) that are available 
+(from quay.io and docker hub) and the workflows (from github/bitbucket/local) that are available 
 to users of Dockstore.org.
 
 For the live site see [dockstore.org](https://dockstore.org)
