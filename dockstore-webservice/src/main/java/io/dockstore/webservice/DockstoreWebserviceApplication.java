@@ -517,7 +517,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Register connection pool health check after server starts so the environment has dropwizard metrics
         environment.lifecycle().addServerLifecycleListener(server -> {
-            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getExternalConfig(), configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
             final LiquibaseLockHealthCheck liquibaseLockHealthCheck = unitOfWorkAwareProxyFactory.create(
                 LiquibaseLockHealthCheck.class,

@@ -3,6 +3,7 @@ package io.dockstore.webservice.resources;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.health.HealthCheck;
 import com.google.gson.Gson;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration.ExternalConfig;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -29,29 +30,29 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
 
     private final int maxConnections;
     private final Map<String, Gauge> metricGauges;
-    private final CloudWatchClient cw;
-    private final String cluster;
-    private final String containerID;
-    private final String namespace;
+    private CloudWatchClient cw = null;
+    private String cluster = null;
+    private String containerID = null;
+    private String namespace = null;
 
-    public ConnectionPoolHealthCheck(int maxConnections, Map<String, Gauge> metricGauges) {
+    public ConnectionPoolHealthCheck(ExternalConfig configuration, int maxConnections, Map<String, Gauge> metricGauges) {
         this.maxConnections = maxConnections;
         this.metricGauges = metricGauges;
 
-        this.cw = CloudWatchClient.builder()
-            .credentialsProvider(ProfileCredentialsProvider.create())
-            .build();
-        String ecsContainerMetadataUri = System.getenv("ECS_CONTAINER_METADATA_URI");
         try {
+            this.cw = CloudWatchClient.builder()
+                .credentialsProvider(ProfileCredentialsProvider.create())
+                .build();
+            String ecsContainerMetadataUri = System.getenv("ECS_CONTAINER_METADATA_URI");
+            // TODO: if this works, we'll want to move this somewhere more central
             String ecsMetadata = IOUtils.toString(new URL(ecsContainerMetadataUri), StandardCharsets.UTF_8);
             Map<String, String> dto = new Gson().fromJson(ecsMetadata, Map.class);
             this.cluster = dto.get("Cluster");
             this.containerID = dto.get("ContainerID");
-            this.namespace = "ECS/" + cluster + "/" + containerID;
+            this.namespace = configuration.getHostname() + "_LogMetrics/";
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOG.debug("Failed to startup ecs metrics, probably not running in AWS");
         }
-
     }
 
     @Override
@@ -61,8 +62,8 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         final int idleConnections = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue();
         final double loadConnections = (double) activeConnections / maxConnections;
 
-        // this can be hooked as a reporter in dropwizard metrics to self-report rather than wait for a healthcheck call
-        if (cluster != null && containerID != null) {
+        if (this.cluster != null && this.containerID != null) {
+            // this can be hooked as a reporter in dropwizard metrics to self-report rather than wait for a healthcheck call
             // also put metrics into cloudwatch
             // from https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_cloudwatch_code_examples.html
 
