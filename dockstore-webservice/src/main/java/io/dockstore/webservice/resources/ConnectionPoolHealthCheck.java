@@ -2,11 +2,7 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.health.HealthCheck;
-import com.google.gson.Gson;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration.ExternalConfig;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -14,7 +10,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
@@ -39,20 +34,16 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         this.maxConnections = maxConnections;
         this.metricGauges = metricGauges;
 
-        try {
-            this.cw = CloudWatchClient.builder()
-                .credentialsProvider(ProfileCredentialsProvider.create())
-                .build();
-            String ecsContainerMetadataUri = System.getenv("ECS_CONTAINER_METADATA_URI");
-            // TODO: if this works, we'll want to move this somewhere more central
-            String ecsMetadata = IOUtils.toString(new URL(ecsContainerMetadataUri), StandardCharsets.UTF_8);
-            Map<String, String> dto = new Gson().fromJson(ecsMetadata, Map.class);
-            this.cluster = dto.get("Cluster");
-            this.containerID = dto.get("ContainerID");
-            this.namespace = configuration.getHostname() + "_LogMetrics/";
-        } catch (IOException e) {
-            LOG.debug("Failed to startup ecs metrics, probably not running in AWS");
-        }
+        this.cw = CloudWatchClient.builder()
+            .credentialsProvider(ProfileCredentialsProvider.create())
+            .build();
+        //            String ecsContainerMetadataUri = System.getenv("ECS_CONTAINER_METADATA_URI");
+        //            // TODO: if this works, we'll want to move this somewhere more central
+        //            String ecsMetadata = IOUtils.toString(new URL(ecsContainerMetadataUri), StandardCharsets.UTF_8);
+        //            Map<String, String> dto = new Gson().fromJson(ecsMetadata, Map.class);
+        //            this.cluster = dto.get("Cluster");
+        //            this.containerID = dto.get("ContainerID");
+        this.namespace = configuration.getHostname() + "_LogMetrics/";
     }
 
     @Override
@@ -62,35 +53,37 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         final int idleConnections = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue();
         final double loadConnections = (double) activeConnections / maxConnections;
 
-        if (this.cluster != null && this.containerID != null) {
-            // this can be hooked as a reporter in dropwizard metrics to self-report rather than wait for a healthcheck call
-            // also put metrics into cloudwatch
-            // from https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_cloudwatch_code_examples.html
+        // this can be hooked as a reporter in dropwizard metrics to self-report rather than wait for a healthcheck call
+        // also put metrics into cloudwatch
+        // from https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_cloudwatch_code_examples.html
 
-            String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-            Instant instant = Instant.parse(time);
+        String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+        Instant instant = Instant.parse(time);
 
-            Dimension[] dimensions = {Dimension.builder().name("ClusterName").value(cluster).build(),
-                Dimension.builder().name("ContainerID").value(containerID).build()};
+        Dimension[] dimensions = {Dimension.builder().name("ClusterName").value(cluster).build(),
+            Dimension.builder().name("ContainerID").value(containerID).build()};
 
-            MetricDatum active = getMetricDatum("active", activeConnections, instant, dimensions);
-            MetricDatum size = getMetricDatum("size", sizeConnections, instant, dimensions);
-            MetricDatum idle = getMetricDatum("idle", idleConnections, instant, dimensions);
-            MetricDatum load = getMetricDatum("calculatedLoad", loadConnections, instant, dimensions);
+        MetricDatum active = getMetricDatum("active", activeConnections, instant, dimensions);
+        MetricDatum size = getMetricDatum("size", sizeConnections, instant, dimensions);
+        MetricDatum idle = getMetricDatum("idle", idleConnections, instant, dimensions);
+        MetricDatum load = getMetricDatum("calculatedLoad", loadConnections, instant, dimensions);
 
-            List<MetricDatum> metricDataList = new ArrayList<>();
-            metricDataList.add(active);
-            metricDataList.add(size);
-            metricDataList.add(idle);
-            metricDataList.add(load);
+        List<MetricDatum> metricDataList = new ArrayList<>();
+        metricDataList.add(active);
+        metricDataList.add(size);
+        metricDataList.add(idle);
+        metricDataList.add(load);
 
-            PutMetricDataRequest request = PutMetricDataRequest.builder()
-                .namespace(namespace)
-                .metricData(metricDataList)
-                .build();
+        PutMetricDataRequest request = PutMetricDataRequest.builder()
+            .namespace(namespace)
+            .metricData(metricDataList)
+            .build();
 
+        try {
             cw.putMetricData(request);
-            LOG.debug("Added metric values for for metrics in " + namespace);
+            LOG.info("Added metric values for for metrics in " + namespace);
+        }  catch (Exception e) {
+            LOG.error("Unable to add metric values for for metrics in " + namespace, e);
         }
 
         if (activeConnections == maxConnections) {
