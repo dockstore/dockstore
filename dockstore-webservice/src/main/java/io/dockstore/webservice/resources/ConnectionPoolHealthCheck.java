@@ -34,7 +34,7 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         this.cw = CloudWatchClient.builder()
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
-        this.namespace = configuration.getHostname() + "_LogMetrics/";
+        this.namespace = configuration.getHostname() + "_LogMetrics";
     }
 
     @Override
