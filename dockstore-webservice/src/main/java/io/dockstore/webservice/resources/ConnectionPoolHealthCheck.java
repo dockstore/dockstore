@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
-import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
 import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
 import software.amazon.awssdk.services.cloudwatch.model.StandardUnit;
@@ -26,8 +25,6 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
     private final int maxConnections;
     private final Map<String, Gauge> metricGauges;
     private CloudWatchClient cw = null;
-    private String cluster = null;
-    private String containerID = null;
     private String namespace = null;
 
     public ConnectionPoolHealthCheck(ExternalConfig configuration, int maxConnections, Map<String, Gauge> metricGauges) {
@@ -37,12 +34,6 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         this.cw = CloudWatchClient.builder()
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
-        //            String ecsContainerMetadataUri = System.getenv("ECS_CONTAINER_METADATA_URI");
-        //            // TODO: if this works, we'll want to move this somewhere more central
-        //            String ecsMetadata = IOUtils.toString(new URL(ecsContainerMetadataUri), StandardCharsets.UTF_8);
-        //            Map<String, String> dto = new Gson().fromJson(ecsMetadata, Map.class);
-        //            this.cluster = dto.get("Cluster");
-        //            this.containerID = dto.get("ContainerID");
         this.namespace = configuration.getHostname() + "_LogMetrics/";
     }
 
@@ -60,13 +51,11 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
         Instant instant = Instant.parse(time);
 
-        Dimension[] dimensions = {Dimension.builder().name("ClusterName").value(cluster).build(),
-            Dimension.builder().name("ContainerID").value(containerID).build()};
 
-        MetricDatum active = getMetricDatum("active", activeConnections, instant, dimensions);
-        MetricDatum size = getMetricDatum("size", sizeConnections, instant, dimensions);
-        MetricDatum idle = getMetricDatum("idle", idleConnections, instant, dimensions);
-        MetricDatum load = getMetricDatum("calculatedLoad", loadConnections, instant, dimensions);
+        MetricDatum active = getMetricDatum("active", activeConnections, instant);
+        MetricDatum size = getMetricDatum("size", sizeConnections, instant);
+        MetricDatum idle = getMetricDatum("idle", idleConnections, instant);
+        MetricDatum load = getMetricDatum("calculatedLoad", loadConnections, instant);
 
         List<MetricDatum> metricDataList = new ArrayList<>();
         metricDataList.add(active);
@@ -94,13 +83,12 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         }
     }
 
-    private static MetricDatum getMetricDatum(String metricName, double value, Instant instant, Dimension[] dimensions) {
+    private static MetricDatum getMetricDatum(String metricName, double value, Instant instant) {
         return MetricDatum.builder()
             .metricName("io.dropwizard.db.ManagedPooledDataSource.hibernate." + metricName)
             .unit(StandardUnit.NONE)
             .value(value)
             .timestamp(instant)
-            .dimensions(dimensions)
             .build();
     }
 }
