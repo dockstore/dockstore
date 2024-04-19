@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
@@ -35,7 +35,7 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         this.metricGauges = metricGauges;
 
         this.cw = CloudWatchClient.builder()
-            .credentialsProvider(ProfileCredentialsProvider.create())
+            .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
         //            String ecsContainerMetadataUri = System.getenv("ECS_CONTAINER_METADATA_URI");
         //            // TODO: if this works, we'll want to move this somewhere more central
