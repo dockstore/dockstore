@@ -72,7 +72,7 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
             cw.putMetricData(request);
             LOG.info("Added metric values for for metrics in " + namespace);
         }  catch (Exception e) {
-            LOG.error("Unable to add metric values for for metrics in " + namespace, e);
+            LOG.info("Unable to add metric values for for metrics in " + namespace, e);
         }
 
         if (activeConnections == maxConnections) {
