@@ -23,6 +23,10 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -245,6 +249,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             return configuration.getDataSourceFactory();
         }
     };
+    private MetricRegistry metricRegistry;
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
@@ -517,7 +522,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Register connection pool health check after server starts so the environment has dropwizard metrics
         environment.lifecycle().addServerLifecycleListener(server -> {
-            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getExternalConfig(), configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
             final LiquibaseLockHealthCheck liquibaseLockHealthCheck = unitOfWorkAwareProxyFactory.create(
                 LiquibaseLockHealthCheck.class,
@@ -531,6 +536,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
+
+        configureDropwizardMetrics(configuration, environment);
 
         // Indexes Elasticsearch if mappings don't exist when the application is started
         environment.lifecycle().addServerLifecycleListener(event -> {
@@ -558,6 +565,36 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 LOG.info("Elasticsearch indices already exist");
             }
         });
+    }
+
+    /**
+     * Instrument the webservice to output metrics
+     * @param configuration
+     * @param environment
+     */
+    private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
+        this.metricRegistry = new MetricRegistry();
+
+        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.load", () -> {
+            final int activeConnections = (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+            final double loadConnections = (double) activeConnections / configuration.getDataSourceFactory().getMaxSize();
+            return loadConnections;
+        });
+
+        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.active", () -> (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue());
+        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.size", () -> (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue());
+        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle", () -> (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue());
+
+        ScheduledReporter reporter;
+        if (configuration.isLocalCloudWatchMetrics()) {
+            reporter = ConsoleReporter.forRegistry(metricRegistry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build();
+        } else {
+            reporter = new CloudWatchMetricsReporter(metricRegistry, "CloudWatchMetricsReporter", MetricFilter.ALL, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, configuration.getExternalConfig());
+        }
+        reporter.start(1, TimeUnit.MINUTES);
     }
 
     private void registerAPIsAndMisc(Environment environment) {
