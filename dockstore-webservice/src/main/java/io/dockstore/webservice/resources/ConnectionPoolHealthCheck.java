@@ -13,6 +13,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
 import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
@@ -31,10 +32,14 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
         this.maxConnections = maxConnections;
         this.metricGauges = metricGauges;
 
-        this.cw = CloudWatchClient.builder()
-            .credentialsProvider(DefaultCredentialsProvider.create())
-            .build();
-        this.namespace = configuration.getHostname() + "_LogMetrics";
+        try {
+            this.cw = CloudWatchClient.builder()
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
+            this.namespace = configuration.getHostname() + "_LogMetrics";
+        } catch (SdkClientException e) {
+            LOG.error("Unable to create CloudWatchClient", e);
+        }
     }
 
     @Override
