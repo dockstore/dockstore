@@ -59,7 +59,7 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
         gauges.forEach((key, value) -> {
             String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             Instant instant = Instant.parse(time);
-            MetricDatum metricDatum = getMetricDatum(key, (double) value.getValue(), instant);
+            MetricDatum metricDatum = getMetricDatum(key, Double.parseDouble(value.getValue().toString()), instant);
             metricDataList.add(metricDatum);
         });
 
