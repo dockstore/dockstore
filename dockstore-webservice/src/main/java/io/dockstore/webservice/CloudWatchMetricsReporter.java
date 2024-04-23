@@ -70,7 +70,7 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
 
         try {
             cw.putMetricData(request);
-            LOG.info("Added metric values for metrics in " + namespace);
+            LOG.info("Added metric values for metrics in {}", namespace);
         } catch (Exception e) {
             LOG.info("Unable to add metric values for metrics in " + namespace, e);
         }

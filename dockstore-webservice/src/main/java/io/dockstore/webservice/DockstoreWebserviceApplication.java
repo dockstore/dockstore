@@ -224,6 +224,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
 
     public static final String PUBLIC_USER_FILTER = "publicUserFilter";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_ACTIVE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.active";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_SIZE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.size";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_IDLE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.idle";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD = "io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad";
 
 
     private static OkHttpClient okHttpClient = null;
@@ -575,15 +579,17 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
         this.metricRegistry = new MetricRegistry();
 
-        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad", () -> {
-            final int activeConnections = (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
-            final double loadConnections = (double) activeConnections / configuration.getDataSourceFactory().getMaxSize();
-            return loadConnections;
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, () -> {
+            final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
+            return (double) activeConnections / configuration.getDataSourceFactory().getMaxSize();
         });
 
-        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.active", () -> (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue());
-        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.size", () -> (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue());
-        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle", () -> (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_ACTIVE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_SIZE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_SIZE).getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_IDLE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_IDLE).getValue());
 
         ScheduledReporter reporter;
         if (configuration.isLocalCloudWatchMetrics()) {
