@@ -3135,6 +3135,29 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{entryId}/syncStatus:
+    get:
+      description: Get information about automatic updates to the entry
+      operationId: syncStatus
+      parameters:
+      - description: id of the entry
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncStatus'
+          description: Information about automatic updates to the entry
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/verifiedPlatforms:
     get:
       description: Get the verified platforms for each version of an entry.
@@ -10602,6 +10625,14 @@ components:
       properties:
         star:
           type: boolean
+    SyncStatus:
+      type: object
+      description: Information about automatic updates to the entry
+      properties:
+        gitHubAppInstalled:
+          type: boolean
+          description: "False if the GitHub App is conclusively not installed, true\
+            \ otherwise."
     TRSService:
       type: object
       description: GA4GH service

@@ -35,6 +35,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.ValidationConstants;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.MetadataApi;
@@ -85,6 +86,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -2097,5 +2099,52 @@ class WebhookIT extends BaseIT {
         } catch (ApiException e) {
             assertEquals("Could not process query due to the invalid sortCol value.", e.getMessage());
         }
+    }
+
+    private void assertThrowsApiException(Executable executable, int expectedCode) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(expectedCode, exception.getCode());
+    }
+
+    @Test
+    void testIsSyncingEndpoint() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final EntriesApi entriesApi = new EntriesApi(webClient);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        // Install GitHub App
+        handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+
+        // Register entry and retrieve its ID
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final long id = workflow.getId();
+
+        // Should indicate that the entry is syncing
+        assertTrue(entriesApi.syncStatus(id).isGitHubAppInstalled());
+
+        // Uninstall GitHub App
+        handleGitHubUninstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+
+        // Should indicate that the entry is not syncing
+        assertFalse(entriesApi.syncStatus(id).isGitHubAppInstalled());
+
+        // Install GitHub app
+        handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+
+        // Should indicate that the entry is syncing
+        assertTrue(entriesApi.syncStatus(id).isGitHubAppInstalled());
+
+        // Should indicate that a non-.dockstore.yml entry is not syncing
+        assertFalse(entriesApi.syncStatus(1L).isGitHubAppInstalled());
+
+        // Should error appropriately when querying nonexistent Entry
+        assertThrowsApiException(() -> entriesApi.syncStatus(0x123456789abcdefL).isGitHubAppInstalled(), HttpStatus.SC_NOT_FOUND);
+
+        // Should not be accessible to general public
+        assertThrowsApiException(() -> new EntriesApi(getAnonymousOpenAPIWebClient()).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
+
+        // Should not be accessible to non-owner user
+        assertThrowsApiException(() -> new EntriesApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres)).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
     }
 }

@@ -23,10 +23,12 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.SyncStatus;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -35,6 +37,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
@@ -45,6 +48,7 @@ import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -134,6 +138,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
+    private final LambdaEventDAO lambdaEventDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
@@ -224,6 +229,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -308,9 +314,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private void updateArchived(boolean archive, User user, Entry<?, ?> entry) {
         checkNotNullEntry(entry);
-        if (!isAdmin(user)) {
-            checkIsOwner(user, entry);
-        }
+        checkIsOwnerOrAdmin(user, entry);
+
         if (entry.isArchived() != archive) {
             entry.setArchived(archive);
             eventDAO.archiveEvent(archive, user, entry);
@@ -379,6 +384,31 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
+    }
+
+    @GET
+    @Path("/{entryId}/syncStatus")
+    @UnitOfWork
+    @Operation(operationId = "syncStatus", description = "Get information about automatic updates to the entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Information about automatic updates to the entry",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SyncStatus.class)))
+    public SyncStatus syncStatus(
+        @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "id of the entry") @PathParam("entryId") Long entryId) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(entryId);
+        checkNotNullEntry(entry);
+        checkIsOwnerOrAdmin(user, entry);
+
+        // If the entry is not a .dockstore.yml-based Workflow, it's not being automatically updated.
+        if (!(entry instanceof Workflow workflow) || workflow.getMode() != WorkflowMode.DOCKSTORE_YML) {
+            return new SyncStatus(false);
+        }
+
+        List<LambdaEvent> latest = lambdaEventDAO.findByOrganization(workflow.getOrganization(), 0, 1, null, "dbCreateDate", "desc", Optional.of(List.of(workflow.getRepository())));
+        // If the Workflow exists in our database, the GitHub App must have been installed at some point.
+        // If the last LambdaEvent is an UNINSTALL, the GitHub App has been uninstalled and not since reinstalled.
+        // Otherwise, either: a) the GitHub App is installed, or b) the last uninstall happened before we started logging uninstalls.
+        return new SyncStatus(latest.isEmpty() || latest.get(0).getType() != LambdaEvent.LambdaEventType.UNINSTALL);
     }
 
     @GET
