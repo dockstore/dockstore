@@ -575,7 +575,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
         this.metricRegistry = new MetricRegistry();
 
-        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.load", () -> {
+        metricRegistry.registerGauge("io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad", () -> {
             final int activeConnections = (int) environment.metrics().getGauges().get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
             final double loadConnections = (double) activeConnections / configuration.getDataSourceFactory().getMaxSize();
             return loadConnections;
