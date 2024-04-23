@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
 import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
@@ -52,27 +53,39 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
     @Override
     public void report(SortedMap<String, Gauge> gauges, SortedMap<String, Counter> counters, SortedMap<String, Histogram> histograms, SortedMap<String, Meter> meters,
         SortedMap<String, Timer> timers) {
+        // start with Gauges but we should add the rest later
+        if (!counters.isEmpty() || !histograms.isEmpty() || !meters.isEmpty() || !timers.isEmpty()) {
+            throw new UnsupportedOperationException("If applicable, consider how a new metric type should be reported to CloudWatch");
+        }
 
-        // start with Guages but we should add the rest later
+        if (cw == null) {
+            LOG.debug("CloudWatchClient client init, unable to add metric values for metrics in " + namespace);
+            return;
+        }
+
         // inspired from https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_cloudwatch_code_examples.html
         List<MetricDatum> metricDataList = new ArrayList<>();
-        gauges.forEach((key, value) -> {
+        gauges.forEach((name, gauge) -> {
             String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             Instant instant = Instant.parse(time);
-            MetricDatum metricDatum = getMetricDatum(key, Double.parseDouble(value.getValue().toString()), instant);
-            metricDataList.add(metricDatum);
+            if (gauge.getValue() instanceof Number number) {
+                MetricDatum metricDatum = getMetricDatum(name, number.doubleValue(), instant);
+                metricDataList.add(metricDatum);
+            }
         });
 
-        PutMetricDataRequest request = PutMetricDataRequest.builder()
-            .namespace(namespace)
-            .metricData(metricDataList)
-            .build();
+        if (!metricDataList.isEmpty()) {
+            PutMetricDataRequest request = PutMetricDataRequest.builder()
+                .namespace(namespace)
+                .metricData(metricDataList)
+                .build();
 
-        try {
-            cw.putMetricData(request);
-            LOG.info("Added metric values for metrics in {}", namespace);
-        } catch (Exception e) {
-            LOG.info("Unable to add metric values for metrics in " + namespace, e);
+            try {
+                cw.putMetricData(request);
+                LOG.info("Added metric values for metrics in {}", namespace);
+            } catch (SdkException e) {
+                LOG.info("AWS issue, unable to add metric values for metrics in " + namespace, e);
+            }
         }
     }
 
