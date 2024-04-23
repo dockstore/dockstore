@@ -5,7 +5,6 @@ import com.codahale.metrics.health.HealthCheck;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 
 public class ConnectionPoolHealthCheck extends HealthCheck  {
 
@@ -13,8 +12,6 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
 
     private final int maxConnections;
     private final Map<String, Gauge> metricGauges;
-    private CloudWatchClient cw = null;
-    private String namespace = null;
 
     public ConnectionPoolHealthCheck(int maxConnections, Map<String, Gauge> metricGauges) {
         this.metricGauges = metricGauges;

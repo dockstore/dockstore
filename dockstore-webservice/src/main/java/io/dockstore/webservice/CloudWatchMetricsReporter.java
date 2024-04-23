@@ -53,13 +53,10 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
     public void report(SortedMap<String, Gauge> gauges, SortedMap<String, Counter> counters, SortedMap<String, Histogram> histograms, SortedMap<String, Meter> meters,
         SortedMap<String, Timer> timers) {
 
+        // start with Guages but we should add the rest later
+        // inspired from https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_cloudwatch_code_examples.html
         List<MetricDatum> metricDataList = new ArrayList<>();
         gauges.forEach((key, value) -> {
-            // start with Guages but we should add more later
-            // this can be hooked as a reporter in dropwizard metrics to self-report rather than wait for a healthcheck call
-            // also put metrics into cloudwatch
-            // from https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_cloudwatch_code_examples.html
-
             String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             Instant instant = Instant.parse(time);
             MetricDatum metricDatum = getMetricDatum(key, (double) value.getValue(), instant);
