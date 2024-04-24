@@ -55,6 +55,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @Valid
     private MetricsConfig metricsConfig = new MetricsConfig();
 
+    @Valid
+    private DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig();
+
     @NotEmpty
     private String template;
 
@@ -541,6 +544,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return diagnosticsConfig;
+    }
+
+    public void setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
+        this.diagnosticsConfig = diagnosticsConfig;
+    }
+
+    @JsonProperty
     public UIConfig getUiConfig() {
         return uiConfig;
     }
@@ -752,6 +764,41 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setS3EndpointOverride(String s3EndpointOverride) {
             this.s3EndpointOverride = s3EndpointOverride;
+        }
+    }
+
+    public static class DiagnosticsConfig {
+        private static final long DEFAULT_PERIOD_SECONDS = 600L;
+        private boolean logRequests = false;
+        private boolean logPeriodic = false;
+        private long periodSeconds = DEFAULT_PERIOD_SECONDS;
+
+        public boolean getLogPeriodic() {
+            return logPeriodic;
+        }
+
+        public void setLogPeriodic(boolean logPeriodic) {
+            this.logPeriodic = logPeriodic;
+        }
+
+        public boolean getLogRequests() {
+            return logRequests;
+        }
+
+        public void setLogRequests(boolean logRequests) {
+            this.logRequests = logRequests;
+        }
+
+        public Long getPeriodSeconds() {
+            return periodSeconds;
+        }
+
+        public void setPeriodSeconds(long periodSeconds) {
+            this.periodSeconds = periodSeconds;
+        }
+
+        public boolean getEnabled() {
+            return logRequests || logPeriodic;
         }
     }
 

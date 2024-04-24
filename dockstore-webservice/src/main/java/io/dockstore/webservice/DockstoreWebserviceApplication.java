@@ -84,6 +84,7 @@ import io.dockstore.webservice.filters.AuthenticatedUserFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
+import io.dockstore.webservice.helpers.DiagnosticsHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -494,6 +495,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         DOIGeneratorFactory.setConfig(configuration);
 
         GoogleHelper.setConfig(configuration);
+
+        if (configuration.getDiagnosticsConfig().getEnabled()) {
+            LOG.info("enabling diagnostic logging output");
+            new DiagnosticsHelper().start(environment, hibernate.getSessionFactory(), configuration.getDiagnosticsConfig());
+        }
 
         registerAPIsAndMisc(environment);
 
