@@ -5696,6 +5696,7 @@ paths:
       parameters:
       - in: query
         name: offset
+        required: true
         schema:
           type: integer
           format: int32
@@ -6081,6 +6082,7 @@ paths:
       parameters:
       - in: query
         name: source
+        required: true
         schema:
           type: string
           enum:
@@ -6228,6 +6230,7 @@ paths:
         schema:
           type: integer
           format: int32
+          minimum: 0
       - description: Filter paths with matching text
         in: query
         name: filter
@@ -6268,6 +6271,7 @@ paths:
         schema:
           type: integer
           format: int32
+          minimum: 0
       - description: Filter paths with matching text
         in: query
         name: filter
