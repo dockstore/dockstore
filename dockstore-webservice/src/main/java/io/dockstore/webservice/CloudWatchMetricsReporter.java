@@ -19,7 +19,7 @@ import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -41,8 +41,10 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
 
     private void initialize(ExternalConfig config) {
         try {
+            // can also use the following to submit to cloudwatch locally
+            // .credentialsProvider(DefaultCredentialsProvider.create())
             this.cw = CloudWatchClient.builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
+                .credentialsProvider(ContainerCredentialsProvider.builder().build())
                 .build();
             this.namespace = config.getHostname() + "_LogMetrics";
         } catch (SdkClientException e) {
