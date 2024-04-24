@@ -435,7 +435,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
-
         // Check if any other collections in the organization exist with that name
         Collection matchingCollection = collectionDAO.findByNameAndOrg(collection.getName(), organizationId);
         if (matchingCollection != null) {

@@ -26,6 +26,8 @@ public class CollectionEntry implements Serializable {
     @JsonProperty("categories")
     private List<CategorySummary> categorySummaries = new ArrayList<>();
 
+    public CollectionEntry() {}
+
     /**
      * @param id
      * @param dbUpdateDate
