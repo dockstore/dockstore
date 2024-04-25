@@ -749,7 +749,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of the Dockstore organizations for a user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = OrganizationUpdateTime.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<OrganizationUpdateTime> getUserDockstoreOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-                                                            @Min(0) @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                            @Min(1) @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                             @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<OrganizationUpdateTime> organizations = new ArrayList<>();
         final User fetchedUser = this.userDAO.findById(authUser.getId());
@@ -791,7 +791,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of the entries for a user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = EntryUpdateTime.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-                                                @Min(0) @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                @Min(1) @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter,
                                                 @Parameter(name = "type", description = "Type of entry", in = ParameterIn.QUERY) @QueryParam("type") EntrySearchType type) {
         //get entries with only minimal columns from database
@@ -1195,7 +1195,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of GitHub Events for the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = LambdaEvent.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @NotNull @QueryParam("offset") Integer offset,
+            @Min(0) @QueryParam("offset") Integer offset,
             @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
             @DefaultValue("") @QueryParam("filter") String filter,
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
