@@ -5696,10 +5696,10 @@ paths:
       parameters:
       - in: query
         name: offset
-        required: true
         schema:
           type: integer
           format: int32
+          minimum: 0
       - in: query
         name: limit
         schema:
@@ -6230,7 +6230,7 @@ paths:
         schema:
           type: integer
           format: int32
-          minimum: 0
+          minimum: 1
       - description: Filter paths with matching text
         in: query
         name: filter
@@ -6271,7 +6271,7 @@ paths:
         schema:
           type: integer
           format: int32
-          minimum: 0
+          minimum: 1
       - description: Filter paths with matching text
         in: query
         name: filter
