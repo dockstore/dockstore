@@ -84,7 +84,7 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
 
             try {
                 cw.putMetricData(request);
-                LOG.info("Added metric values for metrics in {}", namespace);
+                LOG.debug("Added metric values for metrics in {}", namespace);
             } catch (SdkException e) {
                 LOG.info("AWS issue, unable to add metric values for metrics in " + namespace, e);
             }
