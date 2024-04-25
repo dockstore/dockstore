@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,7 +27,9 @@ public class CollectionEntry implements Serializable {
     @JsonProperty("categories")
     private List<CategorySummary> categorySummaries = new ArrayList<>();
 
-    public CollectionEntry() {}
+    public CollectionEntry() throws InvalidObjectException {
+        throw new InvalidObjectException("Invalid CollectionEntry");
+    }
 
     /**
      * @param id
