@@ -1,5 +1,5 @@
 
-Lists of 327 third-party dependencies.
+Lists of 328 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -52,6 +52,7 @@ Lists of 327 third-party dependencies.
      (Apache License, Version 2.0) AWS Java SDK :: Profiles (software.amazon.awssdk:profiles:2.17.186 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) AWS Java SDK :: Regions (software.amazon.awssdk:regions:2.17.186 - https://aws.amazon.com/sdkforjava/core/regions)
      (Apache License, Version 2.0) AWS Java SDK :: SDK Core (software.amazon.awssdk:sdk-core:2.17.186 - https://aws.amazon.com/sdkforjava)
+     (Apache License, Version 2.0) AWS Java SDK :: Services :: Amazon CloudWatch (software.amazon.awssdk:cloudwatch:2.17.186 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) AWS Java SDK :: Services :: Amazon S3 (software.amazon.awssdk:s3:2.17.186 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) AWS Java SDK :: Services :: Amazon SQS (software.amazon.awssdk:sqs:2.17.186 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) AWS Java SDK :: Third Party :: Jackson-core (software.amazon.awssdk:third-party-jackson-core:2.17.186 - https://aws.amazon.com/sdkforjava)

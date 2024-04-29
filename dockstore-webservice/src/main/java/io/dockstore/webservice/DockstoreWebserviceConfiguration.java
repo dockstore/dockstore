@@ -149,6 +149,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String dashboard = "dashboard.dockstore.org";
 
+    private boolean localCloudWatchMetrics = false;
+
     @Valid
     @NotNull
     private UIConfig uiConfig;
@@ -588,6 +590,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setSourceFilePathViolationMessage(String sourceFilePathViolationMessage) {
         this.sourceFilePathViolationMessage = sourceFilePathViolationMessage;
+    }
+
+    @JsonProperty
+    public boolean isLocalCloudWatchMetrics() {
+        return localCloudWatchMetrics;
+    }
+
+    public void setLocalCloudWatchMetrics(boolean localCloudWatchMetrics) {
+        this.localCloudWatchMetrics = localCloudWatchMetrics;
     }
 
     /**
