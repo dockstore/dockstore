@@ -6,6 +6,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.RatioGauge;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Timer;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration.ExternalConfig;
@@ -71,7 +72,12 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
             String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             Instant instant = Instant.parse(time);
             if (gauge.getValue() instanceof Number number) {
-                MetricDatum metricDatum = getMetricDatum(name, number.doubleValue(), instant);
+                MetricDatum metricDatum;
+                if (gauge instanceof RatioGauge) {
+                    metricDatum = getMetricDatum(name, number.doubleValue(), instant, StandardUnit.PERCENT);
+                } else {
+                    metricDatum = getMetricDatum(name, number.doubleValue(), instant, StandardUnit.NONE);
+                }
                 metricDataList.add(metricDatum);
             }
         });
@@ -91,10 +97,10 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
         }
     }
 
-    private static MetricDatum getMetricDatum(String metricName, double value, Instant instant) {
+    private static MetricDatum getMetricDatum(String metricName, double value, Instant instant, StandardUnit unit) {
         return MetricDatum.builder()
             .metricName(metricName)
-            .unit(StandardUnit.NONE)
+            .unit(unit)
             .value(value)
             .timestamp(instant)
             .build();
