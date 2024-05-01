@@ -31,6 +31,7 @@ executors:
           - http.port: 9200
           - discovery.type: single-node
     resource_class: medium+
+    working_directory: /mnt/ramdisk/dockstore
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
       image: ubuntu-2204:2023.10.1
@@ -109,7 +110,6 @@ workflows:
 
 jobs:
   full_build_check:
-    working_directory: /mnt/ramdisk
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
@@ -130,7 +130,6 @@ jobs:
               echo "Did not find [skipTests]: continue running subsequent CircleCI tests."
             fi
   regression-integration-tests:
-    working_directory: /mnt/ramdisk
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
@@ -146,7 +145,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   integration-tests:
-    working_directory: /mnt/ramdisk
     parallelism: 4
     executor: integration_test_exec
     environment:
@@ -160,7 +158,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
-    working_directory: /mnt/ramdisk
     parallelism: 2
     executor: integration_test_exec
     environment:
@@ -172,7 +169,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
-    working_directory: /mnt/ramdisk
     parallelism: 3
     executor: integration_test_exec
     environment:
@@ -184,7 +180,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   bitbucket-tests:
-    working_directory: /mnt/ramdisk
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: bitbucket-tests
@@ -195,7 +190,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   language-parsing-tests:
-    working_directory: /mnt/ramdisk
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
@@ -235,7 +229,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   localstack-tests:
-    working_directory: /mnt/ramdisk
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: localstack-tests
@@ -247,7 +240,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   build:
-    working_directory: /mnt/ramdisk
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
@@ -317,7 +309,6 @@ jobs:
             TESTING_PROFILE: automated-review
 
   unit_test: # runs not using Workflows must have a `build` job as entry point
-    working_directory: /mnt/ramdisk
     parameters:
       aws_bucket:
         type: string
@@ -472,7 +463,6 @@ jobs:
             - misses
 
   sonar-cloud:
-    working_directory: /mnt/ramdisk
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
@@ -711,7 +701,7 @@ commands:
           command: |
             sudo apt update
             sudo apt install -y xmlstarlet
-            for file in ~/test-results/**/*
+            for file in ./test-results/**/*
             do
               xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
             done
