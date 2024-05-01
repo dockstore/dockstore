@@ -122,7 +122,10 @@ public final class ZenodoHelper {
      * @return
      */
     public static void automaticallyRegisterDockstoreOwnedZenodoDOI(Workflow workflow, WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
-        // Perform some preliminary checks to ensure that there's a high chance that the DOI will be successfully created before proceeding with snapshotting
+        if (StringUtils.isEmpty(dockstoreZenodoAccessToken)) {
+            LOG.error("Dockstore Zenodo access token not found for automatic DOI creation, skipping");
+            return;
+        }
 
         LOG.info("Automatically registering Dockstore owned Zenodo DOI for workflow {}, version {}", workflow.getWorkflowPath(), workflowVersion.getName());
         if (!workflowVersion.isFrozen()) {
@@ -136,7 +139,7 @@ public final class ZenodoHelper {
 
         if (hasExistingDOIForWorkflowVersion(workflowVersion)) {
             LOG.error("Version {} already has an existing DOI", workflowVersion.getName());
-        } else if (StringUtils.isNotEmpty(dockstoreZenodoAccessToken)) {
+        } else {
             ApiClient zenodoClient = createDockstoreZenodoClient();
             try {
                 registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface);
@@ -144,8 +147,6 @@ public final class ZenodoHelper {
             } catch (CustomWebApplicationException e) {
                 LOG.error("Could not automatically register DOI for workflow {}, version {}", workflow.getWorkflowPath(), workflowVersion.getName(), e);
             }
-        } else {
-            LOG.error("Dockstore Zenodo access token not found for automatic DOI creation, skipping");
         }
     }
 
