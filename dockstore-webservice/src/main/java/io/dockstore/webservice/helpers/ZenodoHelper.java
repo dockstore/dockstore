@@ -34,7 +34,7 @@ import io.swagger.zenodo.client.model.AccessLink;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
-import io.swagger.zenodo.client.model.DepositMetadataCommunity;
+import io.swagger.zenodo.client.model.Community;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
@@ -516,11 +516,11 @@ public final class ZenodoHelper {
     static void setMetadataCommunities(DepositMetadata depositMetadata) {
         // A communities entry must not be null, but it can be a null
         // List for Zenodo
-        List<DepositMetadataCommunity> communities = depositMetadata.getCommunities();
-        List<DepositMetadataCommunity> myList = new ArrayList<>();
+        List<Community> communities = depositMetadata.getCommunities();
+        List<Community> myList = new ArrayList<>();
         if (StringUtils.isNotEmpty(dockstoreZenodoCommunityId)) {
             // Adding the record to the Dockstore community gives Dockstore the ability to create new versions if the user created the first DOI and they later unlink their account.
-            DepositMetadataCommunity dockstoreCommunity = new DepositMetadataCommunity();
+            Community dockstoreCommunity = new Community();
             dockstoreCommunity.setIdentifier(dockstoreZenodoCommunityId);
             myList.add(dockstoreCommunity);
         }
