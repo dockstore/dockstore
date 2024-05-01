@@ -26,6 +26,7 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.RatioGauge;
 import com.codahale.metrics.ScheduledReporter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -585,9 +586,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
         this.metricRegistry = new MetricRegistry();
 
-        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, () -> {
-            final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
-            return (double) activeConnections / configuration.getDataSourceFactory().getMaxSize();
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new RatioGauge() {
+            @Override
+            protected Ratio getRatio() {
+                final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
+                return Ratio.of(activeConnections, configuration.getDataSourceFactory().getMaxSize());
+            }
         });
 
         metricRegistry.registerGauge(
