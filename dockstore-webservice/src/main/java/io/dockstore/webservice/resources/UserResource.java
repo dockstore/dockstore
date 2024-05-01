@@ -96,7 +96,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -747,7 +749,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of the Dockstore organizations for a user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = OrganizationUpdateTime.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<OrganizationUpdateTime> getUserDockstoreOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-                                                            @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                            @Min(1) @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                             @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<OrganizationUpdateTime> organizations = new ArrayList<>();
         final User fetchedUser = this.userDAO.findById(authUser.getId());
@@ -789,7 +791,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of the entries for a user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = EntryUpdateTime.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-                                                @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                @Min(1) @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter,
                                                 @Parameter(name = "type", description = "Type of entry", in = ParameterIn.QUERY) @QueryParam("type") EntrySearchType type) {
         //get entries with only minimal columns from database
@@ -993,7 +995,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated metadata for logged in user", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiOperation(value = "Update metadata for logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User updateLoggedInUserMetadata(@ApiParam(hidden = true)@Parameter(hidden = true, name = "user")@Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
+    public User updateLoggedInUserMetadata(@ApiParam(hidden = true)@Parameter(hidden = true, name = "user")@Auth User user, @NotNull @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
         checkNotNullUser(dbuser);
         if (source.equals(TokenType.GOOGLE_COM)) {
@@ -1193,7 +1195,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of GitHub Events for the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = LambdaEvent.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @QueryParam("offset") Integer offset,
+            @Min(0) @QueryParam("offset") Integer offset,
             @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
             @DefaultValue("") @QueryParam("filter") String filter,
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,

@@ -23,6 +23,11 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.RatioGauge;
+import com.codahale.metrics.ScheduledReporter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -84,6 +89,7 @@ import io.dockstore.webservice.filters.AuthenticatedUserFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
+import io.dockstore.webservice.helpers.DiagnosticsHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -221,6 +227,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
 
     public static final String PUBLIC_USER_FILTER = "publicUserFilter";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_ACTIVE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.active";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_SIZE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.size";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_IDLE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.idle";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD = "io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad";
 
 
     private static OkHttpClient okHttpClient = null;
@@ -246,6 +256,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             return configuration.getDataSourceFactory();
         }
     };
+    private MetricRegistry metricRegistry;
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
@@ -497,6 +508,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         GoogleHelper.setConfig(configuration);
 
+        if (configuration.getDiagnosticsConfig().getEnabled()) {
+            LOG.info("enabling diagnostic logging output");
+            new DiagnosticsHelper().start(environment, hibernate.getSessionFactory(), configuration.getDiagnosticsConfig());
+        }
+
         registerAPIsAndMisc(environment);
 
         // optional CORS support
@@ -534,6 +550,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 
+        configureDropwizardMetrics(configuration, environment);
+
         // Indexes Elasticsearch if mappings don't exist when the application is started
         environment.lifecycle().addServerLifecycleListener(event -> {
             if (!ElasticSearchHelper.doMappingsExist()) {
@@ -560,6 +578,41 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 LOG.info("Elasticsearch indices already exist");
             }
         });
+    }
+
+    /**
+     * Instrument the webservice to output metrics
+     * @param configuration
+     * @param environment
+     */
+    private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
+        this.metricRegistry = new MetricRegistry();
+
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new RatioGauge() {
+            @Override
+            protected Ratio getRatio() {
+                final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
+                return Ratio.of(activeConnections, configuration.getDataSourceFactory().getMaxSize());
+            }
+        });
+
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_ACTIVE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_SIZE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_SIZE).getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_IDLE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_IDLE).getValue());
+
+        ScheduledReporter reporter;
+        if (configuration.isLocalCloudWatchMetrics()) {
+            reporter = ConsoleReporter.forRegistry(metricRegistry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build();
+        } else {
+            reporter = new CloudWatchMetricsReporter(metricRegistry, "CloudWatchMetricsReporter", MetricFilter.ALL, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, configuration.getExternalConfig());
+        }
+        reporter.start(1, TimeUnit.MINUTES);
     }
 
     private void registerAPIsAndMisc(Environment environment) {
