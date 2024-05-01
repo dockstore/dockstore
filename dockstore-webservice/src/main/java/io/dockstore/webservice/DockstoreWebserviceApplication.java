@@ -93,6 +93,7 @@ import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.PublicUserFilter;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
+import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
@@ -447,6 +448,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
+        ZenodoHelper.init(configuration, httpClient, getHibernate().getSessionFactory(), tokenDAO, toolDAO, workflowDAO, workflowVersionDAO);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
         environment.jersey().register(metadataResource);

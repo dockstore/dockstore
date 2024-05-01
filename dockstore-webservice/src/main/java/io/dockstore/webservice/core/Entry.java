@@ -329,6 +329,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
 
+    @Column(columnDefinition = "boolean default true", nullable = false)
+    @Schema(description = "Indicates if DOIs should automatically be created by Dockstore", defaultValue = "true")
+    private boolean enableAutomaticDoiCreation = true;
 
     public enum GitVisibility {
         /**
@@ -900,6 +903,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setGitVisibility(final GitVisibility gitVisibility) {
         this.gitVisibility = gitVisibility;
+    }
+
+    public boolean isEnableAutomaticDoiCreation() {
+        return enableAutomaticDoiCreation;
+    }
+
+    public void setEnableAutomaticDoiCreation(boolean enableAutomaticDoiCreation) {
+        this.enableAutomaticDoiCreation = enableAutomaticDoiCreation;
     }
 
     public record EntryIdAndPartner(long entryId, Partner partner) {

@@ -665,6 +665,22 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.readMePath = readMePath;
     }
 
+    public String getDoiEditAccessLinkToken() {
+        return this.getVersionMetadata().doiEditAccessLinkToken;
+    }
+
+    public void setDoiEditAccessLinkToken(String doiEditAccessLinkToken) {
+        this.getVersionMetadata().doiEditAccessLinkToken = doiEditAccessLinkToken;
+    }
+
+    public boolean isDockstoreOwnedDoi() {
+        return this.getVersionMetadata().dockstoreOwnedDoi;
+    }
+
+    public void setDockstoreOwnedDoi(boolean dockstoreOwnedDoi) {
+        this.getVersionMetadata().dockstoreOwnedDoi = dockstoreOwnedDoi;
+    }
+
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED
     }
 

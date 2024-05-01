@@ -7998,6 +7998,37 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/requestDOIEditLink/{workflowVersionId}:
+    post:
+      description: Request an access link with edit permissions for the workflow version's
+        DOI. The DOI must have been created by Dockstore's Zenodo account.
+      operationId: requestDOIEditLink
+      parameters:
+      - description: Workflow to modify.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: workflowVersionId
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/resetVersionPaths:
     put:
       description: Reset the workflow paths.
@@ -8263,6 +8294,35 @@ paths:
             application/json:
               schema:
                 type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/updateAutomaticDoiCreationSetting:
+    post:
+      description: Request an access link with edit permissions for the workflow version's
+        DOI.
+      operationId: updateAutomaticDoiCreationSetting
+      parameters:
+      - description: Workflow to modify.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Boolean indicating whether to enable the automatic creation of
+          DOIs for the workflow
+        in: query
+        name: enabled
+        required: true
+        schema:
+          type: boolean
+      responses:
+        default:
+          content:
+            application/json: {}
           description: default response
       security:
       - BEARER: []
@@ -9130,6 +9190,10 @@ components:
           type: array
           items:
             type: string
+        enableAutomaticDoiCreation:
+          type: boolean
+          default: true
+          description: Indicates if DOIs should automatically be created by Dockstore
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9306,6 +9370,10 @@ components:
           type: boolean
         description:
           type: string
+        enableAutomaticDoiCreation:
+          type: boolean
+          default: true
+          description: Indicates if DOIs should automatically be created by Dockstore
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -10751,6 +10819,10 @@ components:
           type: boolean
         dockerfile_path:
           type: string
+        dockstoreOwnedDoi:
+          type: boolean
+        doiEditAccessLinkToken:
+          type: string
         doiStatus:
           type: string
           enum:
@@ -11664,6 +11736,10 @@ components:
           writeOnly: true
         dirtyBit:
           type: boolean
+        dockstoreOwnedDoi:
+          type: boolean
+        doiEditAccessLinkToken:
+          type: string
         doiStatus:
           type: string
           enum:
@@ -11885,6 +11961,10 @@ components:
           - Julia
           - other
           - n/a
+        enableAutomaticDoiCreation:
+          type: boolean
+          default: true
+          description: Indicates if DOIs should automatically be created by Dockstore
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -12061,6 +12141,10 @@ components:
           writeOnly: true
         dirtyBit:
           type: boolean
+        dockstoreOwnedDoi:
+          type: boolean
+        doiEditAccessLinkToken:
+          type: string
         doiStatus:
           type: string
           enum:

@@ -191,4 +191,35 @@
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="tool"/>
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="workflow"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addAutomaticDoiCreation">
+        <addColumn tableName="apptool">
+            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="doieditaccesslinktoken" type="varchar(255 BYTE)"/>
+            <column defaultValueBoolean="false" name="dockstoreowneddoi" type="bool"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

@@ -55,4 +55,9 @@ public class Service12 extends AbstractYamlService implements Workflowish {
     public String getTopic() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean getEnableAutomaticDoiCreation() {
+        throw new UnsupportedOperationException();
+    }
 }

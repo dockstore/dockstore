@@ -20,6 +20,9 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.helpers.SnapshotHelper.extractDescriptorAndSecondaryFiles;
+import static io.dockstore.webservice.helpers.SnapshotHelper.getMainDescriptorFile;
+import static io.dockstore.webservice.helpers.SnapshotHelper.snapshotWorkflow;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
@@ -29,7 +32,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
-import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -40,7 +42,6 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
-import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
@@ -48,7 +49,6 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
@@ -60,10 +60,8 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
-import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -90,7 +88,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -123,9 +120,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
-import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -196,13 +191,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final VersionDAO versionDAO;
 
     private final PermissionsInterface permissionsInterface;
-    private final String zenodoUrl;
-    private final String zenodoClientID;
-    private final String zenodoClientSecret;
     private final String dashboardPrefix;
-
-    private final String dockstoreUrl;
-    private final String dockstoreGA4GHBaseUrl;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
         EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -215,21 +204,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.versionDAO = new VersionDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
-
-        zenodoUrl = configuration.getZenodoUrl();
-        zenodoClientID = configuration.getZenodoClientID();
-        zenodoClientSecret = configuration.getZenodoClientSecret();
         dashboardPrefix = configuration.getDashboard();
-
-        dockstoreUrl = configuration.getExternalConfig().computeBaseUrl();
-
-        try {
-            dockstoreGA4GHBaseUrl = ToolsImplCommon.baseURL(configuration);
-        } catch (URISyntaxException e) {
-            LOG.error("Could create Dockstore base URL. Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could create Dockstore base URL. "
-                + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
     }
 
     /**
@@ -397,6 +372,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
         // Update file formats in each version and then the entry
         FileFormatHelper.updateFileFormats(existingWorkflow, newWorkflow.getWorkflowVersions(), fileFormatDAO, true);
+
+        for (WorkflowVersion workflowVersion: existingWorkflow.getWorkflowVersions()) {
+            if (ZenodoHelper.canAutomaticallyCreateDockstoreOwnedDoi(existingWorkflow, workflowVersion)) {
+                ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI(existingWorkflow, workflowVersion, user, this);
+            }
+        }
 
         // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
         // EntryVersionHelper.removeSourceFilesFromEntry() which performs a session.flush and commits to the db. It's important the parent workflow is updated completely before committing to the db..
@@ -591,30 +572,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-    /**
-     * Get the Zenodo access token and refresh it if necessary
-     *
-     * @param user Dockstore with Zenodo account
-     */
-    private List<Token> checkOnZenodoToken(User user) {
-        List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
-        if (!tokens.isEmpty()) {
-            Token zenodoToken = tokens.get(0);
-
-            // Check that token is an hour old
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime updateTime = zenodoToken.getDbUpdateDate().toLocalDateTime();
-            if (now.isAfter(updateTime.plusHours(1).minusMinutes(1))) {
-                LOG.info("Refreshing the Zenodo Token");
-                String refreshUrl = zenodoUrl + "/oauth/token";
-                String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
-                    + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
-                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, payload);
-            }
-        }
-        return tokenDAO.findByUserId(user.getId());
-    }
-
     @PUT
     @Timed
     @UnitOfWork
@@ -635,7 +592,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflowVersion == null) {
             LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
-
         }
 
         //Only issue doi if workflow is frozen.
@@ -645,32 +601,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED + ". ", HttpStatus.SC_BAD_REQUEST);
         }
 
-        List<Token> tokens = checkOnZenodoToken(user);
-        Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
-
-        // Update the zenodo token in case it changed. This handles the case where the token has been changed but an error occurred, so the token in the database was not updated
-        if (zenodoToken != null) {
-            tokenDAO.update(zenodoToken);
-            sessionFactory.getCurrentSession().getTransaction().commit();
-            sessionFactory.getCurrentSession().beginTransaction();
-        }
-
-        if (zenodoToken == null) {
-            LOG.error(NO_ZENDO_USER_TOKEN + " " + user.getUsername());
-            throw new CustomWebApplicationException(NO_ZENDO_USER_TOKEN + " " + user.getUsername(), HttpStatus.SC_BAD_REQUEST);
-        }
-        final String zenodoAccessToken = zenodoToken.getContent();
-
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        ApiClient zenodoClient = new ApiClient();
-        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoUrlApi = zenodoUrl + "/api";
-        zenodoClient.setBasePath(zenodoUrlApi);
-        zenodoClient.setApiKey(zenodoAccessToken);
-
-        registerZenodoDOIForWorkflow(zenodoClient, workflow, workflowVersion, user);
+        ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
+        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkNotNullEntry(result);
@@ -679,34 +614,42 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     }
 
-    /**
-     * Register a Zenodo DOI for the workflow and workflow version
-     *
-     * @param zenodoClient    Client for interacting with Zenodo server
-     * @param workflow        workflow for which DOI is registered
-     * @param workflowVersion workflow version for which DOI is registered
-     * @param user            user authenticated to issue a DOI for the workflow
-     */
-    private void registerZenodoDOIForWorkflow(ApiClient zenodoClient, Workflow workflow, WorkflowVersion workflowVersion, User user) {
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/requestDOIEditLink/{workflowVersionId}")
+    @Operation(operationId = "requestDOIEditLink", description = "Request an access link with edit permissions for the workflow version's DOI. The DOI must have been created by Dockstore's Zenodo account.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public WorkflowVersion requestDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @Parameter(description = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
 
-        // Create Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
-        String workflowUrl = MetadataResourceHelper.createWorkflowURL(workflow);
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            LOG.error("{}: could not find version: {}", user.getUsername(), workflow.getWorkflowPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+        }
 
-        ZenodoHelper.ZenodoDoiResult zenodoDoiResult = ZenodoHelper.registerZenodoDOI(zenodoClient, workflow,
-            workflowVersion, workflowUrl, dockstoreGA4GHBaseUrl, dockstoreUrl, this);
+        ZenodoHelper.createEditAccessLink(workflowVersion);
 
-        workflowVersion.setDoiURL(zenodoDoiResult.getDoiUrl());
-        workflow.setConceptDoi(zenodoDoiResult.getConceptDoi());
-        // Only add the alias to the workflow version after publishing the DOI succeeds
-        // Otherwise if the publish call fails we will have added an alias
-        // that will not be used and cannot be deleted
-        // This code also checks that the alias does not start with an invalid prefix
-        // If it does, this will generate an exception, the alias will not be added
-        // to the workflow version, but there may be an invalid Related Identifier URL on the Zenodo entry
-        AliasHelper.addWorkflowVersionAliasesAndCheck(this, workflowDAO, workflowVersionDAO, user,
-            workflowVersion.getId(), zenodoDoiResult.getDoiAlias(), false);
+        return workflowVersion;
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/updateAutomaticDoiCreationSetting")
+    @Operation(operationId = "updateAutomaticDoiCreationSetting", description = "Request an access link with edit permissions for the workflow version's DOI.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public void updateAutomaticDoiCreationSetting(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @Parameter(description = "Boolean indicating whether to enable the automatic creation of DOIs for the workflow", required = true) @QueryParam("enabled") boolean enabled) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
+        workflow.setEnableAutomaticDoiCreation(enabled);
+    }
 
     private String workflowNameAndVersion(Workflow workflow, WorkflowVersion workflowVersion) {
         return workflow.getWorkflowPath() + ":" + workflowVersion.getName();
@@ -1391,43 +1334,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
-                    Optional<String> toolsJSONTable = Optional.empty();
-                    LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
-
-                    // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
-                    // If tooltablejson is missing it, retrieve it again so it has this new key.
-                    // Don't need to re-retrieve tooltablejson if it's an empty array because it will just return an empty array again (since the workflow has no Docker images).
-                    String existingToolTableJson = existingTag.getToolTableJson();
-                    if (existingToolTableJson != null && (existingToolTableJson.contains("\"specifier\"") || "[]".equals(existingToolTableJson))) {
-                        toolsJSONTable = Optional.of(existingToolTableJson);
-                    } else {
-                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
-                        if (mainDescriptor != null) {
-                            // Store tool table json
-                            toolsJSONTable = lInterface.getContent(existingTag.getWorkflowPath(), mainDescriptor.getContent(),
-                                extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-                            toolsJSONTable.ifPresent(existingTag::setToolTableJson);
-                        }
-                    }
-
-                    if (toolsJSONTable.isPresent()) {
-                        checkAndAddImages(existingTag, toolsJSONTable.get(), lInterface);
-                    }
-
-                    // If there is a notebook kernel image, attempt to snapshot it.
-                    if (existingTag.getKernelImagePath() != null) {
-                        checkAndAddImages(existingTag, convertImageToToolsJson(existingTag.getKernelImagePath(), lInterface), lInterface);
-                    }
-
-                    // store dag
-                    if (existingTag.getDagJson() == null) {
-                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
-                        if (mainDescriptor != null) {
-                            String dagJson = lInterface.getCleanDAG(existingTag.getWorkflowPath(), mainDescriptor.getContent(),
-                                extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
-                            existingTag.setDagJson(dagJson);
-                        }
-                    }
+                    snapshotWorkflow(w, existingTag, toolDAO);
                 }
             }
         }
@@ -1435,22 +1342,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
-    }
-
-    private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
-        // Check that a snapshot can occur (all images are referenced by tag or digest).
-        languageHandler.checkSnapshotImages(version.getName(), toolsJson);
-        // Retrieve the images.
-        Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
-        // Add them to the version.
-        version.getImages().addAll(images);
-    }
-
-    private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
-        LanguageHandlerInterface.DockerSpecifier specifier = LanguageHandlerInterface.determineImageSpecifier(image, DockerImageReference.LITERAL);
-        String url = languageHandler.getURLFromEntry(image, toolDAO, specifier);
-        LanguageHandlerInterface.DockerInfo info = new LanguageHandlerInterface.DockerInfo("", image, url, specifier);
-        return languageHandler.getJSONTableToolContent(Map.of("", info));
     }
 
     @GET
@@ -1564,18 +1455,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Populates the return file with the descriptor and secondaryDescContent as a map between file paths and secondary files
-     *
-     * @param workflowVersion source control version to consider
-     * @return secondary file map (string path -> string content)
-     */
-    private Set<SourceFile> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
-        return workflowVersion.getSourceFiles().stream()
-            .filter(sf -> !sf.getPath().equals(workflowVersion.getWorkflowPath()))
-            .collect(Collectors.toSet());
-    }
-
-    /**
      * This method will find the workflowVersion based on the workflowVersionId passed in the parameter and return it
      *
      * @param workflow          a workflow to grab a workflow version from
@@ -1608,26 +1487,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
         }
         return workflowVersion;
-    }
-
-
-    /**
-     * This method will find the main descriptor file based on the workflow version passed in the parameter
-     *
-     * @param workflowVersion workflowVersion with collects sourcefiles
-     * @return mainDescriptor
-     */
-    private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion) {
-
-        SourceFile mainDescriptor = null;
-        for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
-            if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                mainDescriptor = sourceFile;
-                break;
-            }
-        }
-
-        return mainDescriptor;
     }
 
     @PUT

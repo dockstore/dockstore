@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -81,8 +82,10 @@ class ZenodoHelperTest {
         workflowVersion.setWorkflowPath("topmed_freeze3_calling.wdl");
         workflowVersion.setName("1.32.0");
 
-        String trsUrl = ZenodoHelper.createWorkflowTrsUrl(workflow, workflowVersion, "https://dockstore.org/api/api/ga4gh/v2/tools/");
-        assertEquals("https://dockstore.org/api/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere"
+        DockstoreWebserviceConfiguration config = createDockstoreConfiguration();
+        ZenodoHelper.init(config, null, null, null, null, null, null);
+        String trsUrl = ZenodoHelper.createWorkflowTrsUrl(workflow, workflowVersion);
+        assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere"
                 + "%2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl", trsUrl);
     }
 
@@ -146,4 +149,28 @@ class ZenodoHelperTest {
         assertEquals(joeBlow, depositMetadata.getCreators().get(0).getName());
     }
 
+    @Test
+    void testExtractRecordIdFromDoi() {
+        assertEquals("372767", ZenodoHelper.extractRecordIdFromDoi("10.5072/zenodo.372767"));
+        assertEquals("372767", ZenodoHelper.extractRecordIdFromDoi("doi/10.5072/zenodo.372767"));
+    }
+
+    @Test
+    void testSetMetadataCommunities() {
+        final String dockstoreCommunityId = "dockstore-community";
+        final DockstoreWebserviceConfiguration configuration = createDockstoreConfiguration();
+        configuration.setDockstoreZenodoCommunityId(dockstoreCommunityId);
+        ZenodoHelper.init(configuration, null, null, null, null, null, null);
+        DepositMetadata depositMetadata = new DepositMetadata();
+        ZenodoHelper.setMetadataCommunities(depositMetadata);
+        assertEquals(dockstoreCommunityId, depositMetadata.getCommunities().get(0).getIdentifier());
+    }
+
+    private DockstoreWebserviceConfiguration createDockstoreConfiguration() {
+        final DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
+        config.getExternalConfig().setBasePath("/api/");
+        config.getExternalConfig().setHostname("dockstore.org");
+        config.getExternalConfig().setScheme("https");
+        return config;
+    }
 }

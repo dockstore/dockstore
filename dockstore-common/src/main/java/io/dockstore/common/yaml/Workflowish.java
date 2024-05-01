@@ -25,4 +25,6 @@ public interface Workflowish {
     String getReadMePath();
 
     String getTopic();
+
+    boolean getEnableAutomaticDoiCreation();
 }

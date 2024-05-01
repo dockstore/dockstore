@@ -6,6 +6,8 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
+import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI;
+import static io.dockstore.webservice.helpers.ZenodoHelper.canAutomaticallyCreateDockstoreOwnedDoi;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
@@ -355,6 +357,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // A version should be deleted if it has the same git reference name and is not frozen
                     Predicate<Version> shouldDeleteVersion = version -> Objects.equals(version.getName(), gitReferenceName.get()) && !version.isFrozen();
 
+                    // Create a failed lambda event for frozen versions that can't be deleted
+                    workflow.getWorkflowVersions().stream()
+                            .filter(version -> Objects.equals(version.getName(), gitReferenceName.get()) && version.isFrozen())
+                            .forEach(version -> {
+                                String msg = "Cannot delete frozen version";
+                                LOG.error(msg);
+                                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, false, deliveryId, computeWorkflowName(workflow));
+                                lambdaEvent.setMessage(msg);
+                                lambdaEventDAO.create(lambdaEvent);
+                            });
+
                     // If the default version is going to be deleted, select a new default version
                     Version defaultVersion = workflow.getActualDefaultVersion();
                     if (defaultVersion != null && shouldDeleteVersion.test(defaultVersion)) {
@@ -667,6 +680,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
 
+                        // Automatically register a DOI if it's enabled and the workflow is published and the version is a valid tag
+                        if (canAutomaticallyCreateDockstoreOwnedDoi(workflow, version)) {
+                            automaticallyRegisterDockstoreOwnedZenodoDOI(workflow, version, user, this);
+                        }
 
                         // Create some events.
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
@@ -861,6 +878,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
+        // Update the automatic DOI creation setting
+        workflowToUpdate.setEnableAutomaticDoiCreation(wf.getEnableAutomaticDoiCreation());
+
         return workflowToUpdate;
     }
 
@@ -957,23 +977,27 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
-                // Copy over workflow version level information.
-                existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
-                existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
-                existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
-                existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
-                existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
-                existingWorkflowVersion.setDagJson(null);
-                existingWorkflowVersion.setToolTableJson(null);
-                existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
-                existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-                existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
-                existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
-                existingWorkflowVersion.setKernelImagePath(remoteWorkflowVersion.getKernelImagePath());
-                existingWorkflowVersion.setReadMePath(remoteWorkflowVersion.getReadMePath());
-                existingWorkflowVersion.setDescriptionAndDescriptionSource(remoteWorkflowVersion.getDescription(), remoteWorkflowVersion.getDescriptionSource());
-                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
-                    workflow.getDescriptorType());
+                // Only update workflow if it's not frozen
+                if (!existingWorkflowVersion.isFrozen()) {
+                    // Copy over workflow version level information.
+                    existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
+                    existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
+                    existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
+                    existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
+                    existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
+                    existingWorkflowVersion.setDagJson(null);
+                    existingWorkflowVersion.setToolTableJson(null);
+                    existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
+                    existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
+                    existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
+                    existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
+                    existingWorkflowVersion.setKernelImagePath(remoteWorkflowVersion.getKernelImagePath());
+                    existingWorkflowVersion.setReadMePath(remoteWorkflowVersion.getReadMePath());
+                    existingWorkflowVersion.setDescriptionAndDescriptionSource(remoteWorkflowVersion.getDescription(),
+                            remoteWorkflowVersion.getDescriptionSource());
+                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
+                            workflow.getDescriptorType());
+                }
                 updatedWorkflowVersion = existingWorkflowVersion;
             } else {
                 if (checkUrlInterface != null) {
