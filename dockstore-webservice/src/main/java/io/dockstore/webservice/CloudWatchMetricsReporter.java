@@ -72,12 +72,8 @@ public class CloudWatchMetricsReporter extends ScheduledReporter {
             String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             Instant instant = Instant.parse(time);
             if (gauge.getValue() instanceof Number number) {
-                MetricDatum metricDatum;
-                if (gauge instanceof RatioGauge) {
-                    metricDatum = getMetricDatum(name, number.doubleValue(), instant, StandardUnit.PERCENT);
-                } else {
-                    metricDatum = getMetricDatum(name, number.doubleValue(), instant, StandardUnit.NONE);
-                }
+                StandardUnit unit = gauge instanceof RatioGauge ? StandardUnit.PERCENT : StandardUnit.NONE;
+                MetricDatum metricDatum = getMetricDatum(name, number.doubleValue(), instant, unit);
                 metricDataList.add(metricDatum);
             }
         });
