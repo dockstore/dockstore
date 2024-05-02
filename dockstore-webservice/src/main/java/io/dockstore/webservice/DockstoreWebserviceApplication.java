@@ -237,7 +237,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
-    private static final int CACHE_IN_MB = PERCENT;
+    private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
 
     static {
