@@ -24,9 +24,9 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
 import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.RatioGauge;
 import com.codahale.metrics.ScheduledReporter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -230,13 +230,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String IO_DROPWIZARD_DB_HIBERNATE_SIZE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.size";
     public static final String IO_DROPWIZARD_DB_HIBERNATE_IDLE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.idle";
     public static final String IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD = "io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad";
+    public static final int PERCENT = 100;
 
 
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
-    private static final int CACHE_IN_MB = 100;
+    private static final int CACHE_IN_MB = PERCENT;
     private static Cache cache = null;
 
     static {
@@ -586,11 +587,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
         this.metricRegistry = new MetricRegistry();
 
-        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new RatioGauge() {
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new Gauge() {
             @Override
-            protected Ratio getRatio() {
+            public Object getValue() {
                 final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
-                return Ratio.of(activeConnections, configuration.getDataSourceFactory().getMaxSize());
+                return ((double) activeConnections / configuration.getDataSourceFactory().getMaxSize()) * PERCENT;
             }
         });
 
