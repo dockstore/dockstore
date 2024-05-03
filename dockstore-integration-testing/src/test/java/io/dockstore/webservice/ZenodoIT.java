@@ -31,6 +31,7 @@ import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML;
+import static io.specto.hoverfly.junit.core.HoverflyConfig.localConfigs;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -55,9 +56,6 @@ import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
-import io.specto.hoverfly.junit5.HoverflyExtension;
-import io.specto.hoverfly.junit5.api.HoverflyConfig;
-import io.specto.hoverfly.junit5.api.HoverflyCore;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -78,9 +76,6 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
-@ExtendWith(HoverflyExtension.class)
-// Must set destination otherwise Hoverfly will intercept everything, including GitHub requests
-@HoverflyCore(mode = HoverflyMode.SIMULATE, config = @HoverflyConfig(destination = ZENODO_SIMULATION_URL))
 @Tag(ConfidentialTest.NAME)
 class ZenodoIT {
 
@@ -114,131 +109,149 @@ class ZenodoIT {
     }
 
     @Test
-    void testGitHubAppAutomaticDoiCreation(Hoverfly hoverfly) {
-        hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
-        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+    void testGitHubAppAutomaticDoiCreation() {
+        try (Hoverfly hoverfly = new Hoverfly(localConfigs().destination(ZENODO_SIMULATION_URL), HoverflyMode.SIMULATE)) {
+            hoverfly.start();
+            hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+            final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+            WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        // Add a fake Zenodo token
-        testingPostgres.runUpdateStatement(String.format("insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
-                + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')", USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
+            // Add a fake Zenodo token
+            testingPostgres.runUpdateStatement(String.format(
+                    "insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
+                            + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')",
+                    USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
-        Workflow foobar2 = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final long foobar2Id = foobar2.getId();
-        WorkflowVersion foobar2TagVersion09 = foobar2.getWorkflowVersions().stream().filter(version -> "0.9".equals(version.getName())).findFirst().orElse(null);
-        assertNotNull(foobar2TagVersion09);
-        final long foobar2VersionId = foobar2TagVersion09.getId();
+            handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+            Workflow foobar2 = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2",
+                    WorkflowSubClass.BIOWORKFLOW, "versions");
+            final long foobar2Id = foobar2.getId();
+            WorkflowVersion foobar2TagVersion09 = foobar2.getWorkflowVersions().stream().filter(version -> "0.9".equals(version.getName()))
+                    .findFirst().orElse(null);
+            assertNotNull(foobar2TagVersion09);
+            final long foobar2VersionId = foobar2TagVersion09.getId();
 
-        // No DOIs should've been automatically created because the workflow is unpublished
-        assertTrue(foobar2.isEnableAutomaticDoiCreation());
-        assertNull(foobar2TagVersion09.getDoiURL());
-        // Publish workflow
-        workflowsApi.publish1(foobar2.getId(), new PublishRequest().publish(true));
+            // No DOIs should've been automatically created because the workflow is unpublished
+            assertTrue(foobar2.isEnableAutomaticDoiCreation());
+            assertNull(foobar2TagVersion09.getDoiURL());
+            // Publish workflow
+            workflowsApi.publish1(foobar2.getId(), new PublishRequest().publish(true));
 
-        // Release the tag again. Should automatically create a DOI
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
-        foobar2TagVersion09 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion09.getId(), "");
-        assertTrue(foobar2TagVersion09.isFrozen(), "Version should've been automatically snapshotted");
-        assertNotNull(foobar2TagVersion09.getDoiURL());
-        assertTrue(foobar2TagVersion09.isDockstoreOwnedDoi());
+            // Release the tag again. Should automatically create a DOI
+            handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+            foobar2TagVersion09 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion09.getId(), "");
+            assertTrue(foobar2TagVersion09.isFrozen(), "Version should've been automatically snapshotted");
+            assertNotNull(foobar2TagVersion09.getDoiURL());
+            assertTrue(foobar2TagVersion09.isDockstoreOwnedDoi());
 
-        // Should not be able to request a DOI for the version because it already has one
-        ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(foobar2Id, foobar2VersionId, ""));
-        assertTrue(exception.getMessage().contains(VERSION_ALREADY_HAS_DOI));
+            // Should not be able to request a DOI for the version because it already has one
+            ApiException exception = assertThrows(ApiException.class,
+                    () -> workflowsApi.requestDOIForWorkflowVersion(foobar2Id, foobar2VersionId, ""));
+            assertTrue(exception.getMessage().contains(VERSION_ALREADY_HAS_DOI));
 
-        // Release a different tag. Should automatically create DOI
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
-        foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
-        WorkflowVersion foobar2TagVersion08 = foobar2.getWorkflowVersions().stream().filter(version -> "0.8".equals(version.getName())).findFirst().orElse(null);
-        assertNotNull(foobar2TagVersion08);
-        assertNotNull(foobar2TagVersion08.getDoiURL());
-        assertTrue(foobar2TagVersion08.isDockstoreOwnedDoi());
+            // Release a different tag. Should automatically create DOI
+            handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+            foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
+            WorkflowVersion foobar2TagVersion08 = foobar2.getWorkflowVersions().stream().filter(version -> "0.8".equals(version.getName()))
+                    .findFirst().orElse(null);
+            assertNotNull(foobar2TagVersion08);
+            assertNotNull(foobar2TagVersion08.getDoiURL());
+            assertTrue(foobar2TagVersion08.isDockstoreOwnedDoi());
 
-        // Release a branch. Should not automatically create a DOI because it's not a tag
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
-        foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
-        WorkflowVersion foobar2BranchVersion = foobar2.getWorkflowVersions().stream().filter(version -> "master".equals(version.getName())).findFirst().orElse(null);
-        assertNotNull(foobar2BranchVersion);
-        assertNull(foobar2BranchVersion.getDoiURL());
+            // Release a branch. Should not automatically create a DOI because it's not a tag
+            handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
+            foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
+            WorkflowVersion foobar2BranchVersion = foobar2.getWorkflowVersions().stream()
+                    .filter(version -> "master".equals(version.getName())).findFirst().orElse(null);
+            assertNotNull(foobar2BranchVersion);
+            assertNull(foobar2BranchVersion.getDoiURL());
 
-        // Should throw an exception because GitHub App workflows can only modify the automatic DOI creation setting through the .dockstore.yml
-        exception = assertThrows(ApiException.class, () -> workflowsApi.updateAutomaticDoiCreationSetting(foobar2Id, false));
-        assertTrue(exception.getMessage().contains(MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML));
+            // Should throw an exception because GitHub App workflows can only modify the automatic DOI creation setting through the .dockstore.yml
+            exception = assertThrows(ApiException.class, () -> workflowsApi.updateAutomaticDoiCreationSetting(foobar2Id, false));
+            assertTrue(exception.getMessage().contains(MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML));
 
-        // Release a tag that has 'enableAutomaticDoiCreation: false' in the .dockstore.yml. Should not automatically create DOI because it's disabled for the workflow
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.10", USER_2_USERNAME);
-        foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
-        assertFalse(foobar2.isEnableAutomaticDoiCreation());
-        WorkflowVersion foobar2TagVersion07 = foobar2.getWorkflowVersions().stream().filter(version -> "0.10".equals(version.getName())).findFirst().orElse(null);
-        assertNotNull(foobar2TagVersion07);
-        assertNull(foobar2TagVersion07.getDoiURL());
+            // Release a tag that has 'enableAutomaticDoiCreation: false' in the .dockstore.yml. Should not automatically create DOI because it's disabled for the workflow
+            handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.10", USER_2_USERNAME);
+            foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
+            assertFalse(foobar2.isEnableAutomaticDoiCreation());
+            WorkflowVersion foobar2TagVersion07 = foobar2.getWorkflowVersions().stream().filter(version -> "0.10".equals(version.getName()))
+                    .findFirst().orElse(null);
+            assertNotNull(foobar2TagVersion07);
+            assertNull(foobar2TagVersion07.getDoiURL());
+        }
     }
 
     @Test
-    void testGenerateDOIFrozenVersion(Hoverfly hoverfly) throws ApiException {
-        hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
-        ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+    void testGenerateDOIFrozenVersion() throws ApiException {
+        try (Hoverfly hoverfly = new Hoverfly(localConfigs().destination(ZENODO_SIMULATION_URL), HoverflyMode.SIMULATE)) {
+            hoverfly.start();
+            hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+            ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+            WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        // register workflow
-        Workflow githubWorkflow = workflowsApi
-                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
+            // register workflow
+            Workflow githubWorkflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl",
+                    "test-update-workflow", "wdl", "/test.json");
 
-        Workflow workflowBeforeFreezing = workflowsApi.refresh1(githubWorkflow.getId(), false);
-        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        final long workflowId = workflowBeforeFreezing.getId();
-        final long versionId = master.getId();
+            Workflow workflowBeforeFreezing = workflowsApi.refresh1(githubWorkflow.getId(), false);
+            WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master"))
+                    .findFirst().get();
+            final long workflowId = workflowBeforeFreezing.getId();
+            final long versionId = master.getId();
 
-        // DOI should only be generated for published workflows.
-        ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
-        assertTrue(exception.getMessage().contains(PUBLISHED_ENTRY_REQUIRED));
+            // DOI should only be generated for published workflows.
+            ApiException exception = assertThrows(ApiException.class,
+                    () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
+            assertTrue(exception.getMessage().contains(PUBLISHED_ENTRY_REQUIRED));
 
-        // Publish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
+            // Publish workflow
+            workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // DOI should only be generated for frozen versions of workflows.
-        exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
-        assertTrue(exception.getMessage().contains(FROZEN_VERSION_REQUIRED));
+            // DOI should only be generated for frozen versions of workflows.
+            exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
+            assertTrue(exception.getMessage().contains(FROZEN_VERSION_REQUIRED));
 
-        // freeze version 'master'
-        master.setFrozen(true);
-        workflowsApi.updateWorkflowVersion(workflowId, List.of(master));
-        master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
-        assertTrue(master.isFrozen());
+            // freeze version 'master'
+            master.setFrozen(true);
+            workflowsApi.updateWorkflowVersion(workflowId, List.of(master));
+            master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
+            assertTrue(master.isFrozen());
 
-        // Should be able to refresh a workflow with a frozen version without throwing an error
-        workflowsApi.refresh1(githubWorkflow.getId(), false);
+            // Should be able to refresh a workflow with a frozen version without throwing an error
+            workflowsApi.refresh1(githubWorkflow.getId(), false);
 
-        // should not be able to restub whether published or not since there is a snapshot/frozen
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
+            // should not be able to restub whether published or not since there is a snapshot/frozen
+            exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
+            assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
 
-        // Should not be able to register DOI without Zenodo token
-        exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
-        assertTrue(exception.getMessage().contains(NO_ZENODO_USER_TOKEN));
+            // Should not be able to register DOI without Zenodo token
+            exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
+            assertTrue(exception.getMessage().contains(NO_ZENODO_USER_TOKEN));
 
-        // Add a fake Zenodo token
-        testingPostgres.runUpdateStatement(String.format("insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
-                + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')", USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
+            // Add a fake Zenodo token
+            testingPostgres.runUpdateStatement(String.format(
+                    "insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
+                            + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')",
+                    USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
 
-        workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, "");
+            workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, "");
 
-        Workflow workflow = workflowsApi.getWorkflow(workflowId, "");
-        assertNotNull(workflow.getConceptDoi());
-        master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
-        assertNotNull(master.getDoiURL());
+            Workflow workflow = workflowsApi.getWorkflow(workflowId, "");
+            assertNotNull(workflow.getConceptDoi());
+            master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
+            assertNotNull(master.getDoiURL());
 
-        // unpublish workflow
-        workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
+            // unpublish workflow
+            workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
 
-        // should not be able to restub workflow with DOI even if it is unpublished
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB));
+            // should not be able to restub workflow with DOI even if it is unpublished
+            exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
+            assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB));
 
-        // don't die horribly when stubbing something with snapshots, explain the error
-        testingPostgres.runUpdateStatement("update workflow set conceptdoi = null");
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
+            // don't die horribly when stubbing something with snapshots, explain the error
+            testingPostgres.runUpdateStatement("update workflow set conceptdoi = null");
+            exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
+            assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
+        }
     }
 }
