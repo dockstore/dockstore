@@ -23,6 +23,7 @@ import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.helpers.SnapshotHelper.extractDescriptorAndSecondaryFiles;
 import static io.dockstore.webservice.helpers.SnapshotHelper.getMainDescriptorFile;
 import static io.dockstore.webservice.helpers.SnapshotHelper.snapshotWorkflow;
+import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
@@ -156,8 +157,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
 
-    public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
-    public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String SC_REGISTRY_ACCESS_MESSAGE = "User does not have access to the given source control registry.";
     public static final String SC_HOSTED_NOT_SUPPORTED_MESSAGE = "This operation is not supported on hosted workflows.";
     private static final String CWL_CHECKER = "_cwl_checker";
@@ -182,6 +181,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
     public static final String YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION = "Your user does not have access to this organization.";
+    public static final String MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML = "Modify the .dockstore.yml to update the automatic DOI creation setting for the GitHub App workflow";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -590,16 +590,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
-            LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
+            LOG.error("{}: could not find version: {}", user.getUsername(), workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        //Only issue doi if workflow is frozen.
-        final String workflowNameAndVersion = workflowNameAndVersion(workflow, workflowVersion);
-        if (!workflowVersion.isFrozen()) {
-            LOG.error(user.getUsername() + ": Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED);
-            throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED + ". ", HttpStatus.SC_BAD_REQUEST);
-        }
+        checkCanRegisterDoi(workflow, workflowVersion, user);
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
@@ -641,13 +636,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/updateAutomaticDoiCreationSetting")
-    @Operation(operationId = "updateAutomaticDoiCreationSetting", description = "Request an access link with edit permissions for the workflow version's DOI.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateAutomaticDoiCreationSetting", description = "Update the automatic DOI creation setting for non-GitHub App workflows.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public void updateAutomaticDoiCreationSetting(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @Parameter(description = "Boolean indicating whether to enable the automatic creation of DOIs for the workflow", required = true) @QueryParam("enabled") boolean enabled) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
+
+        if (workflow.getMode() == DOCKSTORE_YML) {
+            throw new CustomWebApplicationException(MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML, HttpStatus.SC_BAD_REQUEST);
+        }
+
         workflow.setEnableAutomaticDoiCreation(enabled);
     }
 

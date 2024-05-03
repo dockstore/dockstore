@@ -18,11 +18,6 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
-import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static io.dockstore.webservice.resources.WorkflowResource.YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -1122,75 +1117,5 @@ class GeneralWorkflowIT extends BaseIT {
         // final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", long.class);
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
         assertEquals(1, count, "One user should have this info now, there are  " + count);
-    }
-
-    @Test
-    void testGenerateDOIFrozenVersion() throws ApiException {
-        // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-
-        //register workflow
-        Workflow githubWorkflow = workflowsApi
-            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
-
-        Workflow workflowBeforeFreezing = workflowsApi.refresh(githubWorkflow.getId(), false);
-        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
-            .get();
-
-        //try issuing DOI for workflow version that is not frozen.
-        try {
-            workflowsApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
-            fail("This line should never execute if version is mutable. DOI should only be generated for frozen versions of workflows.");
-        } catch (ApiException ex) {
-            assertTrue(ex.getResponseBody().contains(FROZEN_VERSION_REQUIRED));
-        }
-
-        //freeze version 'master'
-        master.setFrozen(true);
-        final List<WorkflowVersion> workflowVersions1 = workflowsApi
-            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
-        master = workflowVersions1.stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        assertTrue(master.isFrozen());
-
-
-        workflowsApi.publish(workflowBeforeFreezing.getId(), CommonTestUtilities.createPublishRequest(true));
-        // should not be able to restub whether published or not since there is a snapshot/frozen
-        try {
-            workflowsApi.restub(workflowBeforeFreezing.getId());
-            fail("This line should never execute, should not be able to restub workflow that is published.");
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
-        }
-
-        //TODO: For now just checking for next failure (no Zenodo token), but should replace with when DOI registration tests are written
-        try {
-            workflowsApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
-            fail("This line should never execute without valid Zenodo token");
-        } catch (ApiException ex) {
-            assertTrue(ex.getResponseBody().contains(NO_ZENDO_USER_TOKEN));
-            // fake a DOI
-            testingPostgres.runUpdateStatement("update workflow set conceptdoi = '10.5281/zenodo.8'");
-        }
-
-        // Should be able to refresh a workflow with a frozen version without throwing an error
-        workflowsApi.refresh(githubWorkflow.getId(), false);
-
-        // unpublish workflow
-        workflowsApi.publish(workflowBeforeFreezing.getId(), CommonTestUtilities.createPublishRequest(false));
-        try {
-            workflowsApi.restub(workflowBeforeFreezing.getId());
-            fail("This line should never execute, should not be able to restub workflow with DOI even if it is unpublished");
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB));
-        }
-        // don't die horribly when stubbing something with snapshots, explain the error
-        testingPostgres.runUpdateStatement("update workflow set conceptdoi = null");
-        try {
-            workflowsApi.restub(workflowBeforeFreezing.getId());
-            fail("This line should never execute, should not be able to restub workflow with DOI even if it is unpublished");
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
-        }
     }
 }

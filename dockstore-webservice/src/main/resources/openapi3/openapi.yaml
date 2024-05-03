@@ -8305,8 +8305,7 @@ paths:
       - workflows
   /workflows/{workflowId}/updateAutomaticDoiCreationSetting:
     post:
-      description: Request an access link with edit permissions for the workflow version's
-        DOI.
+      description: Update the automatic DOI creation setting for non-GitHub App workflows.
       operationId: updateAutomaticDoiCreationSetting
       parameters:
       - description: Workflow to modify.

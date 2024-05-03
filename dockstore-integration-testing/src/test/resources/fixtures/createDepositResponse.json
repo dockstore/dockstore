@@ -1,0 +1,34 @@
+{
+  "conceptrecid": 51309,
+  "created": "2024-05-02T15:13:00.593467+00:00",
+  "files": [],
+  "id": 51310,
+  "links": {
+    "self": "https://sandbox.zenodo.org/api/deposit/depositions/51310",
+    "html": "https://sandbox.zenodo.org/deposit/51310",
+    "badge": "https://sandbox.zenodo.org/badge/doi/.svg",
+    "files": "https://sandbox.zenodo.org/api/deposit/depositions/51310/files",
+    "bucket": "https://sandbox.zenodo.org/api/files/a2b5c741-0e5c-4105-8b2e-70cf8aeee5a9",
+    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/51310",
+    "latest_draft_html": "https://sandbox.zenodo.org/deposit/51310",
+    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/51310/actions/publish",
+    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/51310/actions/edit",
+    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/51310/actions/discard",
+    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/51310/actions/newversion",
+    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/51310/actions/registerconceptdoi"
+  },
+  "metadata": {
+    "creators": [],
+    "access_right": "OPEN",
+    "prereserve_doi": {
+      "doi": "10.5281/zenodo.51310",
+      "recid": 51310
+    }
+  },
+  "modified": "2024-05-02T15:13:00.593467+00:00",
+  "owner": 563,
+  "record_id": 51310,
+  "state": "unsubmitted",
+  "submitted": false,
+  "title": ""
+}

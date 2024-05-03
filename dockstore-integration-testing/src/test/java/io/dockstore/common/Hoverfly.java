@@ -185,6 +185,25 @@ public final class Hoverfly {
                     .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
     );
 
+    public static final String ZENODO_SIMULATION_URL = "https://sandbox.zenodo.org";
+    public static final SimulationSource ZENODO_SIMULATION_SOURCE = dsl(service(ZENODO_SIMULATION_URL)
+            .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
+            // createDeposit
+            .post("/api/deposit/depositions").anyBody().anyQueryParams().willReturn(success(fixture("fixtures/createDepositResponse.json"), MediaType.APPLICATION_JSON))
+            // putDeposit
+            .put(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/putDepositResponse.json"), MediaType.APPLICATION_JSON))
+            // getDeposit
+            .get(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/getDepositResponse.json"), MediaType.APPLICATION_JSON))
+            // newDepositVersion
+            .post(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/actions/newversion")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/newDepositVersionResponse.json"), MediaType.APPLICATION_JSON))
+            // createFile
+            .post(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/files")).anyBody().anyQueryParams().willReturn(success())
+            // publishDeposit
+            .post(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/actions/publish")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/publishDepositResponse.json"), MediaType.APPLICATION_JSON))
+            // deleteFile
+            .delete(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/files/(.+)")).anyQueryParams().anyBody().willReturn(success())
+    );
+
     public static final SimulationSource SIMULATION_SOURCE = dsl(service("https://www.googleapis.com")
 
             .post("/oauth2/v4/token").body(HoverflyMatchers.contains(getFakeCode(SUFFIX3))).anyQueryParams()
