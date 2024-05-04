@@ -31,21 +31,25 @@ import io.swagger.zenodo.client.api.AccessLinksApi;
 import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
 import io.swagger.zenodo.client.api.FilesApi;
+import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.AccessLink;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.Community;
 import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
+import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -364,6 +368,44 @@ public final class ZenodoHelper {
         if (doi == null) {
             long doiId = doiDAO.create(new Doi(doiType, doiInitiator, doiName));
             return doiDAO.findById(doiId);
+    public static List<String> findDOIsForGitHubRepo(ApiClient zenodoClient, String gitHubRepo) {
+        final PreviewApi previewApi = new PreviewApi(zenodoClient);
+        final String query = URLEncoder.encode('"' + gitHubRepo + '"');
+        final int pageSize = 100;
+        final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
+        final List<Hit> hits = records.getHits().getHits();
+        System.out.println(gitHubRepo + " has " + hits.size() + " hits");
+        final List<Hit> matches = hits.stream().filter(hit -> hit.getMetadata().getRelatedIdentifiers() != null && hit.getMetadata().getRelatedIdentifiers().stream()
+                .anyMatch(ri -> ri.getIdentifier() != null && ri.getIdentifier().contains(gitHubRepo))).collect(Collectors.toList());
+        if (!matches.isEmpty()) {
+            System.out.println("matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier() = " + matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier());
+        }
+        return List.of();
+    }
+
+    public static ApiClient createApiClient(String basePath) {
+        ApiClient zenodoClient = new ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoUrlApi = basePath + "/api";
+        zenodoClient.setBasePath(zenodoUrlApi);
+        return zenodoClient;
+    }
+
+    /**
+     * extract a digital object identifier (DOI) from a DOI target URL
+     * @param doiUrl digital object identifier
+     * @return the DOI as a string
+     */
+    protected static String extractDoiFromDoiUrl(String doiUrl) {
+        // Remove the 'https://doi.org/' etc. prefix from the DOI
+        // e.g. https://doi.org/10.5072/zenodo.372767
+        String doi = doiUrl;
+        try {
+            URI uri = new URI(doiUrl);
+            doi = StringUtils.stripStart(uri.getPath(), "/");
+
+        } catch (URISyntaxException e) {
+            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
         }
         return doi;
     }

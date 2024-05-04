@@ -21,6 +21,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.SyncStatus;
@@ -44,6 +45,7 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -149,6 +151,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
+    private final String zenodoUrl;
 
     private IntFunction<List<Workflow>> getWorkflows = offset -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
 
@@ -244,6 +247,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         hostName = configuration.getExternalConfig().getHostname();
         isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
+        zenodoUrl = configuration.getZenodoUrl();
     }
 
     @GET
@@ -723,6 +727,27 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
 
+    @POST
+    @RolesAllowed("admin")
+    @Path("/updateEntryToGetDOIs")
+    @Deprecated
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "updateEntryToGetDOIs", description = "", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public int updateEntryToGetDOIs(@Parameter(hidden = true) @Auth User user) {
+        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+        final List<String> gitHubRepos = allPublished.stream()
+                .filter(workflow -> workflow.getSourceControl() == SourceControl.GITHUB)
+                .map(workflow -> workflow.getOrganization() + '/' + workflow.getRepository())
+                .distinct()
+                .collect(Collectors.toList());
+        final io.swagger.zenodo.client.ApiClient zenodoClient = ZenodoHelper.createApiClient(zenodoUrl);
+        zenodoClient.setBasePath("https://zenodo.org/api"); // TODO: Don't merge this!
+        final int artificialLimit = 100;
+        gitHubRepos.stream().forEach(repo -> ZenodoHelper.findDOIsForGitHubRepo(zenodoClient, repo));
+        return gitHubRepos.size();
+    }
+
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
      * @param id entry id
@@ -815,6 +840,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Override
     public boolean canShare(User user, Entry entry) {
         return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
+    }
+
+    io.swagger.zenodo.client.ApiClient createZenodoClient() {
+        io.swagger.zenodo.client.ApiClient zenodoClient = new io.swagger.zenodo.client.ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoUrlApi = zenodoUrl + "/api";
+        zenodoClient.setBasePath(zenodoUrlApi);
+        return zenodoClient;
     }
 
     /**
