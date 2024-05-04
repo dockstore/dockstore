@@ -3011,6 +3011,22 @@ paths:
       - BEARER: []
       tags:
       - curation
+  /entries/updateEntryToGetDOIs:
+    post:
+      deprecated: true
+      operationId: updateEntryToGetDOIs
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/updateEntryToGetTopics:
     get:
       deprecated: true
