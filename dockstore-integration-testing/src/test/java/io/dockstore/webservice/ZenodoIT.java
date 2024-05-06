@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -58,6 +59,7 @@ import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -77,7 +79,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-class ZenodoIT {
+class ZenodoIT extends BaseIT {
 
     // Set fake Dockstore Zenodo token so DOIs can automatically be created
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(DockstoreWebserviceApplication.class, CONFIDENTIAL_CONFIG_PATH,
@@ -108,12 +110,17 @@ class ZenodoIT {
         SUPPORT.after();
     }
 
+    @AfterEach
+    public void after() throws InterruptedException {
+        assertNoMetricsLeaks(SUPPORT);
+    }
+
     @Test
     void testGitHubAppAutomaticDoiCreation() {
         try (Hoverfly hoverfly = new Hoverfly(localConfigs().destination(ZENODO_SIMULATION_URL), HoverflyMode.SIMULATE)) {
             hoverfly.start();
             hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
-            final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+            final ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
             WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
             // Add a fake Zenodo token
@@ -186,7 +193,7 @@ class ZenodoIT {
         try (Hoverfly hoverfly = new Hoverfly(localConfigs().destination(ZENODO_SIMULATION_URL), HoverflyMode.SIMULATE)) {
             hoverfly.start();
             hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
-            ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+            ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
             WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
             // register workflow
