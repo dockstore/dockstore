@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.HoverflyTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.TestingPostgres;
@@ -82,6 +83,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 // Must set destination otherwise Hoverfly will intercept everything, including GitHub requests
 @HoverflyCore(mode = HoverflyMode.SIMULATE, config = @HoverflyConfig(destination = ZENODO_SIMULATION_URL))
 @Tag(ConfidentialTest.NAME)
+@Tag(HoverflyTest.NAME)
 class ZenodoIT {
 
     // Set fake Dockstore Zenodo token so DOIs can automatically be created

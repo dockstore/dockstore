@@ -866,6 +866,15 @@
             </properties>
         </profile>
         <profile>
+            <id>hoverfly-tests</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.LocalStackTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
+            </properties>
+        </profile>
+        <profile>
             <id>bitbucket-tests</id>
             <!-- run all tests involving bitbucket -->
             <properties>
