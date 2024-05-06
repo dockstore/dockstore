@@ -666,7 +666,7 @@ commands:
                   if [ $CIRCLE_NODE_TOTAL != 1 ] 
                   then
                     ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-                    clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr ' ' ','` | grep  -v "^Running Changeset:"
+                    clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
                   else 
                     ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
                   fi
