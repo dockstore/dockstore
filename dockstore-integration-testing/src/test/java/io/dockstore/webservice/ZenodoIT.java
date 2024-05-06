@@ -17,9 +17,7 @@
 
 package io.dockstore.webservice;
 
-import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
-import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_URL;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
