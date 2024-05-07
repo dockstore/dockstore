@@ -150,14 +150,12 @@ class ZenodoIT {
         assertTrue(exception.getMessage().contains(VERSION_ALREADY_HAS_DOI));
 
         // Release a different tag. Should automatically create DOI
-        /*
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
         WorkflowVersion foobar2TagVersion08 = foobar2.getWorkflowVersions().stream().filter(version -> "0.8".equals(version.getName())).findFirst().orElse(null);
         assertNotNull(foobar2TagVersion08);
         assertNotNull(foobar2TagVersion08.getDoiURL());
         assertTrue(foobar2TagVersion08.isDockstoreOwnedDoi());
-         */
 
         // Release a branch. Should not automatically create a DOI because it's not a tag
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
