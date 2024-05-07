@@ -405,14 +405,11 @@ jobs:
               touch /tmp/non-confidential-tests-to-run.txt
               cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             
-              # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-              /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
-            
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
-              -Dtest=`cat /tmp/non-confidential-tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false -Djavax.net.ssl.trustStorePassword=changeit  -ntp | grep  -v "^Running Changeset:"         
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage \
+              -Dtest=`cat /tmp/non-confidential-tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false -ntp | grep  -v "^Running Changeset:"         
             else 
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
-              -Djavax.net.ssl.trustStorePassword=changeit  -ntp | grep  -v "^Running Changeset:"      
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage \
+              -ntp | grep  -v "^Running Changeset:"      
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - setup_codecov_uploader
