@@ -125,10 +125,10 @@ class ZenodoIT {
         testingPostgres.runUpdateStatement(String.format("insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
                 + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')", USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         Workflow foobar2 = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
         final long foobar2Id = foobar2.getId();
-        WorkflowVersion foobar2TagVersion09 = foobar2.getWorkflowVersions().stream().filter(version -> "0.9".equals(version.getName())).findFirst().orElse(null);
+        WorkflowVersion foobar2TagVersion09 = foobar2.getWorkflowVersions().stream().filter(version -> "0.8".equals(version.getName())).findFirst().orElse(null);
         assertNotNull(foobar2TagVersion09);
         final long foobar2VersionId = foobar2TagVersion09.getId();
 
@@ -139,7 +139,7 @@ class ZenodoIT {
         workflowsApi.publish1(foobar2.getId(), new PublishRequest().publish(true));
 
         // Release the tag again. Should automatically create a DOI
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         foobar2TagVersion09 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion09.getId(), "");
         assertTrue(foobar2TagVersion09.isFrozen(), "Version should've been automatically snapshotted");
         assertNotNull(foobar2TagVersion09.getDoiURL());
@@ -150,9 +150,9 @@ class ZenodoIT {
         assertTrue(exception.getMessage().contains(VERSION_ALREADY_HAS_DOI));
 
         // Release a different tag. Should automatically create DOI
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
         foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
-        WorkflowVersion foobar2TagVersion08 = foobar2.getWorkflowVersions().stream().filter(version -> "0.8".equals(version.getName())).findFirst().orElse(null);
+        WorkflowVersion foobar2TagVersion08 = foobar2.getWorkflowVersions().stream().filter(version -> "0.9".equals(version.getName())).findFirst().orElse(null);
         assertNotNull(foobar2TagVersion08);
         assertNotNull(foobar2TagVersion08.getDoiURL());
         assertTrue(foobar2TagVersion08.isDockstoreOwnedDoi());
