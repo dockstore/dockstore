@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.HoverflyTest;
-import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -38,7 +37,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@Tag(NonConfidentialTest.NAME)
 @Tag(HoverflyTest.NAME)
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE)

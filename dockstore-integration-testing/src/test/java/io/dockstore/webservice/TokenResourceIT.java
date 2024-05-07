@@ -42,7 +42,6 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.HoverflyTest;
 import io.dockstore.common.MuteForSuccessfulTests;
-import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -91,7 +90,6 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE)
-@Tag(NonConfidentialTest.NAME)
 @Tag(HoverflyTest.NAME)
 public class TokenResourceIT {
     // This is not from Hoverfly, it's actually in the starting database
