@@ -168,9 +168,11 @@ import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -178,6 +180,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import okhttp3.Cache;
@@ -188,7 +191,14 @@ import org.apache.http.HttpStatus;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.server.model.ResourceMethod;
+import org.glassfish.jersey.server.monitoring.ApplicationEvent;
+import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -529,6 +539,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         });
 
 
+        // Output information about the endpoints that are accessible to admins and curators.
+        environment.jersey().register(new AdminEndpointLoggingListener());
+
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
@@ -700,6 +713,39 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             SourceFile.restrictPaths(regex, violationMessage);
         } else {
             SourceFile.unrestrictPaths();
+        }
+    }
+
+    private static class AdminEndpointLoggingListener implements ApplicationEventListener {
+
+        @Override
+        public void onEvent(ApplicationEvent event) {
+            if (event.getType() == ApplicationEvent.Type.INITIALIZATION_APP_FINISHED) {
+                List<Resource> resources = event.getResourceModel().getResources();
+                for (Resource resource: resources) {
+                    logResource("", resource);
+                }
+            }
+        }
+
+        private void logResource(String parentPath, Resource resource) {
+            String path = parentPath + "/" + resource.getPath();
+            for (ResourceMethod resourceMethod: resource.getAllMethods()) {
+                String httpMethod = resourceMethod.getHttpMethod();
+                if (!"OPTIONS".equals(httpMethod)) {
+                    Method handlingMethod = resourceMethod.getInvocable().getHandlingMethod();
+                    RolesAllowed rolesAllowed = handlingMethod.getAnnotation(RolesAllowed.class);
+                    LOG.info("RESOURCE " + httpMethod + " " + path + " " + rolesAllowed);
+                }
+            }
+            for (Resource child: resource.getChildResources()) {
+                logResource(path, child);
+            }
+        }
+
+        @Override
+        public RequestEventListener onRequest(RequestEvent requestEvent) {
+            return null;
         }
     }
 }
