@@ -369,6 +369,7 @@ public final class ZenodoHelper {
             long doiId = doiDAO.create(new Doi(doiType, doiInitiator, doiName));
             return doiDAO.findById(doiId);
     public static List<String> findDOIsForGitHubRepo(ApiClient zenodoClient, String gitHubRepo) {
+        final ArrayList<String> dois = new ArrayList<>();
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         final String query = URLEncoder.encode('"' + gitHubRepo + '"');
         final int pageSize = 100;
@@ -378,9 +379,10 @@ public final class ZenodoHelper {
         final List<Hit> matches = hits.stream().filter(hit -> hit.getMetadata().getRelatedIdentifiers() != null && hit.getMetadata().getRelatedIdentifiers().stream()
                 .anyMatch(ri -> ri.getIdentifier() != null && ri.getIdentifier().contains(gitHubRepo))).collect(Collectors.toList());
         if (!matches.isEmpty()) {
+            dois.addAll(matches.stream().map(Hit::getDoiUrl).toList());
             System.out.println("matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier() = " + matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier());
         }
-        return List.of();
+        return dois;
     }
 
     public static ApiClient createApiClient(String basePath) {

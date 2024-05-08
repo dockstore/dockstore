@@ -97,7 +97,9 @@ import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -734,7 +736,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork
     @Timed
     @Operation(operationId = "updateEntryToGetDOIs", description = "", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public int updateEntryToGetDOIs(@Parameter(hidden = true) @Auth User user) {
+    public List<RepoDoi> updateEntryToGetDOIs(@Parameter(hidden = true) @Auth User user) {
         final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
         final List<String> gitHubRepos = allPublished.stream()
                 .filter(workflow -> workflow.getSourceControl() == SourceControl.GITHUB)
@@ -743,10 +745,32 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 .collect(Collectors.toList());
         final io.swagger.zenodo.client.ApiClient zenodoClient = ZenodoHelper.createApiClient(zenodoUrl);
         zenodoClient.setBasePath("https://zenodo.org/api"); // TODO: Don't merge this!
-        final int artificialLimit = 100;
-        gitHubRepos.stream().forEach(repo -> ZenodoHelper.findDOIsForGitHubRepo(zenodoClient, repo));
-        return gitHubRepos.size();
+        final long millis = 500; // Rate limit is 133 per minute
+
+        final List<RepoDoi> reposWithDois = gitHubRepos.stream().map(repo -> {
+            try {
+                Thread.sleep(Duration.ofMillis(millis).toMillis());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            final List<String> dois = ZenodoHelper.findDOIsForGitHubRepo(zenodoClient, repo);
+            if (!dois.isEmpty()) {
+                return new RepoDoi(repo, dois);
+            }
+            return null;
+        }).filter(Objects::nonNull).toList();
+        System.out.println("reposWithDois.size() = " + reposWithDois.size());
+        final List<RepoDoi> reposWithOneWorkflow = reposWithDois.stream().filter(repoDoi -> {
+            final String[] split = repoDoi.repo().split("/");
+            final String org = split[0];
+            final String repoName = split[1];
+            return allPublished.stream().filter(w -> w.getOrganization().equals(org) && w.getRepository().equals(repoName)).toList().size()
+                    == 1;
+        }).toList();
+        return reposWithOneWorkflow;
     }
+
+    public record RepoDoi(String repo, List<String> dois) {}
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
