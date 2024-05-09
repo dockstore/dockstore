@@ -40,6 +40,7 @@ import io.dockstore.common.LanguagePluginManager;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
+import io.dockstore.webservice.SimpleAuthorizer;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -721,8 +722,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         @Override
         public void onEvent(ApplicationEvent event) {
             if (event.getType() == ApplicationEvent.Type.INITIALIZATION_APP_FINISHED) {
-                List<String> roles = List.of("admin", "curator", "platformPartner");
                 StringBuilder builder = new StringBuilder();
+                List<String> roles = SimpleAuthorizer.ROLES;
                 for (Resource resource: event.getResourceModel().getResources()) {
                     formatResource(builder, "/", resource, roles);
                 }
@@ -735,7 +736,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             for (ResourceMethod resourceMethod: resource.getAllMethods()) {
                 RolesAllowed rolesAllowed = resourceMethod.getInvocable().getHandlingMethod().getAnnotation(RolesAllowed.class);
                 if (rolesAllowed != null && !Collections.disjoint(Set.of(rolesAllowed.value()), selectRoles)) {
-                    builder.append(String.format("%s %s %s\n", resourceMethod.getHttpMethod(), path, rolesAllowed));
+                    builder.append(String.format("    %s %s %s\n", resourceMethod.getHttpMethod(), path, rolesAllowed));
                 }
             }
             for (Resource child: resource.getChildResources()) {
