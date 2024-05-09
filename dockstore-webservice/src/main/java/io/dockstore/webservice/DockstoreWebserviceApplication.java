@@ -172,7 +172,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -183,6 +182,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -191,7 +192,6 @@ import org.apache.http.HttpStatus;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.model.ResourceMethod;
@@ -539,8 +539,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         });
 
 
-        // Output information about the endpoints that are accessible to admins and curators.
-        environment.jersey().register(new AdminEndpointLoggingListener());
+        // Log information about privileged endpoints.
+        environment.jersey().register(new LogPrivilegedEndpointsListener());
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
@@ -716,31 +716,35 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
     }
 
-    private static class AdminEndpointLoggingListener implements ApplicationEventListener {
+    private static class LogPrivilegedEndpointsListener implements ApplicationEventListener {
 
         @Override
         public void onEvent(ApplicationEvent event) {
             if (event.getType() == ApplicationEvent.Type.INITIALIZATION_APP_FINISHED) {
-                List<Resource> resources = event.getResourceModel().getResources();
-                for (Resource resource: resources) {
-                    logResource("", resource);
+                List<String> roles = List.of("admin", "curator", "platformPartner");
+                StringBuilder builder = new StringBuilder();
+                for (Resource resource: event.getResourceModel().getResources()) {
+                    formatResource(builder, "/", resource, roles);
                 }
+                LOG.info(String.format("Endpoints that allow a role in %s:\n%s", roles, builder.toString()));
             }
         }
 
-        private void logResource(String parentPath, Resource resource) {
-            String path = parentPath + "/" + resource.getPath();
+        private void formatResource(StringBuilder builder, String parentPath, Resource resource, List<String> selectRoles) {
+            String path = joinPaths(parentPath, resource.getPath());
             for (ResourceMethod resourceMethod: resource.getAllMethods()) {
-                String httpMethod = resourceMethod.getHttpMethod();
-                if (!"OPTIONS".equals(httpMethod)) {
-                    Method handlingMethod = resourceMethod.getInvocable().getHandlingMethod();
-                    RolesAllowed rolesAllowed = handlingMethod.getAnnotation(RolesAllowed.class);
-                    LOG.info("RESOURCE " + httpMethod + " " + path + " " + rolesAllowed);
+                RolesAllowed rolesAllowed = resourceMethod.getInvocable().getHandlingMethod().getAnnotation(RolesAllowed.class);
+                if (rolesAllowed != null && !Collections.disjoint(Set.of(rolesAllowed.value()), selectRoles)) {
+                    builder.append(String.format("%s %s %s\n", resourceMethod.getHttpMethod(), path, rolesAllowed));
                 }
             }
             for (Resource child: resource.getChildResources()) {
-                logResource(path, child);
+                formatResource(builder, path, child, selectRoles);
             }
+        }
+
+        private String joinPaths(String parentPath, String childPath) {
+            return "/" + Stream.concat(Arrays.stream(parentPath.split("/")), Arrays.stream(childPath.split("/"))).filter(s -> s.length() > 0).collect(Collectors.joining("/"));
         }
 
         @Override
