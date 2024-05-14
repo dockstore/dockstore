@@ -790,8 +790,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return reposWithOneWorkflow;
     }
 
-    public record RepoDoi(String repo, List<String> dois) {}
-
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
      * @param id entry id
@@ -904,5 +902,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         private int processedEntries = 0;
         private boolean done = false;
     }
+
+    public record RepoDoi(String repo, List<String> dois) {}
+
 
 }

@@ -3020,8 +3020,9 @@ paths:
           content:
             application/json:
               schema:
-                type: integer
-                format: int32
+                type: array
+                items:
+                  $ref: '#/components/schemas/RepoDoi'
           description: default response
       security:
       - BEARER: []
@@ -10446,6 +10447,15 @@ components:
         privateOnly:
           type: string
         url:
+          type: string
+    RepoDoi:
+      type: object
+      properties:
+        dois:
+          type: array
+          items:
+            type: string
+        repo:
           type: string
     Repository:
       type: object
