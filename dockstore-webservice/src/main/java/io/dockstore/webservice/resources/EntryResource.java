@@ -21,6 +21,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.SyncStatus;
@@ -46,6 +47,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -97,7 +99,9 @@ import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -151,6 +155,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
+    private final String zenodoUrl;
 
     private IntFunction<List<Workflow>> getWorkflows = offset -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
 
@@ -246,6 +251,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         hostName = configuration.getExternalConfig().getHostname();
         isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
+        zenodoUrl = configuration.getZenodoUrl();
     }
 
     @GET
@@ -743,6 +749,47 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return numOfEntriesNotUpdatedWithTopic;
     }
 
+    @POST
+    @RolesAllowed("admin")
+    @Path("/updateEntryToGetDOIs")
+    @Deprecated
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "updateEntryToGetDOIs", description = "", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<RepoDoi> updateEntryToGetDOIs(@Parameter(hidden = true) @Auth User user) {
+        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+        final List<String> gitHubRepos = allPublished.stream()
+                .filter(workflow -> workflow.getSourceControl() == SourceControl.GITHUB)
+                .map(workflow -> workflow.getOrganization() + '/' + workflow.getRepository())
+                .distinct()
+                .collect(Collectors.toList());
+        final io.swagger.zenodo.client.ApiClient zenodoClient = ZenodoHelper.createApiClient(zenodoUrl);
+        zenodoClient.setBasePath("https://zenodo.org/api"); // TODO: Don't merge this!
+        final long millis = 500; // Rate limit is 133 per minute
+
+        final List<RepoDoi> reposWithDois = gitHubRepos.stream().map(repo -> {
+            try {
+                Thread.sleep(Duration.ofMillis(millis).toMillis());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            final List<String> dois = ZenodoHelper.findDOIsForGitHubRepo(zenodoClient, repo);
+            if (!dois.isEmpty()) {
+                return new RepoDoi(repo, dois);
+            }
+            return null;
+        }).filter(Objects::nonNull).toList();
+        System.out.println("reposWithDois.size() = " + reposWithDois.size());
+        final List<RepoDoi> reposWithOneWorkflow = reposWithDois.stream().filter(repoDoi -> {
+            final String[] split = repoDoi.repo().split("/");
+            final String org = split[0];
+            final String repoName = split[1];
+            return allPublished.stream().filter(w -> w.getOrganization().equals(org) && w.getRepository().equals(repoName)).toList().size()
+                    == 1;
+        }).toList();
+        return reposWithOneWorkflow;
+    }
+
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
      * @param id entry id
@@ -837,6 +884,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 
+    io.swagger.zenodo.client.ApiClient createZenodoClient() {
+        io.swagger.zenodo.client.ApiClient zenodoClient = new io.swagger.zenodo.client.ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoUrlApi = zenodoUrl + "/api";
+        zenodoClient.setBasePath(zenodoUrlApi);
+        return zenodoClient;
+    }
+
     /**
      * Need this class because the values need to be accessed from a lambda, and a lambda can
      * only access "effectively final" variables from outside the lambda.
@@ -847,5 +902,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         private int processedEntries = 0;
         private boolean done = false;
     }
+
+    public record RepoDoi(String repo, List<String> dois) {}
+
 
 }

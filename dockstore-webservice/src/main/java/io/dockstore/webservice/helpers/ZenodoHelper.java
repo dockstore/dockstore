@@ -17,12 +17,15 @@ import io.swagger.zenodo.client.ApiException;
 import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
 import io.swagger.zenodo.client.api.FilesApi;
+import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.Community;
 import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
+import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,6 +33,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,14 +93,18 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
                 // Set the attribute that will reserve a DOI before publishing
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
-                depositMetadata.prereserveDoi(true);
+                // TODO: Resolve this
+                //                final PrereserveDoi prereserveDoi = new PrereserveDoi();
+                //                depositMetadata.prereserveDoi(prereserveDoi);
                 // Put the deposit on Zenodo; the returned deposit will contain
                 // the reserved DOI which we can use to create a workflow alias
                 // Later on we will update the Zenodo deposit (put the deposit on
                 // Zenodo again  in the call to putDepositionOnZenodo) so it contains the workflow version alias
                 // constructed with the DOI
                 Deposit newDeposit = putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
-                depositMetadata.prereserveDoi(false);
+                // TODO: Resolve this
+                //                final PrereserveDoi prereserveDoi2 = new PrereserveDoi();
+                //                depositMetadata.prereserveDoi(prereserveDoi2);
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
                 // TODO clean this after https://github.com/dockstore/swagger-java-zenodo-client/pull/20/files is merged and released
@@ -170,6 +178,31 @@ public final class ZenodoHelper {
         String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 
         return new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
+    }
+
+    public static List<String> findDOIsForGitHubRepo(ApiClient zenodoClient, String gitHubRepo) {
+        final ArrayList<String> dois = new ArrayList<>();
+        final PreviewApi previewApi = new PreviewApi(zenodoClient);
+        final String query = URLEncoder.encode('"' + gitHubRepo + '"');
+        final int pageSize = 100;
+        final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
+        final List<Hit> hits = records.getHits().getHits();
+        System.out.println(gitHubRepo + " has " + hits.size() + " hits");
+        final List<Hit> matches = hits.stream().filter(hit -> hit.getMetadata().getRelatedIdentifiers() != null && hit.getMetadata().getRelatedIdentifiers().stream()
+                .anyMatch(ri -> ri.getIdentifier() != null && ri.getIdentifier().contains(gitHubRepo))).collect(Collectors.toList());
+        if (!matches.isEmpty()) {
+            dois.addAll(matches.stream().map(Hit::getDoiUrl).toList());
+            System.out.println("matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier() = " + matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier());
+        }
+        return dois;
+    }
+
+    public static ApiClient createApiClient(String basePath) {
+        ApiClient zenodoClient = new ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoUrlApi = basePath + "/api";
+        zenodoClient.setBasePath(zenodoUrlApi);
+        return zenodoClient;
     }
 
     /**

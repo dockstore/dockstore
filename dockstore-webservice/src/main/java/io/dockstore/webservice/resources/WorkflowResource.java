@@ -664,10 +664,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        ApiClient zenodoClient = new ApiClient();
-        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoUrlApi = zenodoUrl + "/api";
-        zenodoClient.setBasePath(zenodoUrlApi);
+        ApiClient zenodoClient = ZenodoHelper.createApiClient(zenodoUrl);
         zenodoClient.setApiKey(zenodoAccessToken);
 
         registerZenodoDOIForWorkflow(zenodoClient, workflow, workflowVersion, user);
