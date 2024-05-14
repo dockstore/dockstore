@@ -58,7 +58,7 @@ jobs:
       - name: Deploy to GitHub packages with mvnw
         run: ./mvnw --batch-mode deploy -P github-packages -ntp -DskipTests
         env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to artifactory with mvnw
         run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
