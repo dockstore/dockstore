@@ -948,15 +948,5 @@
                 <swagger.skip>true</swagger.skip>
             </properties>
         </profile>
-        <profile>
-            <id>github-packages</id>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>github</id>
-                    <name>GitHub OWNER Apache Maven Packages</name>
-                    <url>https://maven.pkg.github.com/dockstore/dockstore</url>
-                </snapshotRepository>
-            </distributionManagement>
-        </profile>
     </profiles>
 </project>

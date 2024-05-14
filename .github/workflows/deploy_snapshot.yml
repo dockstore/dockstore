@@ -56,7 +56,7 @@ jobs:
           distribution: 'adopt'
 
       - name: Deploy to GitHub packages with mvnw
-        run: ./mvnw --batch-mode deploy -P github-packages -ntp -DskipTests
+        run: ./mvnw --batch-mode deploy -DaltDeploymentRepository=github-packages::https://maven.pkg.github.com/dockstore/dockstore -ntp -DskipTests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
