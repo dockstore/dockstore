@@ -949,10 +949,10 @@
             </properties>
         </profile>
         <profile>
-            <id>github</id>
+            <id>github-packages</id>
             <distributionManagement>
                 <repository>
-                    <id>github-packages</id>
+                    <id>github</id>
                     <name>GitHub OWNER Apache Maven Packages</name>
                     <url>https://maven.pkg.github.com/dockstore/dockstore</url>
                 </repository>
