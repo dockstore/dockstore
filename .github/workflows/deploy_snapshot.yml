@@ -16,6 +16,7 @@ jobs:
       contents: read
       pages: write
       id-token: write 
+      packages: write
       
     # Service containers to run with `container-job`
     services:
@@ -54,7 +55,12 @@ jobs:
           java-version: '21.0.2+13.0.LTS'
           distribution: 'adopt'
 
-      - name: Deploy with mvnw
+      - name: Deploy to GitHub packages with mvnw
+        run: ./mvnw --batch-mode deploy -P github-packages -ntp -DskipTests
+        env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to artifactory with mvnw
         run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
         env: 
           SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
