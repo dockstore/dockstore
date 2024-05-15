@@ -60,6 +60,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -82,10 +83,12 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.kohsuke.github.GHBlob;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
@@ -333,7 +336,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (decodedContentAndMetadata == null) {
                 return null;
             } else {
-                return decodedContentAndMetadata.getRight();
+                String content = decodedContentAndMetadata.getRight();
+                String encoding = decodedContentAndMetadata.getLeft().getEncoding();
+                // If the file size is 1MB or larger, content will be "" and the encoding will be "none":
+                // https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28 (see "Notes")
+                // In such a case, we retrieve the content via the blob endpoint.
+                if ("".equals(content) && "none".equals(encoding)) {
+                    String sha = decodedContentAndMetadata.getLeft().getSha();
+                    GHBlob blob = repo.getBlob(sha);
+                    content = IOUtils.toString(blob.read(), StandardCharsets.UTF_8);
+                }
+                return content;
             }
         } catch (IOException e) {
             LOG.warn(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage(), e);
@@ -369,10 +382,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         GHRef[] branchesAndTags = getBranchesAndTags(repo);
 
+        // only look at github if the reference exists
         if (!submoduleRedirected && Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
-        // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
 
         String stripStart = StringUtils.stripStart(fileName, "/");
