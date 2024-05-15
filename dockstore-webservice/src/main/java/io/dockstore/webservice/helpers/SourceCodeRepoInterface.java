@@ -20,7 +20,6 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 import com.google.common.base.Strings;
-import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Utilities;
@@ -41,7 +40,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import jakarta.validation.constraints.NotNull;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -166,18 +164,9 @@ public abstract class SourceCodeRepoInterface {
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
             dockstoreFile.setType(fileType);
-            // a file of 1MB size is probably up to no good
-            if (fileResponse.getBytes(StandardCharsets.UTF_8).length >= BYTES_IN_KB * BYTES_IN_KB) {
-                fileResponse = "Dockstore does not store files over 1MB in size";
-            }
-            // some binary files that I tried has this character which cannot be stored
-            // in postgres anyway https://www.postgresql.org/message-id/1171970019.3101.328.camel%40coppola.muc.ecircle.de
-            if (Bytes.indexOf(fileResponse.getBytes(StandardCharsets.UTF_8), Byte.decode("0x00")) != -1) {
-                fileResponse = "Dockstore does not store binary files";
-            }
-            dockstoreFile.setContent(fileResponse);
             dockstoreFile.setPath(path);
             dockstoreFile.setAbsolutePath(path);
+            SourceFileHelper.setContentWithLimits(dockstoreFile, fileResponse, path);
             return Optional.of(dockstoreFile);
         }
         return Optional.empty();

@@ -17,7 +17,9 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.google.common.primitives.Bytes;
 import io.dockstore.webservice.core.SourceFile;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import org.json.JSONObject;
@@ -29,10 +31,38 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public final class SourceFileHelper {
 
+    private static final long BYTES_PER_MEGABYTE = 1024L * 1024L;
+    private static final long MAXIMUM_FILE_SIZE = BYTES_PER_MEGABYTE;
+    private static final long NOTEBOOK_MAXIMUM_FILE_SIZE = 3 * BYTES_PER_MEGABYTE;
     private static final Logger LOGGER = LoggerFactory.getLogger(SourceFileHelper.class);
 
     private SourceFileHelper() {
 
+    }
+
+    public static void setContentWithLimits(SourceFile file, String content, String path) {
+        String limitedContent = content;
+        if (content != null) {
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            long maximumSize = computeMaximumSize(path);
+            // A large file is probably up to no good.
+            if (bytes.length > maximumSize) {
+                limitedContent = String.format("Dockstore does not store files of this type over %.1fMB in size", maximumSize / (double) BYTES_PER_MEGABYTE);
+            }
+            // Postgresql cannot store strings that contain nul characters.
+            if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
+                limitedContent = "Dockstore does not store binary files";
+            }
+        }
+        file.setContent(limitedContent);
+    }
+
+    private static long computeMaximumSize(String path) {
+        // Jupyter notebooks can contain embedded images, making them larger, on average.
+        if (path.endsWith(".ipynb")) {
+            return NOTEBOOK_MAXIMUM_FILE_SIZE;
+        }
+        return MAXIMUM_FILE_SIZE;
     }
 
     /**
