@@ -297,21 +297,17 @@ class EntryResourceIT extends BaseIT {
     @Test
     void testUpdateEntryToGetTopics() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        EntriesApi entriesApi = new EntriesApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         DockstoreTool existingTool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", "");
         assertNull(existingTool.getTopic());
+        containersApi.refresh(existingTool.getId());
 
         Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/dockstore.wdl", "",
                 DescriptorLanguage.WDL.getShortName(), "");
-        // Registering a workflow sets the topic. Set it to null in the DB so the migration can be tested
-        testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic=null where id='%s'", workflow.getId()));
-        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
-        assertNull(workflow.getTopic());
+        workflowsApi.refresh1(workflow.getId(), true);
 
-        entriesApi.updateEntryToGetTopics();
 
         existingTool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", "");
         assertEquals("Test repo for dockstore", existingTool.getTopic());
