@@ -39,7 +39,6 @@ import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.core.gitlab.GitLabContainerRegistry;
 import io.dockstore.webservice.core.gitlab.GitLabTag;
-import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;

@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.swagger.bitbucket.client.ApiClient;
 import io.swagger.bitbucket.client.ApiException;
 import io.swagger.bitbucket.client.Configuration;
