@@ -39,6 +39,7 @@ import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.core.gitlab.GitLabContainerRegistry;
 import io.dockstore.webservice.core.gitlab.GitLabTag;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -902,7 +903,7 @@ public abstract class AbstractImageRegistry {
                 if (fileResponse != null) {
                     SourceFile dockstoreFile = new SourceFile();
                     dockstoreFile.setType(f);
-                    dockstoreFile.setContent(fileResponse);
+                    SourceFileHelper.setContentWithLimits(dockstoreFile, fileResponse, null);
                     if (f == DescriptorLanguage.FileType.DOCKERFILE) {
                         dockstoreFile.setPath(tag.getDockerfilePath());
                         dockstoreFile.setAbsolutePath(tag.getDockerfilePath());

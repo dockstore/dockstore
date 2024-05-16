@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.SourceFile;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public final class SourceFileHelper {
 
     private static long computeMaximumSize(String path) {
         // Jupyter notebooks can contain embedded images, making them larger, on average.
-        if (path.endsWith(".ipynb")) {
+        if (StringUtils.endsWith(path, ".ipynb")) {
             return NOTEBOOK_MAXIMUM_FILE_SIZE;
         }
         return MAXIMUM_FILE_SIZE;

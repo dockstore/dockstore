@@ -443,7 +443,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     SourceCodeRepoInterface.LOG.error("Could not read: " + absoluteImportPath);
                     continue;
                 }
-                importFile.setContent(fileResponse);
+                SourceFileHelper.setContentWithLimits(importFile, fileResponse, absoluteImportPath);
                 importFile.setPath(importPath);
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);

@@ -57,6 +57,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
 import java.net.URL;
@@ -881,7 +882,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             String decodedContent = this.readFileFromRepo(calculatedPath, ref.refName(), repository);
             if (decodedContent != null) {
                 SourceFile file = new SourceFile();
-                file.setContent(decodedContent);
+                SourceFileHelper.setContentWithLimits(file, decodedContent, calculatedPath);
                 file.setPath(calculatedPath);
                 file.setAbsolutePath(calculatedPath);
                 file.setType(identifiedType);
@@ -890,13 +891,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Use default test parameter file if either new version or existing version that hasn't been edited
                 // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                 if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                    String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.refName(), repository);
+                    String testJsonPath = workflow.getDefaultTestParameterFilePath();
+                    String testJsonContent = this.readFileFromRepo(testJsonPath, ref.refName(), repository);
                     if (testJsonContent != null) {
                         SourceFile testJson = new SourceFile();
                         testJson.setType(workflow.getDescriptorType().getTestParamType());
-                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setContent(testJsonContent);
+                        testJson.setPath(testJsonPath);
+                        testJson.setAbsolutePath(testJsonPath);
+                        SourceFileHelper.setContentWithLimits(testJson, testJsonContent, testJsonPath);
 
                         // Only add test parameter file if it hasn't already been added
                         boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
@@ -946,7 +948,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 SourceFile file = new SourceFile();
                 file.setAbsolutePath(filePath);
                 file.setPath(filePath);
-                file.setContent(fileContent);
+                SourceFileHelper.setContentWithLimits(file, fileContent, filePath);
                 file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
                 version.getSourceFiles().add(file);
             } else {
@@ -1021,7 +1023,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             SourceFile primaryDescriptorFile = new SourceFile();
             primaryDescriptorFile.setAbsolutePath(primaryDescriptorPath);
             primaryDescriptorFile.setPath(primaryDescriptorPath);
-            primaryDescriptorFile.setContent(fileContent);
+            SourceFileHelper.setContentWithLimits(primaryDescriptorFile, fileContent, primaryDescriptorPath);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
             primaryDescriptorFile.setType(identifiedType);
 
@@ -1042,7 +1044,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         testFile.setType(workflow.getDescriptorType().getTestParamType());
                         testFile.setPath(testParameterPath);
                         testFile.setAbsolutePath(testParameterPath);
-                        testFile.setContent(testFileContent);
+                        SourceFileHelper.setContentWithLimits(testFile, testFileContent, testParameterPath);
                         version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
@@ -1096,7 +1098,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (dockstoreYmlContent != null) {
                 // Create file for .dockstore.yml
                 SourceFile dockstoreYml = new SourceFile();
-                dockstoreYml.setContent(dockstoreYmlContent);
+                SourceFileHelper.setContentWithLimits(dockstoreYml, dockstoreYmlContent, dockstoreYmlPath);
                 dockstoreYml.setPath(dockstoreYmlPath);
                 dockstoreYml.setAbsolutePath(dockstoreYmlPath);
                 dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);

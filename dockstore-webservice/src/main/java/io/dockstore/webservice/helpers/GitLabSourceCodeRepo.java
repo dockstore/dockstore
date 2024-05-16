@@ -271,8 +271,9 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, convertedPath, branch);
             if (repositoryFile != null) {
                 SourceFile file = new SourceFile();
+                String content = new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
                 file.setType(type);
-                file.setContent(new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8));
+                SourceFileHelper.setContentWithLimits(file, content, path);
                 file.setPath(path);
                 file.setAbsolutePath(path);
                 return file;

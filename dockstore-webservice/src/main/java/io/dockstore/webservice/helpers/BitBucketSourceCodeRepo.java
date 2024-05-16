@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.swagger.bitbucket.client.ApiClient;
 import io.swagger.bitbucket.client.ApiException;
 import io.swagger.bitbucket.client.Configuration;
@@ -231,9 +232,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // Grab content from found file
             // do not censor invalid versions to match github expected behaviour
             file.setType(type);
-            file.setContent(content);
             file.setPath(path);
             file.setAbsolutePath(path);
+            SourceFileHelper.setContentWithLimits(file, content, path);
         }
         return file;
     }

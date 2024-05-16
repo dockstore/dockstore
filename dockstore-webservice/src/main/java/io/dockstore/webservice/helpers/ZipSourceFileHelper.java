@@ -140,9 +140,11 @@ public final class ZipSourceFileHelper {
                         } else {
                             sourceFile.setType(workflowFileType);
                         }
-                        sourceFile.setPath(zipEntry.getName());
-                        sourceFile.setAbsolutePath(addLeadingSlashIfNecessary(zipEntry.getName()));
-                        sourceFile.setContent(getContent(zipFile, zipEntry));
+                        String path = zipEntry.getName();
+                        String absolutePath = addLeadingSlashIfNecessary(zipEntry.getName());
+                        sourceFile.setPath(path);
+                        sourceFile.setAbsolutePath(absolutePath);
+                        SourceFileHelper.setContentWithLimits(sourceFile, getContent(zipFile, zipEntry), absolutePath);
                         return sourceFile;
                     }).collect(Collectors.toList());
             return new SourceFiles(
