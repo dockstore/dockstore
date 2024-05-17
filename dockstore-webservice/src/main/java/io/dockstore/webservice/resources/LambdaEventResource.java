@@ -74,6 +74,7 @@ public class LambdaEventResource {
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
             @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
             @Context HttpServletResponse response) {
+        limit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         final User authUser = userDAO.findById(user.getId());
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
         if (githubTokens.isEmpty()) {
@@ -102,6 +103,7 @@ public class LambdaEventResource {
            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
            @Context HttpServletResponse response) {
+        limit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         final User user = userDAO.findById(userid);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
