@@ -756,8 +756,7 @@ public abstract class AbstractImageRegistry {
             List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
-                    oldFile.setContent(newFile.getContent());
-                    oldFile.getMetadata().setTypeVersion(newFile.getMetadata().getTypeVersion());
+                    SourceFileHelper.copy(newFile, oldFile);
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -931,11 +930,7 @@ public abstract class AbstractImageRegistry {
     }
 
     private SourceFile createSourceFile(String path, DescriptorLanguage.FileType type) {
-        SourceFile sourcefile = new SourceFile();
-        sourcefile.setPath(path);
-        sourcefile.setAbsolutePath(path);
-        sourcefile.setType(type);
-        return sourcefile;
+        return SourceFileHelper.create(type, null, path, path);
     }
 
     /**

@@ -47,6 +47,7 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.TransactionHelper;
@@ -228,9 +229,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
-                existingFile.setPath(file.getPath());
-                existingFile.setContent(file.getContent());
-                existingFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion());
+                SourceFileHelper.copy(file, existingFile);
             } else {
                 final long fileID = fileDAO.create(file);
                 final SourceFile fileFromDB = fileDAO.findById(fileID);

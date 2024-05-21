@@ -87,6 +87,7 @@ public final class SourceFileHelper {
         dst.setPath(src.getPath());
         dst.setAbsolutePath(src.getAbsolutePath());
         dst.setContent(src.getContent());
+        dst.getMetadata().setTypeVersion(src.getMetadata().getTypeVersion());
     }
 
     /**
