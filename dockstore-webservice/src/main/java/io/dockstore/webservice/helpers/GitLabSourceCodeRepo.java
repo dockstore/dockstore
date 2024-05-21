@@ -270,13 +270,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, convertedPath, branch);
             if (repositoryFile != null) {
-                SourceFile file = new SourceFile();
                 String content = new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
-                file.setType(type);
-                SourceFileHelper.setContentWithLimits(file, content, path);
-                file.setPath(path);
-                file.setAbsolutePath(path);
-                return file;
+                return SourceFileHelper.create(type, content, path, path);
             }
         } catch (IOException e) {
             LOG.info("could not find " + path + " at " + e.getMessage());

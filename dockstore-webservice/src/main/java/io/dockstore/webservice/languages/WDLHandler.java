@@ -436,17 +436,12 @@ public class WDLHandler implements LanguageHandlerInterface {
         for (String importPath : currentFileImports) {
             String absoluteImportPath = unsafeConvertRelativePathToAbsolutePath(currentFilePath, importPath);
             if (!imports.containsKey(absoluteImportPath)) {
-                SourceFile importFile = new SourceFile();
-
                 final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
                 if (fileResponse == null) {
                     SourceCodeRepoInterface.LOG.error("Could not read: " + absoluteImportPath);
                     continue;
                 }
-                SourceFileHelper.setContentWithLimits(importFile, fileResponse, absoluteImportPath);
-                importFile.setPath(importPath);
-                importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-                importFile.setAbsolutePath(absoluteImportPath);
+                SourceFile importFile = SourceFileHelper.create(DescriptorLanguage.FileType.DOCKSTORE_WDL, fileResponse, importPath, absoluteImportPath);
                 imports.put(absoluteImportPath, importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }

@@ -880,11 +880,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Get contents of descriptor file and store
             String decodedContent = this.readFileFromRepo(calculatedPath, ref.refName(), repository);
             if (decodedContent != null) {
-                SourceFile file = new SourceFile();
-                SourceFileHelper.setContentWithLimits(file, decodedContent, calculatedPath);
-                file.setPath(calculatedPath);
-                file.setAbsolutePath(calculatedPath);
-                file.setType(identifiedType);
+                SourceFile file = SourceFileHelper.create(identifiedType, decodedContent, calculatedPath, calculatedPath);
                 version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
 
                 // Use default test parameter file if either new version or existing version that hasn't been edited
@@ -893,12 +889,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String testJsonPath = workflow.getDefaultTestParameterFilePath();
                     String testJsonContent = this.readFileFromRepo(testJsonPath, ref.refName(), repository);
                     if (testJsonContent != null) {
-                        SourceFile testJson = new SourceFile();
-                        testJson.setType(workflow.getDescriptorType().getTestParamType());
-                        testJson.setPath(testJsonPath);
-                        testJson.setAbsolutePath(testJsonPath);
-                        SourceFileHelper.setContentWithLimits(testJson, testJsonContent, testJsonPath);
-
+                        DescriptorLanguage.FileType testJsonType = workflow.getDescriptorType().getTestParamType();
+                        SourceFile testJson = SourceFileHelper.create(testJsonType, testJsonContent, testJsonPath, testJsonPath);
                         // Only add test parameter file if it hasn't already been added
                         boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
                             && sf.getType() == testJson.getType());
@@ -944,11 +936,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         for (String filePath: files) {
             String fileContent = this.readFileFromRepo(filePath, ref.refName(), repository);
             if (fileContent != null) {
-                SourceFile file = new SourceFile();
-                file.setAbsolutePath(filePath);
-                file.setPath(filePath);
-                SourceFileHelper.setContentWithLimits(file, fileContent, filePath);
-                file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
+                SourceFile file = SourceFileHelper.create(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER, fileContent, filePath, filePath);
                 version.getSourceFiles().add(file);
             } else {
                 // File not found or null
@@ -1019,12 +1007,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.refName(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
-            SourceFile primaryDescriptorFile = new SourceFile();
-            primaryDescriptorFile.setAbsolutePath(primaryDescriptorPath);
-            primaryDescriptorFile.setPath(primaryDescriptorPath);
-            SourceFileHelper.setContentWithLimits(primaryDescriptorFile, fileContent, primaryDescriptorPath);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
-            primaryDescriptorFile.setType(identifiedType);
+            SourceFile primaryDescriptorFile = SourceFileHelper.create(identifiedType, fileContent, primaryDescriptorPath, primaryDescriptorPath);
 
             version = combineVersionAndSourcefile(repository.getFullName(), primaryDescriptorFile, workflow, identifiedType, version, existingDefaults);
 
@@ -1038,12 +1022,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                     String testFileContent = this.readFileFromRepo(testParameterPath, ref.refName(), repository);
                     if (testFileContent != null) {
-                        SourceFile testFile = new SourceFile();
-                        // find type from file type
-                        testFile.setType(workflow.getDescriptorType().getTestParamType());
-                        testFile.setPath(testParameterPath);
-                        testFile.setAbsolutePath(testParameterPath);
-                        SourceFileHelper.setContentWithLimits(testFile, testFileContent, testParameterPath);
+                        DescriptorLanguage.FileType testFileType = workflow.getDescriptorType().getTestParamType();
+                        SourceFile testFile = SourceFileHelper.create(testFileType, testFileContent, testParameterPath, testParameterPath);
                         version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
@@ -1096,13 +1076,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
             if (dockstoreYmlContent != null) {
                 // Create file for .dockstore.yml
-                SourceFile dockstoreYml = new SourceFile();
-                SourceFileHelper.setContentWithLimits(dockstoreYml, dockstoreYmlContent, dockstoreYmlPath);
-                dockstoreYml.setPath(dockstoreYmlPath);
-                dockstoreYml.setAbsolutePath(dockstoreYmlPath);
-                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
-
-                return dockstoreYml;
+                return SourceFileHelper.create(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlContent, dockstoreYmlPath, dockstoreYmlPath);
             }
         }
         // TODO: https://github.com/dockstore/dockstore/issues/3239

@@ -223,19 +223,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public SourceFile getSourceFile(String path, String repositoryId, String branch, DescriptorLanguage.FileType type) {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
-        SourceFile file = null;
         String content = this.readFile(repositoryId, path, branch);
 
-        if (!Strings.isNullOrEmpty(content)) {
-            file = new SourceFile();
-            // Grab content from found file
-            // do not censor invalid versions to match github expected behaviour
-            file.setType(type);
-            file.setPath(path);
-            file.setAbsolutePath(path);
-            SourceFileHelper.setContentWithLimits(file, content, path);
+        if (Strings.isNullOrEmpty(content)) {
+            return null;
         }
-        return file;
+        // Grab content from found file
+        // do not censor invalid versions to match github expected behaviour
+        return SourceFileHelper.create(type, content, path, path);
     }
     @Override
     public void updateReferenceType(String repositoryId, Version version) {

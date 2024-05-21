@@ -900,28 +900,24 @@ public abstract class AbstractImageRegistry {
             if (f != DescriptorLanguage.FileType.CWL_TEST_JSON && f != DescriptorLanguage.FileType.WDL_TEST_JSON && f != DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
                 String fileResponse = sourceCodeRepo.readGitRepositoryFile(repositoryId, f, tag, null);
                 if (fileResponse != null) {
-                    SourceFile dockstoreFile = new SourceFile();
-                    dockstoreFile.setType(f);
-                    SourceFileHelper.setContentWithLimits(dockstoreFile, fileResponse, null);
+                    String path;
                     if (f == DescriptorLanguage.FileType.DOCKERFILE) {
-                        dockstoreFile.setPath(tag.getDockerfilePath());
-                        dockstoreFile.setAbsolutePath(tag.getDockerfilePath());
+                        path = tag.getDockerfilePath();
                     } else if (f == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
-                        dockstoreFile.setPath(tag.getCwlPath());
-                        dockstoreFile.setAbsolutePath(tag.getCwlPath());
+                        path = tag.getCwlPath();
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getCwlPath());
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, path);
                         files.addAll(importedFiles.values());
                     } else if (f == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                        dockstoreFile.setPath(tag.getWdlPath());
-                        dockstoreFile.setAbsolutePath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getWdlPath());
+                        path = tag.getWdlPath();
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, path);
                         files.addAll(importedFiles.values());
                     } else {
                         //TODO add nextflow work here
                         LOG.error("file type not implemented yet");
                         continue;
                     }
+                    SourceFile dockstoreFile = SourceFileHelper.create(f, fileResponse, path, path);
                     files.add(dockstoreFile);
                 }
             } else {

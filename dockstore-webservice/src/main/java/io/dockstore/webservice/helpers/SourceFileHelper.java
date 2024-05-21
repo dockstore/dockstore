@@ -18,6 +18,7 @@
 package io.dockstore.webservice.helpers;
 
 import com.google.common.primitives.Bytes;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -64,6 +65,28 @@ public final class SourceFileHelper {
             return NOTEBOOK_MAXIMUM_FILE_SIZE;
         }
         return MAXIMUM_FILE_SIZE;
+    }
+
+    public static SourceFile create(DescriptorLanguage.FileType type, String content, String path, String absolutePath) {
+        SourceFile file = new SourceFile();
+        file.setType(type);
+        file.setPath(path);
+        file.setAbsolutePath(absolutePath);
+        setContentWithLimits(file, content, absolutePath);
+        return file;
+    }
+
+    public static SourceFile duplicate(SourceFile src) {
+        SourceFile dup = new SourceFile();
+        copy(src, dup);
+        return dup;
+    }
+
+    public static void copy(SourceFile src, SourceFile dst) {
+        dst.setType(src.getType());
+        dst.setPath(src.getPath());
+        dst.setAbsolutePath(src.getAbsolutePath());
+        dst.setContent(src.getContent());
     }
 
     /**
