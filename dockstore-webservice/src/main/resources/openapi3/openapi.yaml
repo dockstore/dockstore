@@ -7725,6 +7725,30 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/deleteDOIEditLink:
+    delete:
+      description: Delete the access link with edit permissions for the workflow's
+        Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
+      operationId: deleteDOIEditLink
+      parameters:
+      - description: Workflow to modify.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/descriptor/{relative-path}:
     get:
       description: Get the corresponding descriptor file from source control.
@@ -8002,10 +8026,10 @@ paths:
       - BEARER: []
       tags:
       - workflows
-  /workflows/{workflowId}/requestDOIEditLink/{workflowVersionId}:
+  /workflows/{workflowId}/requestDOIEditLink:
     post:
-      description: Request an access link with edit permissions for the workflow version's
-        DOI. The DOI must have been created by Dockstore's Zenodo account.
+      description: Request an access link with edit permissions for the workflow's
+        Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
       operationId: requestDOIEditLink
       parameters:
       - description: Workflow to modify.
@@ -8015,19 +8039,12 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: workflowVersionId
-        in: path
-        name: workflowVersionId
-        required: true
-        schema:
-          type: integer
-          format: int64
       responses:
         default:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -9162,6 +9179,12 @@ components:
           format: int64
         conceptDoi:
           type: string
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         custom_docker_registry_path:
           type: string
         customerDockerRegistryPath:
@@ -9193,10 +9216,6 @@ components:
           type: array
           items:
             type: string
-        enableAutomaticDoiCreation:
-          type: boolean
-          default: true
-          description: Indicates if DOIs should automatically be created by Dockstore
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9338,6 +9357,38 @@ components:
           items:
             $ref: '#/components/schemas/Tag'
           uniqueItems: true
+    Doi:
+      type: object
+      description: A Digital Object Identifier (DOI)
+      properties:
+        creator:
+          type: string
+          description: The DOI creator
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
+        editAccessLinkId:
+          type: string
+        editAccessLinkToken:
+          type: string
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the DOI in this web service
+        name:
+          type: string
+          description: The DOI name
+        type:
+          type: string
+          description: The type of DOI
+          enum:
+          - CONCEPT
+          - VERSION
+      required:
+      - creator
+      - name
+      - type
     Entry:
       type: object
       description: This describes one high-level entity in the dockstore
@@ -9361,6 +9412,12 @@ components:
           format: int64
         conceptDoi:
           type: string
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         dbCreateDate:
           type: integer
           format: int64
@@ -9373,10 +9430,6 @@ components:
           type: boolean
         description:
           type: string
-        enableAutomaticDoiCreation:
-          type: boolean
-          default: true
-          description: Indicates if DOIs should automatically be created by Dockstore
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -10822,10 +10875,6 @@ components:
           type: boolean
         dockerfile_path:
           type: string
-        dockstoreOwnedDoi:
-          type: boolean
-        doiEditAccessLinkToken:
-          type: string
         doiStatus:
           type: string
           enum:
@@ -10834,6 +10883,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOI for the version of the entry
         email:
           type: string
         frozen:
@@ -11739,10 +11793,6 @@ components:
           writeOnly: true
         dirtyBit:
           type: boolean
-        dockstoreOwnedDoi:
-          type: boolean
-        doiEditAccessLinkToken:
-          type: string
         doiStatus:
           type: string
           enum:
@@ -11751,6 +11801,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOI for the version of the entry
         email:
           type: string
         frozen:
@@ -11844,6 +11899,10 @@ components:
           type: array
           items:
             type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
         engineVersions:
           type: array
           items:
@@ -11925,6 +11984,12 @@ components:
           format: int64
         conceptDoi:
           type: string
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         dbCreateDate:
           type: integer
           format: int64
@@ -11964,10 +12029,6 @@ components:
           - Julia
           - other
           - n/a
-        enableAutomaticDoiCreation:
-          type: boolean
-          default: true
-          description: Indicates if DOIs should automatically be created by Dockstore
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -12144,10 +12205,6 @@ components:
           writeOnly: true
         dirtyBit:
           type: boolean
-        dockstoreOwnedDoi:
-          type: boolean
-        doiEditAccessLinkToken:
-          type: string
         doiStatus:
           type: string
           enum:
@@ -12156,6 +12213,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOI for the version of the entry
         email:
           type: string
         frozen:

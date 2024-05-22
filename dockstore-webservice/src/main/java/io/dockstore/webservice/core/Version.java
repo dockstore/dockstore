@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Doi.DoiCreator;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -457,12 +458,24 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @JsonProperty
     @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 19)
+    @Deprecated(since = "1.16")
     public String getDoiURL() {
         return versionMetadata.doiURL;
     }
 
+    @Deprecated(since = "1.16")
     public void setDoiURL(String doiURL) {
         this.getVersionMetadata().doiURL = doiURL;
+    }
+
+    @JsonProperty
+    @Schema(description = "The DOI for the version of the entry")
+    public Map<DoiCreator, Doi> getDois() {
+        return versionMetadata.dois;
+    }
+
+    public void setDois(Map<DoiCreator, Doi> dois) {
+        this.getVersionMetadata().dois = dois;
     }
 
     @ApiModelProperty(value = "This indicates the DOI status", position = 20)
@@ -663,22 +676,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setReadMePath(String readMePath) {
         this.readMePath = readMePath;
-    }
-
-    public String getDoiEditAccessLinkToken() {
-        return this.getVersionMetadata().doiEditAccessLinkToken;
-    }
-
-    public void setDoiEditAccessLinkToken(String doiEditAccessLinkToken) {
-        this.getVersionMetadata().doiEditAccessLinkToken = doiEditAccessLinkToken;
-    }
-
-    public boolean isDockstoreOwnedDoi() {
-        return this.getVersionMetadata().dockstoreOwnedDoi;
-    }
-
-    public void setDockstoreOwnedDoi(boolean dockstoreOwnedDoi) {
-        this.getVersionMetadata().dockstoreOwnedDoi = dockstoreOwnedDoi;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

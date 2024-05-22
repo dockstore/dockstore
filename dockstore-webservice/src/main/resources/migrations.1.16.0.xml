@@ -192,34 +192,69 @@
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="workflow"/>
     </changeSet>
     <changeSet author="ktran (generated)" id="addAutomaticDoiCreation">
-        <addColumn tableName="apptool">
-            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+        <createTable tableName="doi">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="doi_pkey"/>
+            </column>
+            <column name="creator" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-        </addColumn>
-        <addColumn tableName="notebook">
-            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="editaccesslinkid" type="VARCHAR(255)"/>
+            <column name="editaccesslinktoken" type="VARCHAR(255)"/>
+            <column name="type" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-        </addColumn>
-        <addColumn tableName="service">
-            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
+            <column name="name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-        </addColumn>
-        <addColumn tableName="tool">
-            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
-                <constraints nullable="false"/>
+        </createTable>
+        <addUniqueConstraint columnNames="name" constraintName="unique_doi_name" tableName="doi"/>
+        <createTable tableName="version_metadata_doi">
+            <column name="versionmetadataid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_doi_pkey"/>
             </column>
-        </addColumn>
-        <addColumn tableName="workflow">
-            <column defaultValueBoolean="true" name="enableautomaticdoicreation" type="bool">
-                <constraints nullable="false"/>
+            <column name="doiid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_doi_pkey"/>
             </column>
-        </addColumn>
-        <addColumn tableName="version_metadata">
-            <column name="doieditaccesslinktoken" type="varchar(255 BYTE)"/>
-            <column defaultValueBoolean="false" name="dockstoreowneddoi" type="bool"/>
-        </addColumn>
+        </createTable>
+        <createTable tableName="entry_concept_doi">
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_concept_doi_pkey"/>
+            </column>
+            <column name="doiid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_concept_doi_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="doiid" baseTableName="entry_concept_doi" constraintName="fk_doiid_entry_concept_doi" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="doi"/>
+        <addForeignKeyConstraint baseColumnNames="versionmetadataid" baseTableName="version_metadata_doi" constraintName="fk_versionmetadataid_version_metadata_doi" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+        <addForeignKeyConstraint baseColumnNames="doiid" baseTableName="version_metadata_doi" constraintName="fk_doiid_version_metadata_doi" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="doi"/>
+        <sql dbms="postgresql">
+            <comment>Migrate workflow concept DOIs</comment>
+            INSERT INTO doi(creator, type, name)
+            SELECT 'USER', 'CONCEPT', conceptdoi
+            FROM workflow
+            WHERE conceptdoi IS NOT NULL;
+
+            INSERT INTO entry_concept_doi(entryid, doiid)
+            SELECT workflow.id, doi.id
+            FROM workflow
+            INNER JOIN doi ON workflow.conceptdoi = doi.name
+            WHERE workflow.conceptdoi IS NOT NULL
+        </sql>
+        <sql dbms="postgresql">
+            <comment>Migrate version DOIs</comment>
+            INSERT INTO doi(creator, type, name)
+            SELECT 'USER', 'VERSION', doiurl
+            FROM version_metadata
+            WHERE doiurl IS NOT NULL;
+
+            INSERT INTO version_metadata_doi(versionmetadataid, doiid)
+            SELECT version_metadata.id, doi.id
+            FROM version_metadata
+            INNER JOIN doi ON version_metadata.doiurl = doi.name
+            WHERE version_metadata.doiurl IS NOT NULL;
+        </sql>
     </changeSet>
 </databaseChangeLog>

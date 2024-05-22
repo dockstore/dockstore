@@ -1,8 +1,8 @@
 {
-  "conceptrecid": 51309,
+  "conceptrecid": {{ randomIntegerRange 10000 99999 }},
   "created": "2024-05-02T15:13:00.593467+00:00",
   "files": [],
-  "id": 51310,
+  "id": {{ randomIntegerRange 10000 99999 }},
   "links": {
     "self": "https://sandbox.zenodo.org/api/deposit/depositions/51310",
     "html": "https://sandbox.zenodo.org/deposit/51310",
@@ -21,13 +21,13 @@
     "creators": [],
     "access_right": "OPEN",
     "prereserve_doi": {
-      "doi": "10.5281/zenodo.51310",
-      "recid": 51310
+      "doi": "10.5281/zenodo.{{ randomIntegerRange 10000 99999 }}",
+      "recid": {{ randomIntegerRange 10000 99999 }}
     }
   },
   "modified": "2024-05-02T15:13:00.593467+00:00",
   "owner": 563,
-  "record_id": 51310,
+  "record_id": {{ randomIntegerRange 10000 99999 }},
   "state": "unsubmitted",
   "submitted": false,
   "title": ""

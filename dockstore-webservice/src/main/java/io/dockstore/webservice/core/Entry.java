@@ -28,9 +28,11 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Doi.DoiCreator;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -47,6 +49,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.MapKey;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.NamedNativeQueries;
@@ -252,7 +255,15 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Column
     @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
+    @Deprecated(since = "1.16")
     private String conceptDoi;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKey(name = "creator")
+    @MapKeyEnumerated(EnumType.STRING)
+    @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
+    private Map<DoiCreator, Doi> conceptDois;
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
@@ -329,10 +340,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
 
-    @Column(columnDefinition = "boolean default true", nullable = false)
-    @Schema(description = "Indicates if DOIs should automatically be created by Dockstore", defaultValue = "true")
-    private boolean enableAutomaticDoiCreation = true;
-
     public enum GitVisibility {
         /**
          * There was a failed attempt to determine visibility
@@ -391,13 +398,23 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
+    @Deprecated(since = "1.16")
     public void setConceptDoi(String conceptDoi) {
         this.conceptDoi = conceptDoi;
     }
 
     @JsonProperty
+    @Deprecated(since = "1.16")
     public String getConceptDoi() {
         return conceptDoi;
+    }
+
+    public Map<DoiCreator, Doi> getConceptDois() {
+        return this.conceptDois;
+    }
+
+    public void setConceptDois(Map<DoiCreator, Doi> conceptDois) {
+        this.conceptDois = conceptDois;
     }
 
     public Map<String, Alias> getAliases() {
@@ -903,14 +920,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setGitVisibility(final GitVisibility gitVisibility) {
         this.gitVisibility = gitVisibility;
-    }
-
-    public boolean isEnableAutomaticDoiCreation() {
-        return enableAutomaticDoiCreation;
-    }
-
-    public void setEnableAutomaticDoiCreation(boolean enableAutomaticDoiCreation) {
-        this.enableAutomaticDoiCreation = enableAutomaticDoiCreation;
     }
 
     public record EntryIdAndPartner(long entryId, Partner partner) {

@@ -37,6 +37,7 @@ import io.specto.hoverfly.junit.core.SimulationSource;
 import io.specto.hoverfly.junit.core.model.RequestFieldMatcher;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
 import jakarta.ws.rs.core.MediaType;
+import java.util.concurrent.TimeUnit;
 import org.apache.http.HttpStatus;
 
 /**
@@ -187,6 +188,7 @@ public final class Hoverfly {
 
     public static final String ZENODO_SIMULATION_URL = "https://sandbox.zenodo.org";
     public static final SimulationSource ZENODO_SIMULATION_SOURCE = dsl(service(ZENODO_SIMULATION_URL)
+            .andDelay(200, TimeUnit.MILLISECONDS).forAll() // I don't know why, but need a short delay for random integers to be generated and not be repeated
             .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
             // createDeposit
             .post("/api/deposit/depositions").anyBody().anyQueryParams().willReturn(success(fixture("fixtures/createDepositResponse.json"), MediaType.APPLICATION_JSON))
@@ -202,6 +204,7 @@ public final class Hoverfly {
             .post(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/actions/publish")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/publishDepositResponse.json"), MediaType.APPLICATION_JSON))
             // deleteFile
             .delete(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/files/(.+)")).anyQueryParams().anyBody().willReturn(success())
+            .post(RequestFieldMatcher.newRegexMatcher("/api/records/([0-9]+)/access/links")).anyQueryParams().anyBody().willReturn(success(fixture("fixtures/createAccessLinkResponse.json"), MediaType.APPLICATION_JSON))
     );
 
     public static final SimulationSource SIMULATION_SOURCE = dsl(service("https://www.googleapis.com")

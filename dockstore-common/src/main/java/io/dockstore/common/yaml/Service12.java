@@ -30,8 +30,6 @@ public class Service12 extends AbstractYamlService implements Workflowish {
 
     private DescriptorLanguageSubclass subclass;
 
-    private boolean enableAutomaticDoiCreation = true;
-
     @NotNull
     public DescriptorLanguageSubclass getSubclass() {
         return subclass;
@@ -56,14 +54,5 @@ public class Service12 extends AbstractYamlService implements Workflowish {
 
     public String getTopic() {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean getEnableAutomaticDoiCreation() {
-        return this.enableAutomaticDoiCreation;
-    }
-
-    public void setEnableAutomaticDoiCreation(boolean enableAutomaticDoiCreation) {
-        this.enableAutomaticDoiCreation = enableAutomaticDoiCreation;
     }
 }

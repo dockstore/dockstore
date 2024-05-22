@@ -41,7 +41,6 @@ public class YamlNotebook implements Workflowish {
     private String topic;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
-    private boolean enableAutomaticDoiCreation = true;
     private Filters filters = new Filters();
     private List<YamlAuthor> authors = new ArrayList<>();
     private List<String> testParameterFiles = new ArrayList<>();
@@ -203,14 +202,5 @@ public class YamlNotebook implements Workflowish {
 
     public void setTopic(String topic) {
         this.topic = topic;
-    }
-
-    @Override
-    public boolean getEnableAutomaticDoiCreation() {
-        return this.enableAutomaticDoiCreation;
-    }
-
-    public void setEnableAutomaticDoiCreation(boolean enableAutomaticDoiCreation) {
-        this.enableAutomaticDoiCreation = enableAutomaticDoiCreation;
     }
 }

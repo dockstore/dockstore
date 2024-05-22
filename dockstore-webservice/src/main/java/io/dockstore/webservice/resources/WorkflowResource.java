@@ -23,6 +23,7 @@ import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.helpers.SnapshotHelper.extractDescriptorAndSecondaryFiles;
 import static io.dockstore.webservice.helpers.SnapshotHelper.getMainDescriptorFile;
 import static io.dockstore.webservice.helpers.SnapshotHelper.snapshotWorkflow;
+import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
@@ -41,6 +42,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Doi.DoiCreator;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -232,7 +234,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflow.isIsChecker()) {
             throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
         }
-        if (workflow.getConceptDoi() != null) {
+        if (!workflow.getConceptDois().isEmpty()) {
             throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
         }
         if (versionDAO.getVersionsFrozen(workflowId) > 0) {
@@ -374,9 +376,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         FileFormatHelper.updateFileFormats(existingWorkflow, newWorkflow.getWorkflowVersions(), fileFormatDAO, true);
 
         for (WorkflowVersion workflowVersion: existingWorkflow.getWorkflowVersions()) {
-            if (ZenodoHelper.canAutomaticallyCreateDockstoreOwnedDoi(existingWorkflow, workflowVersion)) {
-                ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI(existingWorkflow, workflowVersion, user, this);
-            }
+            ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI(existingWorkflow, workflowVersion, user, this);
         }
 
         // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
@@ -594,13 +594,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkCanRegisterDoi(workflow, workflowVersion, user);
+        checkCanRegisterDoi(workflow, workflowVersion, user, DoiCreator.USER);
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
         ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
-        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this);
+        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this, DoiCreator.USER);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkNotNullEntry(result);
@@ -612,24 +612,40 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Timed
     @UnitOfWork
-    @Path("/{workflowId}/requestDOIEditLink/{workflowVersionId}")
-    @Operation(operationId = "requestDOIEditLink", description = "Request an access link with edit permissions for the workflow version's DOI. The DOI must have been created by Dockstore's Zenodo account.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public WorkflowVersion requestDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-            @Parameter(description = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+    @Path("/{workflowId}/requestDOIEditLink")
+    @Operation(operationId = "requestDOIEditLink", description = "Request an access link with edit permissions for the workflow's Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Workflow requestDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
 
-        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
-        if (workflowVersion == null) {
-            LOG.error("{}: could not find version: {}", user.getUsername(), workflow.getWorkflowPath());
-            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
-        }
+        ZenodoHelper.createEditAccessLink(workflow);
 
-        ZenodoHelper.createEditAccessLink(workflowVersion);
+        Workflow result = workflowDAO.findById(workflowId);
+        checkNotNullEntry(result);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
 
-        return workflowVersion;
+        return result;
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/deleteDOIEditLink")
+    @Operation(operationId = "deleteDOIEditLink", description = "Delete the access link with edit permissions for the workflow's Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Workflow deleteDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
+
+        ZenodoHelper.deleteAccessLink(workflow);
+
+        Workflow result = workflowDAO.findById(workflowId);
+        checkNotNullEntry(result);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+        return result;
     }
 
     @POST
@@ -647,8 +663,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflow.getMode() == DOCKSTORE_YML) {
             throw new CustomWebApplicationException(MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML, HttpStatus.SC_BAD_REQUEST);
         }
-
-        workflow.setEnableAutomaticDoiCreation(enabled);
     }
 
     private String workflowNameAndVersion(Workflow workflow, WorkflowVersion workflowVersion) {
@@ -750,6 +764,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotArchived(workflow);
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
+        publishedWorkflow.getWorkflowVersions().forEach(version -> automaticallyRegisterDockstoreOwnedZenodoDOI(workflow, version, user, this));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
         return publishedWorkflow;
     }

@@ -9,27 +9,27 @@
       "checksum": "e83cee92b22a650580fdb2f7c9c00d87"
     }
   ],
-  "id": 51311,
+  "id": {{ Request.Path.[3] }},
   "links": {
-    "self": "https://sandbox.zenodo.org/api/records/51311",
-    "html": "https://sandbox.zenodo.org/records/51311",
-    "doi": "https://doi.org/10.5072/zenodo.51311",
+    "self": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}",
+    "html": "https://sandbox.zenodo.org/records/{{ Request.Path.[3] }}",
+    "doi": "https://doi.org/10.5072/zenodo.{{ Request.Path.[3] }}",
     "parent_doi": "https://sandbox.zenodo.org/doi/10.5072/zenodo.51309",
-    "badge": "https://sandbox.zenodo.org/badge/doi/10.5072%2Fzenodo.51311.svg",
+    "badge": "https://sandbox.zenodo.org/badge/doi/10.5072%2Fzenodo.{{ Request.Path.[3] }}.svg",
     "conceptbadge": "https://sandbox.zenodo.org/badge/doi/10.5072%2Fzenodo.51309.svg",
-    "files": "https://sandbox.zenodo.org/api/records/51311/files",
+    "files": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}/files",
     "bucket": "https://sandbox.zenodo.org/api/files/abd50212-d119-42a1-a425-94ff1e57a863",
-    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/51311",
-    "latest_draft_html": "https://sandbox.zenodo.org/deposit/51311",
-    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/publish",
-    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/edit",
-    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/discard",
-    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/newversion",
-    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/registerconceptdoi",
-    "record": "https://sandbox.zenodo.org/api/records/51311",
-    "record_html": "https://sandbox.zenodo.org/record/51311",
-    "latest": "https://sandbox.zenodo.org/api/records/51311/versions/latest",
-    "latest_html": "https://sandbox.zenodo.org/record/51311/versions/latest"
+    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}",
+    "latest_draft_html": "https://sandbox.zenodo.org/deposit/{{ Request.Path.[3] }}",
+    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/publish",
+    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/edit",
+    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/discard",
+    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/newversion",
+    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/registerconceptdoi",
+    "record": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}",
+    "record_html": "https://sandbox.zenodo.org/record/{{ Request.Path.[3] }}",
+    "latest": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}/versions/latest",
+    "latest_html": "https://sandbox.zenodo.org/record/{{ Request.Path.[3] }}/versions/latest"
   },
   "metadata": {
     "upload_type": "SOFTWARE",
@@ -43,14 +43,14 @@
     "description": "This is foo's README. It references [this](./bar.txt) file.",
     "access_right": "OPEN",
     "license": "cc-by-4.0",
-    "doi": "10.5072/zenodo.51311",
+    "doi": "10.5072/zenodo.{{ Request.Path.[3] }}",
     "prereserve_doi": {
-      "doi": "10.5281/zenodo.51311",
-      "recid": 51311
+      "doi": "10.5281/zenodo.{{ Request.Path.[3] }}",
+      "recid": {{ Request.Path.[3] }}
     },
     "related_identifiers": [
       {
-        "identifier": "http://localhost/aliases/workflow-versions/10.5281-zenodo.51311",
+        "identifier": "http://localhost/aliases/workflow-versions/10.5281-zenodo.{{ Request.Path.[3] }}",
         "relation": "ISIDENTICALTO"
       },
       {
@@ -72,7 +72,7 @@
   },
   "modified": "2024-05-02T15:13:00.593467+00:00",
   "owner": 563,
-  "record_id": 51311,
+  "record_id": {{ Request.Path.[3] }},
   "state": "done",
   "submitted": true,
   "title": "github.com/kathy-t/ghapps-single-workflow/foo"

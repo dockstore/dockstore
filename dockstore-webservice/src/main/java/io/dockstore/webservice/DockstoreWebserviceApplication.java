@@ -49,6 +49,7 @@ import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DeletedUsername;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
@@ -250,7 +251,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class, CostStatisticMetric.class,
-            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class) {
+            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -459,7 +460,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
-        ZenodoHelper.init(configuration, httpClient, getHibernate().getSessionFactory(), tokenDAO, toolDAO, workflowDAO, workflowVersionDAO);
+        ZenodoHelper.init(configuration, httpClient, getHibernate().getSessionFactory(), tokenDAO, workflowDAO, workflowVersionDAO);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
         environment.jersey().register(metadataResource);

@@ -9,20 +9,20 @@
       "checksum": "a505678cb57967cc51eab03366f5d843"
     }
   ],
-  "id": 51311,
+  "id": {{ randomIntegerRange 10000 99999 }},
   "links": {
-    "self": "https://sandbox.zenodo.org/api/deposit/depositions/51311",
-    "html": "https://sandbox.zenodo.org/deposit/51311",
+    "self": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}",
+    "html": "https://sandbox.zenodo.org/deposit/{{ randomIntegerRange 10000 99999 }}",
     "badge": "https://sandbox.zenodo.org/badge/doi/.svg",
-    "files": "https://sandbox.zenodo.org/api/deposit/depositions/51311/files",
+    "files": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/files",
     "bucket": "https://sandbox.zenodo.org/api/files/abd50212-d119-42a1-a425-94ff1e57a863",
-    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/51311",
-    "latest_draft_html": "https://sandbox.zenodo.org/deposit/51311",
-    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/publish",
-    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/edit",
-    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/discard",
-    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/newversion",
-    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/51311/actions/registerconceptdoi"
+    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}",
+    "latest_draft_html": "https://sandbox.zenodo.org/deposit/{{ randomIntegerRange 10000 99999 }}",
+    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/publish",
+    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/edit",
+    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/discard",
+    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/newversion",
+    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/registerconceptdoi"
   },
   "metadata": {
     "upload_type": "SOFTWARE",
@@ -36,8 +36,8 @@
     "access_right": "OPEN",
     "license": "cc-by-4.0",
     "prereserve_doi": {
-      "doi": "10.5281/zenodo.51311",
-      "recid": 51311
+      "doi": "10.5281/zenodo.{{ randomIntegerRange 10000 99999 }}",
+      "recid": {{ randomIntegerRange 10000 99999 }}
     },
     "related_identifiers": [
       {
@@ -62,7 +62,7 @@
   },
   "modified": "2024-05-02T15:13:00.593467+00:00",
   "owner": 563,
-  "record_id": 51311,
+  "record_id": {{ randomIntegerRange 10000 99999 }},
   "state": "unsubmitted",
   "submitted": false,
   "title": "github.com/kathy-t/ghapps-single-workflow/foo"

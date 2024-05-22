@@ -52,8 +52,6 @@ public class YamlWorkflow implements Workflowish {
     // If true, the most recent tag that Dockstore processes from AWS lambda becomes the default version
     private boolean latestTagAsDefault = false;
 
-    private boolean enableAutomaticDoiCreation = true;
-
     private Filters filters = new Filters();
 
     private List<YamlAuthor> authors = new ArrayList<>();
@@ -149,14 +147,5 @@ public class YamlWorkflow implements Workflowish {
 
     public void setTopic(String topic) {
         this.topic = topic;
-    }
-
-    @Override
-    public boolean getEnableAutomaticDoiCreation() {
-        return this.enableAutomaticDoiCreation;
-    }
-
-    public void setEnableAutomaticDoiCreation(boolean enableAutomaticDoiCreation) {
-        this.enableAutomaticDoiCreation = enableAutomaticDoiCreation;
     }
 }
