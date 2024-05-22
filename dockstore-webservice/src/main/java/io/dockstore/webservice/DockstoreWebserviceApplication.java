@@ -24,9 +24,9 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
 import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.RatioGauge;
 import com.codahale.metrics.ScheduledReporter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -170,6 +170,7 @@ import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
@@ -180,8 +181,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -191,6 +195,12 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.server.model.ResourceMethod;
+import org.glassfish.jersey.server.monitoring.ApplicationEvent;
+import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -232,6 +242,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String IO_DROPWIZARD_DB_HIBERNATE_SIZE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.size";
     public static final String IO_DROPWIZARD_DB_HIBERNATE_IDLE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.idle";
     public static final String IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD = "io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad";
+    public static final int PERCENT = 100;
 
 
     private static OkHttpClient okHttpClient = null;
@@ -531,6 +542,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         });
 
 
+        // Log information about privileged endpoints.
+        environment.jersey().register(new LogPrivilegedEndpointsListener());
+
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
@@ -589,11 +603,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
         this.metricRegistry = new MetricRegistry();
 
-        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new RatioGauge() {
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new Gauge() {
             @Override
-            protected Ratio getRatio() {
+            public Object getValue() {
                 final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
-                return Ratio.of(activeConnections, configuration.getDataSourceFactory().getMaxSize());
+                return ((double) activeConnections / configuration.getDataSourceFactory().getMaxSize()) * PERCENT;
             }
         });
 
@@ -702,6 +716,43 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             SourceFile.restrictPaths(regex, violationMessage);
         } else {
             SourceFile.unrestrictPaths();
+        }
+    }
+
+    private static class LogPrivilegedEndpointsListener implements ApplicationEventListener {
+
+        @Override
+        public void onEvent(ApplicationEvent event) {
+            if (event.getType() == ApplicationEvent.Type.INITIALIZATION_APP_FINISHED) {
+                StringBuilder builder = new StringBuilder();
+                List<String> roles = SimpleAuthorizer.ROLES;
+                for (Resource resource: event.getResourceModel().getResources()) {
+                    formatResource(builder, "/", resource, roles);
+                }
+                LOG.info(String.format("Endpoints that allow a role in %s:\n%s", roles, builder.toString()));
+            }
+        }
+
+        private void formatResource(StringBuilder builder, String parentPath, Resource resource, List<String> selectRoles) {
+            String path = joinPaths(parentPath, resource.getPath());
+            for (ResourceMethod resourceMethod: resource.getAllMethods()) {
+                RolesAllowed rolesAllowed = resourceMethod.getInvocable().getHandlingMethod().getAnnotation(RolesAllowed.class);
+                if (rolesAllowed != null && !Collections.disjoint(Set.of(rolesAllowed.value()), selectRoles)) {
+                    builder.append(String.format("    %s %s %s\n", resourceMethod.getHttpMethod(), path, rolesAllowed));
+                }
+            }
+            for (Resource child: resource.getChildResources()) {
+                formatResource(builder, path, child, selectRoles);
+            }
+        }
+
+        private String joinPaths(String parentPath, String childPath) {
+            return "/" + Stream.concat(Arrays.stream(parentPath.split("/")), Arrays.stream(childPath.split("/"))).filter(s -> s.length() > 0).collect(Collectors.joining("/"));
+        }
+
+        @Override
+        public RequestEventListener onRequest(RequestEvent requestEvent) {
+            return null;
         }
     }
 }

@@ -19,6 +19,7 @@ package io.dockstore.webservice;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.auth.Authorizer;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,9 @@ import org.slf4j.LoggerFactory;
 public class SimpleAuthorizer implements Authorizer<User> {
 
     public static final String ADMIN = "admin";
+    public static final String CURATOR = "curator";
+    public static final String PLATFORM_PARTNER = "platformPartner";
+    public static final List<String> ROLES = List.of(ADMIN, CURATOR, PLATFORM_PARTNER);
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthorizer.class);
 
     @Override
@@ -39,9 +43,9 @@ public class SimpleAuthorizer implements Authorizer<User> {
         }
         if (ADMIN.equalsIgnoreCase(role)) {
             return principal.getIsAdmin();
-        } else if  ("curator".equalsIgnoreCase(role)) {
+        } else if (CURATOR.equalsIgnoreCase(role)) {
             return principal.isCurator();
-        } else if ("platformPartner".equalsIgnoreCase(role)) {
+        } else if (PLATFORM_PARTNER.equalsIgnoreCase(role)) {
             return principal.isPlatformPartner();
         } else {
             return true;

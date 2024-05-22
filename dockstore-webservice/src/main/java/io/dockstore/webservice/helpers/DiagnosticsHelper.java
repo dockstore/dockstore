@@ -114,7 +114,6 @@ public final class DiagnosticsHelper {
 
     public void logGlobals() {
         logFilesystems();
-        logDatabase();
         logMemory();
     }
 

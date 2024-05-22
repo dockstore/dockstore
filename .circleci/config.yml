@@ -452,24 +452,11 @@ jobs:
           path: keysmap.list
       - persist_coverage
       - run:
-          name: Make jar directory
-          command: mkdir /tmp/artifacts
-      - run:
-          name: Move jars
-          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
-      - run:
-          name: Move swagger.yaml
-          command: |
-            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
-            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
-      - run:
           name: Move cache miss log
           command: |
             mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
             cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
-      - store_artifacts:
-          path: /tmp/artifacts
       - persist_to_workspace:
           root: .
           paths:

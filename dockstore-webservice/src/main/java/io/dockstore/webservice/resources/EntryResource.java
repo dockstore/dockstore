@@ -39,11 +39,9 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -724,24 +722,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return sourceFile.getPath().equals(path);
     }
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @Path("/updateEntryToGetTopics")
-    @Deprecated
-    @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get the number of entries that failed to have their topics retrieved from GitHub.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
-    @ApiOperation(value = "See OpenApi for details", hidden = true)
-    public int updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
-        List<Entry> githubEntries = toolDAO.findAllGitHubEntriesWithNoTopicAutomatic();
-        // Use the GitHub token of the admin making this call
-        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-        int numOfEntriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
-        return numOfEntriesNotUpdatedWithTopic;
-    }
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
