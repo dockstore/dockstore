@@ -694,11 +694,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference, deliveryId);
                     });
 
-                    // Get the successfully created workflow and version
-                    Workflow workflow = workflowDAO.findById(workflowId.get());
-                    WorkflowVersion version = workflowVersionDAO.findById(workflowVersionId.get());
-                    // Automatically register a DOI
-                    automaticallyRegisterDockstoreOwnedZenodoDOI(workflow, version, user, this);
+                    transactionHelper.transaction(() -> {
+                        // Get the successfully created workflow and version
+                        Workflow workflow = workflowDAO.findById(workflowId.get());
+                        WorkflowVersion version = workflowVersionDAO.findById(workflowVersionId.get());
+                        // Automatically register a DOI
+                        automaticallyRegisterDockstoreOwnedZenodoDOI(workflow, version, user, this);
+                    });
 
                 } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {
                     // If there was a problem updating the workflow (an exception was thrown), either:
