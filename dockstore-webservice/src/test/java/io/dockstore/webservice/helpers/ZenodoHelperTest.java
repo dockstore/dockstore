@@ -1,8 +1,10 @@
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -11,12 +13,17 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Doi;
+import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiType;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.DepositMetadata;
+
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -164,6 +171,21 @@ class ZenodoHelperTest {
         DepositMetadata depositMetadata = new DepositMetadata();
         ZenodoHelper.setMetadataCommunities(depositMetadata);
         assertEquals(dockstoreCommunityId, depositMetadata.getCommunities().get(0).getIdentifier());
+    }
+
+    @Test
+    void testDefaultDoiOrderOfPrecedence() {
+        Map<DoiCreator, Doi> dois = new HashMap<>();
+        assertNull(getDoiBasedOnOrderOfPrecedence(dois));
+
+        dois.put(DoiCreator.DOCKSTORE, new Doi(DoiType.VERSION, DoiCreator.DOCKSTORE, "foobar"));
+        assertEquals(DoiCreator.DOCKSTORE, getDoiBasedOnOrderOfPrecedence(dois).getCreator());
+
+        dois.put(DoiCreator.GITHUB, new Doi(DoiType.VERSION, DoiCreator.GITHUB, "foobar"));
+        assertEquals(DoiCreator.GITHUB, getDoiBasedOnOrderOfPrecedence(dois).getCreator());
+
+        dois.put(DoiCreator.USER, new Doi(DoiType.VERSION, DoiCreator.USER, "foobar"));
+        assertEquals(DoiCreator.USER, getDoiBasedOnOrderOfPrecedence(dois).getCreator());
     }
 
     private DockstoreWebserviceConfiguration createDockstoreConfiguration() {
