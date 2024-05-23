@@ -29,6 +29,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -36,6 +38,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Schema(description = "A Digital Object Identifier (DOI)")
 @Table(name = "doi", uniqueConstraints = @UniqueConstraint(name = "unique_doi_name", columnNames = { "name" }))
 public class Doi {
+    // DOI order of precedence of greatest to least
+    public static final List<DoiCreator> DOI_ORDER_OF_PRECEDENCE = List.of(DoiCreator.USER, DoiCreator.GITHUB, DoiCreator.DOCKSTORE);
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "Implementation specific ID for the DOI in this web service")
@@ -56,10 +61,9 @@ public class Doi {
     private String name;
 
     @Column
+    @Schema(description = "The ID of the access link with edit permissions")
     private String editAccessLinkId;
 
-    @Column
-    private String editAccessLinkToken;
 
     // database timestamps
     @Column(updatable = false)
@@ -119,12 +123,13 @@ public class Doi {
         this.editAccessLinkId = editAccessLinkId;
     }
 
-    public String getEditAccessLinkToken() {
-        return editAccessLinkToken;
-    }
-
-    public void setEditAccessLinkToken(String editAccessLinkToken) {
-        this.editAccessLinkToken = editAccessLinkToken;
+    public static Doi getDoiBasedOnOrderOfPrecedence(Map<DoiCreator, Doi> dois) {
+        for (DoiCreator doiCreator: DOI_ORDER_OF_PRECEDENCE) {
+            if (dois.containsKey(doiCreator)) {
+                return dois.get(doiCreator);
+            }
+        }
+        return null;
     }
 
     public enum DoiType {

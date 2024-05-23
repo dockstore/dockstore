@@ -222,7 +222,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
         targetWorkflow.setIsChecker(isIsChecker());
-        targetWorkflow.setConceptDoi(getConceptDoi());
+        targetWorkflow.setConceptDois(getConceptDois());
         targetWorkflow.setMode(getMode());
         targetWorkflow.setArchived(isArchived());
         targetWorkflow.setWasEverPublic(getWasEverPublic());

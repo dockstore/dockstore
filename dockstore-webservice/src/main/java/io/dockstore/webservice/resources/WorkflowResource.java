@@ -20,9 +20,6 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.helpers.SnapshotHelper.extractDescriptorAndSecondaryFiles;
-import static io.dockstore.webservice.helpers.SnapshotHelper.getMainDescriptorFile;
-import static io.dockstore.webservice.helpers.SnapshotHelper.snapshotWorkflow;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
@@ -34,6 +31,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -45,6 +43,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Doi.DoiCreator;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
@@ -102,6 +101,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
+import io.swagger.zenodo.client.model.AccessLink;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Max;
@@ -183,7 +183,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
     public static final String YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION = "Your user does not have access to this organization.";
-    public static final String MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML = "Modify the .dockstore.yml to update the automatic DOI creation setting for the GitHub App workflow";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -614,19 +613,35 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/requestDOIEditLink")
     @Operation(operationId = "requestDOIEditLink", description = "Request an access link with edit permissions for the workflow's Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public Workflow requestDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId) {
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Access link successfully created", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = AccessLink.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public AccessLink requestDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Workflow with Dockstore DOI to request an access link for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
 
-        ZenodoHelper.createEditAccessLink(workflow);
+        return ZenodoHelper.createEditAccessLink(workflow);
+    }
 
-        Workflow result = workflowDAO.findById(workflowId);
-        checkNotNullEntry(result);
-        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{workflowId}/DOIEditLink")
+    @Operation(operationId = "getDOIEditLink", description = "Get an existing access link with edit permissions for the workflow's Dockstore DOIs.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Access link successfully retrieved", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = AccessLink.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public AccessLink getDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Workflow with Dockstore DOI to get an access link for.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
 
-        return result;
+        return ZenodoHelper.getAccessLink(workflow);
     }
 
     @DELETE
@@ -634,39 +649,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/deleteDOIEditLink")
     @Operation(operationId = "deleteDOIEditLink", description = "Delete the access link with edit permissions for the workflow's Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public Workflow deleteDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public void deleteDOIAccessLink(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
 
         ZenodoHelper.deleteAccessLink(workflow);
-
-        Workflow result = workflowDAO.findById(workflowId);
-        checkNotNullEntry(result);
-        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
-        return result;
-    }
-
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/updateAutomaticDoiCreationSetting")
-    @Operation(operationId = "updateAutomaticDoiCreationSetting", description = "Update the automatic DOI creation setting for non-GitHub App workflows.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public void updateAutomaticDoiCreationSetting(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-            @Parameter(description = "Boolean indicating whether to enable the automatic creation of DOIs for the workflow", required = true) @QueryParam("enabled") boolean enabled) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkNotNullEntry(workflow);
-        checkCanWrite(user, workflow);
-
-        if (workflow.getMode() == DOCKSTORE_YML) {
-            throw new CustomWebApplicationException(MODIFY_AUTO_DOI_SETTING_IN_DOCKSTORE_YML, HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    private String workflowNameAndVersion(Workflow workflow, WorkflowVersion workflowVersion) {
-        return workflow.getWorkflowPath() + ":" + workflowVersion.getName();
     }
 
     @PUT
@@ -1349,7 +1342,43 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
-                    snapshotWorkflow(w, existingTag, toolDAO);
+                    Optional<String> toolsJSONTable = Optional.empty();
+                    LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
+
+                    // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
+                    // If tooltablejson is missing it, retrieve it again so it has this new key.
+                    // Don't need to re-retrieve tooltablejson if it's an empty array because it will just return an empty array again (since the workflow has no Docker images).
+                    String existingToolTableJson = existingTag.getToolTableJson();
+                    if (existingToolTableJson != null && (existingToolTableJson.contains("\"specifier\"") || "[]".equals(existingToolTableJson))) {
+                        toolsJSONTable = Optional.of(existingToolTableJson);
+                    } else {
+                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
+                        if (mainDescriptor != null) {
+                            // Store tool table json
+                            toolsJSONTable = lInterface.getContent(existingTag.getWorkflowPath(), mainDescriptor.getContent(),
+                                    extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                            toolsJSONTable.ifPresent(existingTag::setToolTableJson);
+                        }
+                    }
+
+                    if (toolsJSONTable.isPresent()) {
+                        checkAndAddImages(existingTag, toolsJSONTable.get(), lInterface);
+                    }
+
+                    // If there is a notebook kernel image, attempt to snapshot it.
+                    if (existingTag.getKernelImagePath() != null) {
+                        checkAndAddImages(existingTag, convertImageToToolsJson(existingTag.getKernelImagePath(), lInterface), lInterface);
+                    }
+
+                    // store dag
+                    if (existingTag.getDagJson() == null) {
+                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
+                        if (mainDescriptor != null) {
+                            String dagJson = lInterface.getCleanDAG(existingTag.getWorkflowPath(), mainDescriptor.getContent(),
+                                    extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                            existingTag.setDagJson(dagJson);
+                        }
+                    }
                 }
             }
         }
@@ -1357,6 +1386,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
+    }
+
+    private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
+        // Check that a snapshot can occur (all images are referenced by tag or digest).
+        languageHandler.checkSnapshotImages(version.getName(), toolsJson);
+        // Retrieve the images.
+        Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
+        // Add them to the version.
+        version.getImages().addAll(images);
+    }
+
+    private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
+        LanguageHandlerInterface.DockerSpecifier specifier = LanguageHandlerInterface.determineImageSpecifier(image, DockerImageReference.LITERAL);
+        String url = languageHandler.getURLFromEntry(image, toolDAO, specifier);
+        LanguageHandlerInterface.DockerInfo info = new LanguageHandlerInterface.DockerInfo("", image, url, specifier);
+        return languageHandler.getJSONTableToolContent(Map.of("", info));
     }
 
     @GET
@@ -1470,6 +1515,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
+     * Populates the return file with the descriptor and secondaryDescContent as a map between file paths and secondary files
+     *
+     * @param workflowVersion source control version to consider
+     * @return secondary file map (string path -> string content)
+     */
+    private Set<SourceFile> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
+        return workflowVersion.getSourceFiles().stream()
+                .filter(sf -> !sf.getPath().equals(workflowVersion.getWorkflowPath()))
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * This method will find the workflowVersion based on the workflowVersionId passed in the parameter and return it
      *
      * @param workflow          a workflow to grab a workflow version from
@@ -1502,6 +1559,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
         }
         return workflowVersion;
+    }
+
+    /**
+     * This method will find the main descriptor file based on the workflow version passed in the parameter
+     *
+     * @param workflowVersion workflowVersion with collects sourcefiles
+     * @return mainDescriptor
+     */
+    private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion) {
+
+        SourceFile mainDescriptor = null;
+        for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
+            if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                mainDescriptor = sourceFile;
+                break;
+            }
+        }
+
+        return mainDescriptor;
     }
 
     @PUT

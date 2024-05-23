@@ -75,6 +75,7 @@ public class VersionMetadata {
     @Column()
     @Pattern(regexp = "10\\.[^/]++/.++")
     @Deprecated(since = "1.16")
+    @Schema(deprecated = true)
     protected String doiURL;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)

@@ -202,7 +202,6 @@
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="editaccesslinkid" type="VARCHAR(255)"/>
-            <column name="editaccesslinktoken" type="VARCHAR(255)"/>
             <column name="type" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>

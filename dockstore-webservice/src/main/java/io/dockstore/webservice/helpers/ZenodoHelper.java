@@ -74,7 +74,9 @@ public final class ZenodoHelper {
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String PUBLISHED_ENTRY_REQUIRED = "Published entry required to generate DOI";
     public static final String VERSION_ALREADY_HAS_DOI = "Version already has DOI. Dockstore can only create one DOI per version.";
-    public static final String NO_DOCKSTORE_DOI_TO_CREATE_ACCESS_LINK = "Could not request a DOI access link because this version does not have a DOI created by Dockstore.";
+    public static final String NO_DOCKSTORE_DOI = "The entry does not have DOIs created by Dockstore's Zenodo account.";
+    public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
+    public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
@@ -301,10 +303,11 @@ public final class ZenodoHelper {
                     // We are unable to create a new deposition version using the current user's Zenodo credentials because they don't have permission to create a deposition version for the original concept DOI.
                     // The workaround is for the user who created the concept DOI to request DOI's for other versions whenever it's needed by users from the same organization.
                     // This will hopefully be revisited later when Zenodo implements a feature where a deposit can be shared among users.
+                    final String conceptDoi = workflow.getConceptDois().get(doiCreator).getName();
                     String errorMessage = String.format(
                             "Could not create new deposition version on Zenodo because you do not have permission to create a deposition version for DOI %s. "
                                     + "Please ask the person who created DOI %s to request a DOI for workflow version %s on Dockstore.",
-                            workflow.getConceptDoi(), workflow.getConceptDoi(), workflowVersion.getName());
+                            conceptDoi, conceptDoi, workflowVersion.getName());
                     throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
                 } else {
                     throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
@@ -706,36 +709,42 @@ public final class ZenodoHelper {
      * Creates an access link with edit permissions for the workflow's DOIs. This link can edit ALL versions of the DOI.
      * @param workflow
      */
-    public static void createEditAccessLink(Workflow workflow) {
-        if (!workflow.getConceptDois().containsKey(DoiCreator.DOCKSTORE)) {
-            LOG.error("Could not request a DOI access link because this version does not have a DOI created by Dockstore.");
-            throw new CustomWebApplicationException("Could not request a DOI access link because this version does not have a DOI created by Dockstore.", HttpStatus.SC_BAD_REQUEST);
-        }
-
+    public static AccessLink createEditAccessLink(Workflow workflow) {
+        String existingDockstoreVersionDoiName = checkAndGetDockstoreVersionDoiName(workflow);
         Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiCreator.DOCKSTORE);
-        if (dockstoreConceptDoi.getEditAccessLinkToken() != null) {
-            LOG.error("DOI already has an access link.");
-            throw new CustomWebApplicationException("DOI already has an access link.", HttpStatus.SC_BAD_REQUEST);
-        }
+        checkAccessLinkDoesntExist(dockstoreConceptDoi);
 
-        ApiClient zenodoClient = createDockstoreZenodoClient();
-        Optional<String> existingDockstoreVersionDoiURL = getAnExistingDOIForWorkflow(workflow, DoiCreator.DOCKSTORE);
-        if (existingDockstoreVersionDoiURL.isEmpty()) {
-            LOG.error(NO_DOCKSTORE_DOI_TO_CREATE_ACCESS_LINK);
-            throw new CustomWebApplicationException(NO_DOCKSTORE_DOI_TO_CREATE_ACCESS_LINK, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiURL.get());
-        AccessLinksApi accessLinksApi = new AccessLinksApi(zenodoClient);
+        String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiName);
+        AccessLinksApi accessLinksApi = new AccessLinksApi(createDockstoreZenodoClient());
         try {
             AccessLink accessLink = accessLinksApi.createAccessLink(recordId, new LinkPermissionSettings().permission(PermissionEnum.EDIT));
             // Save the access link to the concept DOI because this link can edit ALL versions
             dockstoreConceptDoi.setEditAccessLinkId(accessLink.getId());
-            dockstoreConceptDoi.setEditAccessLinkToken(accessLink.getToken());
             workflow.getConceptDois().put(DoiCreator.DOCKSTORE, dockstoreConceptDoi);
+            return accessLink;
         } catch (ApiException e) {
             LOG.error("Could not create edit access link on Zenodo. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create edit access link on Zenodo."
+                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Gets an existing access link.
+     * @param workflow
+     */
+    public static AccessLink getAccessLink(Workflow workflow) {
+        String existingDockstoreVersionDoiName = checkAndGetDockstoreVersionDoiName(workflow);
+        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiCreator.DOCKSTORE);
+        checkAccessLinkExists(dockstoreConceptDoi);
+
+        String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiName);
+        AccessLinksApi accessLinksApi = new AccessLinksApi(createDockstoreZenodoClient());
+        try {
+            return accessLinksApi.getAccessLink(recordId, dockstoreConceptDoi.getEditAccessLinkId());
+        } catch (ApiException e) {
+            LOG.error("Could not get edit access link on Zenodo. Error is {}", e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not get edit access link on Zenodo."
                     + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -745,36 +754,44 @@ public final class ZenodoHelper {
      * @param workflow
      */
     public static void deleteAccessLink(Workflow workflow) {
-        if (!workflow.getConceptDois().containsKey(DoiCreator.DOCKSTORE)) {
-            LOG.error("Could not delete the DOI access link because the workflow doesn't not have DOIs created by Dockstore's Zenodo account.");
-            throw new CustomWebApplicationException("Could not delete the DOI access link because the workflow doesn't not have DOIs created by Dockstore's Zenodo account.", HttpStatus.SC_BAD_REQUEST);
-        }
-
+        String existingDockstoreVersionDoiName = checkAndGetDockstoreVersionDoiName(workflow);
         Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiCreator.DOCKSTORE);
-        if (dockstoreConceptDoi.getEditAccessLinkToken() == null) {
-            LOG.error("DOI doesn't have an access link.");
-            throw new CustomWebApplicationException("DOI doesn't have an access link.", HttpStatus.SC_BAD_REQUEST);
-        }
+        checkAccessLinkExists(dockstoreConceptDoi);
 
-        ApiClient zenodoClient = createDockstoreZenodoClient();
-        Optional<String> existingDockstoreVersionDoiURL = getAnExistingDOIForWorkflow(workflow, DoiCreator.DOCKSTORE);
-        if (existingDockstoreVersionDoiURL.isEmpty()) {
-            LOG.error("Could not delete the access link. No Dockstore version DOIs were found.");
-            throw new CustomWebApplicationException("Could not delete the access link. No Dockstore version DOIs were found.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiURL.get());
-        AccessLinksApi accessLinksApi = new AccessLinksApi(zenodoClient);
+        String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiName);
+        AccessLinksApi accessLinksApi = new AccessLinksApi(createDockstoreZenodoClient());
         try {
             accessLinksApi.deleteAccessLink(recordId, dockstoreConceptDoi.getEditAccessLinkId());
             // The access link is stored by the concept DOI. Set the values to null
             dockstoreConceptDoi.setEditAccessLinkId(null);
-            dockstoreConceptDoi.setEditAccessLinkToken(null);
             workflow.getConceptDois().put(DoiCreator.DOCKSTORE, dockstoreConceptDoi);
         } catch (ApiException e) {
             LOG.error("Could not delete edit access link on Zenodo. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not delete edit access link on Zenodo."
                     + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private static String checkAndGetDockstoreVersionDoiName(Workflow workflow) {
+        Optional<String> existingDockstoreVersionDoiURL = getAnExistingDOIForWorkflow(workflow, DoiCreator.DOCKSTORE);
+        if (existingDockstoreVersionDoiURL.isEmpty()) {
+            LOG.error(NO_DOCKSTORE_DOI);
+            throw new CustomWebApplicationException(NO_DOCKSTORE_DOI, HttpStatus.SC_BAD_REQUEST);
+        }
+        return existingDockstoreVersionDoiURL.get();
+    }
+
+    private static void checkAccessLinkExists(Doi conceptDoi) {
+        if (conceptDoi.getEditAccessLinkId() == null) {
+            LOG.error(ACCESS_LINK_DOESNT_EXIST);
+            throw new CustomWebApplicationException(ACCESS_LINK_DOESNT_EXIST, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private static void checkAccessLinkDoesntExist(Doi conceptDoi) {
+        if (conceptDoi.getEditAccessLinkId() != null) {
+            LOG.error(ACCESS_LINK_ALREADY_EXISTS);
+            throw new CustomWebApplicationException(ACCESS_LINK_ALREADY_EXISTS, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -822,10 +839,9 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version
      */
     private static void checkForExistingDOIForWorkflowVersion(WorkflowVersion workflowVersion, DoiCreator doiCreator) {
-        String workflowVersionDoiURL = workflowVersion.getDoiURL();
         if (hasExistingDOIForWorkflowVersion(workflowVersion, doiCreator)) {
             LOG.error("Workflow version {} already has DOI {}. Dockstore can only create one DOI per version.", workflowVersion.getName(),
-                    workflowVersionDoiURL);
+                    workflowVersion.getDois().get(doiCreator).getName());
             throw new CustomWebApplicationException(VERSION_ALREADY_HAS_DOI, HttpStatus.SC_METHOD_NOT_ALLOWED);
         }
     }

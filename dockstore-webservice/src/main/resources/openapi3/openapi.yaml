@@ -7651,6 +7651,36 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/DOIEditLink:
+    get:
+      description: Get an existing access link with edit permissions for the workflow's
+        Dockstore DOIs.
+      operationId: getDOIEditLink
+      parameters:
+      - description: Workflow with Dockstore DOI to get an access link for.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLink'
+          description: Access link successfully retrieved
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       description: Get the DAG for a given workflow version.
@@ -7720,12 +7750,14 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
       - BEARER: []
       tags:
@@ -8013,7 +8045,7 @@ paths:
         Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
       operationId: requestDOIEditLink
       parameters:
-      - description: Workflow to modify.
+      - description: Workflow with Dockstore DOI to request an access link for.
         in: path
         name: workflowId
         required: true
@@ -8021,12 +8053,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
+                $ref: '#/components/schemas/AccessLink'
+          description: Access link successfully created
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
       - BEARER: []
       tags:
@@ -8296,34 +8334,6 @@ paths:
             application/json:
               schema:
                 type: string
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - workflows
-  /workflows/{workflowId}/updateAutomaticDoiCreationSetting:
-    post:
-      description: Update the automatic DOI creation setting for non-GitHub App workflows.
-      operationId: updateAutomaticDoiCreationSetting
-      parameters:
-      - description: Workflow to modify.
-        in: path
-        name: workflowId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - description: Boolean indicating whether to enable the automatic creation of
-          DOIs for the workflow
-        in: query
-        name: enabled
-        required: true
-        schema:
-          type: boolean
-      responses:
-        default:
-          content:
-            application/json: {}
           description: default response
       security:
       - BEARER: []
@@ -8643,6 +8653,23 @@ paths:
       - workflows
 components:
   schemas:
+    AccessLink:
+      type: object
+      properties:
+        created_at:
+          type: string
+        expires_at:
+          type: string
+        id:
+          type: string
+        permission:
+          type: string
+          enum:
+          - view
+          - preview
+          - edit
+        token:
+          type: string
     Alias:
       type: object
       properties:
@@ -9160,6 +9187,9 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         conceptDois:
           type: object
           additionalProperties:
@@ -9179,6 +9209,8 @@ components:
           format: int64
         defaultCWLTestParameterFile:
           type: string
+        defaultConceptDoi:
+          $ref: '#/components/schemas/Doi'
         defaultVersion:
           type: string
         defaultWDLTestParameterFile:
@@ -9351,8 +9383,7 @@ components:
           - GITHUB
         editAccessLinkId:
           type: string
-        editAccessLinkToken:
-          type: string
+          description: The ID of the access link with edit permissions
         id:
           type: integer
           format: int64
@@ -9393,6 +9424,9 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         conceptDois:
           type: object
           additionalProperties:
@@ -9405,6 +9439,8 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
+        defaultConceptDoi:
+          $ref: '#/components/schemas/Doi'
         defaultVersion:
           type: string
         deletable:
@@ -10840,6 +10876,8 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
+        defaultDoi:
+          $ref: '#/components/schemas/Doi'
         descriptionSource:
           type: string
           enum:
@@ -11760,6 +11798,8 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
+        defaultDoi:
+          $ref: '#/components/schemas/Doi'
         descriptionSource:
           type: string
           enum:
@@ -11965,6 +12005,9 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         conceptDois:
           type: object
           additionalProperties:
@@ -11977,6 +12020,8 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
+        defaultConceptDoi:
+          $ref: '#/components/schemas/Doi'
         defaultTestParameterFilePath:
           type: string
         defaultVersion:
@@ -12172,6 +12217,8 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
+        defaultDoi:
+          $ref: '#/components/schemas/Doi'
         descriptionSource:
           type: string
           enum:

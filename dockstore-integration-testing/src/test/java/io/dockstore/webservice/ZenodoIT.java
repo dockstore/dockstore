@@ -18,19 +18,23 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
+import static io.dockstore.client.cli.BaseIT.getAnonymousOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWorkflowVersion;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_URL;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
+import static io.dockstore.webservice.helpers.ZenodoHelper.ACCESS_LINK_ALREADY_EXISTS;
+import static io.dockstore.webservice.helpers.ZenodoHelper.ACCESS_LINK_DOESNT_EXIST;
 import static io.dockstore.webservice.helpers.ZenodoHelper.FROZEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.helpers.ZenodoHelper.NO_DOCKSTORE_DOI_TO_CREATE_ACCESS_LINK;
+import static io.dockstore.webservice.helpers.ZenodoHelper.NO_DOCKSTORE_DOI;
 import static io.dockstore.webservice.helpers.ZenodoHelper.NO_ZENODO_USER_TOKEN;
 import static io.dockstore.webservice.helpers.ZenodoHelper.PUBLISHED_ENTRY_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +51,7 @@ import io.dockstore.common.TestingPostgres;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.AccessLink;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
@@ -62,6 +67,7 @@ import io.specto.hoverfly.junit5.HoverflyExtension;
 import io.specto.hoverfly.junit5.api.HoverflyConfig;
 import io.specto.hoverfly.junit5.api.HoverflyCore;
 import java.util.List;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -314,10 +320,12 @@ class ZenodoIT {
     }
 
     @Test
-    void testEditAccessLink(Hoverfly hoverfly) {
+    void testAccessLinkOperations(Hoverfly hoverfly) {
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        ApiClient anonWebClient = getAnonymousOpenAPIWebClient();
+        WorkflowsApi anonWorkflowsApi = new WorkflowsApi(anonWebClient);
 
         // Create a GitHub App workflow
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
@@ -328,19 +336,46 @@ class ZenodoIT {
         assertTrue(workflow.getConceptDois().isEmpty());
         assertTrue(tagVersion.getDois().isEmpty());
 
-        // Create access link. Should fail because there are no Dockstore DOIs
+        // Should fail to create an access because there are no Dockstore DOIs
         final long workflowId = workflow.getId();
         ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIEditLink(workflowId));
-        assertTrue(exception.getMessage().contains(NO_DOCKSTORE_DOI_TO_CREATE_ACCESS_LINK));
+        assertTrue(exception.getMessage().contains(NO_DOCKSTORE_DOI));
 
         // Publish workflow, should automatically create DOIs
         workflowsApi.publish1(workflow.getId(), new PublishRequest().publish(true));
-        workflow = workflowsApi.getWorkflow(workflow.getId(), "versions");
+        workflow = workflowsApi.getWorkflow(workflowId, "versions");
         tagVersion = getWorkflowVersion(workflow, "0.8").orElse(null);
         assertNotNull(workflow.getConceptDois().get(DoiCreator.DOCKSTORE.name()).getName());
         assertNotNull(tagVersion.getDois().get(DoiCreator.DOCKSTORE.name()).getName());
 
         // Create an access link
-        workflowsApi.requestDOIEditLink(workflowId);
+        AccessLink expectedAccessLink = workflowsApi.requestDOIEditLink(workflowId);
+        assertNotNull(expectedAccessLink.getId());
+        assertNotNull(expectedAccessLink.getToken());
+        // Check that the Dockstore concept DOI stores the access link ID
+        workflow = workflowsApi.getWorkflow(workflowId, "");
+        assertEquals(expectedAccessLink.getId(), workflow.getConceptDois().get(DoiCreator.DOCKSTORE.name()).getEditAccessLinkId());
+
+        // Get the existing access
+        assertEquals(expectedAccessLink, workflowsApi.getDOIEditLink(workflowId));
+
+        // Should not be able to request another link
+        exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIEditLink(workflowId));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
+        assertTrue(exception.getMessage().contains(ACCESS_LINK_ALREADY_EXISTS));
+
+        // Anonymous users should not be able to perform operations on the link
+        exception = assertThrows(ApiException.class, () -> anonWorkflowsApi.requestDOIEditLink(workflowId));
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
+        exception = assertThrows(ApiException.class, () -> anonWorkflowsApi.getDOIEditLink(workflowId));
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
+        exception = assertThrows(ApiException.class, () -> anonWorkflowsApi.deleteDOIEditLink(workflowId));
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
+
+        // Delete the access link
+        workflowsApi.deleteDOIEditLink(workflowId);
+        exception = assertThrows(ApiException.class, () -> workflowsApi.getDOIEditLink(workflowId));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
+        assertTrue(exception.getMessage().contains(ACCESS_LINK_DOESNT_EXIST));
     }
 }

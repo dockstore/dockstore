@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
@@ -305,7 +307,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     void updateByUser(final Version<?> version) {
         this.getVersionMetadata().hidden = version.isHidden();
         this.setDoiStatus(version.getDoiStatus());
-        this.setDoiURL(version.getDoiURL());
         if (!this.isFrozen()) {
             if (version.frozen && this.sourceFiles.isEmpty()) {
                 throw new CustomWebApplicationException(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES, HttpStatus.SC_BAD_REQUEST);
@@ -475,7 +476,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setDois(Map<DoiCreator, Doi> dois) {
-        this.getVersionMetadata().dois = dois;
+        versionMetadata.dois.clear();
+        versionMetadata.dois.putAll(dois);
+    }
+
+    public Doi getDefaultDoi() {
+        return getDoiBasedOnOrderOfPrecedence(versionMetadata.dois);
     }
 
     @ApiModelProperty(value = "This indicates the DOI status", position = 20)

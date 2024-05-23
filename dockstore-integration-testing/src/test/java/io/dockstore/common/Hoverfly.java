@@ -21,6 +21,7 @@ import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
 import static io.specto.hoverfly.junit.dsl.ResponseCreators.badRequest;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.noContent;
 import static io.specto.hoverfly.junit.dsl.ResponseCreators.notFound;
 import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
 import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
@@ -204,7 +205,12 @@ public final class Hoverfly {
             .post(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/actions/publish")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/publishDepositResponse.json"), MediaType.APPLICATION_JSON))
             // deleteFile
             .delete(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/files/(.+)")).anyQueryParams().anyBody().willReturn(success())
+            // createAccessLink
             .post(RequestFieldMatcher.newRegexMatcher("/api/records/([0-9]+)/access/links")).anyQueryParams().anyBody().willReturn(success(fixture("fixtures/createAccessLinkResponse.json"), MediaType.APPLICATION_JSON))
+            // getAccessLink
+            .get(RequestFieldMatcher.newRegexMatcher("/api/records/([0-9]+)/access/links/(.+)")).anyQueryParams().anyBody().willReturn(success(fixture("fixtures/createAccessLinkResponse.json"), MediaType.APPLICATION_JSON))
+            // deleteAccessLink
+            .delete(RequestFieldMatcher.newRegexMatcher("/api/records/([0-9]+)/access/links/(.+)")).anyQueryParams().anyBody().willReturn(noContent())
     );
 
     public static final SimulationSource SIMULATION_SOURCE = dsl(service("https://www.googleapis.com")

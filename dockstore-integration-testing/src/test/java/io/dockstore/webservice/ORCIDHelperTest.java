@@ -13,6 +13,9 @@ import io.dockstore.common.HoverflyTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Doi;
+import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiType;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -28,6 +31,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
@@ -74,7 +78,7 @@ class ORCIDHelperTest {
         // Gary's public ORCID iD
         String id = "0000-0001-8365-0487";
         version.setLastModified(new Date());
-        version.setDoiURL("https://doi.org/10.1038/s41586-020-1969-63");
+        version.setDois(Map.of(DoiCreator.USER, new Doi(DoiType.VERSION, DoiCreator.USER, "https://doi.org/10.1038/s41586-020-1969-63")));
         String token = "fakeToken";
         Optional<Version> optionalVersion = Optional.of(version);
         String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);

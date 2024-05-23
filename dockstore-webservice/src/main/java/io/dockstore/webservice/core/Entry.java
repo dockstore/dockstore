@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
@@ -255,6 +256,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Column
     @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
+    @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", deprecated = true)
     @Deprecated(since = "1.16")
     private String conceptDoi;
 
@@ -414,7 +416,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setConceptDois(Map<DoiCreator, Doi> conceptDois) {
-        this.conceptDois = conceptDois;
+        this.conceptDois.clear();
+        this.conceptDois.putAll(conceptDois);
+    }
+
+    public Doi getDefaultConceptDoi() {
+        return getDoiBasedOnOrderOfPrecedence(conceptDois);
     }
 
     public Map<String, Alias> getAliases() {
