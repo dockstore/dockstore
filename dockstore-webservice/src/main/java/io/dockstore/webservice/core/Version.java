@@ -480,6 +480,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         versionMetadata.dois.putAll(dois);
     }
 
+    @JsonIgnore // Don't surface this, just a helper method
     public Doi getDefaultDoi() {
         return getDoiBasedOnOrderOfPrecedence(versionMetadata.dois);
     }

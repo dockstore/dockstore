@@ -265,7 +265,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @MapKey(name = "creator")
     @MapKeyEnumerated(EnumType.STRING)
     @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
-    private Map<DoiCreator, Doi> conceptDois;
+    private Map<DoiCreator, Doi> conceptDois = new HashMap<>();
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
@@ -420,6 +420,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.conceptDois.putAll(conceptDois);
     }
 
+    @JsonIgnore // Don't surface this, just a helper method
     public Doi getDefaultConceptDoi() {
         return getDoiBasedOnOrderOfPrecedence(conceptDois);
     }

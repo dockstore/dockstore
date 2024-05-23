@@ -64,7 +64,6 @@ public class Doi {
     @Schema(description = "The ID of the access link with edit permissions")
     private String editAccessLinkId;
 
-
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp

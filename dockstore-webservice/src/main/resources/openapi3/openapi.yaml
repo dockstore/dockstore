@@ -9209,8 +9209,6 @@ components:
           format: int64
         defaultCWLTestParameterFile:
           type: string
-        defaultConceptDoi:
-          $ref: '#/components/schemas/Doi'
         defaultVersion:
           type: string
         defaultWDLTestParameterFile:
@@ -9439,8 +9437,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        defaultConceptDoi:
-          $ref: '#/components/schemas/Doi'
         defaultVersion:
           type: string
         deletable:
@@ -10876,8 +10872,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        defaultDoi:
-          $ref: '#/components/schemas/Doi'
         descriptionSource:
           type: string
           enum:
@@ -11798,8 +11792,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        defaultDoi:
-          $ref: '#/components/schemas/Doi'
         descriptionSource:
           type: string
           enum:
@@ -12020,8 +12012,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        defaultConceptDoi:
-          $ref: '#/components/schemas/Doi'
         defaultTestParameterFilePath:
           type: string
         defaultVersion:
@@ -12217,8 +12207,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        defaultDoi:
-          $ref: '#/components/schemas/Doi'
         descriptionSource:
           type: string
           enum:
