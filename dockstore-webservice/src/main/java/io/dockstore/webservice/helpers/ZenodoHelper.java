@@ -28,6 +28,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -65,8 +66,8 @@ public final class ZenodoHelper {
      * @param entryVersionHelper provides interface for retrieving the files of versions
      */
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
-            WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
-            String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
+                                                    WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
+                                                    String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
         Deposit deposit = new Deposit();
@@ -87,20 +88,15 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
                 // Set the attribute that will reserve a DOI before publishing
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
-                depositMetadata.prereserveDoi(true);
                 // Put the deposit on Zenodo; the returned deposit will contain
                 // the reserved DOI which we can use to create a workflow alias
                 // Later on we will update the Zenodo deposit (put the deposit on
                 // Zenodo again  in the call to putDepositionOnZenodo) so it contains the workflow version alias
                 // constructed with the DOI
                 Deposit newDeposit = putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
-                depositMetadata.prereserveDoi(false);
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
-                // TODO clean this after https://github.com/dockstore/swagger-java-zenodo-client/pull/20/files is merged and released
-                Map<String, String> doiMap = (Map<String, String>)newDeposit.getMetadata().getPrereserveDoi();
-                Map.Entry<String, String> doiEntry = doiMap.entrySet().iterator().next();
-                String doi = doiEntry.getValue();
+                String doi = returnDeposit.getMetadata().getPrereserveDoi().getDoi();
                 doiAlias = createAliasUsingDoi(doi);
                 setMetadataRelatedIdentifiers(depositMetadata, dockstoreGA4GHBaseUrl,
                         dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
@@ -129,10 +125,7 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
-                // TODO clean this after https://github.com/dockstore/swagger-java-zenodo-client/pull/20/files is merged and released
-                Map<String, String> doiMap = (Map<String, String>)depositMetadata.getPrereserveDoi();
-                Map.Entry<String, String> doiEntry = doiMap.entrySet().iterator().next();
-                String doi = doiEntry.getValue();
+                String doi = depositMetadata.getPrereserveDoi().getDoi();
                 doiAlias = createAliasUsingDoi(doi);
                 setMetadataRelatedIdentifiers(depositMetadata,  dockstoreGA4GHBaseUrl,
                         dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
@@ -151,7 +144,7 @@ public final class ZenodoHelper {
                     throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
                 } else {
                     throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
-                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                            + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
                 }
             }
         }
@@ -163,11 +156,29 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
-        String conceptDoi = publishedDeposit.getLinks().get("conceptdoi");
+        String conceptDoi = "publishedDeposit.getConceptDoi";
 
         return new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
     }
 
+    /**
+     * extract a digital object identifier (DOI) from a DOI target URL
+     * @param doiUrl digital object identifier
+     * @return the DOI as a string
+     */
+    protected static String extractDoiFromDoiUrl(String doiUrl) {
+        // Remove the 'https://doi.org/' etc. prefix from the DOI
+        // e.g. https://doi.org/10.5072/zenodo.372767
+        String doi = doiUrl;
+        try {
+            URI uri = new URI(doiUrl);
+            doi = StringUtils.stripStart(uri.getPath(), "/");
+
+        } catch (URISyntaxException e) {
+            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
+        }
+        return doi;
+    }
 
     /**
      * Create a workflow alias that uses a digital object identifier
@@ -252,8 +263,8 @@ public final class ZenodoHelper {
      * @param doiAlias workflow alias constructed using a DOI
      */
     private static void setMetadataRelatedIdentifiers(DepositMetadata depositMetadata,
-            String dockstoreGA4GHBaseUrl, String dockstoreUrl, String workflowUrl,
-            Workflow workflow, WorkflowVersion workflowVersion, String doiAlias) {
+                                                      String dockstoreGA4GHBaseUrl, String dockstoreUrl, String workflowUrl,
+                                                      Workflow workflow, WorkflowVersion workflowVersion, String doiAlias) {
 
         List<RelatedIdentifier> relatedIdentifierList = new ArrayList<>();
 
@@ -331,7 +342,7 @@ public final class ZenodoHelper {
         if (communities == null || communities.isEmpty()) {
             List<Community> myList = new ArrayList<>();
             depositMetadata.setCommunities(myList);
-        } else if (communities.size() == 1 && communities.get(0).getId() == null) {
+        } else if (communities.size() == 1 && communities.get(0).getIdentifier() == null) {
             // Sometimes the list of communities contains one object
             // with a null id when Zenodo copies the metadata.
             // This will cause the call to publish to fail, so clear
@@ -348,7 +359,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      */
     private static void fillInMetadata(DepositMetadata depositMetadata,
-            Workflow workflow, WorkflowVersion workflowVersion) {
+                                       Workflow workflow, WorkflowVersion workflowVersion) {
         // add some metadata to the deposition that will be published to Zenodo
         depositMetadata.setTitle(workflow.getWorkflowPath());
         // The Zenodo deposit type for Dockstore will always be SOFTWARE
@@ -381,7 +392,7 @@ public final class ZenodoHelper {
      * @param entryVersionHelper code for interacting with the files of versions, we use zip file creation methods
      */
     private static void provisionWorkflowVersionUploadFiles(ApiClient zendoClient, Deposit returnDeposit,
-            int depositionID, Workflow workflow, WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
+                                                            int depositionID, Workflow workflow, WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
         // Creating a new version copies the files from the previous version
         // We want to delete these since we will upload a new set of files
         // if creating a completely new deposit this should not cause a problem
@@ -425,10 +436,10 @@ public final class ZenodoHelper {
                 // Delete the temporary directory
                 FileUtils.deleteQuietly(tempDirPath.toFile());
                 LOG.error(
-                    "Could not create file " + zipFilePathName + " outputstream for DOI zip file for upload to Zenodo." + " Error is " + fne
-                        .getMessage(), fne);
+                        "Could not create file " + zipFilePathName + " outputstream for DOI zip file for upload to Zenodo." + " Error is " + fne
+                                .getMessage(), fne);
                 throw new CustomWebApplicationException("Internal server error creating Zenodo upload temp directory",
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             File zipFile = new File(zipFilePathName);
@@ -491,7 +502,7 @@ public final class ZenodoHelper {
      * @return a copy of the deposit that was put on Zenodo
      */
     private static Deposit putDepositionOnZenodo(DepositsApi depositApi, DepositMetadata depositMetadata,
-            int depositionID) {
+                                                 int depositionID) {
         NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
         nestedDepositMetadata.setMetadata(depositMetadata);
         Deposit deposit;
