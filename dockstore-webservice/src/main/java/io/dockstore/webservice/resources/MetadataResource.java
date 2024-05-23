@@ -478,9 +478,8 @@ public class MetadataResource {
     @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Health checks failed")
     public Set<HealthCheckResult> checkHealth(
             @Parameter(name = "include", description = "List of health checks to run. If unspecified, run all health checks", in = ParameterIn.QUERY,
-                    array = @ArraySchema(schema = @Schema(implementation = String.class, allowableValues = {"hibernate", "deadlocks", "connectionPool"})))
-            @ApiParam(name = "include", value = "List of health checks to run. If unspecified, run all health checks", allowableValues = "hibernate,deadlocks,connectionPool",
-                    type = "array") @QueryParam(value = "include") List<String> include) {
+                    array = @ArraySchema(schema = @Schema(implementation = String.class, allowableValues = {"hibernate", "deadlocks", "connectionPool", "liquibaseLock", "elasticsearchConsistency"})))
+            @QueryParam(value = "include") List<String> include) {
         Map<String, HealthCheck.Result> results;
         boolean allHealthy;
         if (include.isEmpty()) { // Run all health checks
