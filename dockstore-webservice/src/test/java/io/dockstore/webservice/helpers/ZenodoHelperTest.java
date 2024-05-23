@@ -22,7 +22,6 @@ import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.DepositMetadata;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
