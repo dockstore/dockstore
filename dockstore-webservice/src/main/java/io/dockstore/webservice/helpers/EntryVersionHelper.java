@@ -373,7 +373,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 String absolutePath = Paths.get(StringUtils.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString(); // lgtm[java/path-injection]
-                SourceFile sourceFile = SourceFileHelper.create(fileType, null, path, absolutePath);
+                SourceFile sourceFile = SourceFile.limitedBuilder().start().type(fileType).content(null).path(path).absolutePath(absolutePath).build();
 
                 long id = fileDAO.create(sourceFile);
                 SourceFile sourceFileWithId = fileDAO.findById(id);

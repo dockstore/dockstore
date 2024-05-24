@@ -32,7 +32,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -221,7 +220,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
             String path = entry.getKey();
             String fileContent = entry.getValue().content();
-            SourceFile sourceFile = SourceFileHelper.create(type, fileContent, path, path);
+            SourceFile sourceFile = SourceFile.limitedBuilder().start().type(type).content(fileContent).paths(path).build();
             sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
             results.put(entry.getKey(), sourceFile);
         }

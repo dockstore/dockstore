@@ -162,7 +162,7 @@ public abstract class SourceCodeRepoInterface {
     public Optional<SourceFile> readFile(String repositoryId, Version<?> tag, DescriptorLanguage.FileType fileType, String path) {
         String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
-            SourceFile dockstoreFile = SourceFileHelper.create(fileType, fileResponse, path, path);
+            SourceFile dockstoreFile = SourceFile.limitedBuilder().start().type(fileType).content(fileResponse).paths(path).build();
             return Optional.of(dockstoreFile);
         }
         return Optional.empty();

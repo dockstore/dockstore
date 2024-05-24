@@ -230,7 +230,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
         // Grab content from found file
         // do not censor invalid versions to match github expected behaviour
-        return SourceFileHelper.create(type, content, path, path);
+        return SourceFile.limitedBuilder().start().type(type).content(content).paths(path).build();
     }
     @Override
     public void updateReferenceType(String repositoryId, Version version) {

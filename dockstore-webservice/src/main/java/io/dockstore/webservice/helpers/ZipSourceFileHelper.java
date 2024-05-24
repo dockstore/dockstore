@@ -143,7 +143,7 @@ public final class ZipSourceFileHelper {
                         String content =  getContent(zipFile, zipEntry);
                         String path = zipEntry.getName();
                         String absolutePath = addLeadingSlashIfNecessary(zipEntry.getName());
-                        return SourceFileHelper.create(type, content, path, absolutePath);
+                        return SourceFile.limitedBuilder().start().type(type).content(content).path(path).absolutePath(absolutePath).build();
                     }).collect(Collectors.toList());
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above

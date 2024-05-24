@@ -885,7 +885,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String testJsonContent = this.readFileFromRepo(testJsonPath, ref.refName(), repository);
                     if (testJsonContent != null) {
                         DescriptorLanguage.FileType testJsonType = workflow.getDescriptorType().getTestParamType();
-                        SourceFile testJson = SourceFileHelper.create(testJsonType, testJsonContent, testJsonPath, testJsonPath);
+                        SourceFile testJson = SourceFile.limitedBuilder().start().type(testJsonType).content(testJsonContent).paths(testJsonPath).build();
                         // Only add test parameter file if it hasn't already been added
                         boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
                             && sf.getType() == testJson.getType());
@@ -931,7 +931,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         for (String filePath: files) {
             String fileContent = this.readFileFromRepo(filePath, ref.refName(), repository);
             if (fileContent != null) {
-                SourceFile file = SourceFileHelper.create(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER, fileContent, filePath, filePath);
+                SourceFile file = SourceFile.limitedBuilder().start().type(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER).content(fileContent).paths(filePath).build();
                 version.getSourceFiles().add(file);
             } else {
                 // File not found or null
@@ -1003,7 +1003,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
-            SourceFile primaryDescriptorFile = SourceFileHelper.create(identifiedType, fileContent, primaryDescriptorPath, primaryDescriptorPath);
+            SourceFile primaryDescriptorFile = SourceFile.limitedBuilder().start().type(identifiedType).content(fileContent).paths(primaryDescriptorPath).build();
 
             version = combineVersionAndSourcefile(repository.getFullName(), primaryDescriptorFile, workflow, identifiedType, version, existingDefaults);
 
@@ -1018,7 +1018,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String testFileContent = this.readFileFromRepo(testParameterPath, ref.refName(), repository);
                     if (testFileContent != null) {
                         DescriptorLanguage.FileType testFileType = workflow.getDescriptorType().getTestParamType();
-                        SourceFile testFile = SourceFileHelper.create(testFileType, testFileContent, testParameterPath, testParameterPath);
+                        SourceFile testFile = SourceFile.limitedBuilder().start().type(testFileType).content(testFileContent).paths(testParameterPath).build();
                         version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
@@ -1071,7 +1071,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
             if (dockstoreYmlContent != null) {
                 // Create file for .dockstore.yml
-                return SourceFileHelper.create(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlContent, dockstoreYmlPath, dockstoreYmlPath);
+                return SourceFile.limitedBuilder().start().type(DescriptorLanguage.FileType.DOCKSTORE_YML).content(dockstoreYmlContent).paths(dockstoreYmlPath).build();
             }
         }
         // TODO: https://github.com/dockstore/dockstore/issues/3239

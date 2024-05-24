@@ -916,7 +916,7 @@ public abstract class AbstractImageRegistry {
                         LOG.error("file type not implemented yet");
                         continue;
                     }
-                    SourceFile dockstoreFile = SourceFileHelper.create(f, fileResponse, path, path);
+                    SourceFile dockstoreFile = SourceFile.limitedBuilder().start().type(f).content(fileResponse).paths(path).build();
                     files.add(dockstoreFile);
                 }
             } else {
@@ -930,7 +930,7 @@ public abstract class AbstractImageRegistry {
     }
 
     private SourceFile createSourceFile(String path, DescriptorLanguage.FileType type) {
-        return SourceFileHelper.create(type, null, path, path);
+        return SourceFile.limitedBuilder().start().type(type).content(null).paths(path).build();
     }
 
     /**
