@@ -875,7 +875,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Get contents of descriptor file and store
             String decodedContent = this.readFileFromRepo(calculatedPath, ref.refName(), repository);
             if (decodedContent != null) {
-                SourceFile file = SourceFileHelper.create(identifiedType, decodedContent, calculatedPath, calculatedPath);
+                SourceFile file = SourceFile.limitedBuilder().start().type(identifiedType).content(decodedContent).paths(calculatedPath).build();
                 version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
 
                 // Use default test parameter file if either new version or existing version that hasn't been edited

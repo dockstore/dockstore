@@ -314,6 +314,10 @@ public class SourceFile implements Comparable<SourceFile> {
         this.metadata = metadata;
     }
 
+    public static LimitedSourceFileBuilder limitedBuilder() {
+        return new LimitedSourceFileBuilder();
+    }
+
     private static synchronized void checkPath(String path) {
         if (path != null && pathRegex != null && !pathRegex.matcher(path).matches()) {
             throw new CustomWebApplicationException(pathViolationMessage, HttpStatus.SC_BAD_REQUEST);
