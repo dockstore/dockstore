@@ -36,7 +36,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.HoverflyTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
-import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -54,14 +53,12 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.resources.EntryResource;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import io.specto.hoverfly.junit5.HoverflyExtension;
 import io.specto.hoverfly.junit5.api.HoverflyConfig;
 import io.specto.hoverfly.junit5.api.HoverflyCore;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
