@@ -184,6 +184,9 @@ public final class ZenodoHelper {
         try {
             URI uri = new URI(doiUrl);
             doi = StringUtils.stripStart(uri.getPath(), "/");
+            if (doi.startsWith("doi/")) {
+                doi = doi.split("doi/")[1];
+            }
 
         } catch (URISyntaxException e) {
             LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);

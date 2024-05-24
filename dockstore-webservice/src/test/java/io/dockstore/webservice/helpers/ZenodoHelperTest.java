@@ -101,6 +101,13 @@ class ZenodoHelperTest {
     }
 
     @Test
+    void extractDoiFromDoiUrlWithPrefix() {
+        String doiUrl = "https://doi.org/doi/10.5072/zenodo.372767";
+        String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
+        assertEquals("10.5072/zenodo.372767", doi);
+    }
+
+    @Test
     void checkAliasCreationFromDoiWithInvalidPrefix() {
         String doi = "drs:10.5072/zenodo.372767";
         try {
