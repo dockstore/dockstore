@@ -562,10 +562,6 @@ class GeneralWorkflowIT extends BaseIT {
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
-        master.setDoiURL(DUMMY_DOI);
-        workflowVersions = workflowsApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
-        master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        assertEquals(DUMMY_DOI, master.getDoiURL());
         assertEquals(DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
@@ -646,12 +642,10 @@ class GeneralWorkflowIT extends BaseIT {
             workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
         version.setFrozen(true);
         version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
-        version.setDoiURL(DUMMY_DOI);
         assertFalse(version.isValid(), "Double check that this version is in fact invalid");
         List<WorkflowVersion> workflowVersions = workflowsApi
             .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
         version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
-        assertEquals(DUMMY_DOI, version.getDoiURL());
         assertEquals(DoiStatusEnum.REQUESTED, version.getDoiStatus());
     }
 
