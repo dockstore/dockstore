@@ -153,8 +153,12 @@ public final class Hoverfly {
         .get(RequestFieldMatcher.newRegexMatcher("/repos/[^/]+/[^/]+/installation")).willReturn(notFound()));
     private static final Gson GSON = new Gson();
 
+    public static final String ORCID_API_SIMULATION_URL = "https://api.sandbox.orcid.org";
+    public static final String ORCID_PUB_SIMULATION_URL = "https://pub.orcid.org";
+    public static final String ORCID_SANDBOX_SIMULATION_URL = "https://sandbox.orcid.org";
+    public static final String ORCID_DESTINATION_REGEX = ".+.orcid.org"; // Will match any destinations that end in 'orcid.org'
     public static final SimulationSource ORCID_SIMULATION_SOURCE = dsl(
-            service("https://api.sandbox.orcid.org")
+            service(ORCID_API_SIMULATION_URL)
                     .post(String.format("/v3.0/%s/work", ORCID_USER_1)).anyBody().willReturn(response().status(HttpStatus.SC_CREATED).andSetState("Work1", "Created").header("Location",
                             PUT_CODE_USER_1))
                     .post(String.format("/v3.0/%s/work", ORCID_USER_1)).withState("Work1", "Created").anyBody().willReturn(response().status(HttpStatus.SC_CONFLICT).body(fixture(
@@ -178,12 +182,12 @@ public final class Hoverfly {
                     .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
                     .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
                     .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
-            service("https://pub.orcid.org")
+            service(ORCID_PUB_SIMULATION_URL)
                     // Since it's repetitive to mock all the responses needed to create an OrcidAuthor for these IDs, simulate that the ORCID IDs don't exist.
                     .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
                     .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
                     .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
-            service("https://sandbox.orcid.org")
+            service(ORCID_SANDBOX_SIMULATION_URL)
                     .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
     );
 
