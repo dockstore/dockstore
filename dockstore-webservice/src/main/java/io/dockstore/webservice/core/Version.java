@@ -470,7 +470,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @JsonProperty
-    @Schema(description = "The DOI for the version of the entry")
+    @Schema(description = "The DOIs for the version of the entry")
     public Map<DoiCreator, Doi> getDois() {
         return versionMetadata.dois;
     }

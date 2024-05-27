@@ -9379,6 +9379,7 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
+          example: USER
         editAccessLinkId:
           type: string
           description: The ID of the access link with edit permissions
@@ -9389,12 +9390,14 @@ components:
         name:
           type: string
           description: The DOI name
+          example: 10.5281/zenodo.705645
         type:
           type: string
           description: The type of DOI
           enum:
           - CONCEPT
           - VERSION
+          example: CONCEPT
       required:
       - creator
       - name
@@ -10900,7 +10903,7 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Doi'
-          description: The DOI for the version of the entry
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:
@@ -11818,7 +11821,7 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Doi'
-          description: The DOI for the version of the entry
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:
@@ -11916,6 +11919,7 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         engineVersions:
           type: array
           items:
@@ -12233,7 +12237,7 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Doi'
-          description: The DOI for the version of the entry
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:

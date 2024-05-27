@@ -764,7 +764,6 @@ public final class ZenodoHelper {
             accessLinksApi.deleteAccessLink(recordId, dockstoreConceptDoi.getEditAccessLinkId());
             // The access link is stored by the concept DOI. Set the values to null
             dockstoreConceptDoi.setEditAccessLinkId(null);
-            workflow.getConceptDois().put(DoiCreator.DOCKSTORE, dockstoreConceptDoi);
         } catch (ApiException e) {
             LOG.error("Could not delete edit access link on Zenodo. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not delete edit access link on Zenodo."

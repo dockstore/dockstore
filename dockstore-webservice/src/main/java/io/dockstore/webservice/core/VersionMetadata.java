@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_CREATORS;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.dockstore.webservice.core.Doi.DoiCreator;
 import io.swagger.annotations.ApiModelProperty;
@@ -40,6 +42,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,6 +85,8 @@ public class VersionMetadata {
     @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
     @MapKey(name = "creator")
     @MapKeyEnumerated(EnumType.STRING)
+    @Size(max = MAX_NUMBER_OF_DOI_CREATORS)
+    @Schema(description = "The DOIs for the version of the entry")
     protected Map<DoiCreator, Doi> dois = new HashMap<>();
 
     @Column()

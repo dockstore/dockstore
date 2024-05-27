@@ -38,8 +38,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Schema(description = "A Digital Object Identifier (DOI)")
 @Table(name = "doi", uniqueConstraints = @UniqueConstraint(name = "unique_doi_name", columnNames = { "name" }))
 public class Doi {
-    // DOI order of precedence of greatest to least
+    // DOI order of precedence from greatest to least
     public static final List<DoiCreator> DOI_ORDER_OF_PRECEDENCE = List.of(DoiCreator.USER, DoiCreator.GITHUB, DoiCreator.DOCKSTORE);
+    public static final int MAX_NUMBER_OF_DOI_CREATORS = 3;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,16 +49,16 @@ public class Doi {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "The type of DOI", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The type of DOI", requiredMode = RequiredMode.REQUIRED, example = "CONCEPT")
     private DoiType type;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "The DOI creator", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The DOI creator", requiredMode = RequiredMode.REQUIRED, example = "USER")
     private DoiCreator creator;
 
     @Column(nullable = false)
-    @Schema(description = "The DOI name", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The DOI name", requiredMode = RequiredMode.REQUIRED, example = "10.5281/zenodo.705645")
     private String name;
 
     @Column

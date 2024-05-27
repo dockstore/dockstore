@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_CREATORS;
 import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
@@ -62,6 +63,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -264,6 +266,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
     @MapKey(name = "creator")
     @MapKeyEnumerated(EnumType.STRING)
+    @Size(max = MAX_NUMBER_OF_DOI_CREATORS)
     @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
     private Map<DoiCreator, Doi> conceptDois = new HashMap<>();
 
