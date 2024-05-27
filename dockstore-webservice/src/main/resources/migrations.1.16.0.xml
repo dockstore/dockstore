@@ -191,4 +191,11 @@
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="tool"/>
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="workflow"/>
     </changeSet>
+    <changeSet author="hyunnaye" id="fixConceptDOIs">
+        <sql dbms="postgresql">
+            UPDATE workflow
+            SET conceptdoi = regexp_replace(conceptdoi, 'doi/', '', 'g')
+            WHERE archived=false AND conceptdoi is not null;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
