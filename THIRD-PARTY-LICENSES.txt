@@ -61,7 +61,7 @@ Lists of 329 third-party dependencies.
      (MIT) better-files (com.github.pathikrit:better-files_2.13:3.9.1 - https://github.com/pathikrit/better-files)
      (Bouncy Castle Licence) Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk18on:1.76 - https://www.bouncycastle.org/java.html)
      (Bouncy Castle Licence) Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk18on:1.76 - https://www.bouncycastle.org/java.html)
-     (Bouncy Castle Licence) Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.76 - https://www.bouncycastle.org/java.html)
+     (Bouncy Castle Licence) Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
      (Apache License, Version 2.0) Byte Buddy (without dependencies) (net.bytebuddy:byte-buddy:1.14.8 - https://bytebuddy.net/byte-buddy)
      (Apache License, Version 2.0) Byte Buddy agent (net.bytebuddy:byte-buddy-agent:1.14.8 - https://bytebuddy.net/byte-buddy-agent)
      (Apache License, Version 2.0) Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.1.8 - https://github.com/ben-manes/caffeine)
