@@ -4299,6 +4299,8 @@ paths:
             - hibernate
             - deadlocks
             - connectionPool
+            - liquibaseLock
+            - elasticsearchConsistency
       responses:
         "200":
           content:
