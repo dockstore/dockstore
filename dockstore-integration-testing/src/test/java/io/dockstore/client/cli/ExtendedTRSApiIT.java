@@ -168,6 +168,9 @@ class ExtendedTRSApiIT extends BaseIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
+        Long latestDate = workflow.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
+        assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
+
         assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "'", Boolean.class));
         // Non-admin user should not be able to submit AI topic
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId));
@@ -204,6 +207,9 @@ class ExtendedTRSApiIT extends BaseIT {
         containersApi.publish(containerByToolPath.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
+        Long latestDate = containerByToolPath.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
+        assertTrue(containerByToolPath.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
+
         assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from tag where name = '" + versionName + "'", Boolean.class));
         // Non-admin user should not be able to submit AI topic
         ApiException apiException = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId));
