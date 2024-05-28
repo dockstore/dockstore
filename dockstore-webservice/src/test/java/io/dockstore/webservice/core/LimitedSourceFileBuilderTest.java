@@ -9,74 +9,55 @@ import org.junit.jupiter.api.Test;
 
 class LimitedSourceFileBuilderTest {
 
+    private static final DescriptorLanguage.FileType TYPE = DescriptorLanguage.FileType.DOCKSTORE_WDL;
+    private static final String SMALL_CONTENT = "This is some content.";
+    private static final String BIG_CONTENT = ".".repeat(100_000_000);
+    private static final String BINARY_CONTENT = "Content that contains a nul character \u0000";
+    private static final String PATH = "abc.wdl";
+    private static final String ABSOLUTE_PATH = "/abc.wdl";
+
     @Test
-    void testSmall() {
-        DescriptorLanguage.FileType type = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-        String content = "This is some content.";
-        String path = "abc.wdl";
-        String absolutePath = "/abc.wdl";
-
-        SourceFile file = SourceFile.limitedBuilder().type(type).content(content).path(path).absolutePath(absolutePath).build();
-
-        assertEquals(type, file.getType());
-        assertEquals(content, file.getContent());
-        assertEquals(path, file.getPath());
-        assertEquals(absolutePath, file.getAbsolutePath());
+    void testSmallContent() {
+        SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(SMALL_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
+        assertEquals(TYPE, file.getType());
+        assertEquals(SMALL_CONTENT, file.getContent());
+        assertEquals(PATH, file.getPath());
+        assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
 
     @Test
-    void testBig() {
-        DescriptorLanguage.FileType type = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-        String content = "13 characters".repeat(1000000);
-        String path = "abc.wdl";
-        String absolutePath = "/abc.wdl";
-        
-        SourceFile file = SourceFile.limitedBuilder().type(type).content(content).path(path).absolutePath(absolutePath).build();
-
-        assertEquals(type, file.getType());
+    void testBigContent() {
+        SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(BIG_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
+        assertEquals(TYPE, file.getType());
         assertTrue(file.getContent().startsWith("Dockstore does not store files of this type over"));
-        assertEquals(path, file.getPath());
-        assertEquals(absolutePath, file.getAbsolutePath());
+        assertEquals(PATH, file.getPath());
+        assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
 
     @Test
-    void testBinary() {
-        DescriptorLanguage.FileType type = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-        String content = "content with a nul character \u0000";
-        String path = "abc.wdl";
-        String absolutePath = "/abc.wdl";
-        
-        SourceFile file = SourceFile.limitedBuilder().type(type).content(content).path(path).absolutePath(absolutePath).build();
-
-        assertEquals(type, file.getType());
+    void testBinaryContent() {
+        SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(BINARY_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
+        assertEquals(TYPE, file.getType());
         assertTrue(file.getContent().startsWith("Dockstore does not store binary files"));
-        assertEquals(path, file.getPath());
-        assertEquals(absolutePath, file.getAbsolutePath());
+        assertEquals(PATH, file.getPath());
+        assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
 
-    @Test
-    void testPaths() {
-        DescriptorLanguage.FileType type = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-        String content = "some content";
-        String path = "/abc.wdl";
-
-        SourceFile file = SourceFile.limitedBuilder().type(type).content(content).paths(path).build();
-
-        assertEquals(type, file.getType());
-        assertEquals(content, file.getContent());
-        assertEquals(path, file.getPath());
-        assertEquals(path, file.getAbsolutePath());
-    }
- 
     @Test
     void testNullContent() {
-        DescriptorLanguage.FileType type = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-        String path = "abc.wdl";
-        String absolutePath = "/abc.wdl";
-        SourceFile file = SourceFile.limitedBuilder().type(type).content(null).path(path).absolutePath(absolutePath).build();
-        assertEquals(type, file.getType());
+        SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(null).path(PATH).absolutePath(ABSOLUTE_PATH).build();
+        assertEquals(TYPE, file.getType());
         assertEquals(null, file.getContent());
-        assertEquals(path, file.getPath());
-        assertEquals(absolutePath, file.getAbsolutePath());
+        assertEquals(PATH, file.getPath());
+        assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
+    }
+
+    @Test
+    void testPathsMethod() {
+        SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(SMALL_CONTENT).paths(ABSOLUTE_PATH).build();
+        assertEquals(TYPE, file.getType());
+        assertEquals(SMALL_CONTENT, file.getContent());
+        assertEquals(ABSOLUTE_PATH, file.getPath());
+        assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
 }
