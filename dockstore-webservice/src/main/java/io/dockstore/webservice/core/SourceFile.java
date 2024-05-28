@@ -314,8 +314,8 @@ public class SourceFile implements Comparable<SourceFile> {
         this.metadata = metadata;
     }
 
-    public static LimitedSourceFileBuilder limitedBuilder() {
-        return new LimitedSourceFileBuilder();
+    public static LimitedSourceFileBuilder.FirstStep limitedBuilder() {
+        return new LimitedSourceFileBuilder().start();
     }
 
     private static synchronized void checkPath(String path) {

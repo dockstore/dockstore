@@ -13,8 +13,11 @@ public class LimitedSourceFileBuilder {
     public LimitedSourceFileBuilder() {
     }
 
-    public TypeStep start() {
-        return new TypeStep();
+    public FirstStep start() {
+        return new FirstStep();
+    }
+
+    public class FirstStep extends TypeStep {
     }
 
     public class TypeStep {

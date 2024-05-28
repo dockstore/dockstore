@@ -220,7 +220,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
             String path = entry.getKey();
             String fileContent = entry.getValue().content();
-            SourceFile sourceFile = SourceFile.limitedBuilder().start().type(type).content(fileContent).paths(path).build();
+            SourceFile sourceFile = SourceFile.limitedBuilder().type(type).content(fileContent).paths(path).build();
             sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
             results.put(entry.getKey(), sourceFile);
         }

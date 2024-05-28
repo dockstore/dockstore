@@ -441,7 +441,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     SourceCodeRepoInterface.LOG.error("Could not read: " + absoluteImportPath);
                     continue;
                 }
-                SourceFile importFile = SourceFile.limitedBuilder().start().type(DescriptorLanguage.FileType.DOCKSTORE_WDL).content(fileResponse).path(importPath).absolutePath(absoluteImportPath).build();
+                SourceFile importFile = SourceFile.limitedBuilder().type(DescriptorLanguage.FileType.DOCKSTORE_WDL).content(fileResponse).path(importPath).absolutePath(absoluteImportPath).build();
                 imports.put(absoluteImportPath, importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }
