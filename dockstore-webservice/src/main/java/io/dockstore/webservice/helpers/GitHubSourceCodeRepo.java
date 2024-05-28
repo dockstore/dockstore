@@ -128,6 +128,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final String REFS_HEADS = "refs/heads/";
     public static final String SUBMODULE = "submodule";
     public static final String SYMLINK = "symlink";
+
+    public static final long MAXIMUM_FILE_DOWNLOAD_SIZE = 20L * 1024L * 1024L;
     /**
      * each section that starts with (?!.* is excluding a specific character
      */
@@ -342,6 +344,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28 (see "Notes")
                 // In such a case, we retrieve the content via the blob endpoint.
                 if ("".equals(content) && "none".equals(encoding)) {
+                    long size = decodedContentAndMetadata.getLeft().getSize();
+                    if (size > MAXIMUM_FILE_DOWNLOAD_SIZE) {
+                        LOG.warn(gitUsername + ": file too large in readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference);
+                        return "";
+                    }
                     String sha = decodedContentAndMetadata.getLeft().getSha();
                     GHBlob blob = repo.getBlob(sha);
                     content = IOUtils.toString(blob.read(), StandardCharsets.UTF_8);
