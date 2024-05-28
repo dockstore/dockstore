@@ -17,7 +17,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
-                   context="1.15.0">
+                   context="1.16.0">
     <changeSet author="ktran (generated)" id="addNumberOfSkippedExecutions">
         <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="metric_id_seq" startValue="1"/>
         <sql dbms="postgresql">
