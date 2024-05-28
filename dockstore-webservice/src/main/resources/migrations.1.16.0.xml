@@ -191,4 +191,12 @@
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="tool"/>
         <modifyDataType columnName="topicmanual" newDataType="varchar(250)" tableName="workflow"/>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="add_aitopicprocessed">
+        <addColumn tableName="tag">
+            <column defaultValueBoolean="false" name="aitopicprocessed" type="bool"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column defaultValueBoolean="false" name="aitopicprocessed" type="bool"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

@@ -37,6 +37,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
@@ -647,7 +648,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest) {
+    public Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest, String version) {
         // Check that the entry and version exists
         Entry<?, ?> entry;
         try {
@@ -657,7 +658,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         checkEntryNotNull(entry);
 
+        Optional<? extends Version<?>> versionOptional = getVersion(entry, version);
+        if (versionOptional.isEmpty()) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
         entry.setTopicAI(updateAITopicRequest.getAiTopic());
+        versionOptional.get().setAiTopicProcessed(true);
         // Set topic selection to AI if the manual and automatic topics are empty
         if (StringUtils.isEmpty(entry.getTopicManual()) && StringUtils.isEmpty(entry.getTopicAutomatic())) {
             entry.setTopicSelection(TopicSelection.AI);
@@ -665,6 +672,24 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
 
         return Response.noContent().build();
+    }
+
+    @Override
+    public Response getAITopicCandidate(String id) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty()); // Not providing user to ensure entry is public
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+        checkEntryNotNull(entry);
+
+        Optional<? extends Version<?>> versionOptional = getVersionCandidate(entry);
+        if (versionOptional.isEmpty()) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+        return Response.ok(versionOptional.get().getName()).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
@@ -687,6 +712,35 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         }
         return versionOptional;
+    }
+
+    /**
+     * Get candidate version that can be considered for an ai Topic (or other?)
+     * @param entry
+     * @return
+     */
+    private Optional<? extends Version<?>> getVersionCandidate(Entry<?, ?> entry) {
+        if (entry instanceof Workflow workflow) {
+            List<WorkflowVersion> workflowVersions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 1, 1);
+            if (!workflowVersions.isEmpty()) {
+                return Optional.of(workflowVersions.get(0));
+            }
+        } else if (entry instanceof Tool tool) {
+            Tag oldestVersion = null;
+            Set<Tag> versions = tool.getWorkflowVersions();
+            for (Tag t : versions) {
+                if (oldestVersion == null) {
+                    oldestVersion = t;
+                } else {
+                    if (oldestVersion.getDbUpdateDate().before(t.getDbUpdateDate())) {
+                        oldestVersion = t;
+                    }
+                }
+
+            }
+            return Optional.ofNullable(oldestVersion);
+        }
+        return Optional.empty();
     }
 
     private void deleteIndex(String index, RestHighLevelClient restClient) {

@@ -538,6 +538,40 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/AITopicCanidate:
+    get:
+      description: Get a tool's AI topic candidate version for consideration
+      operationId: getAITopicCandidate
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "207":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Executions to update processed. Please view the individual
+            responses.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to update the executions.
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/updateAITopic:
     put:
       description: Update a tool's AI topic.
@@ -547,6 +581,13 @@ paths:
           \ example `123456`"
         in: path
         name: id
+        required: true
+        schema:
+          type: string
+      - description: "The name of the version that was used to generate a topic, for\
+          \ example `v1.0`"
+        in: query
+        name: version
         required: true
         schema:
           type: string
@@ -10706,6 +10747,9 @@ components:
       type: object
       description: This describes one tag associated with a container.
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -11625,6 +11669,9 @@ components:
       type: object
       description: This describes a version of an entry in Dockstore
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -12018,6 +12065,9 @@ components:
       type: object
       description: This describes one workflow version associated with a workflow.
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         aliases:
           type: object
           additionalProperties:

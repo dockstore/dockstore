@@ -963,6 +963,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
                 existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
                 existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
+                // when a branch is updated, it could have different contents for consideration
+                existingWorkflowVersion.setAiTopicProcessed(false);
                 existingWorkflowVersion.setDagJson(null);
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
