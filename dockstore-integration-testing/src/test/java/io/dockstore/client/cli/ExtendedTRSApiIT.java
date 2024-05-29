@@ -40,10 +40,12 @@ import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.UpdateAITopicRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -169,8 +171,10 @@ class ExtendedTRSApiIT extends BaseIT {
 
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
 
-        Long latestDate = workflow.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
-        assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
+        long latestDate = workflow.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
+        assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate), latestDate + " issue with " + workflow.getWorkflowVersions().stream().map(
+            WorkflowVersion::getDbUpdateDate).collect(
+            Collectors.toSet()));
 
         assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "' and parentid = " + workflow.getId(), Boolean.class));
         // Non-admin user should not be able to submit AI topic
