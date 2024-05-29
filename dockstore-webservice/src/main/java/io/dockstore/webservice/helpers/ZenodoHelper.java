@@ -86,12 +86,6 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
                 // Set the attribute that will reserve a DOI before publishing
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
-                // Put the deposit on Zenodo; the returned deposit will contain
-                // the reserved DOI which we can use to create a workflow alias
-                // Later on we will update the Zenodo deposit (put the deposit on
-                // Zenodo again  in the call to putDepositionOnZenodo) so it contains the workflow version alias
-                // constructed with the DOI
-                Deposit newDeposit = putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
                 String doi = returnDeposit.getMetadata().getPrereserveDoi().getDoi();
