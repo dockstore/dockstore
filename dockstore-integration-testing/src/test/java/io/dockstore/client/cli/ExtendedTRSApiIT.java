@@ -171,14 +171,14 @@ class ExtendedTRSApiIT extends BaseIT {
         Long latestDate = workflow.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
         assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
 
-        assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "'", Boolean.class));
+        assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "' and parentid = " + workflow.getId(), Boolean.class));
         // Non-admin user should not be able to submit AI topic
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
 
         // Admin should be able to submit AI topic for published workflow
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
-        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "'", Boolean.class));
+        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "' and parentid = " + workflow.getId(), Boolean.class));
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals(aiTopic, workflow.getTopicAI());
         assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection()); // Topic selection is unchanged because an automatic topic exists
@@ -220,6 +220,6 @@ class ExtendedTRSApiIT extends BaseIT {
         containerByToolPath = containersApi.getContainerByToolPath(trsId, null);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, containerByToolPath.getTopicSelection());
         assertEquals(aiTopic, containerByToolPath.getTopicAI());
-        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from tag where name = '" + versionName + "'", Boolean.class));
+        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from tag where name = '" + versionName + "' and parentid = " + containerByToolPath.getId(), Boolean.class));
     }
 }
