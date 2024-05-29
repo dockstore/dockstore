@@ -28,8 +28,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -160,7 +158,7 @@ public final class ZenodoHelper {
 
         return new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
     }
-    
+
 
     /**
      * Create a workflow alias that uses a digital object identifier
