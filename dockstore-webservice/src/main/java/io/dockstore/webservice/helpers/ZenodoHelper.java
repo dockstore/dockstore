@@ -156,29 +156,11 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
-        String conceptDoi = publishedDeposit.getConceptDoi();
+        String conceptDoi = publishedDeposit.getConceptdoi();
 
         return new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
     }
-
-    /**
-     * extract a digital object identifier (DOI) from a DOI target URL
-     * @param doiUrl digital object identifier
-     * @return the DOI as a string
-     */
-    protected static String extractDoiFromDoiUrl(String doiUrl) {
-        // Remove the 'https://doi.org/' etc. prefix from the DOI
-        // e.g. https://doi.org/10.5072/zenodo.372767
-        String doi = doiUrl;
-        try {
-            URI uri = new URI(doiUrl);
-            doi = StringUtils.stripStart(uri.getPath(), "/");
-
-        } catch (URISyntaxException e) {
-            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
-        }
-        return doi;
-    }
+    
 
     /**
      * Create a workflow alias that uses a digital object identifier
