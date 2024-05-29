@@ -95,7 +95,8 @@ public final class ZenodoHelper {
                 // to the workflow; we will add that alias as a Zenodo related identifier
                 String doi = returnDeposit.getMetadata().getPrereserveDoi().getDoi();
                 doiAlias = createAliasUsingDoi(doi);
-                setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
+                setMetadataRelatedIdentifiers(depositMetadata, dockstoreGA4GHBaseUrl,
+                        dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
