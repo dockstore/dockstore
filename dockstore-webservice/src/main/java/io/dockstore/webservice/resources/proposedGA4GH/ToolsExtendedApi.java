@@ -359,15 +359,16 @@ public class ToolsExtendedApi {
     @Path("/{id}/AITopicCanidate")
     @RolesAllowed({"curator", "admin"})
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getAITopicCandidate", description = "Get a tool's AI topic candidate version for consideration", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_MULTI_STATUS
-            + "", description = ExecutionMetricsUpdate.MULTI_STATUS_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class))),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
-            + "", description = ExecutionMetricsUpdate.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
-            + "", description = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
-    })
-    public Response updateAITopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+    @Operation(operationId = "getAITopicCandidate", description = "Get a tool's AI topic candidate version for consideration", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_MULTI_STATUS
+                + "", description = ExecutionMetricsUpdate.MULTI_STATUS_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = ExecutionMetricsUpdate.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+        })
+    public Response updateAITopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @PathParam("id") String id,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.getAITopicCandidate(id);
