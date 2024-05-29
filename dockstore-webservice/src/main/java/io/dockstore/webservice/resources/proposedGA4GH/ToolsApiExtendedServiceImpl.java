@@ -726,19 +726,19 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 return Optional.of(workflowVersions.get(0));
             }
         } else if (entry instanceof Tool tool) {
-            Tag oldestVersion = null;
+            Tag newestVersion = null;
             Set<Tag> versions = tool.getWorkflowVersions();
             for (Tag t : versions) {
-                if (oldestVersion == null) {
-                    oldestVersion = t;
+                if (newestVersion == null) {
+                    newestVersion = t;
                 } else {
-                    if (oldestVersion.getDbUpdateDate().before(t.getDbUpdateDate())) {
-                        oldestVersion = t;
+                    if (newestVersion.getDbUpdateDate().before(t.getDbUpdateDate())) {
+                        newestVersion = t;
                     }
                 }
 
             }
-            return Optional.ofNullable(oldestVersion);
+            return Optional.ofNullable(newestVersion);
         }
         return Optional.empty();
     }

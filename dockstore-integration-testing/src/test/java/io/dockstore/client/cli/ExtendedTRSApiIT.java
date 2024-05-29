@@ -168,6 +168,7 @@ class ExtendedTRSApiIT extends BaseIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
+
         Long latestDate = workflow.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
         assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
 
@@ -177,6 +178,7 @@ class ExtendedTRSApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
 
         // Admin should be able to submit AI topic for published workflow
+        assertThrows(ApiException.class, () -> extendedGa4GhApi.updateAITopic(updateAITopicRequest, "messed up version that does not exist", trsId));
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
         assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "' and parentid = " + workflow.getId(), Boolean.class));
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
@@ -207,6 +209,8 @@ class ExtendedTRSApiIT extends BaseIT {
         containersApi.publish(containerByToolPath.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
+        assertThrows(ApiException.class, () -> extendedGa4GhApi.getAITopicCandidate("messed up id that does not exist"));
+
         Long latestDate = containerByToolPath.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
         assertTrue(containerByToolPath.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
 
@@ -216,6 +220,7 @@ class ExtendedTRSApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, apiException.getCode());
 
         // Admin should be able to submit AI topic for published workflow
+        assertThrows(ApiException.class, () -> extendedGa4GhApi.updateAITopic(updateAITopicRequest, "messed up version that does not exist", trsId));
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
         containerByToolPath = containersApi.getContainerByToolPath(trsId, null);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, containerByToolPath.getTopicSelection());
