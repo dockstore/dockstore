@@ -156,7 +156,7 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
-        String conceptDoi = "publishedDeposit.getConceptDoi";
+        String conceptDoi = publishedDeposit.getConceptDoi();
 
         return new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
     }
