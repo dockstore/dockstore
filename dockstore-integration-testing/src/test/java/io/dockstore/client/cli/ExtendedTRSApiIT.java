@@ -217,6 +217,9 @@ class ExtendedTRSApiIT extends BaseIT {
 
         // Admin should be able to submit AI topic for published workflow
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
+        containerByToolPath = containersApi.getContainerByToolPath(trsId, null);
+        assertEquals(DockstoreTool.TopicSelectionEnum.AI, containerByToolPath.getTopicSelection());
+        assertEquals(aiTopic, containerByToolPath.getTopicAI());
         assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from tag where name = '" + versionName + "'", Boolean.class));
     }
 }
