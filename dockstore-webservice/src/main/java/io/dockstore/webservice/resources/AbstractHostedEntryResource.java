@@ -37,7 +37,6 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.PublicStateManager;
-import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -434,7 +433,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             U versionWithTheLargestName = versionWithLargestName(versions);
             // carry over old files
             versionWithTheLargestName.getSourceFiles().forEach(v -> {
-                SourceFile newFile = SourceFileHelper.duplicate(v);
+                SourceFile newFile = v.duplicate();
                 map.put(newFile.getPath(), newFile);
             });
 
@@ -452,7 +451,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                         // case 1)
                         final SourceFile sourceFile = map.get(file.getPath());
                         if (!sourceFile.getContent().equals(file.getContent())) {
-                            SourceFileHelper.copy(file, sourceFile);
+                            sourceFile.updateFrom(file);
                             changed = true;
                         }
                     } else {

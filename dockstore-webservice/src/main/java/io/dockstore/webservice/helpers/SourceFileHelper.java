@@ -35,20 +35,6 @@ public final class SourceFileHelper {
 
     }
 
-    public static SourceFile duplicate(SourceFile src) {
-        SourceFile dup = new SourceFile();
-        copy(src, dup);
-        return dup;
-    }
-
-    public static void copy(SourceFile src, SourceFile dst) {
-        dst.setType(src.getType());
-        dst.setPath(src.getPath());
-        dst.setAbsolutePath(src.getAbsolutePath());
-        dst.setContent(src.getContent());
-        dst.getMetadata().setTypeVersion(src.getMetadata().getTypeVersion());
-    }
-
     /**
      * Converts a test source file into a <code>JSONObject</code>. Returns <code>Optional.empty()</code>
      * if source file is not a test YAML or JSON, or if the file content has a syntax error.

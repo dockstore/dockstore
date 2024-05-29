@@ -850,7 +850,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupEntryFilesForGitHubVersion(GitReferenceInfo ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Add Dockstore.yml to version
-        SourceFile dockstoreYmlClone = SourceFileHelper.duplicate(dockstoreYml);
+        SourceFile dockstoreYmlClone = dockstoreYml.duplicate();
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
             dockstoreYmlClone.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
         }

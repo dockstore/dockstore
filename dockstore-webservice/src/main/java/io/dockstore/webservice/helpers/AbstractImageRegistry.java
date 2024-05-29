@@ -756,7 +756,7 @@ public abstract class AbstractImageRegistry {
             List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
-                    SourceFileHelper.copy(newFile, oldFile);
+                    oldFile.updateFrom(newFile);
                     newFiles.remove(newFile);
                     found = true;
                     break;
