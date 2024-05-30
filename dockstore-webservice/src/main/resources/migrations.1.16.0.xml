@@ -196,7 +196,7 @@
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="doi_pkey"/>
             </column>
-            <column name="creator" type="VARCHAR(255)">
+            <column name="initiator" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
@@ -230,21 +230,35 @@
         <addForeignKeyConstraint baseColumnNames="versionmetadataid" baseTableName="version_metadata_doi" constraintName="fk_versionmetadataid_version_metadata_doi" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
         <addForeignKeyConstraint baseColumnNames="doiid" baseTableName="version_metadata_doi" constraintName="fk_doiid_version_metadata_doi" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="doi"/>
         <sql dbms="postgresql">
-            <comment>Migrate workflow concept DOIs</comment>
-            INSERT INTO doi(creator, type, name)
-            SELECT 'USER', 'CONCEPT', conceptdoi
-            FROM workflow
+            <comment>Migrate entry concept DOIs</comment>
+            CREATE TEMPORARY TABLE concept_doi_entries AS
+            SELECT * FROM (
+                SELECT id, conceptdoi
+                FROM workflow
+                UNION ALL
+                SELECT id, conceptdoi
+                FROM apptool
+                UNION ALL
+                SELECT id, conceptdoi
+                FROM service
+                UNION ALL
+                SELECT id, conceptdoi
+                FROM notebook
+            )
             WHERE conceptdoi IS NOT NULL;
 
+            INSERT INTO doi(initiator, type, name)
+            SELECT 'USER', 'CONCEPT', conceptdoi
+            FROM concept_doi_entries;
+
             INSERT INTO entry_concept_doi(entryid, doiid)
-            SELECT workflow.id, doi.id
-            FROM workflow
-            INNER JOIN doi ON workflow.conceptdoi = doi.name
-            WHERE workflow.conceptdoi IS NOT NULL
+            SELECT concept_doi_entries.id, doi.id
+            FROM concept_doi_entries
+            INNER JOIN doi ON concept_doi_entries.conceptdoi = doi.name;
         </sql>
         <sql dbms="postgresql">
             <comment>Migrate version DOIs</comment>
-            INSERT INTO doi(creator, type, name)
+            INSERT INTO doi(initiator, type, name)
             SELECT 'USER', 'VERSION', doiurl
             FROM version_metadata
             WHERE doiurl IS NOT NULL;

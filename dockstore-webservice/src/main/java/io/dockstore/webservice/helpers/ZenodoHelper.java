@@ -5,7 +5,7 @@ import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Doi;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Doi.DoiType;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -69,6 +69,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ZenodoHelper {
+    // The max number of versions to process when automatically creating DOIs for a workflow
+    public static final int AUTOMATIC_DOI_CREATION_VERSIONS_LIMIT = 10;
     public static final String NO_ZENODO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO = "At least one author is required to publish to Zenodo";
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
@@ -126,7 +128,7 @@ public final class ZenodoHelper {
      * @param authenticatedResourceInterface
      * @return
      */
-    public static void automaticallyRegisterDockstoreOwnedZenodoDOI(Workflow workflow, WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+    public static void automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
         if (StringUtils.isEmpty(dockstoreZenodoAccessToken)) {
             LOG.error("Dockstore Zenodo access token not found for automatic DOI creation, skipping");
             return;
@@ -136,13 +138,26 @@ public final class ZenodoHelper {
             ApiClient zenodoClient = createDockstoreZenodoClient();
             try {
                 // Perform some checks to increase the chance of a DOI being successfully created
-                checkCanRegisterDoi(workflow, workflowVersion, workflowOwner, DoiCreator.DOCKSTORE);
+                checkCanRegisterDoi(workflow, workflowVersion, workflowOwner, DoiInitiator.DOCKSTORE);
                 LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
                 registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
-                        DoiCreator.DOCKSTORE);
+                        DoiInitiator.DOCKSTORE);
             } catch (CustomWebApplicationException e) {
                 LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
             }
+        }
+    }
+
+    /**
+     * Attempts to automatically register Dockstore DOIs for the most recent tags of a workflow.
+     * @param workflow
+     * @param workflowOwner
+     * @param authenticatedResourceInterface
+     */
+    public static void automaticallyRegisterDockstoreDOIForRecentTags(Workflow workflow, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+        final List<WorkflowVersion> recentTags = workflowVersionDAO.getTagsByWorkflowIdOrderedByLastModified(workflow.getId(), AUTOMATIC_DOI_CREATION_VERSIONS_LIMIT);
+        for (WorkflowVersion tag: recentTags) {
+            automaticallyRegisterDockstoreDOI(workflow, tag, workflowOwner, authenticatedResourceInterface);
         }
     }
 
@@ -211,7 +226,7 @@ public final class ZenodoHelper {
                 SourceControlResourceInterface.refreshToken(refreshUrl, zenodoToken, httpClient, tokenDAO, payload);
             }
         }
-        return tokenDAO.findByUserId(user.getId());
+        return tokenDAO.findZenodoByUserId(user.getId());
     }
 
     /**
@@ -232,9 +247,9 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      */
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
-            WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface, DoiCreator doiCreator) {
+            WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface, DoiInitiator doiInitiator) {
 
-        LOG.info("Registering {} Zenodo DOI for workflow {}, version {}", doiCreator.name(), workflow.getWorkflowPath(), workflowVersion.getName());
+        LOG.info("Registering {} Zenodo DOI for workflow {}, version {}", doiInitiator.name(), workflow.getWorkflowPath(), workflowVersion.getName());
         // Create Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
         String workflowUrl = MetadataResourceHelper.createWorkflowURL(workflow);
 
@@ -242,8 +257,8 @@ public final class ZenodoHelper {
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
         Deposit deposit = new Deposit();
         Deposit returnDeposit;
-        checkForExistingDOIForWorkflowVersion(workflowVersion, doiCreator);
-        Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow, doiCreator);
+        checkForExistingDOIForWorkflowVersion(workflowVersion, doiInitiator);
+        Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow, doiInitiator);
 
         int depositionID;
         DepositMetadata depositMetadata;
@@ -303,7 +318,7 @@ public final class ZenodoHelper {
                     // We are unable to create a new deposition version using the current user's Zenodo credentials because they don't have permission to create a deposition version for the original concept DOI.
                     // The workaround is for the user who created the concept DOI to request DOI's for other versions whenever it's needed by users from the same organization.
                     // This will hopefully be revisited later when Zenodo implements a feature where a deposit can be shared among users.
-                    final String conceptDoi = workflow.getConceptDois().get(doiCreator).getName();
+                    final String conceptDoi = workflow.getConceptDois().get(doiInitiator).getName();
                     String errorMessage = String.format(
                             "Could not create new deposition version on Zenodo because you do not have permission to create a deposition version for DOI %s. "
                                     + "Please ask the person who created DOI %s to request a DOI for workflow version %s on Dockstore.",
@@ -328,9 +343,9 @@ public final class ZenodoHelper {
         String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 
         ZenodoDoiResult zenodoDoiResult = new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
-        workflowVersion.getDois().put(doiCreator, new Doi(DoiType.VERSION, doiCreator, zenodoDoiResult.doiUrl()));
-        if (!workflow.getConceptDois().containsKey(doiCreator)) {
-            workflow.getConceptDois().put(doiCreator, new Doi(DoiType.CONCEPT, doiCreator, zenodoDoiResult.conceptDoi()));
+        workflowVersion.getDois().put(doiInitiator, new Doi(DoiType.VERSION, doiInitiator, zenodoDoiResult.doiUrl()));
+        if (!workflow.getConceptDois().containsKey(doiInitiator)) {
+            workflow.getConceptDois().put(doiInitiator, new Doi(DoiType.CONCEPT, doiInitiator, zenodoDoiResult.conceptDoi()));
         }
         // Only add the alias to the workflow version after publishing the DOI succeeds
         // Otherwise if the publish call fails we will have added an alias
@@ -648,7 +663,7 @@ public final class ZenodoHelper {
      * @param workflow workflow
      * @return the DOI for a workflow
      */
-    private static Optional<String> getAnExistingDOIForWorkflow(Workflow workflow, DoiCreator doiCreator) {
+    private static Optional<String> getAnExistingDOIForWorkflow(Workflow workflow, DoiInitiator doiInitiator) {
         // Find out if this workflow already has at least one
         // version that has been assigned a DOI
         // If a version DOI exists, we will create another version DOI
@@ -658,7 +673,7 @@ public final class ZenodoHelper {
         // workflow version DOI
 
         return workflow.getWorkflowVersions().stream()
-                .map(version -> version.getDois().get(doiCreator))
+                .map(version -> version.getDois().get(doiInitiator))
                 .filter(Objects::nonNull)
                 .map(Doi::getName)
                 .filter(doi -> !StringUtils.isEmpty(doi))
@@ -711,7 +726,7 @@ public final class ZenodoHelper {
      */
     public static AccessLink createEditAccessLink(Workflow workflow) {
         String existingDockstoreVersionDoiName = checkAndGetDockstoreVersionDoiName(workflow);
-        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiCreator.DOCKSTORE);
+        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiInitiator.DOCKSTORE);
         checkAccessLinkDoesntExist(dockstoreConceptDoi);
 
         String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiName);
@@ -720,7 +735,7 @@ public final class ZenodoHelper {
             AccessLink accessLink = accessLinksApi.createAccessLink(recordId, new LinkPermissionSettings().permission(PermissionEnum.EDIT));
             // Save the access link to the concept DOI because this link can edit ALL versions
             dockstoreConceptDoi.setEditAccessLinkId(accessLink.getId());
-            workflow.getConceptDois().put(DoiCreator.DOCKSTORE, dockstoreConceptDoi);
+            workflow.getConceptDois().put(DoiInitiator.DOCKSTORE, dockstoreConceptDoi);
             return accessLink;
         } catch (ApiException e) {
             LOG.error("Could not create edit access link on Zenodo. Error is {}", e.getMessage(), e);
@@ -735,7 +750,7 @@ public final class ZenodoHelper {
      */
     public static AccessLink getAccessLink(Workflow workflow) {
         String existingDockstoreVersionDoiName = checkAndGetDockstoreVersionDoiName(workflow);
-        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiCreator.DOCKSTORE);
+        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiInitiator.DOCKSTORE);
         checkAccessLinkExists(dockstoreConceptDoi);
 
         String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiName);
@@ -755,7 +770,7 @@ public final class ZenodoHelper {
      */
     public static void deleteAccessLink(Workflow workflow) {
         String existingDockstoreVersionDoiName = checkAndGetDockstoreVersionDoiName(workflow);
-        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiCreator.DOCKSTORE);
+        Doi dockstoreConceptDoi = workflow.getConceptDois().get(DoiInitiator.DOCKSTORE);
         checkAccessLinkExists(dockstoreConceptDoi);
 
         String recordId = extractRecordIdFromDoi(existingDockstoreVersionDoiName);
@@ -772,7 +787,7 @@ public final class ZenodoHelper {
     }
 
     private static String checkAndGetDockstoreVersionDoiName(Workflow workflow) {
-        Optional<String> existingDockstoreVersionDoiURL = getAnExistingDOIForWorkflow(workflow, DoiCreator.DOCKSTORE);
+        Optional<String> existingDockstoreVersionDoiURL = getAnExistingDOIForWorkflow(workflow, DoiInitiator.DOCKSTORE);
         if (existingDockstoreVersionDoiURL.isEmpty()) {
             LOG.error(NO_DOCKSTORE_DOI);
             throw new CustomWebApplicationException(NO_DOCKSTORE_DOI, HttpStatus.SC_BAD_REQUEST);
@@ -810,7 +825,7 @@ public final class ZenodoHelper {
      * @param workflowVersion
      * @param user
      */
-    public static void checkCanRegisterDoi(Workflow workflow, WorkflowVersion workflowVersion, User user, DoiCreator doiCreator) {
+    public static void checkCanRegisterDoi(Workflow workflow, WorkflowVersion workflowVersion, User user, DoiInitiator doiInitiator) {
         final String workflowNameAndVersion = workflowNameAndVersion(workflow, workflowVersion);
 
         if (!workflow.getIsPublished()) {
@@ -819,12 +834,12 @@ public final class ZenodoHelper {
         }
 
         // Only require snapshotting for user-created DOIs
-        if (doiCreator == DoiCreator.USER && !workflowVersion.isFrozen()) {
+        if (doiInitiator == DoiInitiator.USER && !workflowVersion.isFrozen()) {
             LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, FROZEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, FROZEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkForExistingDOIForWorkflowVersion(workflowVersion, doiCreator);
+        checkForExistingDOIForWorkflowVersion(workflowVersion, doiInitiator);
         checkHasSourceFiles(workflowVersion);
         getAndCheckAuthorsForMetadataCreator(workflow, workflowVersion);
     }
@@ -837,16 +852,16 @@ public final class ZenodoHelper {
      * Check if a Zenodo DOI already exists for the workflow version
      * @param workflowVersion workflow version
      */
-    private static void checkForExistingDOIForWorkflowVersion(WorkflowVersion workflowVersion, DoiCreator doiCreator) {
-        if (hasExistingDOIForWorkflowVersion(workflowVersion, doiCreator)) {
+    private static void checkForExistingDOIForWorkflowVersion(WorkflowVersion workflowVersion, DoiInitiator doiInitiator) {
+        if (hasExistingDOIForWorkflowVersion(workflowVersion, doiInitiator)) {
             LOG.error("Workflow version {} already has DOI {}. Dockstore can only create one DOI per version.", workflowVersion.getName(),
-                    workflowVersion.getDois().get(doiCreator).getName());
+                    workflowVersion.getDois().get(doiInitiator).getName());
             throw new CustomWebApplicationException(VERSION_ALREADY_HAS_DOI, HttpStatus.SC_METHOD_NOT_ALLOWED);
         }
     }
 
-    private static boolean hasExistingDOIForWorkflowVersion(WorkflowVersion workflowVersion, DoiCreator doiCreator) {
-        return workflowVersion.getDois().containsKey(doiCreator);
+    private static boolean hasExistingDOIForWorkflowVersion(WorkflowVersion workflowVersion, DoiInitiator doiInitiator) {
+        return workflowVersion.getDois().containsKey(doiInitiator);
     }
 
     private static void checkHasSourceFiles(WorkflowVersion workflowVersion) {
@@ -867,7 +882,7 @@ public final class ZenodoHelper {
      */
     public static boolean canAutomaticallyCreateDockstoreOwnedDoi(Workflow workflow, WorkflowVersion workflowVersion) {
         final boolean validPublishedTag = workflow.getIsPublished() && workflowVersion.isValid() && workflowVersion.getReferenceType() == ReferenceType.TAG;
-        return validPublishedTag && !hasExistingDOIForWorkflowVersion(workflowVersion, DoiCreator.DOCKSTORE);
+        return validPublishedTag && !hasExistingDOIForWorkflowVersion(workflowVersion, DoiInitiator.DOCKSTORE);
     }
 
     public record ZenodoDoiResult(String doiAlias, String doiUrl, String conceptDoi) {

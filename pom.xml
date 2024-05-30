@@ -772,8 +772,7 @@
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
                     io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
-                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest
-                </excludeGroups>
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
 

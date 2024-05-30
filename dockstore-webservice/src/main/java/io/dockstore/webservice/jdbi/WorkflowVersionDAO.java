@@ -48,4 +48,11 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         query.setParameter("name", name);
         return uniqueResult(query);
     }
+
+    public List<WorkflowVersion> getTagsByWorkflowIdOrderedByLastModified(long workflowId, int limit) {
+        Query<WorkflowVersion> query = namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId");
+        query.setParameter("id", workflowId);
+        query.setMaxResults(limit);
+        return query.getResultList();
+    }
 }

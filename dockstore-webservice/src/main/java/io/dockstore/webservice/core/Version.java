@@ -25,7 +25,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -471,11 +471,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @JsonProperty
     @Schema(description = "The DOIs for the version of the entry")
-    public Map<DoiCreator, Doi> getDois() {
+    public Map<DoiInitiator, Doi> getDois() {
         return versionMetadata.dois;
     }
 
-    public void setDois(Map<DoiCreator, Doi> dois) {
+    public void setDois(Map<DoiInitiator, Doi> dois) {
         versionMetadata.dois.clear();
         versionMetadata.dois.putAll(dois);
     }

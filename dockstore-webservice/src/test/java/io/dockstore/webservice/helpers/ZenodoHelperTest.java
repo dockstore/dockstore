@@ -14,7 +14,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Doi;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Doi.DoiType;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -174,17 +174,17 @@ class ZenodoHelperTest {
 
     @Test
     void testDefaultDoiOrderOfPrecedence() {
-        Map<DoiCreator, Doi> dois = new HashMap<>();
+        Map<DoiInitiator, Doi> dois = new HashMap<>();
         assertNull(getDoiBasedOnOrderOfPrecedence(dois));
 
-        dois.put(DoiCreator.DOCKSTORE, new Doi(DoiType.VERSION, DoiCreator.DOCKSTORE, "foobar"));
-        assertEquals(DoiCreator.DOCKSTORE, getDoiBasedOnOrderOfPrecedence(dois).getCreator());
+        dois.put(DoiInitiator.DOCKSTORE, new Doi(DoiType.VERSION, DoiInitiator.DOCKSTORE, "foobar"));
+        assertEquals(DoiInitiator.DOCKSTORE, getDoiBasedOnOrderOfPrecedence(dois).getInitiator());
 
-        dois.put(DoiCreator.GITHUB, new Doi(DoiType.VERSION, DoiCreator.GITHUB, "foobar"));
-        assertEquals(DoiCreator.GITHUB, getDoiBasedOnOrderOfPrecedence(dois).getCreator());
+        dois.put(DoiInitiator.GITHUB, new Doi(DoiType.VERSION, DoiInitiator.GITHUB, "foobar"));
+        assertEquals(DoiInitiator.GITHUB, getDoiBasedOnOrderOfPrecedence(dois).getInitiator());
 
-        dois.put(DoiCreator.USER, new Doi(DoiType.VERSION, DoiCreator.USER, "foobar"));
-        assertEquals(DoiCreator.USER, getDoiBasedOnOrderOfPrecedence(dois).getCreator());
+        dois.put(DoiInitiator.USER, new Doi(DoiType.VERSION, DoiInitiator.USER, "foobar"));
+        assertEquals(DoiInitiator.USER, getDoiBasedOnOrderOfPrecedence(dois).getInitiator());
     }
 
     private DockstoreWebserviceConfiguration createDockstoreConfiguration() {

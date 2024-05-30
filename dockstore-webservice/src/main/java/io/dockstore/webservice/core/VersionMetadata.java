@@ -15,10 +15,10 @@
  */
 package io.dockstore.webservice.core;
 
-import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_CREATORS;
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_INITIATORS;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CascadeType;
@@ -83,11 +83,11 @@ public class VersionMetadata {
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
-    @MapKey(name = "creator")
+    @MapKey(name = "initiator")
     @MapKeyEnumerated(EnumType.STRING)
-    @Size(max = MAX_NUMBER_OF_DOI_CREATORS)
+    @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
     @Schema(description = "The DOIs for the version of the entry")
-    protected Map<DoiCreator, Doi> dois = new HashMap<>();
+    protected Map<DoiInitiator, Doi> dois = new HashMap<>();
 
     @Column()
     protected boolean hidden;
@@ -216,11 +216,11 @@ public class VersionMetadata {
         this.engineVersions = engineVersions;
     }
 
-    public Map<DoiCreator, Doi> getDois() {
+    public Map<DoiInitiator, Doi> getDois() {
         return dois;
     }
 
-    public void setDois(Map<DoiCreator, Doi> dois) {
+    public void setDois(Map<DoiInitiator, Doi> dois) {
         this.dois = dois;
     }
 }

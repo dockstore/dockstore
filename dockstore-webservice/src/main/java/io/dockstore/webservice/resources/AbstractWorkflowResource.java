@@ -6,7 +6,7 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
-import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI;
+import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOI;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
@@ -699,7 +699,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         Workflow workflow = workflowDAO.findById(workflowId.get());
                         WorkflowVersion version = workflowVersionDAO.findById(workflowVersionId.get());
                         // Automatically register a DOI
-                        automaticallyRegisterDockstoreOwnedZenodoDOI(workflow, version, user, this);
+                        automaticallyRegisterDockstoreDOI(workflow, version, user, this);
                     });
 
                 } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {

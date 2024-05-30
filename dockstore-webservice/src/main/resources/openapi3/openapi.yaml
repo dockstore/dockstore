@@ -9374,21 +9374,18 @@ components:
       type: object
       description: A Digital Object Identifier (DOI)
       properties:
-        creator:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the DOI in this web service
+        initiator:
           type: string
-          description: The DOI creator
+          description: The initiator that initiated the creation of the DOI
           enum:
           - USER
           - DOCKSTORE
           - GITHUB
           example: USER
-        editAccessLinkId:
-          type: string
-          description: The ID of the access link with edit permissions
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the DOI in this web service
         name:
           type: string
           description: The DOI name
@@ -9401,7 +9398,7 @@ components:
           - VERSION
           example: CONCEPT
       required:
-      - creator
+      - initiator
       - name
       - type
     Entry:

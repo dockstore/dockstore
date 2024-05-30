@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.Column;
@@ -39,8 +40,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "doi", uniqueConstraints = @UniqueConstraint(name = "unique_doi_name", columnNames = { "name" }))
 public class Doi {
     // DOI order of precedence from greatest to least
-    public static final List<DoiCreator> DOI_ORDER_OF_PRECEDENCE = List.of(DoiCreator.USER, DoiCreator.GITHUB, DoiCreator.DOCKSTORE);
-    public static final int MAX_NUMBER_OF_DOI_CREATORS = 3;
+    public static final List<DoiInitiator> DOI_ORDER_OF_PRECEDENCE = List.of(DoiInitiator.USER, DoiInitiator.GITHUB, DoiInitiator.DOCKSTORE);
+    public static final int MAX_NUMBER_OF_DOI_INITIATORS = 3;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,15 +55,15 @@ public class Doi {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "The DOI creator", requiredMode = RequiredMode.REQUIRED, example = "USER")
-    private DoiCreator creator;
+    @Schema(description = "The initiator that initiated the creation of the DOI", requiredMode = RequiredMode.REQUIRED, example = "USER")
+    private DoiInitiator initiator;
 
     @Column(nullable = false)
     @Schema(description = "The DOI name", requiredMode = RequiredMode.REQUIRED, example = "10.5281/zenodo.705645")
     private String name;
 
     @Column
-    @Schema(description = "The ID of the access link with edit permissions")
+    @JsonIgnore
     private String editAccessLinkId;
 
     // database timestamps
@@ -77,9 +78,9 @@ public class Doi {
     public Doi() {
     }
 
-    public Doi(DoiType type, DoiCreator creator, String name) {
+    public Doi(DoiType type, DoiInitiator initiator, String name) {
         this.type = type;
-        this.creator = creator;
+        this.initiator = initiator;
         this.name = name;
     }
 
@@ -99,12 +100,12 @@ public class Doi {
         this.type = type;
     }
 
-    public DoiCreator getCreator() {
-        return creator;
+    public DoiInitiator getInitiator() {
+        return initiator;
     }
 
-    public void setCreator(DoiCreator creator) {
-        this.creator = creator;
+    public void setInitiator(DoiInitiator initiator) {
+        this.initiator = initiator;
     }
 
     public String getName() {
@@ -123,10 +124,10 @@ public class Doi {
         this.editAccessLinkId = editAccessLinkId;
     }
 
-    public static Doi getDoiBasedOnOrderOfPrecedence(Map<DoiCreator, Doi> dois) {
-        for (DoiCreator doiCreator: DOI_ORDER_OF_PRECEDENCE) {
-            if (dois.containsKey(doiCreator)) {
-                return dois.get(doiCreator);
+    public static Doi getDoiBasedOnOrderOfPrecedence(Map<DoiInitiator, Doi> dois) {
+        for (DoiInitiator doiInitiator : DOI_ORDER_OF_PRECEDENCE) {
+            if (dois.containsKey(doiInitiator)) {
+                return dois.get(doiInitiator);
             }
         }
         return null;
@@ -137,7 +138,7 @@ public class Doi {
         VERSION
     }
 
-    public enum DoiCreator {
+    public enum DoiInitiator {
         USER,
         DOCKSTORE,
         GITHUB

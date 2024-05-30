@@ -151,7 +151,7 @@ public class ORCIDIT extends BaseIT {
             assertEquals(EntryResource.ENTRY_NO_DOI_ERROR_MESSAGE, e.getMessage());
         }
         final String conceptDoi = "https://doi.org/10.1038/s41586-020-1969-6";
-        testingPostgres.runUpdateStatement(String.format("insert into doi(type, creator, name) values ('CONCEPT', 'USER', '%s')", conceptDoi));
+        testingPostgres.runUpdateStatement(String.format("insert into doi(type, initiator, name) values ('CONCEPT', 'USER', '%s')", conceptDoi));
         final long conceptDoiId = testingPostgres.runSelectStatement(String.format("select id from doi where name = '%s'", conceptDoi), long.class);
         testingPostgres.runUpdateStatement(String.format("insert into entry_concept_doi(entryid, doiid) values (%s, %s)", workflowId, conceptDoiId));
 
@@ -266,14 +266,14 @@ public class ORCIDIT extends BaseIT {
         // Give the workflow a concept DOI
         testingPostgres.runUpdateStatement(String.format("update workflow set conceptDOI='dummy' where id=%s", workflowId));
         final String conceptDoi = "dummy";
-        testingPostgres.runUpdateStatement(String.format("insert into doi(type, creator, name) values ('CONCEPT', 'USER', '%s')", conceptDoi));
+        testingPostgres.runUpdateStatement(String.format("insert into doi(type, initiator, name) values ('CONCEPT', 'USER', '%s')", conceptDoi));
         final long conceptDoiId = testingPostgres.runSelectStatement(String.format("select id from doi where name = '%s'", conceptDoi), long.class);
         testingPostgres.runUpdateStatement(String.format("insert into entry_concept_doi(entryid, doiid) values (%s, %s)", workflowId, conceptDoiId));
 
         // Give the workflow version a DOI url
         testingPostgres.runUpdateStatement(String.format("update version_metadata set doistatus='%s' where id=%s", Version.DOIStatus.CREATED.name(), workflowVersionId));
         final String versionDoi = "10.foo/bar";
-        testingPostgres.runUpdateStatement(String.format("insert into doi(type, creator, name) values ('VERSION', 'USER', '%s')", versionDoi));
+        testingPostgres.runUpdateStatement(String.format("insert into doi(type, initiator, name) values ('VERSION', 'USER', '%s')", versionDoi));
         final long versionDoiId = testingPostgres.runSelectStatement(String.format("select id from doi where name = '%s'", conceptDoi), long.class);
         testingPostgres.runUpdateStatement(String.format("insert into version_metadata_doi(versionmetadataid, doiid) values (%s, %s)", workflowId, versionDoiId));
 

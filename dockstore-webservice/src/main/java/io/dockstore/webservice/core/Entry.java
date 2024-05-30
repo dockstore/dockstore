@@ -16,7 +16,7 @@
 
 package io.dockstore.webservice.core;
 
-import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_CREATORS;
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_INITIATORS;
 import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
@@ -30,7 +30,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -264,11 +264,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
-    @MapKey(name = "creator")
+    @MapKey(name = "initiator")
     @MapKeyEnumerated(EnumType.STRING)
-    @Size(max = MAX_NUMBER_OF_DOI_CREATORS)
+    @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
     @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
-    private Map<DoiCreator, Doi> conceptDois = new HashMap<>();
+    private Map<DoiInitiator, Doi> conceptDois = new HashMap<>();
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
@@ -414,11 +414,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return conceptDoi;
     }
 
-    public Map<DoiCreator, Doi> getConceptDois() {
+    public Map<DoiInitiator, Doi> getConceptDois() {
         return this.conceptDois;
     }
 
-    public void setConceptDois(Map<DoiCreator, Doi> conceptDois) {
+    public void setConceptDois(Map<DoiInitiator, Doi> conceptDois) {
         this.conceptDois.clear();
         this.conceptDois.putAll(conceptDois);
     }

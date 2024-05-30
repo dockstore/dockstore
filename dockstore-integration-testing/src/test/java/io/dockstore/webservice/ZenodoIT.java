@@ -56,7 +56,7 @@ import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.TokenScope;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -149,7 +149,7 @@ class ZenodoIT {
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
         assertFalse(foobar2TagVersion08.isFrozen(), "Version should not be snapshotted for automatic DOI creation");
-        assertNotNull(foobar2TagVersion08.getDois().get(DoiCreator.DOCKSTORE.name()).getName());
+        assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
 
         // Should be able to request a user-created DOI for the version even though it has a Dockstore-created DOI
         foobar2TagVersion08.setFrozen(true);
@@ -157,21 +157,21 @@ class ZenodoIT {
         workflowsApi.requestDOIForWorkflowVersion(foobar2Id, foobar2VersionId, "");
         foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
         foobar2TagVersion08 = getWorkflowVersion(foobar2, "0.8").orElse(null);
-        assertNotNull(foobar2TagVersion08.getDois().get(DoiCreator.USER.name()).getName());
+        assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.USER.name()).getName());
 
         // Release a different tag. Should automatically create DOI
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
         foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
         WorkflowVersion foobar2TagVersion09 = getWorkflowVersion(foobar2, "0.9").orElse(null);
         assertNotNull(foobar2TagVersion09);
-        assertNotNull(foobar2TagVersion09.getDois().get(DoiCreator.DOCKSTORE.name()).getName());
+        assertNotNull(foobar2TagVersion09.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
 
         // Release a branch. Should not automatically create a DOI because it's not a tag
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
         foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
         WorkflowVersion foobar2BranchVersion = getWorkflowVersion(foobar2, "master").orElse(null);
         assertNotNull(foobar2BranchVersion);
-        assertFalse(foobar2BranchVersion.getDois().containsKey(DoiCreator.DOCKSTORE.name()));
+        assertFalse(foobar2BranchVersion.getDois().containsKey(DoiInitiator.DOCKSTORE.name()));
     }
 
     @Test
@@ -195,7 +195,7 @@ class ZenodoIT {
         workflowsApi.refresh1(workflow.getId(), false);
 
         tagVersion = workflowsApi.getWorkflowVersionById(workflow.getId(), tagVersion.getId(), "");
-        assertNotNull(tagVersion.getDois().get(DoiCreator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
+        assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
     }
 
     @Test
@@ -217,8 +217,8 @@ class ZenodoIT {
         workflowsApi.publish1(workflow.getId(), new PublishRequest().publish(true));
         workflow = workflowsApi.getWorkflow(workflow.getId(), "versions");
         tagVersion = getWorkflowVersion(workflow, "0.8").orElse(null);
-        assertNotNull(workflow.getConceptDois().get(DoiCreator.DOCKSTORE.name()).getName());
-        assertNotNull(tagVersion.getDois().get(DoiCreator.DOCKSTORE.name()).getName());
+        assertNotNull(workflow.getConceptDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
     }
 
     @Test
@@ -242,8 +242,8 @@ class ZenodoIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         workflow = workflowsApi.getWorkflow(workflow.getId(), "versions");
         tagVersion = workflowsApi.getWorkflowVersionById(workflow.getId(), tagVersion.getId(), "");
-        assertNotNull(workflow.getConceptDois().get(DoiCreator.DOCKSTORE.name()).getName(), "Should have automatic concept DOI");
-        assertNotNull(tagVersion.getDois().get(DoiCreator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
+        assertNotNull(workflow.getConceptDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic concept DOI");
+        assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
     }
 
     @Test
@@ -307,9 +307,9 @@ class ZenodoIT {
         workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, "");
 
         Workflow workflow = workflowsApi.getWorkflow(workflowId, "");
-        assertNotNull(workflow.getConceptDois().get(DoiCreator.USER.name()));
+        assertNotNull(workflow.getConceptDois().get(DoiInitiator.USER.name()));
         master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
-        assertNotNull(master.getDois().get(DoiCreator.USER.name()).getName());
+        assertNotNull(master.getDois().get(DoiInitiator.USER.name()).getName());
 
         // unpublish workflow
         workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
@@ -345,16 +345,13 @@ class ZenodoIT {
         workflowsApi.publish1(workflow.getId(), new PublishRequest().publish(true));
         workflow = workflowsApi.getWorkflow(workflowId, "versions");
         tagVersion = getWorkflowVersion(workflow, "0.8").orElse(null);
-        assertNotNull(workflow.getConceptDois().get(DoiCreator.DOCKSTORE.name()).getName());
-        assertNotNull(tagVersion.getDois().get(DoiCreator.DOCKSTORE.name()).getName());
+        assertNotNull(workflow.getConceptDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
 
         // Create an access link
         AccessLink expectedAccessLink = workflowsApi.requestDOIEditLink(workflowId);
         assertNotNull(expectedAccessLink.getId());
         assertNotNull(expectedAccessLink.getToken());
-        // Check that the Dockstore concept DOI stores the access link ID
-        workflow = workflowsApi.getWorkflow(workflowId, "");
-        assertEquals(expectedAccessLink.getId(), workflow.getConceptDois().get(DoiCreator.DOCKSTORE.name()).getEditAccessLinkId());
 
         // Get the existing access
         assertEquals(expectedAccessLink, workflowsApi.getDOIEditLink(workflowId));

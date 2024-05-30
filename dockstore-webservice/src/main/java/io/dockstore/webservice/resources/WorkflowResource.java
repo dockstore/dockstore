@@ -20,7 +20,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI;
+import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
@@ -40,7 +40,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Doi.DoiCreator;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.Image;
@@ -374,9 +374,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Update file formats in each version and then the entry
         FileFormatHelper.updateFileFormats(existingWorkflow, newWorkflow.getWorkflowVersions(), fileFormatDAO, true);
 
-        for (WorkflowVersion workflowVersion: existingWorkflow.getWorkflowVersions()) {
-            ZenodoHelper.automaticallyRegisterDockstoreOwnedZenodoDOI(existingWorkflow, workflowVersion, user, this);
-        }
+        automaticallyRegisterDockstoreDOIForRecentTags(existingWorkflow, user, this);
 
         // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
         // EntryVersionHelper.removeSourceFilesFromEntry() which performs a session.flush and commits to the db. It's important the parent workflow is updated completely before committing to the db..
@@ -593,13 +591,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkCanRegisterDoi(workflow, workflowVersion, user, DoiCreator.USER);
+        checkCanRegisterDoi(workflow, workflowVersion, user, DoiInitiator.USER);
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
         ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
-        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this, DoiCreator.USER);
+        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this, DoiInitiator.USER);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkNotNullEntry(result);
@@ -757,7 +755,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotArchived(workflow);
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
-        publishedWorkflow.getWorkflowVersions().forEach(version -> automaticallyRegisterDockstoreOwnedZenodoDOI(workflow, version, user, this));
+        automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
         return publishedWorkflow;
     }
