@@ -208,7 +208,7 @@
             SET conceptdoi = REGEXP_REPLACE(conceptdoi, 'doi/', '', 'g')
             WHERE conceptdoi IS NOT NULL;
 
-            ALTER TABLE apptool ENABLE TRIGGER update_archived_workflow;
+            ALTER TABLE apptool ENABLE TRIGGER update_archived_apptool;
         </sql>
         <sql dbms="postgresql">
             ALTER TABLE service DISABLE TRIGGER update_archived_service;
