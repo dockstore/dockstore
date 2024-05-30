@@ -64,8 +64,8 @@ public final class ZenodoHelper {
      * @param entryVersionHelper provides interface for retrieving the files of versions
      */
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
-           WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
-           String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
+            WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
+            String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
         Deposit deposit = new Deposit();
