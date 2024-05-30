@@ -64,8 +64,8 @@ public final class ZenodoHelper {
      * @param entryVersionHelper provides interface for retrieving the files of versions
      */
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
-                                                    WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
-                                                    String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
+           WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
+           String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
         Deposit deposit = new Deposit();
@@ -242,8 +242,8 @@ public final class ZenodoHelper {
      * @param doiAlias workflow alias constructed using a DOI
      */
     private static void setMetadataRelatedIdentifiers(DepositMetadata depositMetadata,
-                                                      String dockstoreGA4GHBaseUrl, String dockstoreUrl, String workflowUrl,
-                                                      Workflow workflow, WorkflowVersion workflowVersion, String doiAlias) {
+            String dockstoreGA4GHBaseUrl, String dockstoreUrl, String workflowUrl,
+            Workflow workflow, WorkflowVersion workflowVersion, String doiAlias) {
 
         List<RelatedIdentifier> relatedIdentifierList = new ArrayList<>();
 
@@ -338,7 +338,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      */
     private static void fillInMetadata(DepositMetadata depositMetadata,
-                                       Workflow workflow, WorkflowVersion workflowVersion) {
+            Workflow workflow, WorkflowVersion workflowVersion) {
         // add some metadata to the deposition that will be published to Zenodo
         depositMetadata.setTitle(workflow.getWorkflowPath());
         // The Zenodo deposit type for Dockstore will always be SOFTWARE
@@ -371,7 +371,7 @@ public final class ZenodoHelper {
      * @param entryVersionHelper code for interacting with the files of versions, we use zip file creation methods
      */
     private static void provisionWorkflowVersionUploadFiles(ApiClient zendoClient, Deposit returnDeposit,
-                                                            int depositionID, Workflow workflow, WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
+            int depositionID, Workflow workflow, WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
         // Creating a new version copies the files from the previous version
         // We want to delete these since we will upload a new set of files
         // if creating a completely new deposit this should not cause a problem
@@ -481,7 +481,7 @@ public final class ZenodoHelper {
      * @return a copy of the deposit that was put on Zenodo
      */
     private static Deposit putDepositionOnZenodo(DepositsApi depositApi, DepositMetadata depositMetadata,
-                                                 int depositionID) {
+            int depositionID) {
         NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
         nestedDepositMetadata.setMetadata(depositMetadata);
         Deposit deposit;
