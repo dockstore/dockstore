@@ -27,6 +27,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.sql.Timestamp;
@@ -38,6 +40,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Schema(description = "A Digital Object Identifier (DOI)")
 @Table(name = "doi", uniqueConstraints = @UniqueConstraint(name = "unique_doi_name", columnNames = { "name" }))
+@NamedQueries({
+    @NamedQuery(name = "io.dockstore.webservice.core.Doi.findByName", query = "SELECT d FROM Doi d WHERE :doiName = d.name")
+})
 public class Doi {
     // DOI order of precedence from greatest to least
     public static final List<DoiInitiator> DOI_ORDER_OF_PRECEDENCE = List.of(DoiInitiator.USER, DoiInitiator.GITHUB, DoiInitiator.DOCKSTORE);

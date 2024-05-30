@@ -89,7 +89,7 @@ class ZenodoHelperTest {
         workflowVersion.setName("1.32.0");
 
         DockstoreWebserviceConfiguration config = createDockstoreConfiguration();
-        ZenodoHelper.init(config, null, null, null, null, null);
+        ZenodoHelper.init(config, null, null);
         String trsUrl = ZenodoHelper.createWorkflowTrsUrl(workflow, workflowVersion);
         assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere"
                 + "%2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl", trsUrl);
@@ -166,7 +166,7 @@ class ZenodoHelperTest {
         final String dockstoreCommunityId = "dockstore-community";
         final DockstoreWebserviceConfiguration configuration = createDockstoreConfiguration();
         configuration.setDockstoreZenodoCommunityId(dockstoreCommunityId);
-        ZenodoHelper.init(configuration, null, null, null, null, null);
+        ZenodoHelper.init(configuration, null, null);
         DepositMetadata depositMetadata = new DepositMetadata();
         ZenodoHelper.setMetadataCommunities(depositMetadata);
         assertEquals(dockstoreCommunityId, depositMetadata.getCommunities().get(0).getIdentifier());

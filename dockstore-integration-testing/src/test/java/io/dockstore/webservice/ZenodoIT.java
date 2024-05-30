@@ -31,6 +31,7 @@ import static io.dockstore.webservice.helpers.ZenodoHelper.FROZEN_VERSION_REQUIR
 import static io.dockstore.webservice.helpers.ZenodoHelper.NO_DOCKSTORE_DOI;
 import static io.dockstore.webservice.helpers.ZenodoHelper.NO_ZENODO_USER_TOKEN;
 import static io.dockstore.webservice.helpers.ZenodoHelper.PUBLISHED_ENTRY_REQUIRED;
+import static io.dockstore.webservice.helpers.ZenodoHelper.UNHIDDEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
@@ -285,11 +286,18 @@ class ZenodoIT {
         exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
         assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
 
+        // should not be able to request a DOI for a hidden version
+        testingPostgres.runUpdateStatement("update version_metadata set hidden = true");
+        master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
+        assertTrue(master.isHidden());
+        exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
+        assertTrue(exception.getMessage().contains(UNHIDDEN_VERSION_REQUIRED));
+        testingPostgres.runUpdateStatement("update version_metadata set hidden = false");
+
         // Unpublish workflow
         workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(false));
 
         // don't die horribly when stubbing something with snapshots, explain the error
-        testingPostgres.runUpdateStatement("update workflow set conceptdoi = null");
         exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
         assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
 

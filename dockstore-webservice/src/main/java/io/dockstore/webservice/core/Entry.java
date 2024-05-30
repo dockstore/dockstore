@@ -34,7 +34,6 @@ import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -262,7 +261,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Deprecated(since = "1.16")
     private String conceptDoi;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
     @MapKey(name = "initiator")
     @MapKeyEnumerated(EnumType.STRING)

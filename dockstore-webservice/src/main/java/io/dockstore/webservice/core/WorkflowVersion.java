@@ -59,7 +59,7 @@ import org.apache.commons.io.FilenameUtils;
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastModified DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getTagsByWorkflowIdOrderedByLastModified", query = "FROM WorkflowVersion v WHERE v.parent.id = :id AND v.referenceType = 'TAG' ORDER by lastModified DESC")
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getTagsByWorkflowIdOrderedByLastModified", query = "SELECT v FROM WorkflowVersion v WHERE v.parent.id = :id AND v.referenceType = 'TAG' ORDER BY v.lastModified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

@@ -295,6 +295,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "completely refresh all versions, even if they have not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
+        automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
     }
@@ -373,8 +374,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
         // Update file formats in each version and then the entry
         FileFormatHelper.updateFileFormats(existingWorkflow, newWorkflow.getWorkflowVersions(), fileFormatDAO, true);
-
-        automaticallyRegisterDockstoreDOIForRecentTags(existingWorkflow, user, this);
 
         // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
         // EntryVersionHelper.removeSourceFilesFromEntry() which performs a session.flush and commits to the db. It's important the parent workflow is updated completely before committing to the db..
@@ -755,7 +754,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotArchived(workflow);
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
-        automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
+        if (request.getPublish()) {
+            automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
+        }
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
         return publishedWorkflow;
     }

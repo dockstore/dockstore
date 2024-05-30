@@ -17,6 +17,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.DoiDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -74,6 +75,7 @@ public final class ZenodoHelper {
     public static final String NO_ZENODO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO = "At least one author is required to publish to Zenodo";
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
+    public static final String UNHIDDEN_VERSION_REQUIRED = "Unhidden version required to generate DOI";
     public static final String PUBLISHED_ENTRY_REQUIRED = "Published entry required to generate DOI";
     public static final String VERSION_ALREADY_HAS_DOI = "Version already has DOI. Dockstore can only create one DOI per version.";
     public static final String NO_DOCKSTORE_DOI = "The entry does not have DOIs created by Dockstore's Zenodo account.";
@@ -86,6 +88,7 @@ public final class ZenodoHelper {
     private static String dockstoreZenodoCommunityId;
     private static HttpClient httpClient;
     private static SessionFactory sessionFactory;
+    private static DoiDAO doiDAO;
     private static TokenDAO tokenDAO;
     private static WorkflowDAO workflowDAO;
     private static WorkflowVersionDAO workflowVersionDAO;
@@ -97,16 +100,16 @@ public final class ZenodoHelper {
     private ZenodoHelper() {
     }
 
-    public static void init(DockstoreWebserviceConfiguration configuration, HttpClient initHttpClient, SessionFactory initSessionFactory,
-            TokenDAO initTokenDAO, WorkflowDAO initWorkflowDAO, WorkflowVersionDAO initWorkflowVersionDAO) {
+    public static void init(DockstoreWebserviceConfiguration configuration, HttpClient initHttpClient, SessionFactory initSessionFactory) {
         dockstoreUrl = configuration.getExternalConfig().computeBaseUrl();
         dockstoreZenodoAccessToken = configuration.getDockstoreZenodoAccessToken();
         dockstoreZenodoCommunityId = configuration.getDockstoreZenodoCommunityId();
         httpClient = initHttpClient;
         sessionFactory = initSessionFactory;
-        tokenDAO = initTokenDAO;
-        workflowDAO = initWorkflowDAO;
-        workflowVersionDAO = initWorkflowVersionDAO;
+        doiDAO = new DoiDAO(sessionFactory);
+        tokenDAO = new TokenDAO(sessionFactory);
+        workflowDAO = new WorkflowDAO(sessionFactory);
+        workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
@@ -267,22 +270,15 @@ public final class ZenodoHelper {
             try {
                 // No DOI has been assigned to any version of the workflow yet
                 // So create a new deposit which will enable creation of a new
-                // concept DOI and new version DOI
-                returnDeposit = depositApi.createDeposit(deposit);
-                depositionID = returnDeposit.getId();
-                depositMetadata = returnDeposit.getMetadata();
-
-                fillInMetadata(depositMetadata, workflow, workflowVersion);
+                // concept DOI and new version DOI.
                 // The returned deposit will contain
                 // the reserved DOI which we can use to create a workflow alias
                 // Later on we will update the Zenodo deposit (put the deposit on
                 // Zenodo again  in the call to putDepositionOnZenodo) so it contains the workflow version alias
                 // constructed with the DOI
-                // Retrieve the DOI so we can use it to create a Dockstore alias
-                // to the workflow; we will add that alias as a Zenodo related identifier
-                String doi = returnDeposit.getMetadata().getPrereserveDoi().getDoi();
-                doiAlias = createAliasUsingDoi(doi);
-                setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
+                returnDeposit = depositApi.createDeposit(deposit);
+                depositionID = returnDeposit.getId();
+                depositMetadata = returnDeposit.getMetadata();
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is {}", e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
@@ -305,12 +301,6 @@ public final class ZenodoHelper {
                 depositionID = Integer.parseInt(depositionIDStr);
                 returnDeposit = depositApi.getDeposit(depositionID);
                 depositMetadata = returnDeposit.getMetadata();
-                // Retrieve the DOI so we can use it to create a Dockstore alias
-                // to the workflow; we will add that alias as a Zenodo related identifier
-                String doi = depositMetadata.getPrereserveDoi().getDoi();
-                doiAlias = createAliasUsingDoi(doi);
-                setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
-                fillInMetadata(depositMetadata, workflow, workflowVersion);
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is {}", e.getMessage(), e);
                 if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
@@ -331,6 +321,13 @@ public final class ZenodoHelper {
             }
         }
 
+        // Retrieve the DOI so we can use it to create a Dockstore alias
+        // to the workflow; we will add that alias as a Zenodo related identifier
+        String doi = depositMetadata.getPrereserveDoi().getDoi();
+        doiAlias = createAliasUsingDoi(doi);
+        setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
+        fillInMetadata(depositMetadata, workflow, workflowVersion);
+
         provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
                 workflow, workflowVersion);
 
@@ -343,10 +340,9 @@ public final class ZenodoHelper {
         String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 
         ZenodoDoiResult zenodoDoiResult = new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
-        workflowVersion.getDois().put(doiInitiator, new Doi(DoiType.VERSION, doiInitiator, zenodoDoiResult.doiUrl()));
-        if (!workflow.getConceptDois().containsKey(doiInitiator)) {
-            workflow.getConceptDois().put(doiInitiator, new Doi(DoiType.CONCEPT, doiInitiator, zenodoDoiResult.conceptDoi()));
-        }
+        workflowVersion.getDois().put(doiInitiator, getDoiFromDatabase(DoiType.VERSION, doiInitiator, zenodoDoiResult.doiUrl()));
+        workflow.getConceptDois().put(doiInitiator, getDoiFromDatabase(DoiType.CONCEPT, doiInitiator, zenodoDoiResult.conceptDoi()));
+
         // Only add the alias to the workflow version after publishing the DOI succeeds
         // Otherwise if the publish call fails we will have added an alias
         // that will not be used and cannot be deleted
@@ -357,6 +353,15 @@ public final class ZenodoHelper {
                 workflowVersion.getId(), zenodoDoiResult.doiAlias(), false);
 
         return zenodoDoiResult;
+    }
+
+    public static Doi getDoiFromDatabase(DoiType doiType, DoiInitiator doiInitiator, String doiName) {
+        Doi doi = doiDAO.findByName(doiName);
+        if (doi == null) {
+            long doiId = doiDAO.create(new Doi(doiType, doiInitiator, doiName));
+            return doiDAO.findById(doiId);
+        }
+        return doi;
     }
 
     /**
@@ -837,6 +842,11 @@ public final class ZenodoHelper {
         if (doiInitiator == DoiInitiator.USER && !workflowVersion.isFrozen()) {
             LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, FROZEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, FROZEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (workflowVersion.isHidden()) {
+            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED);
+            throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
         }
 
         checkForExistingDOIForWorkflowVersion(workflowVersion, doiInitiator);

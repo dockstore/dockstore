@@ -471,7 +471,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
-        ZenodoHelper.init(configuration, httpClient, getHibernate().getSessionFactory(), tokenDAO, workflowDAO, workflowVersionDAO);
+        ZenodoHelper.init(configuration, httpClient, getHibernate().getSessionFactory());
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
         environment.jersey().register(metadataResource);
