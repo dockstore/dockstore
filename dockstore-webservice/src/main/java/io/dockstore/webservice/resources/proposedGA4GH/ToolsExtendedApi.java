@@ -356,7 +356,7 @@ public class ToolsExtendedApi {
 
     @GET
     @UnitOfWork
-    @Path("/{id}/AITopicCanidate")
+    @Path("/{id}/aiTopicCandidate")
     @RolesAllowed({"curator", "admin"})
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getAITopicCandidate", description = "Get a tool's AI topic candidate version for consideration", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),

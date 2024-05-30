@@ -538,7 +538,7 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
-  /api/ga4gh/v2/extended/{id}/AITopicCanidate:
+  /api/ga4gh/v2/extended/{id}/aiTopicCandidate:
     get:
       description: Get a tool's AI topic candidate version for consideration
       operationId: getAITopicCandidate
