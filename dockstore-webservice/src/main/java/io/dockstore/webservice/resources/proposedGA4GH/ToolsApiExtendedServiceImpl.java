@@ -721,7 +721,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      */
     private Optional<? extends Version<?>> getVersionCandidate(Entry<?, ?> entry) {
         if (entry instanceof Workflow workflow) {
-            List<WorkflowVersion> workflowVersions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 1, 1);
+            List<WorkflowVersion> workflowVersions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 1, 0);
             if (!workflowVersions.isEmpty()) {
                 return Optional.of(workflowVersions.get(0));
             }

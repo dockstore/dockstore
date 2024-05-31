@@ -172,8 +172,8 @@ class ExtendedTRSApiIT extends BaseIT {
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
 
         long latestDate = workflow.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
-        assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate), latestDate + " issue with " + workflow.getWorkflowVersions().stream().map(
-            WorkflowVersion::getDbUpdateDate).collect(
+        assertTrue(workflow.getWorkflowVersions().stream().allMatch(t -> t.getLastModified() <= latestDate), latestDate + " issue with " + workflow.getWorkflowVersions().stream().map(
+            WorkflowVersion::getLastModified).collect(
             Collectors.toSet()));
 
         assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "' and parentid = " + workflow.getId(), Boolean.class));

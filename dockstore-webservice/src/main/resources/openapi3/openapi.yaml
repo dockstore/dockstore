@@ -549,13 +549,12 @@ paths:
         schema:
           type: string
       responses:
-        "207":
+        "200":
           content:
             application/json:
               schema:
                 type: string
-          description: Executions to update processed. Please view the individual
-            responses.
+          description: Got workflow candidate version for topic generation.
         "401":
           content:
             application/json:
@@ -567,7 +566,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-          description: The tool cannot be found to update the executions.
+          description: The tool cannot be found to get a candidate version for topic
+            generation.
       security:
       - BEARER: []
       tags:
