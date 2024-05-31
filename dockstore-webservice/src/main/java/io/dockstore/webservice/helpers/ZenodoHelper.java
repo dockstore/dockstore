@@ -101,19 +101,22 @@ public final class ZenodoHelper {
     }
 
     public static void init(DockstoreWebserviceConfiguration configuration, HttpClient initHttpClient, SessionFactory initSessionFactory) {
-        dockstoreUrl = configuration.getExternalConfig().computeBaseUrl();
-        dockstoreZenodoAccessToken = configuration.getDockstoreZenodoAccessToken();
-        dockstoreZenodoCommunityId = configuration.getDockstoreZenodoCommunityId();
+        initConfig(configuration);
         httpClient = initHttpClient;
         sessionFactory = initSessionFactory;
         doiDAO = new DoiDAO(sessionFactory);
         tokenDAO = new TokenDAO(sessionFactory);
         workflowDAO = new WorkflowDAO(sessionFactory);
         workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
+    }
+
+    static void initConfig(DockstoreWebserviceConfiguration configuration) {
+        dockstoreUrl = configuration.getExternalConfig().computeBaseUrl();
+        dockstoreZenodoAccessToken = configuration.getDockstoreZenodoAccessToken();
+        dockstoreZenodoCommunityId = configuration.getDockstoreZenodoCommunityId();
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
-
         try {
             dockstoreGA4GHBaseUrl = ToolsImplCommon.baseURL(configuration);
         } catch (URISyntaxException e) {
