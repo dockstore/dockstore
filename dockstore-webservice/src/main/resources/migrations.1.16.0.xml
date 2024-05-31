@@ -226,7 +226,7 @@
             SET conceptdoi = REGEXP_REPLACE(conceptdoi, 'doi/', '', 'g')
             WHERE conceptdoi IS NOT NULL;
 
-            ALTER TABLE notebook DISABLE TRIGGER update_archived_notebook;
+            ALTER TABLE notebook ENABLE TRIGGER update_archived_notebook;
         </sql>
     </changeSet>
 </databaseChangeLog>
