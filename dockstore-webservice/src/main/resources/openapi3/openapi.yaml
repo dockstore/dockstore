@@ -7653,6 +7653,36 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/DOIEditLink:
+    get:
+      description: Get an existing access link with edit permissions for the workflow's
+        Dockstore DOIs.
+      operationId: getDOIEditLink
+      parameters:
+      - description: Workflow with Dockstore DOI to get an access link for.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLink'
+          description: Access link successfully retrieved
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       description: Get the DAG for a given workflow version.
@@ -7704,6 +7734,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/deleteDOIEditLink:
+    delete:
+      description: Delete the access link with edit permissions for the workflow's
+        Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
+      operationId: deleteDOIEditLink
+      parameters:
+      - description: Workflow to modify.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
       - BEARER: []
       tags:
@@ -7981,6 +8037,36 @@ paths:
                   $ref: '#/components/schemas/WorkflowVersion'
                 uniqueItems: true
           description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/requestDOIEditLink:
+    post:
+      description: Request an access link with edit permissions for the workflow's
+        Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
+      operationId: requestDOIEditLink
+      parameters:
+      - description: Workflow with Dockstore DOI to request an access link for.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLink'
+          description: Access link successfully created
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
       - BEARER: []
       tags:
@@ -8569,6 +8655,23 @@ paths:
       - workflows
 components:
   schemas:
+    AccessLink:
+      type: object
+      properties:
+        created_at:
+          type: string
+        expires_at:
+          type: string
+        id:
+          type: string
+        permission:
+          type: string
+          enum:
+          - view
+          - preview
+          - edit
+        token:
+          type: string
     Alias:
       type: object
       properties:
@@ -9086,6 +9189,15 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         custom_docker_registry_path:
           type: string
         customerDockerRegistryPath:
@@ -9258,6 +9370,37 @@ components:
           items:
             $ref: '#/components/schemas/Tag'
           uniqueItems: true
+    Doi:
+      type: object
+      description: A Digital Object Identifier (DOI)
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the DOI in this web service
+        initiator:
+          type: string
+          description: The initiator that initiated the creation of the DOI
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
+          example: USER
+        name:
+          type: string
+          description: The DOI name
+          example: 10.5281/zenodo.705645
+        type:
+          type: string
+          description: The type of DOI
+          enum:
+          - CONCEPT
+          - VERSION
+          example: CONCEPT
+      required:
+      - initiator
+      - name
+      - type
     Entry:
       type: object
       description: This describes one high-level entity in the dockstore
@@ -9281,6 +9424,15 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         dbCreateDate:
           type: integer
           format: int64
@@ -10746,6 +10898,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:
@@ -11659,6 +11816,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:
@@ -11752,6 +11914,11 @@ components:
           type: array
           items:
             type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         engineVersions:
           type: array
           items:
@@ -11833,6 +12000,15 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         dbCreateDate:
           type: integer
           format: int64
@@ -12056,6 +12232,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:

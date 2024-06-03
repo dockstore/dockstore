@@ -480,12 +480,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             if (version == null) {
                 throw new CustomWebApplicationException(VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
-            if (version.getDoiURL() == null) {
+            if (version.getDois().isEmpty()) {
                 throw new CustomWebApplicationException(VERSION_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
             optionalVersion = Optional.ofNullable(version);
         } else {
-            if (entry.getConceptDoi() == null) {
+            if (entry.getConceptDois().isEmpty()) {
                 throw new CustomWebApplicationException(ENTRY_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
         }
@@ -521,7 +521,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 int responseCode = createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
                 // If there's a conflict, the user already has an ORCID work with the same DOI URL. Try to link the ORCID work to the Dockstore entry by getting its put code
                 if (responseCode == HttpStatus.SC_CONFLICT) {
-                    String doiUrl = optionalVersion.isPresent() ? optionalVersion.get().getDoiURL() : entry.getConceptDoi();
+                    String doiUrl = optionalVersion.isPresent() ? optionalVersion.get().getDefaultDoi().getName() : entry.getDefaultConceptDoi().getName();
                     Optional<Long> existingPutCode = ORCIDHelper.searchForPutCodeByDoiUrl(orcidId, orcidByUserId, doiUrl);
                     if (existingPutCode.isPresent()) {
                         String existingPutCodeString = existingPutCode.get().toString();

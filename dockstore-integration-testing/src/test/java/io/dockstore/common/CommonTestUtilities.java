@@ -36,6 +36,7 @@ import com.google.gson.JsonSyntaxException;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
@@ -758,6 +759,10 @@ public final class CommonTestUtilities {
         file.setContent("cwlVersion: v1.1\n" + "class: Workflow");
         hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
         return hostedWorkflow;
+    }
+
+    public static Optional<WorkflowVersion> getWorkflowVersion(Workflow workflow, String versionName) {
+        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst();
     }
 
     /**

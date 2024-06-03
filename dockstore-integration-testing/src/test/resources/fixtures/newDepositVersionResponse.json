@@ -1,0 +1,69 @@
+{
+  "conceptrecid": 51309,
+  "created": "2024-05-02T15:13:00.593467+00:00",
+  "files": [
+    {
+      "id": "aee03a4c-03bd-4197-81b5-2bf84049d29c",
+      "filename": "github.com-kathy-t-ghapps-single-workflow-foo_3.0.zip",
+      "filesize": 1259,
+      "checksum": "a505678cb57967cc51eab03366f5d843"
+    }
+  ],
+  "id": {{ randomIntegerRange 10000 99999 }},
+  "links": {
+    "self": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}",
+    "html": "https://sandbox.zenodo.org/deposit/{{ randomIntegerRange 10000 99999 }}",
+    "badge": "https://sandbox.zenodo.org/badge/doi/.svg",
+    "files": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/files",
+    "bucket": "https://sandbox.zenodo.org/api/files/abd50212-d119-42a1-a425-94ff1e57a863",
+    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}",
+    "latest_draft_html": "https://sandbox.zenodo.org/deposit/{{ randomIntegerRange 10000 99999 }}",
+    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/publish",
+    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/edit",
+    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/discard",
+    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/newversion",
+    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/{{ randomIntegerRange 10000 99999 }}/actions/registerconceptdoi"
+  },
+  "metadata": {
+    "upload_type": "SOFTWARE",
+    "title": "github.com/kathy-t/ghapps-single-workflow/foo",
+    "creators": [
+      {
+        "name": "sort entry name"
+      }
+    ],
+    "description": "This is foo's README. It references [this](./bar.txt) file.",
+    "access_right": "OPEN",
+    "license": "cc-by-4.0",
+    "prereserve_doi": {
+      "doi": "10.5281/zenodo.{{ randomIntegerRange 10000 99999 }}",
+      "recid": {{ randomIntegerRange 10000 99999 }}
+    },
+    "related_identifiers": [
+      {
+        "identifier": "http://localhost/aliases/workflow-versions/10.5281-zenodo.51310",
+        "relation": "ISIDENTICALTO"
+      },
+      {
+        "identifier": "http://localhost/workflows/github.com/kathy-t/ghapps-single-workflow/foo:3.0",
+        "relation": "ISIDENTICALTO"
+      },
+      {
+        "identifier": "http://localhost:8080/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2Fkathy-t%2Fghapps-single-workflow%2Ffoo/versions/3.0/PLAIN-CWL/descriptor/Dockstore.cwl",
+        "relation": "ISIDENTICALTO"
+      }
+    ],
+    "communities": [
+      {
+        "identifier": "test-community"
+      }
+    ],
+    "imprint_publisher": "Zenodo"
+  },
+  "modified": "2024-05-02T15:13:00.593467+00:00",
+  "owner": 563,
+  "record_id": {{ randomIntegerRange 10000 99999 }},
+  "state": "unsubmitted",
+  "submitted": false,
+  "title": "github.com/kathy-t/ghapps-single-workflow/foo"
+}
