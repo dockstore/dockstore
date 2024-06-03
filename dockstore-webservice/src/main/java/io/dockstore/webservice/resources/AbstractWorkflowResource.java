@@ -230,6 +230,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
+                // if the file is the primary descriptor and is about to change, then the ai topic sentence is dirty
+                if (file.getAbsolutePath().equals(remoteVersion.getWorkflowPath()) && !existingFile.getContent().equals(file.getContent())) {
+                    // when a branch is updated, it could have different contents for consideration
+                    existingVersion.setAiTopicProcessed(false);
+                }
                 existingFile.setPath(file.getPath());
                 existingFile.setContent(file.getContent());
                 existingFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion());

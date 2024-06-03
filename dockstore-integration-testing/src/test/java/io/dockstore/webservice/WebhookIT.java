@@ -521,6 +521,9 @@ class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set licensename=null");
         // Unset topicAutomatic to simulate a topicAutomatic change
         testingPostgres.runUpdateStatement("update workflow set topicAutomatic=null");
+        // Unset file contents to simulate changed file descriptors
+        testingPostgres.runUpdateStatement("update sourcefile set content=''");
+
         // Branch master on GitHub - updates two existing workflows
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
         List<Workflow> workflows = new ArrayList<>();
