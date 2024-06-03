@@ -46,5 +46,6 @@ public final class RepositoryConstants {
         public static final String WDL_HUMANWGS = "dockstore-testing/wdl-humanwgs";
         public static final String WORKFLOW_DOCKSTORE_YML = "dockstore-testing/workflow-dockstore-yml";
         public static final String TEST_SERVICE = "dockstore-testing/test-service";
+        public static final String SOURCEFILE_TESTING = "dockstore-testing/sourcefile-testing";
     }
 }
