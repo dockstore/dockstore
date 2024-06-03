@@ -79,7 +79,7 @@ public interface SourceControlResourceInterface {
      * @param payload e.g. "grant_type=refresh_token&refresh_token=" + token.getRefreshToken()
      * @return the updated token
      */
-    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String payload) {
+    static Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String payload) {
 
         Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, payload);
 

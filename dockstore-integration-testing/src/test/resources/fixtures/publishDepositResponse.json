@@ -1,0 +1,79 @@
+{
+  "conceptrecid": {{ randomIntegerRange 10000 99999 }},
+  "created": "2024-05-02T15:13:00.593467+00:00",
+  "files": [
+    {
+      "id": "b6e8da40-c63b-413c-ba5b-3b0952a88436",
+      "filename": "github.com-kathy-t-ghapps-single-workflow-foo_lightweight-tag-1.zip",
+      "filesize": 1259,
+      "checksum": "e83cee92b22a650580fdb2f7c9c00d87"
+    }
+  ],
+  "id": {{ Request.Path.[3] }},
+  "links": {
+    "self": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}",
+    "html": "https://sandbox.zenodo.org/records/{{ Request.Path.[3] }}",
+    "doi": "https://doi.org/10.5072/zenodo.{{ Request.Path.[3] }}",
+    "parent_doi": "https://sandbox.zenodo.org/doi/10.5072/zenodo.{{ randomIntegerRange 10000 99999 }}",
+    "badge": "https://sandbox.zenodo.org/badge/doi/10.5072%2Fzenodo.{{ Request.Path.[3] }}.svg",
+    "conceptbadge": "https://sandbox.zenodo.org/badge/doi/10.5072%2Fzenodo.{{ randomIntegerRange 10000 99999 }}.svg",
+    "files": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}/files",
+    "bucket": "https://sandbox.zenodo.org/api/files/abd50212-d119-42a1-a425-94ff1e57a863",
+    "latest_draft": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}",
+    "latest_draft_html": "https://sandbox.zenodo.org/deposit/{{ Request.Path.[3] }}",
+    "publish": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/publish",
+    "edit": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/edit",
+    "discard": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/discard",
+    "newversion": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/newversion",
+    "registerconceptdoi": "https://sandbox.zenodo.org/api/deposit/depositions/{{ Request.Path.[3] }}/actions/registerconceptdoi",
+    "record": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}",
+    "record_html": "https://sandbox.zenodo.org/record/{{ Request.Path.[3] }}",
+    "latest": "https://sandbox.zenodo.org/api/records/{{ Request.Path.[3] }}/versions/latest",
+    "latest_html": "https://sandbox.zenodo.org/record/{{ Request.Path.[3] }}/versions/latest"
+  },
+  "metadata": {
+    "upload_type": "SOFTWARE",
+    "publication_date": "2024-05-02",
+    "title": "github.com/kathy-t/ghapps-single-workflow/foo",
+    "creators": [
+      {
+        "name": "sort entry name"
+      }
+    ],
+    "description": "This is foo's README. It references [this](./bar.txt) file.",
+    "access_right": "OPEN",
+    "license": "cc-by-4.0",
+    "doi": "10.5072/zenodo.{{ Request.Path.[3] }}",
+    "prereserve_doi": {
+      "doi": "10.5281/zenodo.{{ Request.Path.[3] }}",
+      "recid": {{ Request.Path.[3] }}
+    },
+    "related_identifiers": [
+      {
+        "identifier": "http://localhost/aliases/workflow-versions/10.5281-zenodo.{{ Request.Path.[3] }}",
+        "relation": "ISIDENTICALTO"
+      },
+      {
+        "identifier": "http://localhost/workflows/github.com/kathy-t/ghapps-single-workflow/foo:lightweight-tag-1",
+        "relation": "ISIDENTICALTO"
+      },
+      {
+        "identifier": "http://localhost:8080/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2Fkathy-t%2Fghapps-single-workflow%2Ffoo/versions/lightweight-tag-1/PLAIN-CWL/descriptor/Dockstore.cwl",
+        "relation": "ISIDENTICALTO"
+      }
+    ],
+    "communities": [
+      {
+        "identifier": "test-community"
+      }
+    ],
+    "imprint_publisher": "Zenodo",
+    "version": "lightweight-tag-1"
+  },
+  "modified": "2024-05-02T15:13:00.593467+00:00",
+  "owner": 563,
+  "record_id": {{ Request.Path.[3] }},
+  "state": "done",
+  "submitted": true,
+  "title": "github.com/kathy-t/ghapps-single-workflow/foo"
+}

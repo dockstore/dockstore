@@ -15,7 +15,10 @@
  */
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_INITIATORS;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CollectionTable;
@@ -29,12 +32,16 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.MapKey;
 import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,7 +76,17 @@ public class VersionMetadata {
 
     @Column()
     @Pattern(regexp = "10\\.[^/]++/.++")
+    @Deprecated(since = "1.16")
+    @Schema(deprecated = true)
     protected String doiURL;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKey(name = "initiator")
+    @MapKeyEnumerated(EnumType.STRING)
+    @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
+    @Schema(description = "The DOIs for the version of the entry")
+    protected Map<DoiInitiator, Doi> dois = new HashMap<>();
 
     @Column()
     protected boolean hidden;
@@ -196,5 +213,13 @@ public class VersionMetadata {
 
     public void setEngineVersions(final List<String> engineVersions) {
         this.engineVersions = engineVersions;
+    }
+
+    public Map<DoiInitiator, Doi> getDois() {
+        return dois;
+    }
+
+    public void setDois(Map<DoiInitiator, Doi> dois) {
+        this.dois = dois;
     }
 }

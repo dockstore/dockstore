@@ -22,8 +22,8 @@ import static io.dockstore.common.Hoverfly.SUFFIX2;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.HoverflyTest;
 import io.dockstore.common.MuteForSuccessfulTests;
-import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -67,7 +67,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE)
-@Tag(NonConfidentialTest.NAME)
+@Tag(HoverflyTest.NAME)
 public class UserResourceServicesIT {
 
     private static final long GITHUB_USER1_ID = 1L;
