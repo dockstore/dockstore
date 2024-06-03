@@ -199,6 +199,44 @@
             <column defaultValueBoolean="false" name="aitopicprocessed" type="bool"/>
         </addColumn>
     </changeSet>
+    <changeSet author="hyunnaye" id="fixConceptDOIs">
+        <sql dbms="postgresql">
+            ALTER TABLE workflow DISABLE TRIGGER update_archived_workflow;
+
+            UPDATE workflow
+            SET conceptdoi = REGEXP_REPLACE(conceptdoi, 'doi/', '', 'g')
+            WHERE conceptdoi IS NOT NULL;
+
+            ALTER TABLE workflow ENABLE TRIGGER update_archived_workflow;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE apptool DISABLE TRIGGER update_archived_apptool;
+
+            UPDATE apptool
+            SET conceptdoi = REGEXP_REPLACE(conceptdoi, 'doi/', '', 'g')
+            WHERE conceptdoi IS NOT NULL;
+
+            ALTER TABLE apptool ENABLE TRIGGER update_archived_apptool;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE service DISABLE TRIGGER update_archived_service;
+
+            UPDATE service
+            SET conceptdoi = REGEXP_REPLACE(conceptdoi, 'doi/', '', 'g')
+            WHERE conceptdoi IS NOT NULL;
+
+            ALTER TABLE service ENABLE TRIGGER update_archived_service;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE notebook DISABLE TRIGGER update_archived_notebook;
+
+            UPDATE notebook
+            SET conceptdoi = REGEXP_REPLACE(conceptdoi, 'doi/', '', 'g')
+            WHERE conceptdoi IS NOT NULL;
+
+            ALTER TABLE notebook ENABLE TRIGGER update_archived_notebook;
+        </sql>
+    </changeSet>
     <changeSet author="ktran (generated)" id="addAutomaticDoiCreation">
         <createTable tableName="doi">
             <column autoIncrement="true" name="id" type="BIGINT">
@@ -252,7 +290,7 @@
                 UNION ALL
                 SELECT id, conceptdoi
                 FROM notebook
-            )
+            ) AS entries_ids_dois
             WHERE conceptdoi IS NOT NULL;
 
             INSERT INTO doi(initiator, type, name)
