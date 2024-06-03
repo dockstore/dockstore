@@ -1,5 +1,6 @@
 {
   "conceptrecid": 51309,
+  "conceptdoi": "10.5072/zenodo.{{ randomIntegerRange 10000 99999 }}",
   "created": "2024-05-02T15:13:00.593467+00:00",
   "files": [
     {

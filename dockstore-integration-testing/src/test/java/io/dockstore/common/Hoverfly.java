@@ -193,7 +193,7 @@ public final class Hoverfly {
 
     public static final String ZENODO_SIMULATION_URL = "https://sandbox.zenodo.org";
     public static final SimulationSource ZENODO_SIMULATION_SOURCE = dsl(service(ZENODO_SIMULATION_URL)
-            .andDelay(200, TimeUnit.MILLISECONDS).forAll() // I don't know why, but need a short delay for random integers to be generated and not be repeated
+            .andDelay(500, TimeUnit.MILLISECONDS).forAll() // I don't know why, but need a short delay for random integers to be generated and not be repeated
             .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
             // createDeposit
             .post("/api/deposit/depositions").anyBody().anyQueryParams().willReturn(success(fixture("fixtures/createDepositResponse.json"), MediaType.APPLICATION_JSON))
