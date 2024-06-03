@@ -2155,15 +2155,17 @@ class WebhookIT extends BaseIT {
         final String versionName = "master";
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-
-        // Register the sourcefile-testing repo
         handleGitHubRelease(workflowsApi, DockstoreTesting.SOURCEFILE_TESTING, ref, USER_2_USERNAME);
 
-        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.SOURCEFILE_TESTING + "/empty", WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals("", getSourceFile(workflowsApi, ref, "empty", versionName, "/empty.txt").getContent());
+        assertTrue(getSourceFile(workflowsApi, ref, "big_notebook", versionName, "/big_notebook.ipynb").getContent().contains("Hello world!"));
+        assertTrue(getSourceFile(workflowsApi, ref, "huge_utf8", versionName, "/huge_utf8.txt").getContent().contains("Dockstore does not process extremely large files"));
+    }
+
+    private SourceFile getSourceFile(WorkflowsApi workflowsApi, String ref, String entryName, String versionName, String absolutePath) {
+        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.SOURCEFILE_TESTING + "/" + entryName, WorkflowSubClass.NOTEBOOK, "versions");
         final WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionName)).findFirst().get();
         final List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
-        final SourceFile sourceFile = sourceFiles.stream().filter(file -> Objects.equals(file.getAbsolutePath(), "/empty.txt")).findFirst().get();
-
-        assertEquals("", sourceFile.getContent());
+        return sourceFiles.stream().filter(file -> Objects.equals(file.getAbsolutePath(), absolutePath)).findFirst().get();
     }
 }

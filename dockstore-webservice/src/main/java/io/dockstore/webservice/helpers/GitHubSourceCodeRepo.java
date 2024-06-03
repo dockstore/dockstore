@@ -129,7 +129,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final String SUBMODULE = "submodule";
     public static final String SYMLINK = "symlink";
 
-    public static final long MAXIMUM_FILE_DOWNLOAD_SIZE = 20L * 1024L * 1024L;
+    public static final long MAXIMUM_FILE_DOWNLOAD_SIZE = 10L * 1024L * 1024L;
     /**
      * each section that starts with (?!.* is excluding a specific character
      */
@@ -347,7 +347,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     long size = decodedContentAndMetadata.getLeft().getSize();
                     if (size > MAXIMUM_FILE_DOWNLOAD_SIZE) {
                         LOG.warn(gitUsername + ": file too large in readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference);
-                        return "";
+                        return "Dockstore does not process extremely large files";
                     }
                     String sha = decodedContentAndMetadata.getLeft().getSha();
                     GHBlob blob = repo.getBlob(sha);
