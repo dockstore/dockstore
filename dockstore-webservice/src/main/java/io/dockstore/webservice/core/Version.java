@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
@@ -23,6 +25,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -304,7 +307,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     void updateByUser(final Version<?> version) {
         this.getVersionMetadata().hidden = version.isHidden();
         this.setDoiStatus(version.getDoiStatus());
-        this.setDoiURL(version.getDoiURL());
         if (!this.isFrozen()) {
             if (version.frozen && this.sourceFiles.isEmpty()) {
                 throw new CustomWebApplicationException(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES, HttpStatus.SC_BAD_REQUEST);
@@ -457,12 +459,30 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @JsonProperty
     @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 19)
+    @Deprecated(since = "1.16")
     public String getDoiURL() {
         return versionMetadata.doiURL;
     }
 
+    @Deprecated(since = "1.16")
     public void setDoiURL(String doiURL) {
         this.getVersionMetadata().doiURL = doiURL;
+    }
+
+    @JsonProperty
+    @Schema(description = "The DOIs for the version of the entry")
+    public Map<DoiInitiator, Doi> getDois() {
+        return versionMetadata.dois;
+    }
+
+    public void setDois(Map<DoiInitiator, Doi> dois) {
+        versionMetadata.dois.clear();
+        versionMetadata.dois.putAll(dois);
+    }
+
+    @JsonIgnore // Don't surface this, just a helper method
+    public Doi getDefaultDoi() {
+        return getDoiBasedOnOrderOfPrecedence(versionMetadata.dois);
     }
 
     @ApiModelProperty(value = "This indicates the DOI status", position = 20)

@@ -113,6 +113,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String zenodoClientSecret;
 
+    private String dockstoreZenodoAccessToken;
+
+    private String dockstoreZenodoCommunityId;
+
     @NotEmpty
     private String orcidClientID;
 
@@ -383,6 +387,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setZenodoClientSecret(String zenodoClientSecret) {
         this.zenodoClientSecret = zenodoClientSecret;
+    }
+
+    public String getDockstoreZenodoAccessToken() {
+        return dockstoreZenodoAccessToken;
+    }
+
+    public void setDockstoreZenodoAccessToken(String dockstoreZenodoAccessToken) {
+        this.dockstoreZenodoAccessToken = dockstoreZenodoAccessToken;
+    }
+
+    public String getDockstoreZenodoCommunityId() {
+        return dockstoreZenodoCommunityId;
+    }
+
+    public void setDockstoreZenodoCommunityId(String dockstoreZenodoCommunityId) {
+        this.dockstoreZenodoCommunityId = dockstoreZenodoCommunityId;
     }
 
     public String getOrcidClientID() {
