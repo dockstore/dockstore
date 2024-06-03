@@ -3,7 +3,6 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -93,20 +92,6 @@ class ZenodoHelperTest {
         String trsUrl = ZenodoHelper.createWorkflowTrsUrl(workflow, workflowVersion);
         assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere"
                 + "%2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl", trsUrl);
-    }
-
-    @Test
-    void extractDoiFromDoiUrl() {
-        String doiUrl = "https://doi.org/10.5072/zenodo.372767";
-        String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
-        assertEquals("10.5072/zenodo.372767", doi);
-    }
-
-    @Test
-    void extractDoiFromBadDoiUrl() {
-        String doiUrl = "https://doi.org/blah/10.5072/zenodo.372767";
-        String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
-        assertNotEquals("10.5072/zenodo.372767", doi);
     }
 
     @Test

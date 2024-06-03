@@ -45,7 +45,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -338,9 +337,7 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
-        String conceptDoiUrl = publishedDeposit.getLinks().get("parent_doi");
-
-        String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
+        String conceptDoi = publishedDeposit.getConceptdoi();
 
         ZenodoDoiResult zenodoDoiResult = new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
         workflowVersion.getDois().put(doiInitiator, getDoiFromDatabase(DoiType.VERSION, doiInitiator, zenodoDoiResult.doiUrl()));
@@ -367,24 +364,6 @@ public final class ZenodoHelper {
         return doi;
     }
 
-    /**
-     * extract a digital object identifier (DOI) from a DOI target URL
-     * @param doiUrl digital object identifier
-     * @return the DOI as a string
-     */
-    protected static String extractDoiFromDoiUrl(String doiUrl) {
-        // Remove the 'https://doi.org/' etc. prefix from the DOI
-        // e.g. https://doi.org/10.5072/zenodo.372767
-        String doi = doiUrl;
-        try {
-            URI uri = new URI(doiUrl);
-            doi = StringUtils.stripStart(uri.getPath(), "/");
-
-        } catch (URISyntaxException e) {
-            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
-        }
-        return doi;
-    }
 
     /**
      * Create a workflow alias that uses a digital object identifier
