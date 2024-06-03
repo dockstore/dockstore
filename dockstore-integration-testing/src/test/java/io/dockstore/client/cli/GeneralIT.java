@@ -1242,10 +1242,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(Tag.DoiStatusEnum.REQUESTED);
-        master.setDoiURL(DUMMY_DOI);
         tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
-        assertEquals(DUMMY_DOI, master.getDoiURL());
         assertEquals(DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // try modifying sourcefiles
