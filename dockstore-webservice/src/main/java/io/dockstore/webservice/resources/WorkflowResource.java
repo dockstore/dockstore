@@ -335,8 +335,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(existingWorkflow);
         checkCanWrite(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
-        checkNotService(existingWorkflow);
-        // get a live user for the following
+
+        // Refuse to refresh a .dockstore.yml-based entry
+        // As of June 2024, all apptools, notebooks, and services are .dockstore.yml-based
+        if (Objects.equals(existingWorkflow.getMode(), DOCKSTORE_YML)) {
+            String message = String.format("To refresh this .dockstore.yml-based %s, modify .dockstore.yml and push.", existingWorkflow.getEntryTypeMetadata().getTerm());
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
         user.updateUserMetadata(tokenDAO);
@@ -344,10 +351,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Set up source code interface and ensure token is set up
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(existingWorkflow.getGitUrl(), user);
 
-        // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (!Objects.equals(existingWorkflow.getMode(), DOCKSTORE_YML)) {
-            existingWorkflow.setMode(WorkflowMode.FULL);
-        }
+        // The result of a refresh is a FULL workflow.
+        existingWorkflow.setMode(WorkflowMode.FULL);
 
         // Look for checker workflows to associate with if applicable
         if (existingWorkflow instanceof BioWorkflow && !existingWorkflow.isIsChecker() && existingWorkflow.getDescriptorType() == CWL || existingWorkflow.getDescriptorType() == WDL) {
@@ -1906,17 +1911,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Throws an exception if the workflow is a service
-     *
-     * @param workflow
-     */
-    private void checkNotService(Workflow workflow) {
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            throw new CustomWebApplicationException("Cannot modify services this way", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
