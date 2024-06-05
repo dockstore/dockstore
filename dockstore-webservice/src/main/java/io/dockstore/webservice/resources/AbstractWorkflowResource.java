@@ -744,8 +744,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
-        if (ex == transactionHelper.thrown()) {
-            LOG.error("rethrowing fatal database transaction exception", ex);
+        if (ex instanceof TransactionHelper.TransactionHelperException tex) {
+            LOG.error("rethrowing fatal database transaction exception", tex.getCause());
             throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (isGitHubRateLimitError(ex) || isServerError(ex))  {
