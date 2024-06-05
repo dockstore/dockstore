@@ -27,9 +27,10 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
 
         if (activeConnections == maxConnections) {
             LOG.info("size: {}, active: {}, idle: {}, calculatedLoad: {}", sizeConnections, activeConnections, idleConnections, loadConnections);
-            return Result.unhealthy("No database connections available");
-        } else {
-            return Result.healthy();
         }
+        // All connections being in use doesn't necessarily mean the container is unhealthy; it's probably just processing many requests.
+        // See discussion at https://ucsc-cgl.atlassian.net/browse/SEAB-4879. Always return healthy for now; perhaps we'll improve it to
+        // detect unhealthiness in the future.
+        return Result.healthy();
     }
 }

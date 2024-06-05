@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_INITIATORS;
+import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
@@ -28,6 +30,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,6 +50,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.MapKey;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.NamedNativeQueries;
@@ -58,6 +62,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -252,7 +257,17 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Column
     @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
+    @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", deprecated = true)
+    @Deprecated(since = "1.16")
     private String conceptDoi;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKey(name = "initiator")
+    @MapKeyEnumerated(EnumType.STRING)
+    @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
+    @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
+    private Map<DoiInitiator, Doi> conceptDois = new HashMap<>();
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
@@ -329,7 +344,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
 
-
     public enum GitVisibility {
         /**
          * There was a failed attempt to determine visibility
@@ -388,13 +402,29 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
+    @Deprecated(since = "1.16")
     public void setConceptDoi(String conceptDoi) {
         this.conceptDoi = conceptDoi;
     }
 
     @JsonProperty
+    @Deprecated(since = "1.16")
     public String getConceptDoi() {
         return conceptDoi;
+    }
+
+    public Map<DoiInitiator, Doi> getConceptDois() {
+        return this.conceptDois;
+    }
+
+    public void setConceptDois(Map<DoiInitiator, Doi> conceptDois) {
+        this.conceptDois.clear();
+        this.conceptDois.putAll(conceptDois);
+    }
+
+    @JsonIgnore // Don't surface this, just a helper method
+    public Doi getDefaultConceptDoi() {
+        return getDoiBasedOnOrderOfPrecedence(conceptDois);
     }
 
     public Map<String, Alias> getAliases() {

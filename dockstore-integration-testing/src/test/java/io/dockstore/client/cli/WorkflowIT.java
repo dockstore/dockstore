@@ -35,6 +35,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
@@ -760,7 +761,7 @@ public class WorkflowIT extends BaseIT {
     void testSnapshotImageFailures() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
         String errorMessage = "Snapshot for version %s failed because not all images are specified using a digest nor a valid tag.";
 
         // Test that the snapshot fails for a workflow version containing an image with no tag
@@ -1240,7 +1241,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue(workflowVersion.getVersionMetadata().getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
 
         // Test WDL workflow with 'version 1.0'
-        workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/hello-wdl-workflow",
+        workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DockstoreTesting.HELLO_WDL_WORKFLOW,
                 "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         workflowVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion1 -> workflowVersion1.getName().equals("master")).findFirst().get();
@@ -1262,7 +1263,7 @@ public class WorkflowIT extends BaseIT {
         // test that versions coming back from TRS 2.0.1 look sane
         workflowsApi.publish1(workflow.getId(), new io.dockstore.openapi.client.model.PublishRequest().publish(true));
         final Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
-        final ToolVersion toolVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", "master");
+        final ToolVersion toolVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW, "master");
         final Map<String, List<String>> descriptorTypeVersion = toolVersion.getDescriptorTypeVersion();
         assertTrue(descriptorTypeVersion.containsKey("WDL") && descriptorTypeVersion.get("WDL").contains("1.0"));
 

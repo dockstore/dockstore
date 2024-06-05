@@ -337,6 +337,7 @@ public class ToolsExtendedApi {
         return delegate.updateExecutionMetrics(id, versionId, platform, user, description, executions);
     }
 
+
     @PUT
     @UnitOfWork
     @Path("/{id}/updateAITopic")
@@ -346,10 +347,37 @@ public class ToolsExtendedApi {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully updated the tool's AI topic")
     public Response updateAITopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(description = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true, in = ParameterIn.PATH) @PathParam("id") String id,
+            @Parameter(description = "The name of the version that was used to generate a topic, for example `v1.0`", required = true, in = ParameterIn.QUERY) @QueryParam("version") String version,
             @RequestBody(description = "The update AI topic request", required = true, content = @Content(schema = @Schema(implementation = UpdateAITopicRequest.class))) UpdateAITopicRequest updateAITopicRequest,
             @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
 
-        return delegate.updateAITopic(id, updateAITopicRequest);
+        return delegate.updateAITopic(id, updateAITopicRequest, version);
+    }
+
+    @GET
+    @UnitOfWork
+    @Path("/{id}/aiTopicCandidate")
+    @RolesAllowed({"curator", "admin"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getAITopicCandidate", description = "Get a tool's AI topic candidate version for consideration", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                + "", description = AiTopicCandidateGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = AiTopicCandidateGet.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = AiTopicCandidateGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+        })
+    public Response aiTopicCandidateGet(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @PathParam("id") String id,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.getAITopicCandidate(id);
+    }
+
+    private static final class AiTopicCandidateGet {
+        public static final String OK_RESPONSE = "Got workflow candidate version for topic generation.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to get a candidate version for topic generation.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 
     private static final class ExecutionMetricsUpdate {

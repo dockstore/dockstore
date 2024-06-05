@@ -1,5 +1,5 @@
 
-Lists of 328 third-party dependencies.
+Lists of 329 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -59,8 +59,9 @@ Lists of 328 third-party dependencies.
      (Apache License, Version 2.0) AWS Java SDK :: Utilities (software.amazon.awssdk:utils:2.17.186 - https://aws.amazon.com/sdkforjava/utils)
      (The Apache Software License, Version 2.0) Bean Validation API (javax.validation:validation-api:1.1.0.Final - http://beanvalidation.org)
      (MIT) better-files (com.github.pathikrit:better-files_2.13:3.9.1 - https://github.com/pathikrit/better-files)
-     (Bouncy Castle Licence) Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk15on:1.64 - https://www.bouncycastle.org/java.html)
-     (Bouncy Castle Licence) Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15on:1.69 - https://www.bouncycastle.org/java.html)
+     (Bouncy Castle Licence) Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
+     (Bouncy Castle Licence) Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
+     (Bouncy Castle Licence) Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
      (Apache License, Version 2.0) Byte Buddy (without dependencies) (net.bytebuddy:byte-buddy:1.14.8 - https://bytebuddy.net/byte-buddy)
      (Apache License, Version 2.0) Byte Buddy agent (net.bytebuddy:byte-buddy-agent:1.14.8 - https://bytebuddy.net/byte-buddy-agent)
      (Apache License, Version 2.0) Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.1.8 - https://github.com/ben-manes/caffeine)
@@ -103,10 +104,10 @@ Lists of 328 third-party dependencies.
      (Cromwell License https://github.com/broadinstitute/cromwell/blob/develop/LICENSE.txt) cromwell-wom (org.broadinstitute:cromwell-wom_2.13:85 - no url defined)
      (Apache License, Version 2.0) cwlavro-generated (io.cwl:cwlavro-generated:2.0.4.9 - no url defined)
      (Apache License, Version 2.0) cwlavro-tools (io.cwl:cwlavro-tools:2.0.4.9 - no url defined)
-     (The Apache Software License, Version 2.0) docker-java-api (com.github.docker-java:docker-java-api:3.3.0 - https://github.com/docker-java/docker-java)
-     (The Apache Software License, Version 2.0) docker-java-core (com.github.docker-java:docker-java-core:3.3.0 - https://github.com/docker-java/docker-java)
-     (The Apache Software License, Version 2.0) docker-java-transport (com.github.docker-java:docker-java-transport:3.3.0 - https://github.com/docker-java/docker-java)
-     (The Apache Software License, Version 2.0) docker-java-transport-httpclient5 (com.github.docker-java:docker-java-transport-httpclient5:3.3.0 - https://github.com/docker-java/docker-java)
+     (The Apache Software License, Version 2.0) docker-java-api (com.github.docker-java:docker-java-api:3.3.6 - https://github.com/docker-java/docker-java)
+     (The Apache Software License, Version 2.0) docker-java-core (com.github.docker-java:docker-java-core:3.3.6 - https://github.com/docker-java/docker-java)
+     (The Apache Software License, Version 2.0) docker-java-transport (com.github.docker-java:docker-java-transport:3.3.6 - https://github.com/docker-java/docker-java)
+     (The Apache Software License, Version 2.0) docker-java-transport-httpclient5 (com.github.docker-java:docker-java-transport-httpclient5:3.3.6 - https://github.com/docker-java/docker-java)
      (Apache License 2.0) Dropwizard (io.dropwizard:dropwizard-core:4.0.2 - http://www.dropwizard.io/4.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-core)
      (Apache License 2.0) Dropwizard Asset Bundle (io.dropwizard:dropwizard-assets:4.0.2 - http://www.dropwizard.io/4.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-assets)
      (Apache License 2.0) Dropwizard Authentication (io.dropwizard:dropwizard-auth:4.0.2 - http://www.dropwizard.io/4.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-auth)

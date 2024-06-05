@@ -163,13 +163,13 @@ public final class ORCIDHelper {
         externalID.setType("doi");
         if (optionalVersion.isPresent()) {
             Version v = optionalVersion.get();
-            String doi = v.getDoiURL(); // getDoiURL returns a DOI, not a URL
+            String doi = v.getDefaultDoi().getName();
             externalID.setUrl(new Url(doiToUrl(doi)));
             externalID.setValue(doi);
             title.setContent(e.getEntryPath() + ":" + v.getName());
             work.setShortDescription(StringUtils.abbreviate(v.getDescription(), descriptionLength));
         } else {
-            String doi = e.getConceptDoi();
+            String doi = e.getDefaultConceptDoi().getName();
             externalID.setUrl(new Url(doiToUrl(doi)));
             externalID.setValue(doi);
             title.setContent(e.getEntryPath());

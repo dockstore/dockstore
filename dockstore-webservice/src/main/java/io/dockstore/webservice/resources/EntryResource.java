@@ -39,11 +39,9 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -482,12 +480,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             if (version == null) {
                 throw new CustomWebApplicationException(VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
-            if (version.getDoiURL() == null) {
+            if (version.getDois().isEmpty()) {
                 throw new CustomWebApplicationException(VERSION_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
             optionalVersion = Optional.ofNullable(version);
         } else {
-            if (entry.getConceptDoi() == null) {
+            if (entry.getConceptDois().isEmpty()) {
                 throw new CustomWebApplicationException(ENTRY_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
         }
@@ -523,7 +521,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 int responseCode = createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
                 // If there's a conflict, the user already has an ORCID work with the same DOI URL. Try to link the ORCID work to the Dockstore entry by getting its put code
                 if (responseCode == HttpStatus.SC_CONFLICT) {
-                    String doiUrl = optionalVersion.isPresent() ? optionalVersion.get().getDoiURL() : entry.getConceptDoi();
+                    String doiUrl = optionalVersion.isPresent() ? optionalVersion.get().getDefaultDoi().getName() : entry.getDefaultConceptDoi().getName();
                     Optional<Long> existingPutCode = ORCIDHelper.searchForPutCodeByDoiUrl(orcidId, orcidByUserId, doiUrl);
                     if (existingPutCode.isPresent()) {
                         String existingPutCodeString = existingPutCode.get().toString();
@@ -724,24 +722,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return sourceFile.getPath().equals(path);
     }
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @Path("/updateEntryToGetTopics")
-    @Deprecated
-    @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get the number of entries that failed to have their topics retrieved from GitHub.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
-    @ApiOperation(value = "See OpenApi for details", hidden = true)
-    public int updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
-        List<Entry> githubEntries = toolDAO.findAllGitHubEntriesWithNoTopicAutomatic();
-        // Use the GitHub token of the admin making this call
-        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-        int numOfEntriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
-        return numOfEntriesNotUpdatedWithTopic;
-    }
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database

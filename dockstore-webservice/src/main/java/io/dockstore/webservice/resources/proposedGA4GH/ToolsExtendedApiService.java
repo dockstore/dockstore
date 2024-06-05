@@ -50,5 +50,7 @@ public abstract class ToolsExtendedApiService {
     public abstract Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) throws NotFoundException;
     public abstract Response getExecution(String id, String versionId, Partner platform, String executionId, User user) throws NotFoundException;
     public abstract Response updateExecutionMetrics(String id, String versionId, Partner platform, User user, String description, ExecutionsRequestBody executionId);
-    public abstract Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest);
+    public abstract Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest, String version);
+
+    public abstract Response getAITopicCandidate(String id);
 }

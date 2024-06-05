@@ -341,7 +341,7 @@ public class BaseIT {
         return client;
     }
 
-    protected static io.dockstore.openapi.client.ApiClient getAnonymousOpenAPIWebClient() {
+    public static io.dockstore.openapi.client.ApiClient getAnonymousOpenAPIWebClient() {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         io.dockstore.openapi.client.ApiClient client = new io.dockstore.openapi.client.ApiClient();
