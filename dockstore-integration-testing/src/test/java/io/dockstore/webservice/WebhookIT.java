@@ -2110,7 +2110,7 @@ class WebhookIT extends BaseIT {
     }
 
     @Test
-    void testEmptySourceFile() {
+    void testSourceFilesOfVariousSizes() {
         final String ref = "refs/heads/master";
         final String versionName = "master";
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
