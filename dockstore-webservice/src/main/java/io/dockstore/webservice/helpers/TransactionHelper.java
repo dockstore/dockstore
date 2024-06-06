@@ -1,5 +1,6 @@
 package io.dockstore.webservice.helpers;
 
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -30,7 +31,9 @@ import org.slf4j.LoggerFactory;
 public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
-    private SessionFactory factory;
+    private final SessionFactory factory;
+    private Session session;
+    private RuntimeException thrown;
 
     public TransactionHelper(SessionFactory factory) {
         this.factory = factory;
@@ -45,39 +48,39 @@ public final class TransactionHelper {
      * transaction().
      */
     public void transaction(Runnable runnable) {
-        Session session = current();
-        commit(session);
-        clear(session);
-        begin(session);
-        boolean success = false;
-        try {
+        transaction(() -> {
             runnable.run();
-            success = true;
-        } finally {
-            if (success) {
-                commit(session);
-            } else {
-                rollback(session);
-            }
-        }
+            return true;
+        }, x -> true);
     }
 
     public <T> T transaction(Supplier<T> supplier) {
-        Session session = current();
-        commit(session);
-        clear(session);
-        begin(session);
-        boolean success = false;
+        return transaction(supplier, x -> true);
+    }
+
+    public <T> T transaction(Supplier<T> supplier, Predicate<T> isSuccess) {
         try {
-            T result = supplier.run();
-            success = true;
-            return result;
-        } finally {
-            if (success) {
-                commit(session);
-            } else {
-                rollback(session);
+            thrown = null;
+            session = current();
+            commit();
+            clear();
+            begin();
+            boolean success = false;
+            try {
+                T result = supplier.get();
+                success = isSuccess.test(result);
+                return result;
+            } finally {
+                if (thrown != null) {
+                    if (success) {
+                        commit();
+                    } else {
+                        rollback();
+                    }
+                }
             }
+        } finally {
+            session = null;
         }
     }
 
@@ -85,45 +88,61 @@ public final class TransactionHelper {
         try {
             return factory.getCurrentSession();
         } catch (RuntimeException ex) {
-            throw handle(null, "current", ex);
+            throw handle("current", ex);
         }
     }
 
-    private void clear(Session session) {
+    public void clear() {
+        check();
         try {
             session.clear();
         } catch (RuntimeException ex) {
-            throw handle(session, "clear", ex);
+            throw handle("clear", ex);
         }
     }
 
-    private void begin(Session session) {
+    public void begin() {
+        check();
         try {
             session.beginTransaction();
         } catch (RuntimeException ex) {
-            throw handle(session, "begin", ex);
+            throw handle("begin", ex);
         }
     }
 
-    private void rollback(Session session) {
+    public void rollback() {
+        check();
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction) && transaction.getStatus().canRollback()) {
                 transaction.rollback();
             }
         } catch (RuntimeException ex) {
-            throw handle(session, "rollback", ex);
+            throw handle("rollback", ex);
         }
     }
 
-    private void commit(Session session) {
+    public void commit() {
+        check();
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction)) {
                 transaction.commit();
             }
         } catch (RuntimeException ex) {
-            throw handle(session, "commit", ex);
+            throw handle("commit", ex);
+        }
+    }
+
+
+    private void check() {
+        if (session == null) {
+            throw new RuntimeException("operation attempted outside of TransactionHelper.transaction()");
+        }
+        if (thrown != null) {
+            String message = "operation on session that has thrown";
+            LOG.error("operation on session that has thrown", thrown);
+            throw new TransactionHelperException("operation on session that has thrown", thrown);
         }
     }
 
@@ -131,14 +150,15 @@ public final class TransactionHelper {
         return transaction != null && transaction.isActive();
     }
 
-    private RuntimeException handle(Session session, String operation, RuntimeException ex) {
-        String message = String.format("TransactionHelper {} failed", operation);
+    private RuntimeException handle(String operation, RuntimeException ex) {
+        thrown = ex;
+        String message = String.format("operation {} failed", operation);
         LOG.error(message, ex);
         // To prevent us from interacting with foobared state, the
         // Hibernate docs instruct us to immediately close a session
         // if a previous operation on the session has thrown.
         try {
-            if (session != null) { 
+            if (session != null) {
                 session.close();
             }
         } catch (RuntimeException closeEx) {
