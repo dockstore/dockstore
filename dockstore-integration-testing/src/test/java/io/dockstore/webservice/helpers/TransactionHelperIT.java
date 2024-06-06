@@ -25,7 +25,9 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +56,11 @@ class TransactionHelperIT extends BaseIT {
     public static void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         sessionFactory = application.getHibernate().getSessionFactory();
+    }
+
+    @BeforeEach
+    public void openSession() {
+        ManagedSessionContext.bind(sessionFactory.openSession());
     }
 
     private void insert() {

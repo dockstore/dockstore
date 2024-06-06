@@ -1,6 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -49,14 +48,10 @@ public final class TransactionHelper {
         transaction(() -> {
             runnable.run();
             return true;
-        }, x -> true);
+        });
     }
 
     public <T> T transaction(Supplier<T> supplier) {
-        return transaction(supplier, x -> true);
-    }
-
-    public <T> T transaction(Supplier<T> supplier, Predicate<T> isSuccess) {
         Session session = current();
         commit(session);
         clear(session);
@@ -64,7 +59,7 @@ public final class TransactionHelper {
         boolean success = false;
         try {
             T result = supplier.get();
-            success = isSuccess.test(result);
+            success = true;
             return result;
         } finally {
             if (success) {
