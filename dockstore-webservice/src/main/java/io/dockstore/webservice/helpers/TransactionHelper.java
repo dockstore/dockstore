@@ -24,13 +24,15 @@ import org.slf4j.LoggerFactory;
  * a given transaction, the subsequent commit()s or rollbacks() on that
  * transaction are ignored.
  *
- * <p> For more information on Hibernate transactions, see:
- * <a href="https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions">...</a>
+ * <p> For more information, see the
+ * <a href="https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions">Hibernate User Guide</a>
  */
 public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
     private final SessionFactory factory;
+    private Session session;
+    private boolean continueSession;
 
     public TransactionHelper(SessionFactory factory) {
         this.factory = factory;
@@ -52,10 +54,8 @@ public final class TransactionHelper {
     }
 
     public <T> T transaction(Supplier<T> supplier) {
-        Session session = current();
-        commit(session);
-        clear(session);
-        begin(session);
+        setSession();
+        begin();
         boolean success = false;
         try {
             T result = supplier.get();
@@ -63,56 +63,82 @@ public final class TransactionHelper {
             return result;
         } finally {
             if (success) {
-                commit(session);
+                commit();
             } else {
-                rollback(session);
+                rollback();
             }
         }
     }
 
-    private Session current() {
+    public TransactionHelper continueSession() {
+        continueSession = true;
+        return this;
+    }
+
+    private void setSession() {
+        if (continueSession) {
+            continueSession = false;
+            // Before continuing to use the Session, confirm that it exists, has not changed, and is open.
+            if (session == null) {
+                throw new IllegalStateException("no session to continue");
+            }
+            if (session != currentSession()) {
+                throw new IllegalStateException("current session has changed");
+            }
+            if (!session.isOpen()) {
+                throw new IllegalStateException("cannot continue closed session");
+            }
+        } else {
+            // Retrieve the current session, commit any uncommitted changes, then clear.
+            session = currentSession();
+            commit();
+            clear();
+        }
+    }
+
+    private Session currentSession() {
         try {
             return factory.getCurrentSession();
         } catch (RuntimeException ex) {
-            throw handle(null, "current", ex);
+            throw handle("current session", ex);
         }
     }
 
-    private void clear(Session session) {
+    private void clear() {
         try {
             session.clear();
         } catch (RuntimeException ex) {
-            throw handle(session, "clear", ex);
+            throw handle("clear session", ex);
         }
     }
 
-    public void begin(Session session) {
+    public void begin() {
         try {
             session.beginTransaction();
         } catch (RuntimeException ex) {
-            throw handle(session, "begin", ex);
+            throw handle("begin transaction", ex);
         }
     }
 
-    public void rollback(Session session) {
+    public void rollback() {
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction) && transaction.getStatus().canRollback()) {
                 transaction.rollback();
             }
         } catch (RuntimeException ex) {
-            throw handle(session, "rollback", ex);
+            throw handle("rollback transaction", ex);
         }
     }
 
-    public void commit(Session session) {
+    public void commit() {
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction)) {
                 transaction.commit();
             }
         } catch (RuntimeException ex) {
-            throw handle(session, "commit", ex);
+            throw handle("commit transaction", ex);
         }
     }
 
@@ -120,8 +146,8 @@ public final class TransactionHelper {
         return transaction != null && transaction.isActive();
     }
 
-    private RuntimeException handle(Session session, String operation, RuntimeException ex) {
-        String message = String.format("operation {} failed", operation);
+    private RuntimeException handle(String operation, RuntimeException ex) {
+        String message = String.format("database '%s' failed", operation);
         LOG.error(message, ex);
         // To prevent us from interacting with foobared state, the
         // Hibernate docs instruct us to immediately close a session
@@ -136,6 +162,12 @@ public final class TransactionHelper {
         return new TransactionHelperException(message, ex);
     }
 
+    /**
+     * Wraps session/database exceptions thrown by internal
+     * TransactionHelper code, so they can be differentiated from
+     * exceptions thrown by the user-specified code that's run by
+     * transaction().
+     */
     public static class TransactionHelperException extends RuntimeException {
         public TransactionHelperException(String message, Exception ex) {
             super(message, ex);
