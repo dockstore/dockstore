@@ -240,8 +240,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkNotHosted(workflow);
         checkCanWrite(user, workflow);
+        checkNotHosted(workflow);
+        checkNotDockstoreYml(workflow);
 
         workflow.setMode(WorkflowMode.STUB);
 
@@ -335,13 +336,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(existingWorkflow);
         checkCanWrite(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
-
-        // Refuse to refresh a .dockstore.yml-based entry
-        // As of June 2024, all apptools, notebooks, and services are .dockstore.yml-based
-        if (Objects.equals(existingWorkflow.getMode(), DOCKSTORE_YML)) {
-            String message = String.format("To refresh this .dockstore.yml-based %s, modify .dockstore.yml and push.", existingWorkflow.getEntryTypeMetadata().getTerm());
-            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
-        }
+        checkNotDockstoreYml(existingWorkflow);
 
         // Get a live user for the following
         user = userDAO.findById(user.getId());
@@ -682,6 +677,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(wf);
         checkCanWrite(user, wf);
         checkNotHosted(wf);
+        checkNotDockstoreYml(wf);
 
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = wf.getWorkflowVersions();
@@ -1160,6 +1156,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
         checkNotHosted(workflow);
+        checkNotDockstoreYml(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
             String msg = "The workflow '" + workflow.getWorkflowPath()
@@ -1205,6 +1202,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
         checkNotHosted(workflow);
+        checkNotDockstoreYml(workflow);
 
         Optional<WorkflowVersion> potentialWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
@@ -1911,6 +1909,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Throws an exception if the specified workflow is .dockstore.yml-based
+     *
+     * @param workflow
+     */
+    private void checkNotDockstoreYml(Workflow workflow) {
+        // As of June 2024, all apptools, notebooks, and services are .dockstore.yml-based
+        if (Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
+            String message = String.format("To update this .dockstore.yml-based %s, modify .dockstore.yml and push.", workflow.getEntryTypeMetadata().getTerm());
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
