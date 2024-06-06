@@ -32,6 +32,7 @@ import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -336,9 +337,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(existingWorkflow);
         checkCanWrite(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
-        checkNotDockstoreYml(existingWorkflow);
-
-        // Get a live user for the following
+        checkIsBioWorkflow(existingWorkflow);
+        // get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
         user.updateUserMetadata(tokenDAO);
@@ -346,8 +346,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Set up source code interface and ensure token is set up
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(existingWorkflow.getGitUrl(), user);
 
-        // The result of a refresh is a FULL workflow.
-        existingWorkflow.setMode(WorkflowMode.FULL);
+        // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
+        if (!Objects.equals(existingWorkflow.getMode(), DOCKSTORE_YML)) {
+            existingWorkflow.setMode(WorkflowMode.FULL);
+        }
 
         // Look for checker workflows to associate with if applicable
         if (existingWorkflow instanceof BioWorkflow && !existingWorkflow.isIsChecker() && existingWorkflow.getDescriptorType() == CWL || existingWorkflow.getDescriptorType() == WDL) {
@@ -1909,6 +1911,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Throws an exception if the workflow is not a bioworkflow
+     *
+     * @param workflow
+     */
+    private void checkIsBioWorkflow(Workflow workflow) {
+        if (workflow.getEntryType() != EntryType.WORKFLOW) {
+            String message = String.format("Cannot modify a %s this way", workflow.getEntryTypeMetadata().getTerm());
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
 

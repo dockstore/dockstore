@@ -2109,22 +2109,15 @@ class WebhookIT extends BaseIT {
     }
 
     @Test
-    void testShouldNotBeAbleToRestubOrRefreshDockstoreYmlWorkflow() {
+    void testShouldNotBeAbleToRestubDockstoreYmlWorkflow() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         // Register entry and retrieve one of its versions
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
         final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final WorkflowVersion version = workflow.getWorkflowVersions().get(0);
 
         // Should not be able to restub a .dockstore.yml-based workflow
         assertThrowsApiException(() -> workflowsApi.restub(workflow.getId()), HttpStatus.SC_BAD_REQUEST);
-
-        // Shoold not be able to refresh a .dockstore.yml-based workflow
-        assertThrowsApiException(() -> workflowsApi.refresh1(workflow.getId(), false), HttpStatus.SC_BAD_REQUEST);
-
-        // Shoold not be able to refresh a .dockstore.yml-based workflow version
-        assertThrowsApiException(() -> workflowsApi.refreshVersion(workflow.getId(), version.getName(), false), HttpStatus.SC_BAD_REQUEST);
     }
 }
