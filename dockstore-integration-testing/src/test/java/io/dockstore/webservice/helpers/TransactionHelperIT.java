@@ -17,8 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
@@ -26,10 +24,8 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,22 +48,20 @@ class TransactionHelperIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private Session session;
+    private SessionFactory sessionFactory;
 
-    @BeforeEach
+    @BeforeAll
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
-        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-        session = sessionFactory.openSession();
-        ManagedSessionContext.bind(session);
+        sessionFactory = application.getHibernate().getSessionFactory();
     }
 
     private void insert() {
-        session.createQuery("insert into Label (id, value) values (1234L, 'foo')").executeUpdate();
+        sessionFactory.getCurrentSession().createQuery("insert into Label (id, value) values (1234L, 'foo')").executeUpdate();
     }
 
     private int count() {
-        return session.createQuery("select count(*) from Label", Long.class).getSingleResult().intValue();
+        return sessionFactory.getCurrentSession().createQuery("select count(*) from Label", Long.class).getSingleResult().intValue();
     }
 
     private void shouldThrow(Runnable runnable) {
@@ -80,49 +74,19 @@ class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testTransactionAutoCommit() {
-        TransactionHelper helper = new TransactionHelper(session);
+    void testTransactionCommit() {
+        TransactionHelper helper = new TransactionHelper(sessionFactory);
         helper.transaction(this::insert);
         helper.transaction(() -> assertEquals(1, count()));
     }
 
     @Test
-    void testTransactionAutoRollback() {
-        TransactionHelper helper = new TransactionHelper(session);
+    void testTransactionRollback() {
+        TransactionHelper helper = new TransactionHelper(sessionFactory);
         shouldThrow(() -> helper.transaction(() -> {
             insert();
             throw new RuntimeException("foo");
         }));
         helper.transaction(() -> assertEquals(0, count()));
-        assertNull(helper.thrown());
-    }
-
-    @Test
-    void testRepeatedCommitsAndRollbacks() {
-        TransactionHelper helper = new TransactionHelper(session);
-        helper.commit();
-        helper.rollback();
-        helper.transaction(this::insert);
-        helper.rollback();
-        helper.rollback();
-        helper.commit();
-        helper.commit();
-        shouldThrow(() -> helper.transaction(this::insert));
-        assertNull(helper.thrown());
-        helper.commit();
-        helper.commit();
-        helper.rollback();
-        helper.rollback();
-        helper.transaction(() -> assertEquals(1, count()));
-    }
-
-    @Test
-    void testThrowsOnClosedSession() {
-        TransactionHelper helper = new TransactionHelper(session);
-        session.close();
-        shouldThrow(helper::begin);
-        assertNotNull(helper.thrown());
-        shouldThrow(() -> helper.transaction(this::insert));
-        assertNotNull(helper.thrown());
     }
 }
