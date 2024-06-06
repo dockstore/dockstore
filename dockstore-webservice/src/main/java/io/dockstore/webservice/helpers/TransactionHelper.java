@@ -32,8 +32,6 @@ public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
     private final SessionFactory factory;
-    private Session session;
-    private RuntimeException thrown;
 
     public TransactionHelper(SessionFactory factory) {
         this.factory = factory;
@@ -59,28 +57,21 @@ public final class TransactionHelper {
     }
 
     public <T> T transaction(Supplier<T> supplier, Predicate<T> isSuccess) {
+        Session session = current();
+        commit(session);
+        clear(session);
+        begin(session);
+        boolean success = false;
         try {
-            thrown = null;
-            session = current();
-            commit();
-            clear();
-            begin();
-            boolean success = false;
-            try {
-                T result = supplier.get();
-                success = isSuccess.test(result);
-                return result;
-            } finally {
-                if (thrown != null) {
-                    if (success) {
-                        commit();
-                    } else {
-                        rollback();
-                    }
-                }
-            }
+            T result = supplier.get();
+            success = isSuccess.test(result);
+            return result;
         } finally {
-            session = null;
+            if (success) {
+                commit(session);
+            } else {
+                rollback(session);
+            }
         }
     }
 
@@ -88,61 +79,45 @@ public final class TransactionHelper {
         try {
             return factory.getCurrentSession();
         } catch (RuntimeException ex) {
-            throw handle("current", ex);
+            throw handle(null, "current", ex);
         }
     }
 
-    public void clear() {
-        check();
+    private void clear(Session session) {
         try {
             session.clear();
         } catch (RuntimeException ex) {
-            throw handle("clear", ex);
+            throw handle(session, "clear", ex);
         }
     }
 
-    public void begin() {
-        check();
+    public void begin(Session session) {
         try {
             session.beginTransaction();
         } catch (RuntimeException ex) {
-            throw handle("begin", ex);
+            throw handle(session, "begin", ex);
         }
     }
 
-    public void rollback() {
-        check();
+    public void rollback(Session session) {
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction) && transaction.getStatus().canRollback()) {
                 transaction.rollback();
             }
         } catch (RuntimeException ex) {
-            throw handle("rollback", ex);
+            throw handle(session, "rollback", ex);
         }
     }
 
-    public void commit() {
-        check();
+    public void commit(Session session) {
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction)) {
                 transaction.commit();
             }
         } catch (RuntimeException ex) {
-            throw handle("commit", ex);
-        }
-    }
-
-
-    private void check() {
-        if (session == null) {
-            throw new RuntimeException("operation attempted outside of TransactionHelper.transaction()");
-        }
-        if (thrown != null) {
-            String message = "operation on session that has thrown";
-            LOG.error("operation on session that has thrown", thrown);
-            throw new TransactionHelperException("operation on session that has thrown", thrown);
+            throw handle(session, "commit", ex);
         }
     }
 
@@ -150,8 +125,7 @@ public final class TransactionHelper {
         return transaction != null && transaction.isActive();
     }
 
-    private RuntimeException handle(String operation, RuntimeException ex) {
-        thrown = ex;
+    private RuntimeException handle(Session session, String operation, RuntimeException ex) {
         String message = String.format("operation {} failed", operation);
         LOG.error(message, ex);
         // To prevent us from interacting with foobared state, the
