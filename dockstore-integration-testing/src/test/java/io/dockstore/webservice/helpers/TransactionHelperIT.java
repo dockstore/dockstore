@@ -48,10 +48,10 @@ class TransactionHelperIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private SessionFactory sessionFactory;
+    private static SessionFactory sessionFactory;
 
     @BeforeAll
-    public void setup() {
+    public static void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         sessionFactory = application.getHibernate().getSessionFactory();
     }
