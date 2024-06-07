@@ -32,6 +32,7 @@ import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -240,8 +241,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkNotHosted(workflow);
         checkCanWrite(user, workflow);
+        checkNotHosted(workflow);
+        checkNotDockstoreYml(workflow);
 
         workflow.setMode(WorkflowMode.STUB);
 
@@ -335,7 +337,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(existingWorkflow);
         checkCanWrite(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
-        checkNotService(existingWorkflow);
+        checkIsBioWorkflow(existingWorkflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
@@ -677,6 +679,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(wf);
         checkCanWrite(user, wf);
         checkNotHosted(wf);
+        checkNotDockstoreYml(wf);
 
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = wf.getWorkflowVersions();
@@ -1155,6 +1158,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
         checkNotHosted(workflow);
+        checkNotDockstoreYml(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
             String msg = "The workflow '" + workflow.getWorkflowPath()
@@ -1200,6 +1204,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanWrite(user, workflow);
         checkNotHosted(workflow);
+        checkNotDockstoreYml(workflow);
 
         Optional<WorkflowVersion> potentialWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
@@ -1910,13 +1915,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Throws an exception if the workflow is a service
+     * Throws an exception if the workflow is not a bioworkflow
      *
      * @param workflow
      */
-    private void checkNotService(Workflow workflow) {
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            throw new CustomWebApplicationException("Cannot modify services this way", HttpStatus.SC_BAD_REQUEST);
+    private void checkIsBioWorkflow(Workflow workflow) {
+        if (workflow.getEntryType() != EntryType.WORKFLOW) {
+            String message = String.format("Cannot modify a %s this way", workflow.getEntryTypeMetadata().getTerm());
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Throws an exception if the specified workflow is .dockstore.yml-based
+     *
+     * @param workflow
+     */
+    private void checkNotDockstoreYml(Workflow workflow) {
+        // As of June 2024, all apptools, notebooks, and services are .dockstore.yml-based
+        if (Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
+            String message = String.format("To update this .dockstore.yml-based %s, modify .dockstore.yml and push.", workflow.getEntryTypeMetadata().getTerm());
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
