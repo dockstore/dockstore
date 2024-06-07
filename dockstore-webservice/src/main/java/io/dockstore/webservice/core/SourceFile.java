@@ -314,6 +314,28 @@ public class SourceFile implements Comparable<SourceFile> {
         this.metadata = metadata;
     }
 
+    /**
+     * Make this SourceFile appear to have the equivalent content/attributes as the specified SourceFile.
+     * Do not include "Hibernate-managed" fields such as the ID and creation/update dates.
+     */
+    public void updateFrom(SourceFile src) {
+        setType(src.getType());
+        setContent(src.getContent());
+        setPath(src.getPath());
+        setAbsolutePath(src.getAbsolutePath());
+        getMetadata().setTypeVersion(src.getMetadata().getTypeVersion());
+    }
+
+    public SourceFile duplicate() {
+        SourceFile file = new SourceFile();
+        file.updateFrom(this);
+        return file;
+    }
+
+    public static LimitedSourceFileBuilder.FirstStep limitedBuilder() {
+        return new LimitedSourceFileBuilder().start();
+    }
+
     private static synchronized void checkPath(String path) {
         if (path != null && pathRegex != null && !pathRegex.matcher(path).matches()) {
             throw new CustomWebApplicationException(pathViolationMessage, HttpStatus.SC_BAD_REQUEST);

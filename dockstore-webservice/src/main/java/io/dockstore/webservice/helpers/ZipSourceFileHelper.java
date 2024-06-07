@@ -132,18 +132,18 @@ public final class ZipSourceFileHelper {
                     .stream()
                     .filter(zipEntry -> !zipEntry.isDirectory())
                     .map(zipEntry -> {
-                        SourceFile sourceFile = new SourceFile();
+                        DescriptorLanguage.FileType type;
                         if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
-                            sourceFile.setType(paramFileType(workflowFileType));
+                            type = paramFileType(workflowFileType);
                         } else if (".dockstore.yml".equals(zipEntry.getName())) {
-                            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+                            type = DescriptorLanguage.FileType.DOCKSTORE_YML;
                         } else {
-                            sourceFile.setType(workflowFileType);
+                            type = workflowFileType;
                         }
-                        sourceFile.setPath(zipEntry.getName());
-                        sourceFile.setAbsolutePath(addLeadingSlashIfNecessary(zipEntry.getName()));
-                        sourceFile.setContent(getContent(zipFile, zipEntry));
-                        return sourceFile;
+                        String content =  getContent(zipFile, zipEntry);
+                        String path = zipEntry.getName();
+                        String absolutePath = addLeadingSlashIfNecessary(zipEntry.getName());
+                        return SourceFile.limitedBuilder().type(type).content(content).path(path).absolutePath(absolutePath).build();
                     }).collect(Collectors.toList());
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above
