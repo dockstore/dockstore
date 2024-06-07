@@ -433,12 +433,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             U versionWithTheLargestName = versionWithLargestName(versions);
             // carry over old files
             versionWithTheLargestName.getSourceFiles().forEach(v -> {
-                SourceFile newfile = new SourceFile();
-                newfile.setPath(v.getPath());
-                newfile.setAbsolutePath(v.getAbsolutePath());
-                newfile.setContent(v.getContent());
-                newfile.setType(v.getType());
-                map.put(newfile.getPath(), newfile);
+                SourceFile newFile = v.duplicate();
+                map.put(newFile.getPath(), newFile);
             });
 
             boolean changed = false;
@@ -455,7 +451,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                         // case 1)
                         final SourceFile sourceFile = map.get(file.getPath());
                         if (!sourceFile.getContent().equals(file.getContent())) {
-                            sourceFile.setContent(file.getContent());
+                            sourceFile.updateFrom(file);
                             changed = true;
                         }
                     } else {
