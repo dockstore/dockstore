@@ -235,9 +235,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // when a branch is updated, it could have different contents for consideration
                     existingVersion.setAiTopicProcessed(false);
                 }
-                existingFile.setPath(file.getPath());
-                existingFile.setContent(file.getContent());
-                existingFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion());
+                existingFile.updateFrom(file);
             } else {
                 final long fileID = fileDAO.create(file);
                 final SourceFile fileFromDB = fileDAO.findById(fileID);

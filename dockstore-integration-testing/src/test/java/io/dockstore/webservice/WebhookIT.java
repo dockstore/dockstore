@@ -2023,6 +2023,7 @@ class WebhookIT extends BaseIT {
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
         assertEquals(TopicSelectionEnum.AUTOMATIC, foobar2.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
     }
+
     @Test
     void testLambdaEvents() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -2106,5 +2107,25 @@ class WebhookIT extends BaseIT {
 
         // Should not be accessible to non-owner user
         assertThrowsApiException(() -> new EntriesApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres)).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
+    }
+
+    @Test
+    void testSourceFilesOfVariousSizes() {
+        final String ref = "refs/heads/master";
+        final String versionName = "master";
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.SOURCEFILE_TESTING, ref, USER_2_USERNAME);
+
+        assertEquals("", getSourceFile(workflowsApi, ref, "empty", versionName, "/empty.txt").getContent());
+        assertTrue(getSourceFile(workflowsApi, ref, "big_notebook", versionName, "/big_notebook.ipynb").getContent().contains("Hello world!"));
+        assertTrue(getSourceFile(workflowsApi, ref, "huge_utf8", versionName, "/huge_utf8.txt").getContent().contains("Dockstore does not process extremely large files"));
+    }
+
+    private SourceFile getSourceFile(WorkflowsApi workflowsApi, String ref, String entryName, String versionName, String absolutePath) {
+        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.SOURCEFILE_TESTING + "/" + entryName, WorkflowSubClass.NOTEBOOK, "versions");
+        final WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionName)).findFirst().get();
+        final List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
+        return sourceFiles.stream().filter(file -> Objects.equals(file.getAbsolutePath(), absolutePath)).findFirst().get();
     }
 }

@@ -60,6 +60,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -82,10 +83,12 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.kohsuke.github.GHBlob;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
@@ -125,6 +128,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final String REFS_HEADS = "refs/heads/";
     public static final String SUBMODULE = "submodule";
     public static final String SYMLINK = "symlink";
+
+    public static final long MAXIMUM_FILE_DOWNLOAD_SIZE = 10L * 1024L * 1024L;
     /**
      * each section that starts with (?!.* is excluding a specific character
      */
@@ -333,7 +338,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (decodedContentAndMetadata == null) {
                 return null;
             } else {
-                return decodedContentAndMetadata.getRight();
+                String content = decodedContentAndMetadata.getRight();
+                String encoding = decodedContentAndMetadata.getLeft().getEncoding();
+                // If the file size is 1MB or larger, content will be "" and the encoding will be "none":
+                // https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28 (see "Notes")
+                // In such a case, we retrieve the content via the blob endpoint.
+                if ("".equals(content) && "none".equals(encoding)) {
+                    long size = decodedContentAndMetadata.getLeft().getSize();
+                    if (size > MAXIMUM_FILE_DOWNLOAD_SIZE) {
+                        LOG.warn(gitUsername + ": file too large in readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference);
+                        return "Dockstore does not process extremely large files";
+                    }
+                    String sha = decodedContentAndMetadata.getLeft().getSha();
+                    GHBlob blob = repo.getBlob(sha);
+                    content = IOUtils.toString(blob.read(), StandardCharsets.UTF_8);
+                }
+                return content;
             }
         } catch (IOException e) {
             LOG.warn(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage(), e);
@@ -369,10 +389,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         GHRef[] branchesAndTags = getBranchesAndTags(repo);
 
+        // only look at github if the reference exists
         if (!submoduleRedirected && Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
-        // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
 
         String stripStart = StringUtils.stripStart(fileName, "/");
@@ -830,14 +850,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupEntryFilesForGitHubVersion(GitReferenceInfo ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Add Dockstore.yml to version
-        SourceFile dockstoreYmlClone = new SourceFile();
-        dockstoreYmlClone.setAbsolutePath(dockstoreYml.getAbsolutePath());
-        dockstoreYmlClone.setPath(dockstoreYml.getPath());
-        dockstoreYmlClone.setContent(dockstoreYml.getContent());
+        SourceFile dockstoreYmlClone = dockstoreYml.duplicate();
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
             dockstoreYmlClone.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
-        } else {
-            dockstoreYmlClone.setType(dockstoreYml.getType());
         }
         version.addSourceFile(dockstoreYmlClone);
         version.setLegacyVersion(false);
@@ -867,24 +882,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Get contents of descriptor file and store
             String decodedContent = this.readFileFromRepo(calculatedPath, ref.refName(), repository);
             if (decodedContent != null) {
-                SourceFile file = new SourceFile();
-                file.setContent(decodedContent);
-                file.setPath(calculatedPath);
-                file.setAbsolutePath(calculatedPath);
-                file.setType(identifiedType);
+                SourceFile file = SourceFile.limitedBuilder().type(identifiedType).content(decodedContent).paths(calculatedPath).build();
                 version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
 
                 // Use default test parameter file if either new version or existing version that hasn't been edited
                 // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                 if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                    String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.refName(), repository);
+                    String testJsonPath = workflow.getDefaultTestParameterFilePath();
+                    String testJsonContent = this.readFileFromRepo(testJsonPath, ref.refName(), repository);
                     if (testJsonContent != null) {
-                        SourceFile testJson = new SourceFile();
-                        testJson.setType(workflow.getDescriptorType().getTestParamType());
-                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setContent(testJsonContent);
-
+                        DescriptorLanguage.FileType testJsonType = workflow.getDescriptorType().getTestParamType();
+                        SourceFile testJson = SourceFile.limitedBuilder().type(testJsonType).content(testJsonContent).paths(testJsonPath).build();
                         // Only add test parameter file if it hasn't already been added
                         boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
                             && sf.getType() == testJson.getType());
@@ -930,11 +938,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         for (String filePath: files) {
             String fileContent = this.readFileFromRepo(filePath, ref.refName(), repository);
             if (fileContent != null) {
-                SourceFile file = new SourceFile();
-                file.setAbsolutePath(filePath);
-                file.setPath(filePath);
-                file.setContent(fileContent);
-                file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
+                SourceFile file = SourceFile.limitedBuilder().type(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER).content(fileContent).paths(filePath).build();
                 version.getSourceFiles().add(file);
             } else {
                 // File not found or null
@@ -1005,12 +1009,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.refName(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
-            SourceFile primaryDescriptorFile = new SourceFile();
-            primaryDescriptorFile.setAbsolutePath(primaryDescriptorPath);
-            primaryDescriptorFile.setPath(primaryDescriptorPath);
-            primaryDescriptorFile.setContent(fileContent);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
-            primaryDescriptorFile.setType(identifiedType);
+            SourceFile primaryDescriptorFile = SourceFile.limitedBuilder().type(identifiedType).content(fileContent).paths(primaryDescriptorPath).build();
 
             version = combineVersionAndSourcefile(repository.getFullName(), primaryDescriptorFile, workflow, identifiedType, version, existingDefaults);
 
@@ -1024,12 +1024,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                     String testFileContent = this.readFileFromRepo(testParameterPath, ref.refName(), repository);
                     if (testFileContent != null) {
-                        SourceFile testFile = new SourceFile();
-                        // find type from file type
-                        testFile.setType(workflow.getDescriptorType().getTestParamType());
-                        testFile.setPath(testParameterPath);
-                        testFile.setAbsolutePath(testParameterPath);
-                        testFile.setContent(testFileContent);
+                        DescriptorLanguage.FileType testFileType = workflow.getDescriptorType().getTestParamType();
+                        SourceFile testFile = SourceFile.limitedBuilder().type(testFileType).content(testFileContent).paths(testParameterPath).build();
                         version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
@@ -1082,13 +1078,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
             if (dockstoreYmlContent != null) {
                 // Create file for .dockstore.yml
-                SourceFile dockstoreYml = new SourceFile();
-                dockstoreYml.setContent(dockstoreYmlContent);
-                dockstoreYml.setPath(dockstoreYmlPath);
-                dockstoreYml.setAbsolutePath(dockstoreYmlPath);
-                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
-
-                return dockstoreYml;
+                return SourceFile.limitedBuilder().type(DescriptorLanguage.FileType.DOCKSTORE_YML).content(dockstoreYmlContent).paths(dockstoreYmlPath).build();
             }
         }
         // TODO: https://github.com/dockstore/dockstore/issues/3239
