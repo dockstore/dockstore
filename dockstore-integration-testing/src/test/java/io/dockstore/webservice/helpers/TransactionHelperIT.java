@@ -17,6 +17,8 @@
 package io.dockstore.webservice.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
@@ -24,6 +26,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.Event;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeAll;
@@ -81,19 +84,56 @@ class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testTransactionCommit() {
+    void testCommit() {
         TransactionHelper helper = new TransactionHelper(sessionFactory);
         helper.transaction(this::insert);
-        helper.transaction(() -> assertEquals(1, count()));
+        assertEquals(1, count());
     }
 
     @Test
-    void testTransactionRollback() {
+    void testRollback() {
         TransactionHelper helper = new TransactionHelper(sessionFactory);
         shouldThrow(() -> helper.transaction(() -> {
             insert();
             throw new RuntimeException("foo");
         }));
-        helper.transaction(() -> assertEquals(0, count()));
+        assertEquals(0, count());
+    }
+
+    @Test
+    void testReturn() {
+        TransactionHelper helper = new TransactionHelper(sessionFactory);
+        assertEquals(1, helper.transaction(() -> 1));
+    }
+
+    @Test
+    void testContinueSession() {
+        TransactionHelper helper = new TransactionHelper(sessionFactory);
+        Object a = helper.transaction(this::createEntity);
+        assertEquals(1, sessionEntityCount());
+        assertTrue(sessionContains(a));
+        Object b = helper.continueSession().transaction(this::createEntity);
+        assertEquals(2, sessionEntityCount());
+        assertTrue(sessionContains(a));
+        assertTrue(sessionContains(b));
+        Object c = helper.transaction(this::createEntity);
+        assertEquals(1, sessionEntityCount());
+        assertFalse(sessionContains(a));
+        assertFalse(sessionContains(b));
+        assertTrue(sessionContains(c));
+    }
+
+    private Object createEntity() {
+        Event event = new Event();
+        sessionFactory.getCurrentSession().save(event);
+        return event;
+    }
+
+    private int sessionEntityCount() {
+        return sessionFactory.getCurrentSession().getStatistics().getEntityCount();
+    }
+
+    private boolean sessionContains(Object obj) {
+        return sessionFactory.getCurrentSession().contains(obj);
     }
 }
