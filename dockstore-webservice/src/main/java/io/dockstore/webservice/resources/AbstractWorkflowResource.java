@@ -402,7 +402,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 });
             } catch (RuntimeException ex) {
                 LOG.error(String.format("failed to delete version, workflowId=%s, repository=%s, gitReference=%s", workflowId, repository, gitReference), ex);
-                rethrowIfFatal(ex, transactionHelper);
+                rethrowIfFatal(ex);
             }
         }
     }
@@ -710,9 +710,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
                     // b) log something helpful and move on to the next workflow.
                     isSuccessful = false;
-                    if (ex instanceof RuntimeException) {
-                        rethrowIfFatal((RuntimeException)ex, transactionHelper);
-                    }
+                    rethrowIfFatal(ex);
                     final String message = String.format("Failed to create %s '%s':%n- %s",
                         computeTermFromClass(workflowType), computeWorkflowName(wf), generateMessageFromException(ex));
                     LOG.error(message, ex);
@@ -741,14 +739,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
+    private void rethrowIfFatal(Exception ex) {
         if (ex instanceof TransactionHelper.TransactionHelperException tex) {
             LOG.error("rethrowing fatal database transaction exception", tex.getCause());
             throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (isGitHubRateLimitError(ex) || isServerError(ex))  {
             LOG.error("rethrowing fatal exception", ex);
-            throw ex;
+            throw (RuntimeException)ex;
         }
     }
 
