@@ -25,8 +25,10 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Event;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -55,6 +57,7 @@ class TransactionHelperIT extends BaseIT {
 
     @BeforeEach
     public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         session = sessionFactory.openSession();
         ManagedSessionContext.bind(session);
@@ -78,14 +81,14 @@ class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testCommit() {
+    void testAutoCommit() {
         TransactionHelper helper = new TransactionHelper(session);
         helper.transaction(this::insert);
         assertEquals(1, count());
     }
 
     @Test
-    void testRollback() {
+    void testAutoRollback() {
         TransactionHelper helper = new TransactionHelper(session);
         shouldThrow(() -> helper.transaction(() -> {
             insert();
