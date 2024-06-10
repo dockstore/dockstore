@@ -53,25 +53,21 @@ class TransactionHelperIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private static SessionFactory sessionFactory;
-
-    @BeforeAll
-    public static void setup() {
-        DockstoreWebserviceApplication application = SUPPORT.getApplication();
-        sessionFactory = application.getHibernate().getSessionFactory();
-    }
+    private Session session;
 
     @BeforeEach
-    public void openSession() {
-        ManagedSessionContext.bind(sessionFactory.openSession());
+    public void setup() {
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        session = sessionFactory.openSession();
+        ManagedSessionContext.bind(session);
     }
 
     private void insert() {
-        sessionFactory.getCurrentSession().createQuery("insert into Label (id, value) values (1234L, 'foo')").executeUpdate();
+        session.createQuery("insert into Label (id, value) values (1234L, 'foo')").executeUpdate();
     }
 
     private int count() {
-        return sessionFactory.getCurrentSession().createQuery("select count(*) from Label", Long.class).getSingleResult().intValue();
+        return session.createQuery("select count(*) from Label", Long.class).getSingleResult().intValue();
     }
 
     private void shouldThrow(Runnable runnable) {
@@ -85,14 +81,14 @@ class TransactionHelperIT extends BaseIT {
 
     @Test
     void testCommit() {
-        TransactionHelper helper = new TransactionHelper(sessionFactory);
+        TransactionHelper helper = new TransactionHelper(session);
         helper.transaction(this::insert);
         assertEquals(1, count());
     }
 
     @Test
     void testRollback() {
-        TransactionHelper helper = new TransactionHelper(sessionFactory);
+        TransactionHelper helper = new TransactionHelper(session);
         shouldThrow(() -> helper.transaction(() -> {
             insert();
             throw new RuntimeException("foo");
@@ -102,13 +98,13 @@ class TransactionHelperIT extends BaseIT {
 
     @Test
     void testReturn() {
-        TransactionHelper helper = new TransactionHelper(sessionFactory);
+        TransactionHelper helper = new TransactionHelper(session);
         assertEquals(1, helper.transaction(() -> 1));
     }
 
     @Test
     void testContinueSession() {
-        TransactionHelper helper = new TransactionHelper(sessionFactory);
+        TransactionHelper helper = new TransactionHelper(session);
         Object a = helper.transaction(this::createEntity);
         assertEquals(1, sessionEntityCount());
         assertTrue(sessionContains(a));
@@ -125,15 +121,15 @@ class TransactionHelperIT extends BaseIT {
 
     private Object createEntity() {
         Event event = new Event();
-        sessionFactory.getCurrentSession().save(event);
+        session.save(event);
         return event;
     }
 
     private int sessionEntityCount() {
-        return sessionFactory.getCurrentSession().getStatistics().getEntityCount();
+        return session.getStatistics().getEntityCount();
     }
 
     private boolean sessionContains(Object obj) {
-        return sessionFactory.getCurrentSession().contains(obj);
+        return session.contains(obj);
     }
 }

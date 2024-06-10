@@ -30,12 +30,15 @@ import org.slf4j.LoggerFactory;
 public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
-    private final SessionFactory factory;
-    private Session session;
+    private final Session session;
     private boolean continueSession;
 
+    public TransactionHelper(Session session) {
+        this.session = session;
+    }
+
     public TransactionHelper(SessionFactory factory) {
-        this.factory = factory;
+        this(factory.getCurrentSession());
     }
 
     /**
@@ -54,7 +57,11 @@ public final class TransactionHelper {
     }
 
     public <T> T transaction(Supplier<T> supplier) {
-        setSession();
+        commit();
+        if (!continueSession) {
+            clear();
+            continueSession = false;
+        }
         begin();
         boolean success = false;
         try {
@@ -67,6 +74,7 @@ public final class TransactionHelper {
             } else {
                 rollback();
             }
+            begin();
         }
     }
 
@@ -75,40 +83,11 @@ public final class TransactionHelper {
         return this;
     }
 
-    private void setSession() {
-        if (continueSession) {
-            continueSession = false;
-            // Before continuing to use the Session, confirm that it exists, has not changed, and is open.
-            if (session == null) {
-                throw new IllegalStateException("no session to continue");
-            }
-            if (session != currentSession()) {
-                throw new IllegalStateException("current session has changed");
-            }
-            if (!session.isOpen()) {
-                throw new IllegalStateException("cannot continue closed session");
-            }
-        } else {
-            // Retrieve the current session, commit any uncommitted changes, then clear.
-            session = currentSession();
-            commit();
-            clear();
-        }
-    }
-
-    private Session currentSession() {
-        try {
-            return factory.getCurrentSession();
-        } catch (RuntimeException ex) {
-            throw handle("current session", ex);
-        }
-    }
-
-    private void clear() {
+    public void clear() {
         try {
             session.clear();
         } catch (RuntimeException ex) {
-            throw handle("clear session", ex);
+            handle("clear session", ex);
         }
     }
 
@@ -116,7 +95,7 @@ public final class TransactionHelper {
         try {
             session.beginTransaction();
         } catch (RuntimeException ex) {
-            throw handle("begin transaction", ex);
+            handle("begin transaction", ex);
         }
     }
 
@@ -127,7 +106,7 @@ public final class TransactionHelper {
                 transaction.rollback();
             }
         } catch (RuntimeException ex) {
-            throw handle("rollback transaction", ex);
+            handle("rollback transaction", ex);
         }
     }
 
@@ -138,7 +117,7 @@ public final class TransactionHelper {
                 transaction.commit();
             }
         } catch (RuntimeException ex) {
-            throw handle("commit transaction", ex);
+            handle("commit transaction", ex);
         }
     }
 
@@ -146,20 +125,18 @@ public final class TransactionHelper {
         return transaction != null && transaction.isActive();
     }
 
-    private RuntimeException handle(String operation, RuntimeException ex) {
+    private void handle(String operation, RuntimeException ex) {
         String message = String.format("database '%s' failed", operation);
         LOG.error(message, ex);
         // To prevent us from interacting with foobared state, the
         // Hibernate docs instruct us to immediately close a session
         // if a previous operation on the session has thrown.
         try {
-            if (session != null) {
-                session.close();
-            }
+            session.close();
         } catch (RuntimeException closeEx) {
             LOG.error("post-Exception close failed", closeEx);
         }
-        return new TransactionHelperException(message, ex);
+        throw new TransactionHelperException(message, ex);
     }
 
     /**
