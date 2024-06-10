@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Event;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,11 @@ class TransactionHelperIT extends BaseIT {
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         session = sessionFactory.openSession();
         ManagedSessionContext.bind(session);
+    }
+
+    @AfterEach
+    public void close() {
+        session.close();
     }
 
     private void insert() {

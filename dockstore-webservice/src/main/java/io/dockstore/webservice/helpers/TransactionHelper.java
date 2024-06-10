@@ -80,7 +80,6 @@ public final class TransactionHelper {
             } else {
                 rollback();
             }
-            begin();
         }
     }
 
