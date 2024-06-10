@@ -106,7 +106,7 @@ public final class DockstoreYamlHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreYamlHelper.class);
     private static final Pattern VERSION_PATTERN =
-            Pattern.compile("^\\s*((dockstoreVersion)|(version))\\s*:\\s*(?<version>\\S+).*$", Pattern.MULTILINE);
+            Pattern.compile("^\\s*((?>dockstoreVersion)|(?>version))\\s*:\\s*(?<version>\\S+).*$", Pattern.MULTILINE);
 
     private DockstoreYamlHelper() {
     }
