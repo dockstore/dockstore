@@ -10,21 +10,24 @@ import org.slf4j.LoggerFactory;
 /**
  * Provides a clean interface to Hibernate transactions.
  *
- * <p>The easiest way to use this class is via the transaction() method,
- * which begins a transaction, executes a runnable, and either commits
- * or rolls back the transaction, depending upon whether the runnable
- * ran to completion, or threw.
+ * <p>TransactionHelper's transaction() methods begin a transaction,
+ * execute some user-specified code (in the form of a Runnable or Supplier),
+ * and either commit or roll back the transaction, depending upon whether
+ * the user-specified code successfully ran to completion, or threw.
  *
- * <p> Under the hood, the transaction() method calls various methods
- * that implement various primitive transaction/session operations,
- * which you can also call directly to implement a particular behavior.
+ * <p>When transaction() is called, any in progress-session is committed.
+ * Then, the Session is cleared of entities, unless the continueSession()
+ * method was called directly beforehand, in which case the Session is not
+ * cleared.  After that, the user-specified code is executed in a new
+ * transaction.
  *
- * <p>The commit() and rollback() primitives must be called on
- * a transaction that is open.  Only the first call has any effect on
- * a given transaction, the subsequent commit()s or rollbacks() on that
- * transaction are ignored.
+ * If an exception is thrown from low-level Hibernate's Transaction/Session
+ * manipulation code, the Session is closed (per Hibernate recommendation)
+ * and the exception is wrapped in a TransactionHelperException and
+ * rethrown.  At that point, surrounding code should clean up and exit,
+ * because it will no longer be able to read or write to the database.
  *
- * <p> For more information, see the
+ * <p> For more information on Hibernate transactions, see the
  * <a href="https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions">Hibernate User Guide</a>
  */
 public final class TransactionHelper {
@@ -43,11 +46,8 @@ public final class TransactionHelper {
 
     /**
      * Begin a transaction, execute the specified Runnable, and either commit
-     * the database transaction when the Runnable returns, or roll back the
-     * database transaction if the Runnable throws.  Prior to the transaction,
-     * any previous transaction is committed and the session is cleared.
-     * To rollback the previous transaction, call rollback() before calling
-     * transaction().
+     * the database transaction when the Runnable completes, or roll back the
+     * database transaction if the Runnable throws.
      */
     public void transaction(Runnable runnable) {
         transaction(() -> {
@@ -56,6 +56,12 @@ public final class TransactionHelper {
         });
     }
 
+    /**
+     * Begin a transaction, get a value from the specified Supplier, and
+     * either commit the database transaction when the Supplier returns, or
+     * roll back the database transaction if the Supplier throws.  The value
+     * produced by the Supplier is returned.
+     */
     public <T> T transaction(Supplier<T> supplier) {
         commit();
         if (!continueSession) {
@@ -78,6 +84,10 @@ public final class TransactionHelper {
         }
     }
 
+    /**
+     * Instruct TransactionHelper to not clear the Session before beginning
+     * the next transaction.
+     */
     public TransactionHelper continueSession() {
         continueSession = true;
         return this;
