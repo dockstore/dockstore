@@ -76,10 +76,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -667,6 +667,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         for (Workflowish wf : yamlWorkflows) {
             if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                boolean logged = false;
                 try {
                     DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
 
@@ -674,18 +675,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
                     // Update the workflow version in its own database transaction.
-                    AtomicLong workflowId = new AtomicLong();
-                    AtomicLong workflowVersionId = new AtomicLong();
-                    transactionHelper.transaction(() -> {
+                    Pair<Workflow, WorkflowVersion> result = transactionHelper.transaction(() -> {
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
                         final boolean latestTagAsDefault = wf.getLatestTagAsDefault();
                         final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
-                        workflowId.set(workflow.getId());
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
-                        workflowVersionId.set(version.getId());
 
                         // Create some events.
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
@@ -695,12 +692,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         lambdaEventDAO.create(lambdaEvent);
 
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference, deliveryId);
+                        return Pair.of(workflow, version);
                     });
 
-                    transactionHelper.transaction(() -> {
-                        // Get the successfully created workflow and version
-                        Workflow workflow = workflowDAO.findById(workflowId.get());
-                        WorkflowVersion version = workflowVersionDAO.findById(workflowVersionId.get());
+                    logged = true;
+
+                    transactionHelper.continueSession().transaction(() -> {
+                        Workflow workflow = result.getLeft();
+                        WorkflowVersion version = result.getRight();
                         // Automatically register a DOI
                         automaticallyRegisterDockstoreDOI(workflow, version, user, this);
                     });
@@ -711,14 +710,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // b) log something helpful and move on to the next workflow.
                     isSuccessful = false;
                     rethrowIfFatal(ex);
-                    final String message = String.format("Failed to create %s '%s':%n- %s",
-                        computeTermFromClass(workflowType), computeWorkflowName(wf), generateMessageFromException(ex));
-                    LOG.error(message, ex);
-                    transactionHelper.transaction(() -> {
-                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
-                        setEventMessage(lambdaEvent, message);
-                        lambdaEventDAO.create(lambdaEvent);
-                    });
+                    if (!logged) {
+                        final String message = String.format("Failed to create %s '%s':%n- %s",
+                            computeTermFromClass(workflowType), computeWorkflowName(wf), generateMessageFromException(ex));
+                        LOG.error(message, ex);
+                        transactionHelper.transaction(() -> {
+                            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
+                            setEventMessage(lambdaEvent, message);
+                            lambdaEventDAO.create(lambdaEvent);
+                        });
+                    }
                 }
             }
         }
