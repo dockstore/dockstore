@@ -83,7 +83,7 @@ public final class TransactionHelper {
         return this;
     }
 
-    public void clear() {
+    private void clear() {
         try {
             session.clear();
         } catch (RuntimeException ex) {
@@ -91,7 +91,7 @@ public final class TransactionHelper {
         }
     }
 
-    public void begin() {
+    private void begin() {
         try {
             session.beginTransaction();
         } catch (RuntimeException ex) {
@@ -99,7 +99,7 @@ public final class TransactionHelper {
         }
     }
 
-    public void rollback() {
+    private void rollback() {
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction) && transaction.getStatus().canRollback()) {
@@ -110,7 +110,7 @@ public final class TransactionHelper {
         }
     }
 
-    public void commit() {
+    private void commit() {
         try {
             Transaction transaction = session.getTransaction();
             if (isActive(transaction)) {
