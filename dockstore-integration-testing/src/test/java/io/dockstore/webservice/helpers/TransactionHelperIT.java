@@ -90,7 +90,7 @@ class TransactionHelperIT extends BaseIT {
     void testAutoCommit() {
         TransactionHelper helper = new TransactionHelper(session);
         helper.transaction(this::insert);
-        assertEquals(1, count());
+        assertEquals(1, helper.transaction(() -> count()));
     }
 
     @Test
@@ -100,7 +100,7 @@ class TransactionHelperIT extends BaseIT {
             insert();
             throw new RuntimeException("foo");
         }));
-        assertEquals(0, count());
+        assertEquals(0, helper.transaction(() -> count()));
     }
 
     @Test

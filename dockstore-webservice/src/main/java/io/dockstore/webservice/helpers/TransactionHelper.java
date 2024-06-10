@@ -64,10 +64,7 @@ public final class TransactionHelper {
      */
     public <T> T transaction(Supplier<T> supplier) {
         commit();
-        if (!continueSession) {
-            clear();
-            continueSession = false;
-        }
+        clearIfNecessary();
         begin();
         boolean success = false;
         try {
@@ -80,6 +77,7 @@ public final class TransactionHelper {
             } else {
                 rollback();
             }
+            begin();
         }
     }
 
@@ -92,6 +90,13 @@ public final class TransactionHelper {
         return this;
     }
 
+    private void clearIfNecessary() {
+        if (!continueSession) {
+            clear();
+        }
+        continueSession = false;
+    }
+
     private void clear() {
         try {
             session.clear();
@@ -102,7 +107,10 @@ public final class TransactionHelper {
 
     private void begin() {
         try {
-            session.beginTransaction();
+            Transaction transaction = session.getTransaction();
+            if (!isActive(transaction)) {
+                session.beginTransaction();
+            }
         } catch (RuntimeException ex) {
             handle("begin transaction", ex);
         }
