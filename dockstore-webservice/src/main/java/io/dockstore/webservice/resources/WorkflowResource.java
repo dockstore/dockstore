@@ -783,9 +783,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
         @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
-        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         final Class<Workflow> workflowClass = (Class<Workflow>) workflowSubClass(services, subclass);
-        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
+        List<Workflow> workflows = workflowDAO.findAllPublished(offset, limit, filter, sortCol, sortOrder,
                 workflowClass);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);

@@ -1207,10 +1207,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
             @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
             @Context HttpServletResponse response) {
-        int adjustedLimit = (int) Math.min(MAX_PAGINATION_LIMIT, limit);
         final User user = userDAO.findById(authUser.getId());
         checkNotNullUser(user);
-        List<LambdaEvent> byUser = lambdaEventDAO.findByUser(user, offset, adjustedLimit, filter, sortCol, sortOrder);
+        List<LambdaEvent> byUser = lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(byUser.size()));
         response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return byUser;
