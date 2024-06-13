@@ -1727,6 +1727,16 @@ class WebhookIT extends BaseIT {
     }
 
     @Test
+    void testVersionComment() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTesting.MULTI_ENTRY, "refs/heads/version_comment", USER_2_USERNAME);
+        assertEquals(2, countWorkflows());
+        assertEquals(2, countTools());
+    }
+
+    @Test
     void testMultiEntryOneBroken() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
