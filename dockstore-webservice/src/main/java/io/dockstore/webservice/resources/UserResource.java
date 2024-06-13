@@ -19,7 +19,10 @@ package io.dockstore.webservice.resources;
 import static io.dockstore.webservice.Constants.USERNAME_CONTAINS_KEYWORD_PATTERN;
 import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -96,6 +99,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -110,6 +115,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.sql.Timestamp;
@@ -1195,14 +1201,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of GitHub Events for the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = LambdaEvent.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @Min(0) @QueryParam("offset") Integer offset,
-            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @Parameter(description = PAGINATION_OFFSET_TEXT) @Min(0) @QueryParam("offset") Integer offset,
+            @Parameter(description = PAGINATION_LIMIT_TEXT) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
             @DefaultValue("") @QueryParam("filter") String filter,
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
-            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder) {
+            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+            @Context HttpServletResponse response) {
         final User user = userDAO.findById(authUser.getId());
         checkNotNullUser(user);
-        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
+        List<LambdaEvent> byUser = lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(byUser.size()));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
+        return byUser;
     }
 
     @GET

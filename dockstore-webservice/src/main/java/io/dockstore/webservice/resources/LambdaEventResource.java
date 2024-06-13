@@ -74,7 +74,6 @@ public class LambdaEventResource {
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
             @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
             @Context HttpServletResponse response) {
-        int adjustedLimit = (int) Math.min(MAX_PAGINATION_LIMIT, limit);
         final User authUser = userDAO.findById(user.getId());
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
         if (githubTokens.isEmpty()) {
@@ -84,7 +83,7 @@ public class LambdaEventResource {
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
         response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos, filter)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
-        return lambdaEventDAO.findByOrganization(organization, offset, adjustedLimit, filter, sortCol, sortOrder, authorizedRepos);
+        return lambdaEventDAO.findByOrganization(organization, offset, limit, filter, sortCol, sortOrder, authorizedRepos);
     }
 
     @GET
@@ -103,14 +102,13 @@ public class LambdaEventResource {
            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
            @Context HttpServletResponse response) {
-        int adjustedLimit = (int) Math.min(MAX_PAGINATION_LIMIT, limit);
         final User user = userDAO.findById(userid);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user, filter)));
         response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
-        return lambdaEventDAO.findByUser(user, offset, adjustedLimit, filter, sortCol, sortOrder);
+        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
     }
 
     /**
