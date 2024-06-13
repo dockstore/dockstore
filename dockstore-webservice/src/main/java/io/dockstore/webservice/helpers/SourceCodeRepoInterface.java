@@ -122,6 +122,13 @@ public abstract class SourceCodeRepoInterface {
                 String.format("could not read projects from %s, please re-link your %s token", getName(), getName()), HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
+    /**
+     * TODO
+     */
+    public List<String> listPaths(String repositoryId, String reference) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
     public abstract String getName();
 
     /**

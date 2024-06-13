@@ -40,9 +40,11 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.InferredEntriesHelper;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -442,6 +444,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+
+
+        FileTree fileTree = new FileTree() {
+            public String readFile(String path) {
+                return gitHubSourceCodeRepo.readFile(repository, path, gitReference);
+            }
+            public List<String> listFiles(String pathToDirectory) {
+                return gitHubSourceCodeRepo.listFiles(repository, pathToDirectory, gitReference);
+            }
+            public List<String> listAllFilePaths() {
+                return gitHubSourceCodeRepo.listPaths(repository, gitReference);
+            }
+        };
+        LOG.error("INFERRING ENTRIES");
+        List<InferredEntriesHelper.InferredEntry> entries = new InferredEntriesHelper().infer(fileTree);
+        entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
 
         boolean isSuccessful = true;
 

@@ -103,6 +103,7 @@ import org.kohsuke.github.GHMyself.RepositoryListFilter;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHTree;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubAbuseLimitHandler;
@@ -257,6 +258,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
+        }
+    }
+
+    @Override
+    public List<String> listPaths(String repositoryId, String reference) {
+        GHRepository repo;
+        try {
+            String sha = getCommitID(repositoryId, reference);
+            LOG.info(String.format("LISTPATHS %s %s %s", repositoryId, reference, sha));
+            repo = github.getRepository(repositoryId);
+            GHTree tree = repo.getTreeRecursive(sha, 1);
+            return tree.getTree().stream().filter(e -> Objects.equals(e.getType(), "blob")).map(e -> "/" + e.getPath()).toList();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
