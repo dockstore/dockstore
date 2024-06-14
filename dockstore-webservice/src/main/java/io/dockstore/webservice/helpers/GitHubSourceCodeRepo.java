@@ -269,6 +269,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(String.format("LISTPATHS %s %s %s", repositoryId, reference, sha));
             repo = github.getRepository(repositoryId);
             GHTree tree = repo.getTreeRecursive(sha, 1);
+            tree.getTree().stream().forEach(e -> LOG.error("ENTRY " + e.getType() + " " + e.getPath() + " " + e));
             return tree.getTree().stream().filter(e -> Objects.equals(e.getType(), "blob")).map(e -> "/" + e.getPath()).toList();
         } catch (IOException e) {
             throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);

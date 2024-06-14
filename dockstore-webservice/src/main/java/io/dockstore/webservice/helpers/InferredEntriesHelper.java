@@ -7,8 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -32,7 +32,9 @@ public class InferredEntriesHelper {
             for (String path: paths) {
                 EntryType type = calculateType(fileTree, path, language);
                 String name = calculateName(fileTree, path, language);
-                entries.add(new InferredEntry(type, language, path, name));
+                if (type != null) {
+                    entries.add(new InferredEntry(type, language, path, name));
+                }
             }
         }
         return postprocessNames(entries);
@@ -98,19 +100,28 @@ public class InferredEntriesHelper {
         case WDL:
             return calculateTypeWDL(fileTree, path);
         default:
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 
     private EntryType calculateTypeCWL(FileTree fileTree, String path) {
-        // TODO differentiate between workflow and tool
-        // "^class:.*CommandLineTool$"
-        return EntryType.WORKFLOW;
+        String content = fileTree.readFile(path);
+        if (Pattern.matches("^class:\\s*Workflow", content)) {
+            return EntryType.WORKFLOW;
+        }
+        if (Pattern.matches("^class:\\sCommandLineTool", content)) {
+            return EntryType.APPTOOL;
+        }
+        return null;
     }
 
     private EntryType calculateTypeWDL(FileTree fileTree, String path) {
         // TODO differentiate between workflow and tool
-        return EntryType.WORKFLOW;
+        String content = fileTree.readFile(path);
+        if (Pattern.matches("^workflow\\s", content)) {
+            return EntryType.WORKFLOW;
+        }
+        return null;
     }
 
     private String calculateName(FileTree fileTree, String path, DescriptorLanguage language) {
@@ -121,10 +132,8 @@ public class InferredEntriesHelper {
     }
 
     private List<InferredEntry> postprocessNames(List<InferredEntry> entries) {
-        // TODO
-        // if there's only a single entry, remove the name
-        // remove everything but alpha characters
-        // make sure there are no duplicates
+        // TODO subsitute invalid names with something legal
+        // TODO change any duplicate names so they are unique
         return entries;
     }
 
@@ -136,7 +145,7 @@ public class InferredEntriesHelper {
     }
 
     public record InferredEntry(EntryType type, DescriptorLanguage language, String path, String name) {
-        public InferredEntry setName(String newName) {
+        public InferredEntry changeName(String newName) {
             return new InferredEntry(type, language, path, newName);
         }
     }
