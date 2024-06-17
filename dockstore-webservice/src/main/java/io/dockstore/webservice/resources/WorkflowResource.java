@@ -65,6 +65,9 @@ import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.InferredEntriesHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -2080,6 +2083,41 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Path("/github/infer/{owner}/{repo}/{ref}")
+    @Timed
+    @UnitOfWork
+    @Operation(description = "Infer the entries in a repository on GitHub.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
+        @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
+        @Parameter(name = "ref", description = "reference", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+        LOG.error(String.format("INFER %s %s %s", owner, repo, gitReference));
+        user = userDAO.findById(user.getId());
+        // create github source code repo
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokenDAO.findGithubByUserId(user.getId()).get(0));
+        // create FileTree
+        String repository = owner + "/" + repo;
+        FileTree fileTree = new FileTree() {
+            public String readFile(String path) {
+                return gitHubSourceCodeRepo.readFile(repository, path, gitReference);
+            }
+            public List<String> listFiles(String pathToDirectory) {
+                return gitHubSourceCodeRepo.listFiles(repository, pathToDirectory, gitReference);
+            }
+            public List<String> listAllFilePaths() {
+                return gitHubSourceCodeRepo.listPaths(repository, gitReference);
+            }
+        };
+        // infer entries
+        LOG.error("INFERRING ENTRIES");
+        List<InferredEntriesHelper.InferredEntry> entries = new InferredEntriesHelper().infer(fileTree);
+        entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
+        // create .dockstore.yml
+        // return output
+        return "output goes here";
     }
 
     @POST

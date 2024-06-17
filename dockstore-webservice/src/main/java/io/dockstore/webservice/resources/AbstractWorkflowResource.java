@@ -445,7 +445,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
-
+        /*
         FileTree fileTree = new FileTree() {
             public String readFile(String path) {
                 return gitHubSourceCodeRepo.readFile(repository, path, gitReference);
@@ -460,6 +460,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         LOG.error("INFERRING ENTRIES");
         List<InferredEntriesHelper.InferredEntry> entries = new InferredEntriesHelper().infer(fileTree);
         entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
+        */
 
         boolean isSuccessful = true;
 
