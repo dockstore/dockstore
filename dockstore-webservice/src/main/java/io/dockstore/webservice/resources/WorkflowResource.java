@@ -29,6 +29,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
@@ -133,6 +134,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2096,28 +2098,36 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "ref", description = "reference", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
         LOG.error(String.format("INFER %s %s %s", owner, repo, gitReference));
         user = userDAO.findById(user.getId());
-        // create github source code repo
+
+        // Create github source code repo.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokenDAO.findGithubByUserId(user.getId()).get(0));
-        // create FileTree
-        String repository = owner + "/" + repo;
+
+        // Create FileTree.
+        String ownerAndRepo = owner + "/" + repo;
         FileTree fileTree = new FileTree() {
             public String readFile(String path) {
-                return gitHubSourceCodeRepo.readFile(repository, path, gitReference);
+                return gitHubSourceCodeRepo.readFile(ownerAndRepo, path, gitReference);
             }
             public List<String> listFiles(String pathToDirectory) {
-                return gitHubSourceCodeRepo.listFiles(repository, pathToDirectory, gitReference);
+                return gitHubSourceCodeRepo.listFiles(ownerAndRepo, pathToDirectory, gitReference);
             }
-            public List<String> listAllFilePaths() {
-                return gitHubSourceCodeRepo.listPaths(repository, gitReference);
+            public List<String> listPaths() {
+                return gitHubSourceCodeRepo.listPaths(ownerAndRepo, gitReference);
             }
         };
-        // infer entries
+
+        // Infer entries.
         LOG.error("INFERRING ENTRIES");
-        List<InferredEntriesHelper.InferredEntry> entries = new InferredEntriesHelper().infer(fileTree);
+        InferredEntriesHelper inferredEntriesHelper = new InferredEntriesHelper();
+        List<InferredEntriesHelper.InferredEntry> entries = inferredEntriesHelper.infer(fileTree);
         entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
-        // create .dockstore.yml
-        // return output
-        return "output goes here";
+
+        // Create .dockstore.yml
+        String dockstoreYml = inferredEntriesHelper.toDockstoreYml(entries);
+
+        // TODO Parse to make sure the .dockstore.yml is valid.
+
+        return dockstoreYml;
     }
 
     @POST
