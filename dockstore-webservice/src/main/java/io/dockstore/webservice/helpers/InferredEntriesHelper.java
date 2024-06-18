@@ -2,12 +2,10 @@ package io.dockstore.webservice.helpers;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
-import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -20,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class InferredEntriesHelper {
 
@@ -175,6 +172,7 @@ public class InferredEntriesHelper {
         return entries;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public String toDockstoreYml(List<InferredEntry> entries) {
         // construct map
         Map<String, Object> map = new LinkedHashMap<>();

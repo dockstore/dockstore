@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface FileTree {
 
-    public String readFile(String path);
-    public List<String> listFiles(String pathToDirectory);
-    public List<String> listPaths();
+    String readFile(String path);
+    List<String> listFiles(String pathToDirectory);
+    List<String> listPaths();
 }
