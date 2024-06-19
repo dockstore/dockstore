@@ -1,13 +1,18 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.Map;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -20,25 +25,43 @@ public class GitHubFileTree implements FileTree {
     private final GitHubSourceCodeRepo gitHubSourceCodeRepo;
     private final String repository;
     private final String ref;
-    private final byte[] zip;
+    private final ZipFile zipFile;
+    private final Map<String, ZipArchiveEntry> pathToEntry;
 
     public GitHubFileTree(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String ref) {
         this.gitHubSourceCodeRepo = gitHubSourceCodeRepo;
         this.repository = repository;
         this.ref = ref;
-        zip = gitHubSourceCodeRepo.readZip(repository, ref);
+        // Read the Zip contents and create an in-memory ZipFile.
+        LOG.error("downloading Zip");
+        byte[] zipBytes = gitHubSourceCodeRepo.readZip(repository, ref);
+        LOG.error("downloaded Zip " + zipBytes.length);
+        SeekableByteChannel zipChannel = new SeekableInMemoryByteChannel(zipBytes);
+        try {
+            zipFile = new ZipFile(zipChannel);
+        } catch (IOException e) {
+            throw new CustomWebApplicationException("could not read zip archive", HttpStatus.SC_BAD_REQUEST);
+        }
+        // Create a Map of absolute paths to Zip file entries.
+        pathToEntry = new HashMap<>();
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = entries.nextElement();
+            if (!entry.isDirectory() && !entry.isUnixSymlink()) {
+                String path = getPathFromEntry(entry);
+                pathToEntry.put(path, entry);
+            }
+        }
     }
 
     public String readFile(String path) {
-        try (ZipInputStream in = zipInputStream()) {
-            ZipEntry entry;
-            while ((entry = in.getNextEntry()) != null) {
-                if (!entry.isDirectory() && getPathFromEntry(entry).equals(path)) {
-                    return IOUtils.toString(in, StandardCharsets.UTF_8);
-                }
+        ZipArchiveEntry entry = pathToEntry.get(path);
+        if (entry != null) {
+            try (InputStream in = zipFile.getInputStream(entry)) {
+                return IOUtils.toString(in, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new CustomWebApplicationException("could not read file from zip archive", HttpStatus.SC_BAD_REQUEST);
             }
-        } catch (IOException e) {
-            throw new CustomWebApplicationException("could not read file from zip archive", HttpStatus.SC_BAD_REQUEST);
         }
         return gitHubSourceCodeRepo.readFile(path, repository, ref);
     }
@@ -48,26 +71,11 @@ public class GitHubFileTree implements FileTree {
     }
 
     public List<String> listPaths() {
-        try (ZipInputStream in = zipInputStream()) {
-            List<String> paths = new ArrayList<>();
-            ZipEntry entry;
-            while ((entry = in.getNextEntry()) != null) {
-                LOG.error("ZIPENTRY " + entry.getName() + " " + entry.getComment() + " " + entry.getExtra());
-                if (!entry.isDirectory()) {
-                    paths.add(getPathFromEntry(entry));
-                }
-            }
-            return paths;
-        } catch (IOException e) {
-            throw new CustomWebApplicationException("could not read paths from zip archive", HttpStatus.SC_BAD_REQUEST);
-        }
+        return new ArrayList<>(pathToEntry.keySet());
     }
 
-    private ZipInputStream zipInputStream() throws IOException {
-        return new ZipInputStream(new ByteArrayInputStream(zip));
-    }
-
-    private String getPathFromEntry(ZipEntry entry) {
+    private String getPathFromEntry(ZipArchiveEntry entry) {
+        // TODO improve
         return "/" + entry.getName().split("/", 2)[1];
     }
 }
