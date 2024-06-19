@@ -92,6 +92,7 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -100,6 +101,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -129,6 +131,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMetricsTRSOpenApiIT.class);
+    public static final String MINUTES_EXECUTION = "5";
 
     private static String bucketName;
     private static String s3EndpointOverride;
@@ -483,7 +486,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyRunExecutionMetricsDataContent(List.of(workflowExecution), extendedGa4GhApi, workflowId, workflowVersionId, platform1);
 
         // Update the workflow execution so that it has execution time
-        workflowExecution.setExecutionTime("PT5M"); // 5 mins
+        workflowExecution.setExecutionTime("PT" + MINUTES_EXECUTION + "M"); // 5 mins
         workflowExecution.setExecutionStatus(ExecutionStatusEnum.FAILED_RUNTIME_INVALID); // Attempt to update the execution status. This should not be updated because it's not an optional field
         ExecutionsResponseBody responseBody = extendedGa4GhApi.executionMetricsUpdate(new ExecutionsRequestBody().runExecutions(List.of(workflowExecution)), platform1, workflowId, workflowVersionId, description);
         assertEquals(1, responseBody.getExecutionResponses().size());
@@ -491,7 +494,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 11); // There should still be 11 files
         ExecutionsRequestBody execution = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, executionId);
         RunExecution updatedWorkflowExecutionFromS3 = execution.getRunExecutions().get(0);
-        assertEquals("PT5M", updatedWorkflowExecutionFromS3.getExecutionTime(), "Execution time should've been updated");
+        assertEquals("PT" + MINUTES_EXECUTION + "M", updatedWorkflowExecutionFromS3.getExecutionTime(), "Execution time should've been updated");
         assertEquals(ExecutionStatusEnum.SUCCESSFUL, updatedWorkflowExecutionFromS3.getExecutionStatus(), "Execution status should not change");
 
         // Try to update an execution that doesn't exist
@@ -908,8 +911,38 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         expectedWorkflowExecutions.forEach(expectedWorkflowExecution -> {
             List<RunExecution> actualWorkflowExecutions = getExecution(extendedGa4GhApi, trsId, versionId, platform, expectedWorkflowExecution.getExecutionId()).getRunExecutions();
             assertEquals(1, actualWorkflowExecutions.size());
+            // mimic server calculation client-side
+            if (expectedWorkflowExecution.getExecutionTime() != null) {
+                overrideExpectation(expectedWorkflowExecution);
+            }
             assertTrue(expectedWorkflowExecutions.contains(actualWorkflowExecutions.get(0)));
+            if (expectedWorkflowExecution.getExecutionTime() != null) {
+                assertTrue(actualWorkflowExecutions.stream().allMatch(f -> f.getExecutionTimeSeconds() != null && f.getExecutionTimeSeconds() > 0),
+                    () -> "executionTimes are showing up as " + actualWorkflowExecutions.stream().map(
+                        RunExecution::getExecutionTimeSeconds).collect(
+                        Collectors.toSet()));
+            }
         });
+    }
+
+    /**
+     * The executionTimeSeconds is calculated server side but is read-only, so we change our expectation
+     *
+     * @param expectedWorkflowExecution
+     */
+    private static void overrideExpectation(RunExecution expectedWorkflowExecution) {
+        Field f1;
+        try {
+            f1 = expectedWorkflowExecution.getClass().getDeclaredField("executionTimeSeconds");
+            f1.setAccessible(true);
+            f1.set(expectedWorkflowExecution, (Long.parseLong(MINUTES_EXECUTION) * 60));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void overrideExpectation(TaskExecutions taskExecutions) {
+        taskExecutions.getTaskExecutions().forEach(ExtendedMetricsTRSOpenApiIT::overrideExpectation);
     }
 
     private int getNumberOfExecutions(ExecutionsRequestBody executionsRequestBody) {
@@ -920,6 +953,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         expectedTaskExecutions.forEach(expectedTaskExecutionsSet -> {
             List<TaskExecutions> actualTaskExecution = getExecution(extendedGa4GhApi, trsId, versionId, platform, expectedTaskExecutionsSet.getExecutionId()).getTaskExecutions();
             assertEquals(1, actualTaskExecution.size());
+            overrideExpectation(expectedTaskExecutionsSet);
             assertTrue(expectedTaskExecutions.contains(actualTaskExecution.get(0)));
         });
     }
@@ -946,12 +980,12 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             execution.setExecutionId(generateExecutionId()); // Set a random execution ID
             execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
             execution.setDateExecuted(Instant.now().toString());
-            execution.setExecutionTime("PT5M");
+            execution.setExecutionTime("PT" + MINUTES_EXECUTION + "M");
             execution.setCpuRequirements(2);
             execution.setMemoryRequirementsGB(2.0);
             execution.setCost(new Cost().value(9.99));
             execution.setRegion("us-central1");
-            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
+            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT" + MINUTES_EXECUTION + "M");
             execution.setAdditionalProperties(additionalProperties);
             executions.add(execution);
         }
