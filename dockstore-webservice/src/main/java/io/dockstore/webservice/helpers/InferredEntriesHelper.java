@@ -177,7 +177,7 @@ public class InferredEntriesHelper {
         // construct map
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("version", "1.2");
-        putEntriesField(map, "tools", entries, EntryType.TOOL);
+        putEntriesField(map, "tools", entries, EntryType.APPTOOL);
         putEntriesField(map, "workflows", entries, EntryType.WORKFLOW);
         putEntriesField(map, "notebooks", entries, EntryType.NOTEBOOK);
         // convert to string representation
