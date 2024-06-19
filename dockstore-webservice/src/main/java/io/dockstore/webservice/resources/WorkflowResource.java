@@ -66,6 +66,7 @@ import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
+import io.dockstore.webservice.helpers.GitHubFileTree;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.InferredEntriesHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -2102,17 +2103,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create FileTree.
         String ownerAndRepo = owner + "/" + repo;
-        FileTree fileTree = new FileTree() {
-            public String readFile(String path) {
-                return gitHubSourceCodeRepo.readFile(ownerAndRepo, path, gitReference);
-            }
-            public List<String> listFiles(String pathToDirectory) {
-                return gitHubSourceCodeRepo.listFiles(ownerAndRepo, pathToDirectory, gitReference);
-            }
-            public List<String> listPaths() {
-                return gitHubSourceCodeRepo.listPaths(ownerAndRepo, gitReference);
-            }
-        };
+        FileTree fileTree = new GitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference);
 
         // Infer entries.
         LOG.error("INFERRING ENTRIES");

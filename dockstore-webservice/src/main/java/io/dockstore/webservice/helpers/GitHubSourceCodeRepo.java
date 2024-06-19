@@ -276,6 +276,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    public byte[] readZip(String repositoryId, String reference) {
+        GHRepository repo;
+        try {
+            String sha = getCommitID(repositoryId, reference);
+            repo = github.getRepository(repositoryId);
+            return repo.readZip(in -> IOUtils.toByteArray(in), sha);
+        } catch (IOException e) {
+            throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     /**
      * This method appears to read files from github in a cache-aware manner, taking into account symlinks and submodules.
      *
