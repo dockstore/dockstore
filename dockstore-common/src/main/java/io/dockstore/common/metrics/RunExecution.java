@@ -45,13 +45,13 @@ public class RunExecution extends Execution {
     @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S")
     private String executionTime;
 
-    @PositiveOrZero
     @JsonProperty
     @PositiveOrZero
     @Schema(description = "In seconds, automatically calculated from executionTime and dateExecuted", example = "30", accessMode = Schema.AccessMode.READ_ONLY)
     private Long executionTimeSeconds;
 
     @JsonProperty
+    @PositiveOrZero
     @Schema(description = "Memory requirements for the execution in GB", example = "2")
     private Double memoryRequirementsGB;
 
