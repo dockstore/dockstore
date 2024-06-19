@@ -24,6 +24,9 @@ import io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStat
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 
 /**
  * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
@@ -41,6 +44,11 @@ public class RunExecution extends Execution {
     @JsonProperty
     @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S")
     private String executionTime;
+
+    @JsonProperty
+    @PositiveOrZero
+    @Schema(description = "In seconds, automatically calculated from executionTime and dateExecuted", example = "30", accessMode = Schema.AccessMode.READ_ONLY)
+    private Long executionTimeSeconds;
 
     @JsonProperty
     @Schema(description = "Memory requirements for the execution in GB", example = "2")
@@ -83,6 +91,12 @@ public class RunExecution extends Execution {
 
     public void setExecutionTime(String executionTime) {
         this.executionTime = executionTime;
+        // make life easier on AWS athena, also store duration in seconds
+        try {
+            this.executionTimeSeconds = Duration.parse(executionTime).getSeconds();
+        } catch (DateTimeParseException e) {
+            // ignore, expecting this to be caught by `ISO8601ExecutionTime` anyway
+        }
     }
 
     public Double getMemoryRequirementsGB() {
@@ -120,10 +134,14 @@ public class RunExecution extends Execution {
     public void update(RunExecution newRunExecution) {
         // Can only update fields that are optional
         super.update(newRunExecution);
-        this.executionTime = newRunExecution.executionTime;
+        this.setExecutionTime(newRunExecution.executionTime);
         this.memoryRequirementsGB = newRunExecution.memoryRequirementsGB;
         this.cpuRequirements = newRunExecution.cpuRequirements;
         this.cost = newRunExecution.cost;
         this.region = newRunExecution.region;
+    }
+
+    public Long getExecutionTimeSeconds() {
+        return executionTimeSeconds;
     }
 }

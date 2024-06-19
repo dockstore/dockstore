@@ -10430,6 +10430,13 @@ components:
             description: The total time it took for the execution to complete in ISO
               8601 duration format
             example: PT30S
+          executionTimeSeconds:
+            type: integer
+            format: int64
+            description: "In seconds, automatically calculated from executionTime\
+              \ and dateExecuted"
+            example: 30
+            readOnly: true
           memoryRequirementsGB:
             type: number
             format: double
