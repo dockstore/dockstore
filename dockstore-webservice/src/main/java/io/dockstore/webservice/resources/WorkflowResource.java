@@ -69,6 +69,7 @@ import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHubFileTree;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.InferredEntriesHelper;
+import io.dockstore.webservice.helpers.Inferrer;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -2108,7 +2109,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Infer entries.
         LOG.error("INFERRING ENTRIES");
         InferredEntriesHelper inferredEntriesHelper = new InferredEntriesHelper();
-        List<InferredEntriesHelper.InferredEntry> entries = inferredEntriesHelper.infer(fileTree);
+        List<Inferrer.InferredEntry> entries = inferredEntriesHelper.infer(fileTree);
         entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
 
         // Create .dockstore.yml
