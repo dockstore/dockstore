@@ -1,8 +1,8 @@
-package io.dockstore.webservice.helpers;
+package io.dockstore.webservice.helpers.infer;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
-import io.dockstore.webservice.helpers.Inferrer.InferredEntry;
+import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +25,7 @@ public abstract class BasicInferrer implements Inferrer {
     }
 
     @Override
-    public List<InferredEntry> infer(FileTree fileTree) {
+    public List<Entry> infer(FileTree fileTree) {
         // Get a list of paths that are probably descriptors.
         List<String> paths = fileTree.listPaths().stream().filter(this::isDescriptorPath).toList();
         // Remove paths that probably correspond to tests, subtasks, etc.
@@ -34,12 +34,12 @@ public abstract class BasicInferrer implements Inferrer {
         paths = removeReferencedPaths(fileTree, paths);
         // For each path that remains, calculate its entry type.
         // If we're successful, add it as an inferred entry.
-        List<InferredEntry> entries = new ArrayList<>();
+        List<Entry> entries = new ArrayList<>();
         for (String path: paths) {
             EntryType type = calculateType(fileTree, path);
             String name = calculateName(fileTree, path);
             if (type != null) {
-                entries.add(new InferredEntry(type, language, path, name));
+                entries.add(new Entry(type, language, path, name));
             }
         }
         // Remove entries that don't appear to reference other descriptors.
@@ -94,7 +94,7 @@ public abstract class BasicInferrer implements Inferrer {
         return content.replaceAll("#.*", "");
     }
 
-    protected List<InferredEntry> removeStandaloneEntries(FileTree fileTree, List<InferredEntry> entries) {
+    protected List<Entry> removeStandaloneEntries(FileTree fileTree, List<Entry> entries) {
         // TODO implement
         return entries;
     }

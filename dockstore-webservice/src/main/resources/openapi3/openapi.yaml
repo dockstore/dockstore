@@ -6850,7 +6850,7 @@ paths:
       - workflows
   /workflows/github/infer/{owner}/{repo}/{ref}:
     get:
-      description: Infer the entries in a repository on GitHub.
+      description: Infer the entries of a GitHub reference.
       operationId: inferEntries
       parameters:
       - description: repo owner

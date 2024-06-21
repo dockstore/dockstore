@@ -68,8 +68,6 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHubFileTree;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
-import io.dockstore.webservice.helpers.InferredEntriesHelper;
-import io.dockstore.webservice.helpers.Inferrer;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -77,6 +75,8 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
+import io.dockstore.webservice.helpers.infer.Inferrer;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -2091,7 +2091,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/github/infer/{owner}/{repo}/{ref}")
     @Timed
     @UnitOfWork
-    @Operation(description = "Infer the entries in a repository on GitHub.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(description = "Infer the entries of a GitHub reference.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
         @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
@@ -2108,12 +2108,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Infer entries.
         LOG.error("INFERRING ENTRIES");
-        InferredEntriesHelper inferredEntriesHelper = new InferredEntriesHelper();
-        List<Inferrer.InferredEntry> entries = inferredEntriesHelper.infer(fileTree);
+        InferrerHelper inferrerHelper = new InferrerHelper();
+        List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
         entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
 
         // Create .dockstore.yml
-        String dockstoreYml = inferredEntriesHelper.toDockstoreYml(entries);
+        String dockstoreYml = inferrerHelper.toDockstoreYml(entries);
 
         // TODO Parse to make sure the .dockstore.yml is valid.
 

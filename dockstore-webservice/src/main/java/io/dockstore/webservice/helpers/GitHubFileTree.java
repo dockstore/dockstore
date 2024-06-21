@@ -7,7 +7,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -43,7 +43,7 @@ public class GitHubFileTree implements FileTree {
             throw new CustomWebApplicationException("could not read zip archive", HttpStatus.SC_BAD_REQUEST);
         }
         // Create a Map of absolute paths to Zip file entries.
-        pathToEntry = new HashMap<>();
+        pathToEntry = new LinkedHashMap<>();
         Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
         while (entries.hasMoreElements()) {
             ZipArchiveEntry entry = entries.nextElement();
