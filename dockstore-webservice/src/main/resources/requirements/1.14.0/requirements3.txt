@@ -12,7 +12,7 @@ cwltool==3.1.20230201224320
 decorator==5.1.1
 future==0.18.2
 humanfriendly==10.0
-idna==3.4
+idna==3.7
 isodate==0.6.1
 lockfile==0.12.2
 lxml==4.9.2
