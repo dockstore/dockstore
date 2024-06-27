@@ -7,6 +7,7 @@ import java.io.StringWriter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -57,11 +58,14 @@ public class InferrerHelper {
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith("/nextflow.config");
                 }
+                protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
+                    return List.of();
+                }
             },
             // GALAXY
             new BasicInferrer(DescriptorLanguage.GXFORMAT2) {
                 protected boolean isDescriptorPath(String path) {
-                    return path.endsWith(".ga") || path.endsWith(".ga2");
+                    return path.endsWith(".ga");
                 }
             },
             // JUPYTER
@@ -69,16 +73,43 @@ public class InferrerHelper {
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ipynb");
                 }
+                protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
+                    return List.of();
+                }
             }
 
         );
     }
 
     private List<Inferrer.Entry> postprocessEntries(List<Inferrer.Entry> entries) {
-        // TODO subsitute invalid names with something legal
-        // TODO change any duplicate names so they are unique
-        // TODO if any paths are the same, pick an entry
-        return entries;
+        return deduplicateNames(legalizeNames(deduplicatePaths(entries)));
+    }
+
+    private List<Inferrer.Entry> deduplicatePaths(List<Inferrer.Entry> entries) {
+        return entries.stream().collect(Collections.toMap(Entry::path, entry -> entry)).values();
+    }
+
+    private List<Inferrer.Entry> legalizeNames(List<Inferrer.Entry> entries) {
+        return entries.stream().map(entry -> entry.changeName(legalizeName(entry.name()))).toList();
+    }
+
+    private String legalizeName(String name) {
+        return name.replaceAll("[^a-zA-Z0-9_-]", "").replaceAll("([_-])[_-]+", "\\1");
+    }
+
+    private List<Inferrer.Entry> deduplicateNames(List<Inferrer.Entry> entries) {
+        AtomicLong counter = new AtomicLong();
+        Set<String> takenNames = new HashSet<>();
+        return entries.stream().map(entry -> {
+            String name = entry.name();
+            String candidateName = name;
+            while (takenNames.contains(candidateName)) {
+                candidateName = name + counter.get();
+                counter.increment();
+            }
+            takenNames.add(candidateName);
+            return entry.changeName(candidateName);
+        });
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -103,24 +134,25 @@ public class InferrerHelper {
     }
 
     private void putEntries(Map<String, Object> map, String fieldName, List<Inferrer.Entry> entries, EntryType type) {
-        List<Map<String, Object>> subset = entries.stream().filter(entry -> entry.type() == type).map(entry -> {
-            Map<String, Object> submap = new LinkedHashMap<>();
-            if (entry.name() != null) {
-                submap.put("name", entry.name());
-            }
-            if (entry.type() == EntryType.NOTEBOOK) {
-                submap.put("format", entry.language().toString());
-                // TODO add notebook language
-                submap.put("path", entry.path());
-            } else {
-                submap.put("subclass", entry.language().toString());
-                submap.put("primaryDescriptorPath", entry.path());
-            }
-            return submap;
-        }).toList();
-
-        if (!subset.isEmpty()) {
-            map.put(fieldName, subset);
+        List<Map<String, Object>> fieldValue = entries.stream().filter(entry -> entry.type() == type).map(this::toMap).toList();
+        if (!fieldValue.isEmpty()) {
+            map.put(fieldName, fieldValue);
         }
+    }
+
+    private Map<String, Object> toMap(Inferrer.Entry entry) { 
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (entry.name() != null) {
+            map.put("name", entry.name());
+        }
+        if (entry.type() == EntryType.NOTEBOOK) {
+            map.put("format", entry.language().toString());
+            // TODO add notebook language
+            map.put("path", entry.path());
+        } else {
+            map.put("subclass", entry.language().toString());
+            map.put("primaryDescriptorPath", entry.path());
+        }
+        return map;
     }
 }

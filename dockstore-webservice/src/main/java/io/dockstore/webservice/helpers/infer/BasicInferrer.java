@@ -8,9 +8,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,8 @@ public abstract class BasicInferrer implements Inferrer {
             }
         }
         // Remove entries that don't appear to reference other descriptors.
-        return removeStandaloneEntries(fileTree, entries);
+        // return removeStandaloneEntries(fileTree, entries);
+        return entries;
     }
 
     protected abstract boolean isDescriptorPath(String path);
@@ -67,7 +70,7 @@ public abstract class BasicInferrer implements Inferrer {
         Matcher matcher = POSSIBLE_PATH.matcher(content);
         while (matcher.find()) {
             String foundPath = matcher.group();
-            if (isDescriptorPath(foundPath)) {
+            if (isDescriptorPath(path)) {
                 String referencedPath = Paths.get(path).resolve(foundPath).normalize().toString();
                 referencedPaths.add(referencedPath);
             }
@@ -94,10 +97,17 @@ public abstract class BasicInferrer implements Inferrer {
         return content.replaceAll("#.*", "");
     }
 
+    /*
     protected List<Entry> removeStandaloneEntries(FileTree fileTree, List<Entry> entries) {
-        // TODO implement
-        return entries;
+        Map<Entry, Integer> entryToReferencedCount = entries.stream().collect(Collectors.toMap(entry -> entry, entry -> calculateReferencedPaths(fileTree, entry.path()).size()));
+        int maxReferencedCount = entryToReferencedCount.values().stream().max(Integer::compare).orElse(0);
+        if (maxReferencedCount > 0) {
+            return entries.stream().filter(entry -> entryToReferencedCount.get(entry) > 0).toList();
+        } else {
+            return entries;
+        }
     }
+    */
 
     protected static boolean lineContainsRegex(String regex, String s) {
         return Pattern.compile(regex, Pattern.MULTILINE).matcher(s).find();
