@@ -83,6 +83,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.AbuseLimitHandler;
@@ -136,6 +137,15 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false, testingPostgres);
+    }
+
+    @Test
+    @Disabled("cannot repeat easily ... yet")
+    void testForkAndCreatePR() throws IOException {
+        String githubToken = "< insert a token with repo, user scope >";
+        GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
+            AbuseLimitHandler.FAIL).build();
+        GitHubHelper.createForkPlusPR("groovy pr content", gitHub, "dockstore-testing/hello-wdl-workflow");
     }
 
     @Test

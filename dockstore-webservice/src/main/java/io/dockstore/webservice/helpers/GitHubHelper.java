@@ -32,8 +32,12 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import java.io.IOException;
+import java.net.URL;
 import org.apache.http.HttpStatus;
+import org.kohsuke.github.GHContentUpdateResponse;
 import org.kohsuke.github.GHLicense;
+import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
@@ -44,6 +48,28 @@ public final class GitHubHelper {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubHelper.class);
 
     private GitHubHelper() {
+    }
+
+    /**
+     * Experimental building block, given a repository, create a fork of it and a PR to it
+     * @param inferredDockstoreYml should be the only real change in the PR
+     * @param gitHub    The GitHub API
+     * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
+     * @return TBD
+     */
+    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName) {
+        try {
+            GHRepository targetRepository = gitHub.getRepository(repositoryName);
+            GHRepository fork = targetRepository.fork();
+            String masterSha = fork.getRef("heads/master").getObject().getSha();
+            GHRef ref = fork.createRef("refs/heads/feature/add_dockstore_yml", masterSha);
+            GHContentUpdateResponse commit = fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message("example commit message").commit();
+            GHPullRequest pullRequest = targetRepository.createPullRequest("experimental fork", "DockstoreTestUser2:feature/add_dockstore_yml", "master", "body", true, true);
+            return pullRequest.getUrl();
+        } catch (IOException e) {
+            LOG.error("Something messed up creating a fork and PR on: " + repositoryName, e);
+            throw new RuntimeException(e);
+        }
     }
 
     public static String getGitHubAccessToken(String code, String githubClientID, String githubClientSecret) {
