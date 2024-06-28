@@ -3,6 +3,7 @@ package io.dockstore.webservice.helpers.infer;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.FileTree;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,8 +70,12 @@ public abstract class BasicInferrer implements Inferrer {
         while (matcher.find()) {
             String foundPath = matcher.group();
             if (isDescriptorPath(path)) {
-                String referencedPath = Paths.get(path).resolve(foundPath).normalize().toString();
-                referencedPaths.add(referencedPath);
+                try {
+                    String referencedPath = Paths.get(path).resolve(foundPath).normalize().toString();
+                    referencedPaths.add(referencedPath);
+                } catch (InvalidPathException e) {
+                    // If either path was invalid, ignore and continue.
+                }
             }
         }
         return toList(referencedPaths);
@@ -106,6 +111,15 @@ public abstract class BasicInferrer implements Inferrer {
 
     protected static boolean lineContainsRegex(String regex, String s) {
         return Pattern.compile(regex, Pattern.MULTILINE).matcher(s).find();
+    }
+
+    protected static String groupFromLineContainingRegex(String regex, int groupIndex, String s) {
+        Matcher matcher = Pattern.compile(regex, Pattern.MULTILINE).matcher(s);
+        if (matcher.find()) {
+            return matcher.group(groupIndex);
+        } else {
+            return null;
+        }
     }
 
     protected static <T> List<T> toList(Collection<? extends T> values) {

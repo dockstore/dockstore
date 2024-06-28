@@ -4,6 +4,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,7 +55,10 @@ public class InferrerHelper {
                     }
                     return null;
                 }
-                // TODO get name out of WDL file
+                protected String calculateName(FileTree fileTree, String path) {
+                    String content = fileTree.readFile(path);
+                    return groupFromLineContainingRegex("^workflow\\s+(\\S+)\\s", 1, content);
+                }
             },
             // NEXTFLOW
             new BasicInferrer(DescriptorLanguage.NEXTFLOW) {
@@ -98,10 +102,11 @@ public class InferrerHelper {
     }
 
     private String calculateNameFromPath(String path) {
-        // TODO extract name from entry within file itself, if it exists
-        // Use more robust name-from-file extraction technique
-        String[] parts = path.split("\\/");
-        return parts[parts.length - 1].split("\\.")[0];
+        try {
+            return Paths.get(path).getFileName().toString().split("\\.")[0];
+        } catch (InvalidPathException e) {
+            return null;
+        }
     }
 
     private List<Inferrer.Entry> legalizeNames(List<Inferrer.Entry> entries) {
@@ -109,10 +114,40 @@ public class InferrerHelper {
     }
 
     private String legalizeName(String name) {
-        return name.replaceAll("[^a-zA-Z0-9_-]", "").replaceAll("([_-])[_-]+", "\\1");
+        return name
+            .replaceAll("[^a-zA-Z0-9_-]", "")
+            .replaceAll("^[_-]+", "")
+            .replaceAll("[_-]+$", "")
+            .replaceAll("([_-])[_-]+", "\\1");
     }
 
     private List<Inferrer.Entry> ensureUniqueNames(List<Inferrer.Entry> entries) {
+        Set<String> names = new HashSet<>();
+        Set<String> duplicates = new HashSet<>();
+        entries.forEach(entry -> {
+            String name = entry.name();
+            if (names.contains(name)) {
+                duplicates.add(name);
+            }
+            names.add(name);
+        });
+
+        AtomicLong counter = new AtomicLong(1);
+        Set<String> taken = new HashSet<>();
+        return entries.stream().map(entry -> {
+            String name = entry.name();
+            if (duplicates.contains(name) || taken.contains(name)) {
+                String newName;
+                do {
+                    newName = name + "_" + counter.getAndIncrement();
+                } while (!taken.contains(newName));
+                name = newName;
+            }
+            taken.add(name);
+            return entry.changeName(name);
+        }).toList();
+        /*
+        entries.stream().collect(
         // TODO counter per prefix
         AtomicLong counter = new AtomicLong(1);
         Set<String> takenNames = new HashSet<>();
@@ -124,6 +159,7 @@ public class InferrerHelper {
             }
             return entry.changeName(candidateName);
         }).toList();
+        */
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -143,8 +179,9 @@ public class InferrerHelper {
         dumperOptions.setPrettyFlow(true);
         dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         new Yaml(dumperOptions).dump(map, writer);
-        // TODO parse to make sure we didn't generate an invalid .dockstore.yml
         return writer.toString();
+        // TODO parse to make sure we didn't generate an invalid .dockstore.yml
+        // throw IllegalStateException or CustomWebApplicationException?
     }
 
     private void putEntries(Map<String, Object> map, String fieldName, List<Inferrer.Entry> entries, EntryType type) {
