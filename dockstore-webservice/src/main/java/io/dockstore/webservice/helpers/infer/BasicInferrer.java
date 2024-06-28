@@ -8,11 +8,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,17 +28,17 @@ public abstract class BasicInferrer implements Inferrer {
     public List<Entry> infer(FileTree fileTree) {
         // Get a list of paths that are probably descriptors.
         List<String> paths = fileTree.listPaths().stream().filter(this::isDescriptorPath).toList();
-        // Remove paths that probably correspond to tests, subtasks, etc.
+        // Remove paths that likely correspond to tests, subtasks, etc.
         paths = removeTestPaths(paths);
         // Remove paths that are referenced from other descriptors.
         paths = removeReferencedPaths(fileTree, paths);
         // For each path that remains, calculate its entry type.
-        // If we're successful, add it as an inferred entry.
+        // If we're successful, calculate its name and add it as an inferred entry.
         List<Entry> entries = new ArrayList<>();
         for (String path: paths) {
             EntryType type = calculateType(fileTree, path);
-            String name = calculateName(fileTree, path);
             if (type != null) {
+                String name = calculateName(fileTree, path);
                 entries.add(new Entry(type, language, path, name));
             }
         }
@@ -87,10 +85,7 @@ public abstract class BasicInferrer implements Inferrer {
     }
 
     protected String calculateName(FileTree fileTree, String path) {
-        // TODO extract name from entry within file itself, if it exists
-        // Use more robust name-from-file extraction technique
-        String[] parts = path.split("\\/");
-        return parts[parts.length - 1].split("\\.")[0];
+        return null;
     }
 
     protected String removeComments(String content) {

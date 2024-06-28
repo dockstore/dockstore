@@ -4,10 +4,13 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -81,12 +84,24 @@ public class InferrerHelper {
         );
     }
 
-    private List<Inferrer.Entry> postprocessEntries(List<Inferrer.Entry> entries) {
-        return deduplicateNames(legalizeNames(deduplicatePaths(entries)));
+    public List<Inferrer.Entry> refine(List<Inferrer.Entry> entries) {
+        return ensureUniqueNames(legalizeNames(setMissingNames(removeDuplicatePaths(entries))));
     }
 
-    private List<Inferrer.Entry> deduplicatePaths(List<Inferrer.Entry> entries) {
-        return entries.stream().collect(Collections.toMap(Entry::path, entry -> entry)).values();
+    private List<Inferrer.Entry> removeDuplicatePaths(List<Inferrer.Entry> entries) {
+        Set<String> paths = new HashSet<>();
+        return entries.stream().filter(entry -> paths.add(entry.path())).toList();
+    }
+
+    private List<Inferrer.Entry> setMissingNames(List<Inferrer.Entry> entries) {
+        return entries.stream().map(entry -> entry.changeName(ObjectUtils.firstNonNull(entry.name(), calculateNameFromPath(entry.path()), entry.type().getTerm()))).toList();
+    }
+
+    private String calculateNameFromPath(String path) {
+        // TODO extract name from entry within file itself, if it exists
+        // Use more robust name-from-file extraction technique
+        String[] parts = path.split("\\/");
+        return parts[parts.length - 1].split("\\.")[0];
     }
 
     private List<Inferrer.Entry> legalizeNames(List<Inferrer.Entry> entries) {
@@ -97,24 +112,23 @@ public class InferrerHelper {
         return name.replaceAll("[^a-zA-Z0-9_-]", "").replaceAll("([_-])[_-]+", "\\1");
     }
 
-    private List<Inferrer.Entry> deduplicateNames(List<Inferrer.Entry> entries) {
-        AtomicLong counter = new AtomicLong();
+    private List<Inferrer.Entry> ensureUniqueNames(List<Inferrer.Entry> entries) {
+        // TODO counter per prefix
+        AtomicLong counter = new AtomicLong(1);
         Set<String> takenNames = new HashSet<>();
         return entries.stream().map(entry -> {
             String name = entry.name();
             String candidateName = name;
-            while (takenNames.contains(candidateName)) {
-                candidateName = name + counter.get();
-                counter.increment();
+            while (!takenNames.add(candidateName)) {
+                candidateName = name + counter.getAndIncrement();
             }
-            takenNames.add(candidateName);
             return entry.changeName(candidateName);
-        });
+        }).toList();
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
     public String toDockstoreYml(List<Inferrer.Entry> entries) {
-        entries = postprocessEntries(entries);
+        entries = refine(entries);
         // construct map
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("version", "1.2");
