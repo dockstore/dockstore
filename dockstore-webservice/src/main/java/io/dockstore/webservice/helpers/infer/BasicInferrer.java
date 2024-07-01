@@ -33,19 +33,19 @@ public abstract class BasicInferrer implements Inferrer {
         paths = removeTestPaths(paths);
         // Remove paths that are referenced from other descriptors.
         paths = removeReferencedPaths(fileTree, paths);
-        // For each path that remains, calculate its entry type.
-        // If we're successful, calculate its name and add it as an inferred entry.
-        List<Entry> entries = new ArrayList<>();
-        for (String path: paths) {
+        // For each path that remains, attempt to infer the entries.
+        return paths.stream().flatMap(path -> infer(fileTree, path).stream()).toList();
+    }
+
+    public List<Entry> infer(FileTree fileTree, String path) {
+        if (isDescriptorPath(path)) {
             EntryType type = calculateType(fileTree, path);
             if (type != null) {
                 String name = calculateName(fileTree, path);
-                entries.add(new Entry(type, language, path, name));
+                return List.of(new Entry(type, language, path, name));
             }
         }
-        // Remove entries that don't appear to reference other descriptors.
-        // return removeStandaloneEntries(fileTree, entries);
-        return entries;
+        return List.of();
     }
 
     protected abstract boolean isDescriptorPath(String path);
@@ -96,18 +96,6 @@ public abstract class BasicInferrer implements Inferrer {
     protected String removeComments(String content) {
         return content.replaceAll("#.*", "");
     }
-
-    /*
-    protected List<Entry> removeStandaloneEntries(FileTree fileTree, List<Entry> entries) {
-        Map<Entry, Integer> entryToReferencedCount = entries.stream().collect(Collectors.toMap(entry -> entry, entry -> calculateReferencedPaths(fileTree, entry.path()).size()));
-        int maxReferencedCount = entryToReferencedCount.values().stream().max(Integer::compare).orElse(0);
-        if (maxReferencedCount > 0) {
-            return entries.stream().filter(entry -> entryToReferencedCount.get(entry) > 0).toList();
-        } else {
-            return entries;
-        }
-    }
-    */
 
     protected static boolean lineContainsRegex(String regex, String s) {
         return Pattern.compile(regex, Pattern.MULTILINE).matcher(s).find();

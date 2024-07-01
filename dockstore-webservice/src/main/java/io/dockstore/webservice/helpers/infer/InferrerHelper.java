@@ -2,8 +2,11 @@ package io.dockstore.webservice.helpers.infer;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.helpers.FileTree;
+import io.dockstore.webservice.CustomWebApplicationException;
 import java.io.StringWriter;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -12,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -146,32 +150,19 @@ public class InferrerHelper {
             taken.add(name);
             return entry.changeName(name);
         }).toList();
-        /*
-        entries.stream().collect(
-        // TODO counter per prefix
-        AtomicLong counter = new AtomicLong(1);
-        Set<String> takenNames = new HashSet<>();
-        return entries.stream().map(entry -> {
-            String name = entry.name();
-            String candidateName = name;
-            while (!takenNames.add(candidateName)) {
-                candidateName = name + counter.getAndIncrement();
-            }
-            return entry.changeName(candidateName);
-        }).toList();
-        */
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
     public String toDockstoreYml(List<Inferrer.Entry> entries) {
+        // "Refine" the entries, to fix things like missing, colliding, or illegal names.
         entries = refine(entries);
-        // construct map
+        // Construct map that contains an abstract representation of the .dockstore.yml.
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("version", "1.2");
         putEntries(map, "tools", entries, EntryType.APPTOOL);
         putEntries(map, "workflows", entries, EntryType.WORKFLOW);
         putEntries(map, "notebooks", entries, EntryType.NOTEBOOK);
-        // convert to string representation
+        // Convert the abstract representation to a yaml string.
         StringWriter writer = new StringWriter();
         DumperOptions dumperOptions = new DumperOptions();
         dumperOptions.setIndent(4);
@@ -179,9 +170,10 @@ public class InferrerHelper {
         dumperOptions.setPrettyFlow(true);
         dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         new Yaml(dumperOptions).dump(map, writer);
-        return writer.toString();
-        // TODO parse to make sure we didn't generate an invalid .dockstore.yml
-        // throw IllegalStateException or CustomWebApplicationException?
+        String dockstoreYaml = writer.toString();
+        // Parse to make sure we didn't generate an invalid .dockstore.yml
+        parseDockstoreYaml(dockstoreYaml);
+        return dockstoreYaml;
     }
 
     private void putEntries(Map<String, Object> map, String fieldName, List<Inferrer.Entry> entries, EntryType type) {
@@ -205,5 +197,15 @@ public class InferrerHelper {
             map.put("primaryDescriptorPath", entry.path());
         }
         return map;
+    }
+
+    private void parseDockstoreYaml(String dockstoreYaml) {
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYaml, true);
+        } catch (Exception e) {
+            String message = "error creating .dockstore.yml";
+            LOG.error(message, e);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 }
