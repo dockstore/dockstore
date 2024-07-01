@@ -1,11 +1,13 @@
 package io.dockstore.webservice.helpers.infer;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -42,7 +44,8 @@ public abstract class BasicInferrer implements Inferrer {
             EntryType type = calculateType(fileTree, path);
             if (type != null) {
                 String name = calculateName(fileTree, path);
-                return List.of(new Entry(type, language, path, name));
+                DescriptorLanguageSubclass subclass = calculateSubclass(fileTree, path);
+                return List.of(new Entry(type, language, subclass, path, name));
             }
         }
         return List.of();
@@ -91,6 +94,14 @@ public abstract class BasicInferrer implements Inferrer {
 
     protected String calculateName(FileTree fileTree, String path) {
         return null;
+    }
+
+    protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path) {
+        List<DescriptorLanguageSubclass> subclasses = Arrays.stream(DescriptorLanguageSubclass.values()).filter(subclass -> subclass.getEntryTypes().contains(language)).toList();
+        if (subclasses.size() == 1) {
+            return subclasses.get(0);
+        }
+        throw new UnsupportedOperationException();
     }
 
     protected String removeComments(String content) {

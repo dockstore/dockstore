@@ -1,6 +1,7 @@
 package io.dockstore.webservice.helpers.infer;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.helpers.FileTree;
@@ -86,6 +87,16 @@ public class InferrerHelper {
                 }
                 protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
                     return List.of();
+                }
+                protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path) {
+                    String content = fileTree.readFile(path).toLowerCase();
+                    for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.values()) {
+                        String quotedSubclass = '"' + subclass.getShortName() + '"';
+                        if (content.contains(quotedSubclass)) {
+                            return subclass;
+                        }
+                    }
+                    return DescriptorLanguageSubclass.PYTHON;
                 }
             }
 
@@ -190,7 +201,7 @@ public class InferrerHelper {
         }
         if (entry.type() == EntryType.NOTEBOOK) {
             map.put("format", entry.language().toString());
-            // TODO add notebook language
+            map.put("language", entry.subclass().toString());
             map.put("path", entry.path());
         } else {
             map.put("subclass", entry.language().toString());
