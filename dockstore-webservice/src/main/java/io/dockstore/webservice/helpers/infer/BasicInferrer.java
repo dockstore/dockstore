@@ -44,7 +44,7 @@ public abstract class BasicInferrer implements Inferrer {
             EntryType type = calculateType(fileTree, path);
             if (type != null) {
                 String name = calculateName(fileTree, path);
-                DescriptorLanguageSubclass subclass = calculateSubclass(fileTree, path);
+                DescriptorLanguageSubclass subclass = calculateSubclass(fileTree, path, type);
                 return List.of(new Entry(type, language, subclass, path, name));
             }
         }
@@ -96,10 +96,10 @@ public abstract class BasicInferrer implements Inferrer {
         return null;
     }
 
-    protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path) {
-        List<DescriptorLanguageSubclass> subclasses = Arrays.stream(DescriptorLanguageSubclass.values()).filter(subclass -> subclass.getEntryTypes().contains(language)).toList();
+    protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path, EntryType type) {
+        Set<DescriptorLanguageSubclass> subclasses = DescriptorLanguageSubclass.valuesForEntryType(type);
         if (subclasses.size() == 1) {
-            return subclasses.get(0);
+            return subclasses.iterator().next();
         }
         throw new UnsupportedOperationException();
     }

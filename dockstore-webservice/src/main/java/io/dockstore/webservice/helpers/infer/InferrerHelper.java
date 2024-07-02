@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -34,9 +35,11 @@ public class InferrerHelper {
         return List.of(
             // CWL
             new BasicInferrer(DescriptorLanguage.CWL) {
+                @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".cwl");
                 }
+                @Override
                 protected EntryType calculateType(FileTree fileTree, String path) {
                     String content = fileTree.readFile(path);
                     if (lineContainsRegex("^class:\\s*Workflow", content)) {
@@ -50,9 +53,11 @@ public class InferrerHelper {
             },
             // WDL
             new BasicInferrer(DescriptorLanguage.WDL) {
+                @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".wdl");
                 }
+                @Override
                 protected EntryType calculateType(FileTree fileTree, String path) {
                     String content = fileTree.readFile(path);
                     if (lineContainsRegex("^workflow\\s", content)) {
@@ -60,6 +65,7 @@ public class InferrerHelper {
                     }
                     return null;
                 }
+                @Override
                 protected String calculateName(FileTree fileTree, String path) {
                     String content = fileTree.readFile(path);
                     return groupFromLineContainingRegex("^workflow\\s+(\\S+)\\s", 1, content);
@@ -67,32 +73,40 @@ public class InferrerHelper {
             },
             // NEXTFLOW
             new BasicInferrer(DescriptorLanguage.NEXTFLOW) {
+                @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith("/nextflow.config");
                 }
+                @Override
                 protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
                     return List.of();
                 }
             },
             // GALAXY
             new BasicInferrer(DescriptorLanguage.GXFORMAT2) {
+                @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ga");
                 }
             },
             // JUPYTER
             new BasicInferrer(DescriptorLanguage.JUPYTER) {
+                @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ipynb");
                 }
+                @Override
                 protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
                     return List.of();
                 }
-                protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path) {
+                @Override
+                protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path, EntryType type) {
                     String content = fileTree.readFile(path).toLowerCase();
-                    for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.values()) {
-                        String quotedSubclass = '"' + subclass.getShortName() + '"';
-                        if (content.contains(quotedSubclass)) {
+                    // Look for some json that sets the "language" field to one of the legal values.
+                    // TODO improve
+                    for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.valuesForEntryType(type)) {
+                        String regex = "\"language\":\\s*\"%s\"".formatted(subclass.getShortName());
+                        if (Pattern.compile(regex).matcher(content).find()) {
                             return subclass;
                         }
                     }
