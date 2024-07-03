@@ -46,6 +46,13 @@ import org.slf4j.LoggerFactory;
 public final class GitHubHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubHelper.class);
+    public static final String BRANCHNAME_FOR_BOT = "feature/add_dockstore_yml";
+
+    public static final String DOCKSTORE_BOT_PR_TEXT = """
+           Dockstore's bot has guessed at a .dockstore.yml for your repository.
+           
+           Please review, make appropriate changes, add any [additional keys](https://docs.dockstore.org/en/stable/assets/templates/template.html) and merge in order to complete integration with Dockstore, allowing Dockstore to keep informed of new changes to your workkflow, notebook, or tools.
+           """;
 
     private GitHubHelper() {
     }
@@ -55,16 +62,19 @@ public final class GitHubHelper {
      * @param inferredDockstoreYml should be the only real change in the PR
      * @param gitHub    The GitHub API
      * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
+     * @param targetBranch    Name of the branch in the GitHub repository to make a PR against (e.g. develop)
      * @return TBD
      */
-    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName) {
+    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName, String targetBranch) {
         try {
+            String username = gitHub.getMyself().getLogin();
             GHRepository targetRepository = gitHub.getRepository(repositoryName);
+            // note: this will try to turn an async call to a sync call by waiting up to half a minute, 3 seconds at a time. This did not seem reliable, may need to wait more before creating a ref/branch
             GHRepository fork = targetRepository.fork();
-            String masterSha = fork.getRef("heads/master").getObject().getSha();
-            GHRef ref = fork.createRef("refs/heads/feature/add_dockstore_yml", masterSha);
-            GHContentUpdateResponse commit = fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message("example commit message").commit();
-            GHPullRequest pullRequest = targetRepository.createPullRequest("experimental fork", "DockstoreTestUser2:feature/add_dockstore_yml", "master", "body", true, true);
+            String masterSha = fork.getRef("heads/" + targetBranch).getObject().getSha();
+            GHRef ref = fork.createRef("refs/heads/" + BRANCHNAME_FOR_BOT, masterSha);
+            GHContentUpdateResponse commit = fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message(".dockstore.yml added by bot").commit();
+            GHPullRequest pullRequest = targetRepository.createPullRequest("dockstore-bot inferred .dockstore.yml", username + ":" + BRANCHNAME_FOR_BOT, targetBranch, DOCKSTORE_BOT_PR_TEXT, true, true);
             return pullRequest.getUrl();
         } catch (IOException e) {
             LOG.error("Something messed up creating a fork and PR on: " + repositoryName, e);

@@ -142,10 +142,11 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Test
     @Disabled("cannot repeat easily ... yet")
     void testForkAndCreatePR() throws IOException {
+        // get a PR from https://github.com/settings/tokens
         String githubToken = "< insert a token with repo, user scope >";
         GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
             AbuseLimitHandler.FAIL).build();
-        GitHubHelper.createForkPlusPR("groovy pr content", gitHub, "dockstore-testing/hello-wdl-workflow");
+        GitHubHelper.createForkPlusPR("groovy pr content", gitHub, "dockstore-testing/hello-wdl-workflow", "master");
     }
 
     @Test
