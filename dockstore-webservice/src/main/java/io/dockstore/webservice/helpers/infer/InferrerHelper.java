@@ -7,8 +7,8 @@ import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
-import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,27 +127,40 @@ public class InferrerHelper {
     }
 
     private List<Inferrer.Entry> setMissingNames(List<Inferrer.Entry> entries) {
-        return entries.stream().map(entry -> entry.changeName(ObjectUtils.firstNonNull(entry.name(), calculateNameFromPath(entry.path()), entry.type().getTerm()))).toList();
+        return entries.stream().map(this::setMissingName).toList();
+    }
+
+    private Inferrer.Entry setMissingName(Inferrer.Entry entry) {
+        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), calculateNameFromPath(entry.path()), defaultName(entry)));
     }
 
     private String calculateNameFromPath(String path) {
-        try {
-            return Paths.get(path).getFileName().toString().split("\\.")[0];
-        } catch (InvalidPathException e) {
+        String[] pathParts = path.split("/");
+        if (pathParts.length == 0) {
             return null;
         }
+        String[] nameParts = pathParts[pathParts.length - 1].split("\\.");
+        if (nameParts.length == 0) {
+            return null;
+        }
+        return nameParts[0];
     }
 
     private List<Inferrer.Entry> legalizeNames(List<Inferrer.Entry> entries) {
-        return entries.stream().map(entry -> entry.changeName(legalizeName(entry.name()))).toList();
+        return entries.stream().map(this::legalizeName).toList();
     }
 
-    private String legalizeName(String name) {
-        return name
+    private Inferrer.Entry legalizeName(Inferrer.Entry entry) {
+        String legalName = entry.name()
             .replaceAll("[^a-zA-Z0-9_-]", "")
             .replaceAll("^[_-]+", "")
             .replaceAll("[_-]+$", "")
-            .replaceAll("([_-])[_-]+", "\\1");
+            .replaceAll("([_-])[_-]+", "$1");
+        return entry.changeName(StringUtils.firstNonEmpty(legalName, defaultName(entry)));
+    }
+
+    private String defaultName(Inferrer.Entry entry) {
+        return entry.type().getTerm();
     }
 
     private List<Inferrer.Entry> ensureUniqueNames(List<Inferrer.Entry> entries) {
@@ -169,7 +182,7 @@ public class InferrerHelper {
                 String newName;
                 do {
                     newName = name + "_" + counter.getAndIncrement();
-                } while (!taken.contains(newName));
+                } while (taken.contains(newName));
                 name = newName;
             }
             taken.add(name);
@@ -178,12 +191,12 @@ public class InferrerHelper {
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public String toDockstoreYml(List<Inferrer.Entry> entries) {
+    public String toDockstoreYaml(List<Inferrer.Entry> entries) {
         // "Refine" the entries, to fix things like missing, colliding, or illegal names.
         entries = refine(entries);
         // Construct map that contains an abstract representation of the .dockstore.yml.
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("version", "1.2");
+        map.put("version", new BigDecimal("1.2"));
         putEntries(map, "tools", entries, EntryType.APPTOOL);
         putEntries(map, "workflows", entries, EntryType.WORKFLOW);
         putEntries(map, "notebooks", entries, EntryType.NOTEBOOK);
@@ -230,6 +243,7 @@ public class InferrerHelper {
         } catch (Exception e) {
             String message = "error creating .dockstore.yml";
             LOG.error(message, e);
+            LOG.error(dockstoreYaml, e);
             throw new CustomWebApplicationException(message, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }

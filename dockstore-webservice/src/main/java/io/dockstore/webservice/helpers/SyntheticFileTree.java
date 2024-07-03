@@ -12,10 +12,12 @@ public class SyntheticFileTree implements FileTree {
     private Map<String, String> pathToContent = new HashMap<>();
     private static final String SLASH = "/";
 
+    @Override
     public String readFile(String filePath) {
         return pathToContent.get(filePath);
     }
 
+    @Override
     public List<String> listFiles(String dirPath) {
         String normalizedDirPath = addSlash(dirPath);
         return pathToContent.keySet().stream()
@@ -26,7 +28,7 @@ public class SyntheticFileTree implements FileTree {
             .toList();
     }
 
-
+    @Override
     public List<String> listPaths() {
         return new ArrayList<>(pathToContent.keySet());
     }

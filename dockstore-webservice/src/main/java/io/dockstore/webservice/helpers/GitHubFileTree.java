@@ -54,6 +54,7 @@ public class GitHubFileTree implements FileTree {
         }
     }
 
+    @Override
     public String readFile(String path) {
         ZipArchiveEntry entry = pathToEntry.get(path);
         if (entry != null) {
@@ -66,10 +67,12 @@ public class GitHubFileTree implements FileTree {
         return gitHubSourceCodeRepo.readFile(path, repository, ref);
     }
 
+    @Override
     public List<String> listFiles(String path) {
         return gitHubSourceCodeRepo.listFiles(path, repository, ref);
     }
 
+    @Override
     public List<String> listPaths() {
         return new ArrayList<>(pathToEntry.keySet());
     }

@@ -2113,7 +2113,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
 
         // Create .dockstore.yml
-        String dockstoreYml = inferrerHelper.toDockstoreYml(entries);
+        String dockstoreYml = inferrerHelper.toDockstoreYaml(entries);
 
         // TODO Parse to make sure the .dockstore.yml is valid.
 

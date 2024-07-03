@@ -17,6 +17,7 @@ public class CachedFileTree implements FileTree {
         this.fileTree = fileTree;
     }
 
+    @Override
     public String readFile(String filePath) {
         if (pathToContent.containsKey(filePath)) {
             return pathToContent.get(filePath);
@@ -26,6 +27,7 @@ public class CachedFileTree implements FileTree {
         return content;
     }
 
+    @Override
     public List<String> listFiles(String dirPath) {
         if (pathToFiles.containsKey(dirPath)) {
             return pathToFiles.get(dirPath);
@@ -35,6 +37,7 @@ public class CachedFileTree implements FileTree {
         return files;
     }
 
+    @Override
     public List<String> listPaths() {
         if (paths == null) {
             paths = fileTree.listPaths();
