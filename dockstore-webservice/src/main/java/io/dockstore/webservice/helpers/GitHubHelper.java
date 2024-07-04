@@ -31,10 +31,11 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.openapi.api.ApiException;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
 import org.apache.http.HttpStatus;
-import org.kohsuke.github.GHContentUpdateResponse;
 import org.kohsuke.github.GHLicense;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRef;
@@ -65,20 +66,28 @@ public final class GitHubHelper {
      * @param targetBranch    Name of the branch in the GitHub repository to make a PR against (e.g. develop)
      * @return TBD
      */
-    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName, String targetBranch) {
+    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName, String targetBranch) throws ApiException {
         try {
             String username = gitHub.getMyself().getLogin();
             GHRepository targetRepository = gitHub.getRepository(repositoryName);
-            // note: this will try to turn an async call to a sync call by waiting up to half a minute, 3 seconds at a time. This did not seem reliable, may need to wait more before creating a ref/branch
+            // note: this will try to turn an async call to a sync call by waiting up to half a minute, 3 seconds at a time.
+            // This did not seem consistently reliable, may need to wait more before creating a ref/branch
             GHRepository fork = targetRepository.fork();
+            Thread.sleep(Duration.ofMinutes(1L).toMillis());
             String masterSha = fork.getRef("heads/" + targetBranch).getObject().getSha();
             GHRef ref = fork.createRef("refs/heads/" + BRANCHNAME_FOR_BOT, masterSha);
-            GHContentUpdateResponse commit = fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message(".dockstore.yml added by bot").commit();
-            GHPullRequest pullRequest = targetRepository.createPullRequest("dockstore-bot inferred .dockstore.yml", username + ":" + BRANCHNAME_FOR_BOT, targetBranch, DOCKSTORE_BOT_PR_TEXT, true, true);
+            fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message(".dockstore.yml added by bot").commit();
+            String prTitle = "dockstore-bot inferred .dockstore.yml";
+            GHPullRequest pullRequest = targetRepository.createPullRequest(prTitle, username + ":" + BRANCHNAME_FOR_BOT, targetBranch, DOCKSTORE_BOT_PR_TEXT, true, true);
             return pullRequest.getUrl();
         } catch (IOException e) {
-            LOG.error("Something messed up creating a fork and PR on: " + repositoryName, e);
-            throw new RuntimeException(e);
+            String msg = "Something messed up creating a PR on: " + repositoryName;
+            LOG.error(msg, e);
+            throw new ApiException(HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
+        } catch (InterruptedException e) {
+            String msg = "Something interrupted creating a fork on: " + repositoryName;
+            LOG.error(msg, e);
+            throw new ApiException(HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
         }
     }
 

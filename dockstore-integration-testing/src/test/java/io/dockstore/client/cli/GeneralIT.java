@@ -70,6 +70,7 @@ import io.swagger.client.model.Tag.DoiStatusEnum;
 import io.swagger.client.model.Workflow;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -141,12 +142,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     @Disabled("cannot repeat easily ... yet")
-    void testForkAndCreatePR() throws IOException {
+    void testForkAndCreatePR() throws IOException, io.openapi.api.ApiException {
         // get a PR from https://github.com/settings/tokens
         String githubToken = "< insert a token with repo, user scope >";
         GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
             AbuseLimitHandler.FAIL).build();
-        GitHubHelper.createForkPlusPR("groovy pr content", gitHub, "dockstore-testing/hello-wdl-workflow", "master");
+        URL forkPlusPR = GitHubHelper.createForkPlusPR("groovy pr content", gitHub, "dockstore-testing/hello-wdl-workflow", "master");
+        assertNotNull(forkPlusPR);
     }
 
     @Test
