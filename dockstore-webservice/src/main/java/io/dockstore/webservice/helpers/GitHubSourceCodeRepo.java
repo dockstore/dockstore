@@ -103,7 +103,6 @@ import org.kohsuke.github.GHMyself.RepositoryListFilter;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHTree;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubAbuseLimitHandler;

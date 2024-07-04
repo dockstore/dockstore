@@ -8,7 +8,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
 import java.math.BigDecimal;
-import java.nio.file.InvalidPathException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;

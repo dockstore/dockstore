@@ -18,12 +18,12 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class SyntheticFileHelperTest {
+public class SyntheticFileTreeHelperTest {
 
     @Test
     void testEmpty() {

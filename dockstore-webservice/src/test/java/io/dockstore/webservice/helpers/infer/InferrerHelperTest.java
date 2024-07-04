@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.helpers;
+package io.dockstore.webservice.helpers.infer;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
@@ -23,12 +23,8 @@ import io.dockstore.common.EntryType;
 import io.dockstore.common.ValidationConstants;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
-import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.SyntheticFileTree;
-import io.dockstore.webservice.helpers.infer.Inferrer;
-import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -142,16 +138,16 @@ class InferrerHelperTest {
     void testNamesLegalAndUniqueFuzz() {
         int loops = 10;
         for (int i = 0; i < loops; i++) {
-            int N = random.nextInt(1000, 10000);
+            int n = random.nextInt(1000, 10000);
             List<Inferrer.Entry> in = Stream
                 .generate(this::randomPath)
                 .distinct()
                 .map(path -> wdlWorkflow(path, null))
-                .limit(N)
+                .limit(n)
                 .toList();
             List<Inferrer.Entry> out = inferrerHelper.refine(in);
-            Assertions.assertEquals(N, out.size());
-            Assertions.assertEquals(N, out.stream().map(Inferrer.Entry::name).distinct().count());
+            Assertions.assertEquals(n, out.size());
+            Assertions.assertEquals(n, out.stream().map(Inferrer.Entry::name).distinct().count());
             out.forEach(entry -> {
                 Assertions.assertTrue(entry.name().matches(ValidationConstants.ENTRY_NAME_REGEX));
             });
