@@ -81,7 +81,6 @@ public class GitHubFileTree implements FileTree {
         if (parts.length != 2) {
             throw new CustomWebApplicationException("could not process zip archive", HttpStatus.SC_BAD_REQUEST);
         }
-        // TODO improve
         return "/" + parts[1];
     }
 }
