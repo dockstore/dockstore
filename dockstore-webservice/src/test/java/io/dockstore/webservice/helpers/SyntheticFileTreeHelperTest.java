@@ -33,7 +33,7 @@ public class SyntheticFileTreeHelperTest {
         sameElements(List.of(), fileTree.listFiles("/"));
         sameElements(List.of(), fileTree.listFiles("/foo_dir/"));
         sameElements(List.of(), fileTree.listFiles("/foo_dir"));
-        sameElements(List.of(), fileTree.listPaths()); 
+        sameElements(List.of(), fileTree.listPaths());
     }
 
     @Test
