@@ -221,7 +221,7 @@ public class InferrerHelper {
         }
     }
 
-    private Map<String, Object> toMap(Inferrer.Entry entry) { 
+    private Map<String, Object> toMap(Inferrer.Entry entry) {
         Map<String, Object> map = new LinkedHashMap<>();
         if (entry.name() != null) {
             map.put("name", entry.name());

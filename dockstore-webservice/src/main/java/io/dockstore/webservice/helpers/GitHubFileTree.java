@@ -33,9 +33,8 @@ public class GitHubFileTree implements FileTree {
         this.repository = repository;
         this.ref = ref;
         // Read the Zip contents and create an in-memory ZipFile.
-        LOG.error("downloading Zip");
         byte[] zipBytes = gitHubSourceCodeRepo.readZip(repository, ref);
-        LOG.error("downloaded Zip " + zipBytes.length);
+        LOG.info("downloaded Zip " + zipBytes.length);
         SeekableByteChannel zipChannel = new SeekableInMemoryByteChannel(zipBytes);
         try {
             zipFile = new ZipFile(zipChannel);
@@ -78,7 +77,11 @@ public class GitHubFileTree implements FileTree {
     }
 
     private String getPathFromEntry(ZipArchiveEntry entry) {
+        String[] parts = entry.getName().split("/", 2);
+        if (parts.length != 2) {
+            throw new CustomWebApplicationException("could not process zip archive", HttpStatus.SC_BAD_REQUEST);
+        }
         // TODO improve
-        return "/" + entry.getName().split("/", 2)[1];
+        return "/" + parts[1];
     }
 }
