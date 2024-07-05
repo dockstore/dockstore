@@ -50,9 +50,9 @@ public final class GitHubHelper {
     public static final String BRANCHNAME_FOR_BOT = "feature/add_dockstore_yml";
 
     public static final String DOCKSTORE_BOT_PR_TEXT = """
-           Dockstore's bot has guessed at a .dockstore.yml for your repository.
+           The dockstore-bot has guessed at a .dockstore.yml for your repository.
            
-           Please review, make appropriate changes, add any [additional keys](https://docs.dockstore.org/en/stable/assets/templates/template.html) and merge in order to complete integration with Dockstore, allowing Dockstore to keep informed of new changes to your workkflow, notebook, or tools.
+           Please review, make appropriate changes, add any [additional keys](https://docs.dockstore.org/en/stable/assets/templates/template.html) and merge in order to complete integration with Dockstore, allowing Dockstore to keep informed of new changes to your workflow(s), notebook(s), or tool(s).
            """;
 
     private GitHubHelper() {
