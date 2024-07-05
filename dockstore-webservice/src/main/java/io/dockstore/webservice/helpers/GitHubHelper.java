@@ -31,7 +31,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.openapi.api.ApiException;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -55,7 +54,13 @@ public final class GitHubHelper {
            Please review, make appropriate changes, add any [additional keys](https://docs.dockstore.org/en/stable/assets/templates/template.html) and merge in order to complete integration with Dockstore, allowing Dockstore to keep informed of new changes to your workflow(s), notebook(s), or tool(s).
            """;
 
+    public static final String DOCKSTORE_BOT_PR_TITLE =  "dockstore-bot inferred .dockstore.yml";
+
     private GitHubHelper() {
+    }
+
+    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName, String targetBranch) {
+        return createForkPlusPR(inferredDockstoreYml, gitHub, repositoryName, targetBranch, BRANCHNAME_FOR_BOT, DOCKSTORE_BOT_PR_TITLE, DOCKSTORE_BOT_PR_TEXT);
     }
 
     /**
@@ -64,9 +69,12 @@ public final class GitHubHelper {
      * @param gitHub    The GitHub API
      * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
      * @param targetBranch    Name of the branch in the GitHub repository to make a PR against (e.g. develop)
+     * @param branchForBot  Name of the branch in the fork
+     * @param prTitle Name of the pull request
+     * @param prDescription Description in the pull request
      * @return TBD
      */
-    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName, String targetBranch) throws ApiException {
+    public static URL createForkPlusPR(String inferredDockstoreYml, GitHub gitHub, String repositoryName, String targetBranch, String branchForBot, String prTitle, String prDescription) {
         try {
             String username = gitHub.getMyself().getLogin();
             GHRepository targetRepository = gitHub.getRepository(repositoryName);
@@ -76,18 +84,17 @@ public final class GitHubHelper {
             Thread.sleep(Duration.ofMinutes(1L).toMillis());
             String masterSha = fork.getRef("heads/" + targetBranch).getObject().getSha();
             GHRef ref = fork.createRef("refs/heads/" + BRANCHNAME_FOR_BOT, masterSha);
-            fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message(".dockstore.yml added by bot").commit();
-            String prTitle = "dockstore-bot inferred .dockstore.yml";
-            GHPullRequest pullRequest = targetRepository.createPullRequest(prTitle, username + ":" + BRANCHNAME_FOR_BOT, targetBranch, DOCKSTORE_BOT_PR_TEXT, true, true);
+            fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message(DOCKSTORE_BOT_PR_TITLE).commit();
+            GHPullRequest pullRequest = targetRepository.createPullRequest(prTitle, username + ":" + branchForBot, targetBranch, prDescription, true, true);
             return pullRequest.getUrl();
         } catch (IOException e) {
             String msg = "Something messed up creating a PR on: " + repositoryName;
             LOG.error(msg, e);
-            throw new ApiException(HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } catch (InterruptedException e) {
             String msg = "Something interrupted creating a fork on: " + repositoryName;
             LOG.error(msg, e);
-            throw new ApiException(HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
