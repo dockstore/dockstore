@@ -59,7 +59,7 @@ public final class GitHubHelper {
     }
 
     /**
-     * Experimental building block, given a repository, create a fork of it and a PR to it
+     * Experimental building block, given a repository, create a fork of it (to the personal organization for the robot user) and a PR to it
      * @param inferredDockstoreYml should be the only real change in the PR
      * @param gitHub    The GitHub API
      * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
