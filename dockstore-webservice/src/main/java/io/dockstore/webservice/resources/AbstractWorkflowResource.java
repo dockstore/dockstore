@@ -44,6 +44,7 @@ import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
+import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -1016,6 +1017,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
+
+            // Check the version to see if it exceeds any limits.
+            LimitHelper.checkVersion(updatedWorkflowVersion);
 
             // Update verification information.
             updatedWorkflowVersion.updateVerified();
