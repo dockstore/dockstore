@@ -8,10 +8,12 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
@@ -31,9 +33,13 @@ public class InferrerHelper {
     }
 
     public List<Inferrer> getInferrers() {
-        return List.of(
-            // CWL
-            new BasicInferrer(DescriptorLanguage.CWL) {
+        return Arrays.stream(DescriptorLanguage.values()).map(this::getInferrer).filter(Objects::nonNull).toList();
+    }
+
+    public Inferrer getInferrer(DescriptorLanguage language) {
+        switch (language) {
+        case CWL:
+            return new BasicInferrer(DescriptorLanguage.CWL) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".cwl");
@@ -49,9 +55,9 @@ public class InferrerHelper {
                     }
                     return null;
                 }
-            },
-            // WDL
-            new BasicInferrer(DescriptorLanguage.WDL) {
+            };
+        case WDL:
+            return new BasicInferrer(DescriptorLanguage.WDL) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".wdl");
@@ -69,9 +75,9 @@ public class InferrerHelper {
                     String content = fileTree.readFile(path);
                     return groupFromLineContainingRegex("^workflow\\s+(\\S+)\\s", 1, content);
                 }
-            },
-            // NEXTFLOW
-            new BasicInferrer(DescriptorLanguage.NEXTFLOW) {
+            };
+        case NEXTFLOW:
+            return new BasicInferrer(DescriptorLanguage.NEXTFLOW) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith("/nextflow.config");
@@ -80,16 +86,16 @@ public class InferrerHelper {
                 protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
                     return List.of();
                 }
-            },
-            // GALAXY
-            new BasicInferrer(DescriptorLanguage.GXFORMAT2) {
+            };
+        case GXFORMAT2:
+            return new BasicInferrer(DescriptorLanguage.GXFORMAT2) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ga");
                 }
-            },
-            // JUPYTER
-            new BasicInferrer(DescriptorLanguage.JUPYTER) {
+            };
+        case JUPYTER:
+            return new BasicInferrer(DescriptorLanguage.JUPYTER) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ipynb");
@@ -110,9 +116,16 @@ public class InferrerHelper {
                     }
                     return DescriptorLanguageSubclass.PYTHON;
                 }
-            }
-
-        );
+            };
+        case SMK:
+        case SWL:
+        case SERVICE:
+            return null;
+        default:
+            String message = "no mapping from descriptor language to inferrer";
+            LOG.error(message);
+            throw new IllegalStateException(message);
+        }
     }
 
     public List<Inferrer.Entry> refine(List<Inferrer.Entry> entries) {
