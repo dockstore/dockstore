@@ -49,12 +49,12 @@ public final class GitHubHelper {
     public static final String BRANCHNAME_FOR_BOT = "feature/add_dockstore_yml";
 
     public static final String DOCKSTORE_BOT_PR_TEXT = """
-           The dockstore-bot has guessed at a .dockstore.yml for your repository.
+           The dockstore-bot has guessed at a .dockstore.yml for your repository to enable Dockstore's [GitHub app](https://docs.dockstore.org/en/stable/getting-started/github-apps/github-apps-landing-page.html).
            
            Please review, make appropriate changes, add any [additional keys](https://docs.dockstore.org/en/stable/assets/templates/template.html) and merge in order to complete integration with Dockstore, allowing Dockstore to keep informed of new changes to your workflow(s), notebook(s), or tool(s).
            """;
 
-    public static final String DOCKSTORE_BOT_PR_TITLE =  "dockstore-bot inferred .dockstore.yml";
+    public static final String DOCKSTORE_BOT_PR_TITLE =  "Add dockstore-bot inferred .dockstore.yml";
 
     private GitHubHelper() {
     }
@@ -85,7 +85,7 @@ public final class GitHubHelper {
             String masterSha = fork.getRef("heads/" + targetBranch).getObject().getSha();
             GHRef ref = fork.createRef("refs/heads/" + BRANCHNAME_FOR_BOT, masterSha);
             fork.createContent().content(inferredDockstoreYml).branch(ref.getRef()).message(DOCKSTORE_BOT_PR_TITLE).commit();
-            GHPullRequest pullRequest = targetRepository.createPullRequest(prTitle, username + ":" + branchForBot, targetBranch, prDescription, true, true);
+            GHPullRequest pullRequest = targetRepository.createPullRequest(prTitle, username + ":" + branchForBot, targetBranch, prDescription, true, false);
             return pullRequest.getUrl();
         } catch (IOException e) {
             String msg = "Something messed up creating a PR on: " + repositoryName;
