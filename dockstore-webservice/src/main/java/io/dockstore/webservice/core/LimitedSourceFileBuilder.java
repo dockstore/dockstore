@@ -121,7 +121,7 @@ public class LimitedSourceFileBuilder {
         }
 
         private static long computeMaximumSize(String path) {
-            // Jupyter notebooks can contain embedded images, making them larger, on average.
+            // Jupyter notebook files can contain embedded images, making them tend to be larger.
             if (StringUtils.endsWith(path, ".ipynb")) {
                 return NOTEBOOK_MAXIMUM_FILE_SIZE;
             }
