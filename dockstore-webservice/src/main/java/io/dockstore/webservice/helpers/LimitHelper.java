@@ -32,7 +32,7 @@ public final class LimitHelper {
 
     public static void checkVersion(Version<?> version) {
         if (totalFileSize(version) > MAXIMUM_VERSION_FILE_SIZE) {
-            String message = "A version must contain less than %.1dMB of files".formatted(MAXIMUM_VERSION_FILE_SIZE / BYTES_PER_MEGABYTE);
+            String message = "A version must contain less than %.1fMB of files".formatted(MAXIMUM_VERSION_FILE_SIZE / (double)BYTES_PER_MEGABYTE);
             throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }

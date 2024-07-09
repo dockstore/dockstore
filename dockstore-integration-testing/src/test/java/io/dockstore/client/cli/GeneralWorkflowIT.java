@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -1111,5 +1112,20 @@ class GeneralWorkflowIT extends BaseIT {
         // final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", long.class);
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
         assertEquals(1, count, "One user should have this info now, there are  " + count);
+    }
+
+    @Test
+    void testVersionSourceFileSizeLimit() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/large-sourcefiles", "main", "cwl", SourceControl.GITHUB, "/main.cwl", true);
+        List<String> testFiles = IntStream.range(0, 12).mapToObj(i -> "/test%d.json".formatted(i)).toList();
+        workflowsApi.addTestParameterFiles(workflow.getId(), testFiles, "", "main");
+        try {
+            workflowsApi.refresh(workflow.getId(), false);
+            fail("refresh should have failed");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("file"));
+        }
     }
 }
