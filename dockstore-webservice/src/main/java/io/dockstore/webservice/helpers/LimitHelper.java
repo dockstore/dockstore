@@ -21,11 +21,14 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class LimitHelper {
 
     public static final long BYTES_PER_MEGABYTE = 1_000_000L;
     public static final long MAXIMUM_VERSION_FILE_SIZE = 10 * BYTES_PER_MEGABYTE;
+    private static final Logger LOG = LoggerFactory.getLogger(LimitHelper.class);
 
     private LimitHelper() {
         // This space intentionally left blank.
@@ -34,6 +37,7 @@ public final class LimitHelper {
     public static void checkVersion(Version<?> version) {
         if (totalFileSize(version) > MAXIMUM_VERSION_FILE_SIZE) {
             String message = "A version must contain less than %.1fMB of files".formatted(MAXIMUM_VERSION_FILE_SIZE / (double)BYTES_PER_MEGABYTE);
+            LOG.warn(message);
             throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
