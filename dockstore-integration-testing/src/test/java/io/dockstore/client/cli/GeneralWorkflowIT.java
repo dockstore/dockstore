@@ -1118,9 +1118,9 @@ class GeneralWorkflowIT extends BaseIT {
     void testVersionSourceFileSizeLimit() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/large-sourcefiles", "main", "cwl", SourceControl.GITHUB, "/main.cwl", true);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/large-sourcefiles", "v1_11MB", "cwl", SourceControl.GITHUB, "/main.cwl", true);
         List<String> testFiles = IntStream.range(0, 12).mapToObj(i -> "/test%d.json".formatted(i)).toList();
-        workflowsApi.addTestParameterFiles(workflow.getId(), testFiles, "", "main");
+        workflowsApi.addTestParameterFiles(workflow.getId(), testFiles, "", "v1_11MB");
         try {
             workflowsApi.refresh(workflow.getId(), false);
             fail("refresh should have failed");

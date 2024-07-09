@@ -2157,7 +2157,7 @@ class WebhookIT extends BaseIT {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         try {
-            handleGitHubRelease(workflowsApi, "dockstore-testing/large-sourcefiles", "refs/heads/main", USER_2_USERNAME);
+            handleGitHubRelease(workflowsApi, "dockstore-testing/large-sourcefiles", "refs/tags/v1_11MB", USER_2_USERNAME);
             fail("registration should have failed");
         } catch (ApiException e) {
             // Expected execution path.
