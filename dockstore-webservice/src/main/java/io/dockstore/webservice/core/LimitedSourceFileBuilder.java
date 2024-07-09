@@ -37,6 +37,7 @@ public class LimitedSourceFileBuilder {
 
     private DescriptorLanguage.FileType type;
     private String content;
+    private SourceFile.FormEnum form;
     private String path;
     private String absolutePath;
 
@@ -93,21 +94,29 @@ public class LimitedSourceFileBuilder {
 
         private static void setContentWithLimits(SourceFile file, String content, String path) {
             String limitedContent = content;
-            if (content != null) {
+            SourceFile.FormEnum limitedForm = SourceFile.FormEnum.COMPLETE;
+            if (content == null) {
+                limitedContent = "Dockstore could not retrieve this file";
+                limitedForm = SourceFile.FormEnum.ERROR;
+            } else {
                 byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-                long maximumSize = computeMaximumSize(path);
-                // A large file is probably up to no good.
-                if (bytes.length > maximumSize) {
-                    limitedContent = String.format("Dockstore does not store files of this type over %.1fMB in size", maximumSize / (double) BYTES_PER_MEGABYTE);
-                }
-                // Postgresql cannot store strings that contain "NUL" characters.
-                // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
-                // https://www.ascii-code.com/character/%E2%90%80
                 if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
+                    // Postgres cannot store strings that contain "NUL" characters.
+                    // Thus, Dockstore cannot currently store binary files.
+                    // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
+                    // https://www.ascii-code.com/character/%E2%90%80
                     limitedContent = "Dockstore does not store binary files";
+                    limitedForm = SourceFile.FormEnum.ERROR;
+                }
+                long maximumSize = computeMaximumSize(path);
+                if (bytes.length > maximumSize) {
+                    // A large file is probably up to no good.
+                    limitedContent = String.format("Dockstore does not store files of this type over %.1fMB in size", maximumSize / (double) BYTES_PER_MEGABYTE);
+                    limitedForm = SourceFile.FormEnum.ERROR;
                 }
             }
             file.setContent(limitedContent);
+            file.setForm(limitedForm);
         }
 
         private static long computeMaximumSize(String path) {

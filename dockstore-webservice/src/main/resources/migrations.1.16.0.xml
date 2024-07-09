@@ -316,4 +316,11 @@
             WHERE version_metadata.doiurl IS NOT NULL;
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="addFormToSourceFile">
+        <addColumn tableName="sourcefile">
+            <column name="form" type="varchar(32 BYTE)" value="COMPLETE">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
