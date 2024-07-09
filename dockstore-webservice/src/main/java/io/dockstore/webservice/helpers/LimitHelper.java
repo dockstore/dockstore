@@ -18,6 +18,7 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import org.apache.http.HttpStatus;
 
@@ -38,6 +39,11 @@ public final class LimitHelper {
     }
 
     private static long totalFileSize(Version<?> version) {
-        return version.getSourceFiles().stream().mapToLong(file -> file.getContent().length()).sum();
+        return version.getSourceFiles().stream().mapToLong(LimitHelper::fileSize).sum();
+    }
+
+    private static long fileSize(SourceFile file) {
+        String content = file.getContent();
+        return content != null ? content.length() : 0;
     }
 }
