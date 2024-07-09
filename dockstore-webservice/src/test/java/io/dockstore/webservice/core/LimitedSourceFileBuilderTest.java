@@ -20,6 +20,7 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(SMALL_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals(SMALL_CONTENT, file.getContent());
+        assertEquals(SourceFile.FormEnum.COMPLETE, file.getForm());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -29,6 +30,7 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(HUGE_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertTrue(file.getContent().startsWith("Dockstore does not store files of this type over"));
+        assertEquals(SourceFile.FormEnum.ERROR, file.getForm());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -37,7 +39,8 @@ class LimitedSourceFileBuilderTest {
     void testBinaryContent() {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(BINARY_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
-        assertTrue(file.getContent().startsWith("Dockstore does not store binary files"));
+        assertEquals("Dockstore does not store binary files", file.getContent());
+        assertEquals(SourceFile.FormEnum.ERROR, file.getForm());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -46,7 +49,8 @@ class LimitedSourceFileBuilderTest {
     void testNullContent() {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(null).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
-        assertEquals(null, file.getContent());
+        assertEquals("Dockstore could not retrieve this file", file.getContent());
+        assertEquals(SourceFile.FormEnum.ERROR, file.getForm());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -56,6 +60,7 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(SMALL_CONTENT).paths(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals(SMALL_CONTENT, file.getContent());
+        assertEquals(SourceFile.FormEnum.COMPLETE, file.getForm());
         assertEquals(ABSOLUTE_PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }

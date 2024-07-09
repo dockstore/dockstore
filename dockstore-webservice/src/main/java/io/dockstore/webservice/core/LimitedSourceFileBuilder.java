@@ -95,6 +95,7 @@ public class LimitedSourceFileBuilder {
         private static void setContentWithLimits(SourceFile file, String content, String path) {
             String limitedContent = content;
             SourceFile.FormEnum limitedForm = SourceFile.FormEnum.COMPLETE;
+            // Limit certain types of content.
             if (content == null) {
                 limitedContent = "Dockstore could not retrieve this file";
                 limitedForm = SourceFile.FormEnum.ERROR;
