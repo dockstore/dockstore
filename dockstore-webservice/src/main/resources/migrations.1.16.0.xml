@@ -322,5 +322,13 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <sql dbms="postgresql">
+            <comment>Set appropriate content and form for sourcefiles with null content</comment>
+            UPDATE sourcefile SET form = 'ERROR', content = 'Dockstore could not retrieve this file' WHERE content IS NULL;
+        </sql>
+        <sql dbms="postgresql">
+            <comment>Set form = ERROR for binary sourcefiles</comment>
+            UPDATE sourcefile SET form = 'ERROR' WHERE content = 'Dockstore does not store binary files';
+        </sql>
     </changeSet>
 </databaseChangeLog>
