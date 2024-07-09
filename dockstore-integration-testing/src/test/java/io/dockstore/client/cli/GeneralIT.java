@@ -70,7 +70,6 @@ import io.swagger.client.model.Tag.DoiStatusEnum;
 import io.swagger.client.model.Workflow;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -84,7 +83,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.AbuseLimitHandler;
@@ -138,17 +136,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false, testingPostgres);
-    }
-
-    @Test
-    @Disabled("cannot repeat easily ... yet")
-    void testForkAndCreatePR() throws IOException {
-        // get a PR from https://github.com/settings/tokens
-        String githubToken = "< insert a token with repo, user scope >";
-        GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
-            AbuseLimitHandler.FAIL).build();
-        URL forkPlusPR = GitHubHelper.createForkPlusPR("groovy pr content", gitHub, "dockstore-testing/hello-wdl-workflow", "master");
-        assertNotNull(forkPlusPR);
     }
 
     @Test
