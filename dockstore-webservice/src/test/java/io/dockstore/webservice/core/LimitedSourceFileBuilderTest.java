@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class LimitedSourceFileBuilderTest {
 
     private static final DescriptorLanguage.FileType TYPE = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-    private static final String SMALL_CONTENT = "This is some content.";
+    private static final String SMALL_CONTENT = "A small bit of content.";
     private static final String HUGE_CONTENT = ".".repeat(100_000_000);
     private static final String BINARY_CONTENT = "Content that contains a nul character \u0000";
     private static final String PATH = "abc.wdl";
