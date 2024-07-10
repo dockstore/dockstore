@@ -164,6 +164,7 @@ public class SourceFile implements Comparable<SourceFile> {
     @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Schema(description = "Enumerates the form of file", requiredMode = RequiredMode.REQUIRED)
     private FormEnum form = FormEnum.COMPLETE;
