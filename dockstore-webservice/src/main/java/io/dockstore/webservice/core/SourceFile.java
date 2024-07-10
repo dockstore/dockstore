@@ -166,7 +166,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Enumerated(EnumType.STRING)
     @Schema(description = "Enumerates the form of file", requiredMode = RequiredMode.REQUIRED)
-    private FormEnum form;
+    private FormEnum form = FormEnum.COMPLETE;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
