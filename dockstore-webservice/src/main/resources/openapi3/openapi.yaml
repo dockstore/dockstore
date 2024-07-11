@@ -10757,12 +10757,6 @@ components:
             $ref: '#/components/schemas/Checksum'
         content:
           type: string
-        form:
-          type: string
-          description: Enumerates the form of file
-          enum:
-          - COMPLETE
-          - ERROR
         frozen:
           type: boolean
         id:
@@ -10773,6 +10767,19 @@ components:
         path:
           type: string
           description: Path to sourcefile relative to its parent
+        reason:
+          type: string
+          description: Enumerates the reason for the file state
+          enum:
+          - TOO_LARGE
+          - BINARY
+          - READ_ERROR
+        state:
+          type: string
+          description: Enumerates the file state
+          enum:
+          - COMPLETE
+          - MESSAGE
         type:
           type: string
           description: Enumerates the type of file
@@ -10806,8 +10813,8 @@ components:
             $ref: '#/components/schemas/VerificationInformation'
       required:
       - absolutePath
-      - form
       - path
+      - state
       - type
     SourceFileMetadata:
       type: object

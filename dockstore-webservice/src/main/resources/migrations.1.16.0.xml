@@ -318,17 +318,21 @@
     </changeSet>
     <changeSet author="svonworl" id="addFormFieldToSourceFile">
         <addColumn tableName="sourcefile">
-            <column name="form" type="VARCHAR(255)" value="COMPLETE">
+            <column name="state" type="VARCHAR(255)" value="COMPLETE">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addColumn tableName="sourcefile">
+            <column name="reason" type="VARCHAR(255)">
+            </column>
+        </addColumn>
         <sql dbms="postgresql">
-            <comment>Set appropriate content and form for sourcefiles with null content</comment>
-            UPDATE sourcefile SET form = 'ERROR', content = 'Dockstore could not retrieve this file' WHERE content IS NULL;
+            <comment>Set state and content for sourcefiles with null content</comment>
+            UPDATE sourcefile SET state = 'MESSAGE', content = 'Dockstore could not retrieve this file' WHERE content IS NULL;
         </sql>
         <sql dbms="postgresql">
-            <comment>Set form = ERROR for binary sourcefiles</comment>
-            UPDATE sourcefile SET form = 'ERROR' WHERE content = 'Dockstore does not store binary files';
+            <comment>Set state and reason for binary sourcefiles</comment>
+            UPDATE sourcefile SET state = 'MESSAGE', reason = 'BINARY' WHERE content = 'Dockstore does not store binary files';
         </sql>
     </changeSet>
 </databaseChangeLog>

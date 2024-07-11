@@ -37,7 +37,8 @@ public class LimitedSourceFileBuilder {
 
     private DescriptorLanguage.FileType type;
     private String content;
-    private SourceFile.FormEnum form;
+    private SourceFile.State state;
+    private SourceFile.Reason reason;
     private String path;
     private String absolutePath;
 
@@ -94,11 +95,13 @@ public class LimitedSourceFileBuilder {
 
         private static void setContentWithLimits(SourceFile file, String content, String path) {
             String limitedContent = content;
-            SourceFile.FormEnum limitedForm = SourceFile.FormEnum.COMPLETE;
+            SourceFile.State limitedState = SourceFile.State.COMPLETE;
+            SourceFile.Reason limitedReason = null;
             // Limit certain types of content.
             if (content == null) {
                 limitedContent = "Dockstore could not retrieve this file";
-                limitedForm = SourceFile.FormEnum.ERROR;
+                limitedState = SourceFile.State.MESSAGE;
+                limitedReason = SourceFile.Reason.READ_ERROR;
             } else {
                 byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
                 if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
@@ -107,17 +110,20 @@ public class LimitedSourceFileBuilder {
                     // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
                     // https://www.ascii-code.com/character/%E2%90%80
                     limitedContent = "Dockstore does not store binary files";
-                    limitedForm = SourceFile.FormEnum.ERROR;
+                    limitedState = SourceFile.State.MESSAGE;
+                    limitedReason = SourceFile.Reason.BINARY;
                 }
                 long maximumSize = computeMaximumSize(path);
                 if (bytes.length > maximumSize) {
                     // A large file is probably up to no good.
                     limitedContent = String.format("Dockstore does not store files of this type over %.1fMB in size", maximumSize / (double) BYTES_PER_MEGABYTE);
-                    limitedForm = SourceFile.FormEnum.ERROR;
+                    limitedState = SourceFile.State.MESSAGE;
+                    limitedReason = SourceFile.Reason.TOO_LARGE;
                 }
             }
             file.setContent(limitedContent);
-            file.setForm(limitedForm);
+            file.setState(limitedState);
+            file.setReason(limitedReason);
         }
 
         private static long computeMaximumSize(String path) {

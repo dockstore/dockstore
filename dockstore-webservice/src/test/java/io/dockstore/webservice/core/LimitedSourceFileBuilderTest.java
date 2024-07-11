@@ -20,7 +20,8 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(SMALL_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals(SMALL_CONTENT, file.getContent());
-        assertEquals(SourceFile.FormEnum.COMPLETE, file.getForm());
+        assertEquals(SourceFile.State.COMPLETE, file.getState());
+        assertEquals(null, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -30,7 +31,8 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(HUGE_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertTrue(file.getContent().startsWith("Dockstore does not store files of this type over"));
-        assertEquals(SourceFile.FormEnum.ERROR, file.getForm());
+        assertEquals(SourceFile.State.MESSAGE, file.getState());
+        assertEquals(SourceFile.Reason.TOO_LARGE, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -40,7 +42,8 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(BINARY_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals("Dockstore does not store binary files", file.getContent());
-        assertEquals(SourceFile.FormEnum.ERROR, file.getForm());
+        assertEquals(SourceFile.State.MESSAGE, file.getState());
+        assertEquals(SourceFile.Reason.BINARY, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -50,7 +53,8 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(null).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals("Dockstore could not retrieve this file", file.getContent());
-        assertEquals(SourceFile.FormEnum.ERROR, file.getForm());
+        assertEquals(SourceFile.State.MESSAGE, file.getState());
+        assertEquals(SourceFile.Reason.READ_ERROR, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -60,7 +64,8 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(SMALL_CONTENT).paths(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals(SMALL_CONTENT, file.getContent());
-        assertEquals(SourceFile.FormEnum.COMPLETE, file.getForm());
+        assertEquals(SourceFile.State.COMPLETE, file.getState());
+        assertEquals(null, file.getReason());
         assertEquals(ABSOLUTE_PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }

@@ -166,8 +166,13 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "Enumerates the form of file", requiredMode = RequiredMode.REQUIRED)
-    private FormEnum form = FormEnum.COMPLETE;
+    @Schema(description = "Enumerates the file state", requiredMode = RequiredMode.REQUIRED)
+    private State state = State.COMPLETE;
+
+    @Column()
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "Enumerates the reason for the file state")
+    private Reason reason;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
@@ -300,7 +305,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).add("form", form).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).add("state", state).add("reason", reason).toString();
     }
 
     public boolean isFrozen() {
@@ -311,12 +316,20 @@ public class SourceFile implements Comparable<SourceFile> {
         this.frozen = frozen;
     }
 
-    public FormEnum getForm() {
-        return form;
+    public State getState() {
+        return state;
     }
 
-    public void setForm(FormEnum form) {
-        this.form = form;
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public Reason getReason() {
+        return reason;
+    }
+
+    public void setReason(Reason reason) {
+        this.reason = reason;
     }
 
     public SourceFileMetadata getMetadata() {
@@ -336,7 +349,8 @@ public class SourceFile implements Comparable<SourceFile> {
         setContent(src.getContent());
         setPath(src.getPath());
         setAbsolutePath(src.getAbsolutePath());
-        setForm(src.getForm());
+        setState(src.getState());
+        setReason(src.getReason());
         getMetadata().setTypeVersion(src.getMetadata().getTypeVersion());
     }
 
@@ -386,8 +400,14 @@ public class SourceFile implements Comparable<SourceFile> {
         // There is no dbupdatedate because it doesn't work with @Embeddable nor @ElementCollection
     }
 
-    public enum FormEnum {
+    public enum State {
         COMPLETE,
-        ERROR
+        MESSAGE
+    }
+
+    public enum Reason {
+        TOO_LARGE,
+        BINARY,
+        READ_ERROR
     }
 }
