@@ -2151,4 +2151,22 @@ class WebhookIT extends BaseIT {
         final List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
         return sourceFiles.stream().filter(file -> Objects.equals(file.getAbsolutePath(), absolutePath)).findFirst().get();
     }
+
+    @Test
+    void testVersionSourceFileSizeLimit() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        // Register a test workflow that contains some big test files.
+        try {
+            handleGitHubRelease(workflowsApi, "dockstore-testing/large-sourcefiles", "refs/tags/v1_11MB", USER_2_USERNAME);
+            fail("registration should have failed");
+        } catch (ApiException e) {
+            // Expected execution path.
+        }
+        // The last lambda event should correspond to the file-size-induced registration failure.
+        // Its error message could vary according to our current file size limits and editorial tastes, but will likely contain the substring "file".
+        LambdaEvent event = new UsersApi(webClient).getUserGitHubEvents(0, 1, null, null, null).get(0);
+        assertTrue(event.getMessage().contains("file"));
+        assertFalse(event.isSuccess());
+    }
 }
