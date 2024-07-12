@@ -10780,6 +10780,7 @@ components:
           enum:
           - COMPLETE
           - MESSAGE
+          - STUB
         type:
           type: string
           description: Enumerates the type of file

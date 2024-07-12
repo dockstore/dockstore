@@ -402,7 +402,8 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public enum State {
         COMPLETE,
-        MESSAGE
+        MESSAGE,
+        STUB
     }
 
     public enum Reason {

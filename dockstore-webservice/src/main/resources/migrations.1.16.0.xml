@@ -327,8 +327,8 @@
             </column>
         </addColumn>
         <sql dbms="postgresql">
-            <comment>Set state and content for sourcefiles with null content</comment>
-            UPDATE sourcefile SET state = 'MESSAGE', content = 'Dockstore could not retrieve this file' WHERE content IS NULL;
+            <comment>Set state and for sourcefiles with null content</comment>
+            UPDATE sourcefile SET state = 'STUB' WHERE content IS NULL;
         </sql>
         <sql dbms="postgresql">
             <comment>Set state and reason for binary sourcefiles</comment>

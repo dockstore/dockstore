@@ -99,9 +99,7 @@ public class LimitedSourceFileBuilder {
             SourceFile.Reason limitedReason = null;
             // Limit certain types of content.
             if (content == null) {
-                limitedContent = "Dockstore could not retrieve this file";
-                limitedState = SourceFile.State.MESSAGE;
-                limitedReason = SourceFile.Reason.READ_ERROR;
+                limitedState = SourceFile.State.STUB;
             } else {
                 byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
                 if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
