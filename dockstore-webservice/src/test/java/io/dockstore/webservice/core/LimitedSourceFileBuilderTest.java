@@ -52,9 +52,9 @@ class LimitedSourceFileBuilderTest {
     void testNullContent() {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(null).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
-        assertEquals("Dockstore could not retrieve this file", file.getContent());
-        assertEquals(SourceFile.State.MESSAGE, file.getState());
-        assertEquals(SourceFile.Reason.READ_ERROR, file.getReason());
+        assertEquals(null, file.getContent());
+        assertEquals(SourceFile.State.STUB, file.getState());
+        assertEquals(null, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
