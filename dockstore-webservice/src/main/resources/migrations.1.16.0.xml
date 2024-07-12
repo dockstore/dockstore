@@ -316,7 +316,7 @@
             WHERE version_metadata.doiurl IS NOT NULL;
         </sql>
     </changeSet>
-    <changeSet author="svonworl" id="addFormFieldToSourceFile">
+    <changeSet author="svonworl" id="addFieldsToSourceFile">
         <addColumn tableName="sourcefile">
             <column name="state" type="VARCHAR(255)" value="COMPLETE">
                 <constraints nullable="false"/>
