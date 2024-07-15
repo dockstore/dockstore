@@ -28,3 +28,11 @@ updates:
     open-pull-requests-limit: 0
     reviewers:
       - "dockstore/dockstore"   
+
+  # Ignore all python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "*"

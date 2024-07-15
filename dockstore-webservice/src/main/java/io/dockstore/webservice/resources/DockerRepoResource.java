@@ -791,8 +791,7 @@ public class DockerRepoResource
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
-        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
-        List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
+        List<Tool> tools = toolDAO.findAllPublished(offset, limit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
