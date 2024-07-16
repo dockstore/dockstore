@@ -10767,13 +10767,6 @@ components:
         path:
           type: string
           description: Path to sourcefile relative to its parent
-        reason:
-          type: string
-          description: Enumerates the reason for the file state
-          enum:
-          - TOO_LARGE
-          - BINARY
-          - READ_ERROR
         state:
           type: string
           description: Enumerates the file state

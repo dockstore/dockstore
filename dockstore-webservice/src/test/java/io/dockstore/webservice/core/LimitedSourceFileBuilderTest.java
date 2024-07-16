@@ -21,7 +21,6 @@ class LimitedSourceFileBuilderTest {
         assertEquals(TYPE, file.getType());
         assertEquals(SMALL_CONTENT, file.getContent());
         assertEquals(SourceFile.State.COMPLETE, file.getState());
-        assertEquals(null, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -32,7 +31,6 @@ class LimitedSourceFileBuilderTest {
         assertEquals(TYPE, file.getType());
         assertTrue(file.getContent().startsWith("Dockstore does not store files of this type over"));
         assertEquals(SourceFile.State.MESSAGE, file.getState());
-        assertEquals(SourceFile.Reason.TOO_LARGE, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -43,7 +41,6 @@ class LimitedSourceFileBuilderTest {
         assertEquals(TYPE, file.getType());
         assertEquals("Dockstore does not store binary files", file.getContent());
         assertEquals(SourceFile.State.MESSAGE, file.getState());
-        assertEquals(SourceFile.Reason.BINARY, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -54,7 +51,6 @@ class LimitedSourceFileBuilderTest {
         assertEquals(TYPE, file.getType());
         assertEquals(null, file.getContent());
         assertEquals(SourceFile.State.STUB, file.getState());
-        assertEquals(null, file.getReason());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -65,7 +61,6 @@ class LimitedSourceFileBuilderTest {
         assertEquals(TYPE, file.getType());
         assertEquals(SMALL_CONTENT, file.getContent());
         assertEquals(SourceFile.State.COMPLETE, file.getState());
-        assertEquals(null, file.getReason());
         assertEquals(ABSOLUTE_PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }

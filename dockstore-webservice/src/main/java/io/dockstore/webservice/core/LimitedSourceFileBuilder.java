@@ -38,7 +38,6 @@ public class LimitedSourceFileBuilder {
     private DescriptorLanguage.FileType type;
     private String content;
     private SourceFile.State state;
-    private SourceFile.Reason reason;
     private String path;
     private String absolutePath;
 
@@ -94,12 +93,15 @@ public class LimitedSourceFileBuilder {
         }
 
         private static void setContentWithLimits(SourceFile file, String content, String path) {
-            String limitedContent = content;
-            SourceFile.State limitedState = SourceFile.State.COMPLETE;
-            SourceFile.Reason limitedReason = null;
-            // Limit certain types of content.
+            // Set the properties to default values.
+            file.setContent(content);
+            file.setState(SourceFile.State.COMPLETE);
+            // Check the content and override the above settings, if necessary.
             if (content == null) {
-                limitedState = SourceFile.State.STUB;
+                file.setContent(null);
+                file.setState(SourceFile.State.STUB);
+                logContentAction(path, "stub");
+                return;
             } else {
                 byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
                 if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
@@ -107,21 +109,26 @@ public class LimitedSourceFileBuilder {
                     // Thus, Dockstore cannot currently store binary files.
                     // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
                     // https://www.ascii-code.com/character/%E2%90%80
-                    limitedContent = "Dockstore does not store binary files";
-                    limitedState = SourceFile.State.MESSAGE;
-                    limitedReason = SourceFile.Reason.BINARY;
+                    file.setContent("Dockstore does not store binary files");
+                    file.setState(SourceFile.State.MESSAGE);
+                    logContentAction(path, "binary file");
+                    return;
                 }
                 long maximumSize = computeMaximumSize(path);
                 if (bytes.length > maximumSize) {
                     // A large file is probably up to no good.
-                    limitedContent = String.format("Dockstore does not store files of this type over %.1fMB in size", maximumSize / (double) BYTES_PER_MEGABYTE);
-                    limitedState = SourceFile.State.MESSAGE;
-                    limitedReason = SourceFile.Reason.TOO_LARGE;
+                    double megabytes = maximumSize / (double) BYTES_PER_MEGABYTE;
+                    file.setContent("Dockstore does not store files of this type over %.1fMB in size".formatted(megabytes));
+                    file.setState(SourceFile.State.MESSAGE);
+                    logContentAction(path, "large file (%n bytes)".formatted(bytes.length));
+                    return;
                 }
             }
-            file.setContent(limitedContent);
-            file.setState(limitedState);
-            file.setReason(limitedReason);
+        }
+
+        private static void logContentAction(String path, String why) {
+            String message = "incomplete content for file %s: %s".formatted(path, why);
+            LOG.info(message);
         }
 
         private static long computeMaximumSize(String path) {

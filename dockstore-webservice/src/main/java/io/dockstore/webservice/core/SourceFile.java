@@ -169,11 +169,6 @@ public class SourceFile implements Comparable<SourceFile> {
     @Schema(description = "Enumerates the file state", requiredMode = RequiredMode.REQUIRED)
     private State state = State.COMPLETE;
 
-    @Column()
-    @Enumerated(EnumType.STRING)
-    @Schema(description = "Enumerates the reason for the file state")
-    private Reason reason;
-
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
@@ -305,7 +300,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).add("state", state).add("reason", reason).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).add("state", state).toString();
     }
 
     public boolean isFrozen() {
@@ -322,14 +317,6 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setState(State state) {
         this.state = state;
-    }
-
-    public Reason getReason() {
-        return reason;
-    }
-
-    public void setReason(Reason reason) {
-        this.reason = reason;
     }
 
     public SourceFileMetadata getMetadata() {
@@ -350,7 +337,6 @@ public class SourceFile implements Comparable<SourceFile> {
         setPath(src.getPath());
         setAbsolutePath(src.getAbsolutePath());
         setState(src.getState());
-        setReason(src.getReason());
         getMetadata().setTypeVersion(src.getMetadata().getTypeVersion());
     }
 
@@ -404,11 +390,5 @@ public class SourceFile implements Comparable<SourceFile> {
         COMPLETE,
         MESSAGE,
         STUB
-    }
-
-    public enum Reason {
-        TOO_LARGE,
-        BINARY,
-        READ_ERROR
     }
 }
