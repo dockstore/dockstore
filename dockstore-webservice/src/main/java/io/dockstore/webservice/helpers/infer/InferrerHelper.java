@@ -45,7 +45,7 @@ public class InferrerHelper {
                     return path.endsWith(".cwl");
                 }
                 @Override
-                protected EntryType calculateType(FileTree fileTree, String path) {
+                protected EntryType determineType(FileTree fileTree, String path) {
                     String content = readFile(fileTree, path);
                     if (lineContainsRegex("^class:\\s*Workflow", content)) {
                         return EntryType.WORKFLOW;
@@ -63,7 +63,7 @@ public class InferrerHelper {
                     return path.endsWith(".wdl");
                 }
                 @Override
-                protected EntryType calculateType(FileTree fileTree, String path) {
+                protected EntryType determineType(FileTree fileTree, String path) {
                     String content = readFile(fileTree, path);
                     if (lineContainsRegex("^workflow\\s", content)) {
                         return EntryType.WORKFLOW;
@@ -71,7 +71,7 @@ public class InferrerHelper {
                     return null;
                 }
                 @Override
-                protected String calculateName(FileTree fileTree, String path) {
+                protected String determineName(FileTree fileTree, String path) {
                     String content = readFile(fileTree, path);
                     return groupFromLineContainingRegex("^workflow\\s+(\\S+)\\s", 1, content);
                 }
@@ -83,7 +83,7 @@ public class InferrerHelper {
                     return path.endsWith("/nextflow.config");
                 }
                 @Override
-                protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
+                protected List<String> determineReferencedPaths(FileTree fileTree, String path) {
                     return List.of();
                 }
             };
@@ -101,11 +101,11 @@ public class InferrerHelper {
                     return path.endsWith(".ipynb");
                 }
                 @Override
-                protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
+                protected List<String> determineReferencedPaths(FileTree fileTree, String path) {
                     return List.of();
                 }
                 @Override
-                protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path, EntryType type) {
+                protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
                     String content = readFile(fileTree, path).toLowerCase();
                     // Look for some json that sets the "language" field to one of the legal values.
                     for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.valuesForEntryType(type)) {
@@ -142,10 +142,10 @@ public class InferrerHelper {
     }
 
     private Inferrer.Entry setMissingName(Inferrer.Entry entry) {
-        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), calculateNameFromPath(entry.path()), defaultName(entry)));
+        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), nameFromPath(entry.path()), defaultName(entry)));
     }
 
-    private String calculateNameFromPath(String path) {
+    private String nameFromPath(String path) {
         String[] pathParts = path.split("/");
         if (pathParts.length == 0) {
             return null;
@@ -203,7 +203,7 @@ public class InferrerHelper {
 
     @SuppressWarnings("checkstyle:magicnumber")
     public String toDockstoreYaml(List<Inferrer.Entry> entries) {
-        // "Refine" the entries, to fix things like missing, colliding, or illegal names.
+        // "Refine" the entries to fix issues like missing, duplicate, or illegal names.
         entries = refine(entries);
         // Construct map that contains an abstract representation of the .dockstore.yml.
         Map<String, Object> map = new LinkedHashMap<>();

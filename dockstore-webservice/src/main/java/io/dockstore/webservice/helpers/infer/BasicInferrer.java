@@ -42,10 +42,10 @@ public abstract class BasicInferrer implements Inferrer {
 
     public List<Entry> infer(FileTree fileTree, String path) {
         if (isDescriptorPath(path)) {
-            EntryType type = calculateType(fileTree, path);
+            EntryType type = determineType(fileTree, path);
             if (type != null) {
-                String name = calculateName(fileTree, path);
-                DescriptorLanguageSubclass subclass = calculateSubclass(fileTree, path, type);
+                String name = determineName(fileTree, path);
+                DescriptorLanguageSubclass subclass = determineSubclass(fileTree, path, type);
                 return List.of(new Entry(type, language, subclass, path, name));
             }
         }
@@ -63,11 +63,11 @@ public abstract class BasicInferrer implements Inferrer {
 
     protected List<String> removeReferencedPaths(FileTree fileTree, List<String> paths) {
         Set<String> unreferencedPaths = new LinkedHashSet<>(paths);
-        paths.forEach(path -> unreferencedPaths.removeAll(calculateReferencedPaths(fileTree, path)));
+        paths.forEach(path -> unreferencedPaths.removeAll(determineReferencedPaths(fileTree, path)));
         return toList(unreferencedPaths);
     }
 
-    protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
+    protected List<String> determineReferencedPaths(FileTree fileTree, String path) {
         Set<String> referencedPaths = new LinkedHashSet<>();
         String content = removeComments(readFile(fileTree, path));
         Matcher matcher = POSSIBLE_PATH.matcher(content);
@@ -85,7 +85,7 @@ public abstract class BasicInferrer implements Inferrer {
         return toList(referencedPaths);
     }
 
-    protected EntryType calculateType(FileTree fileTree, String path) {
+    protected EntryType determineType(FileTree fileTree, String path) {
         Set<EntryType> entryTypes = language.getEntryTypes();
         if (entryTypes.size() == 1) {
             return entryTypes.iterator().next();
@@ -93,11 +93,11 @@ public abstract class BasicInferrer implements Inferrer {
         throw new UnsupportedOperationException();
     }
 
-    protected String calculateName(FileTree fileTree, String path) {
+    protected String determineName(FileTree fileTree, String path) {
         return null;
     }
 
-    protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path, EntryType type) {
+    protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
         Set<DescriptorLanguageSubclass> subclasses = DescriptorLanguageSubclass.valuesForEntryType(type);
         if (subclasses.size() == 1) {
             return subclasses.iterator().next();
