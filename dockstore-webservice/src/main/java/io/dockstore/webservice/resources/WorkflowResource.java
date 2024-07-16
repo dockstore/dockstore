@@ -63,6 +63,7 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
+import io.dockstore.webservice.helpers.CachedFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
@@ -2108,20 +2109,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create FileTree.
         String ownerAndRepo = owner + "/" + repo;
-        FileTree fileTree = new GitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference);
+        FileTree fileTree = new CachedFileTree(new GitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
 
         // Infer entries.
-        LOG.error("INFERRING ENTRIES");
+        LOG.error("Inferring entries");
         InferrerHelper inferrerHelper = new InferrerHelper();
         List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
-        entries.forEach(e -> LOG.error("INFERRED ENTRY " + e));
+        entries.forEach(e -> LOG.error("Inferred entry: " + e));
 
-        // Create .dockstore.yml
-        String dockstoreYml = inferrerHelper.toDockstoreYaml(entries);
-
-        // TODO Parse to make sure the .dockstore.yml is valid.
-
-        return dockstoreYml;
+        // Create and return .dockstore.yml
+        return inferrerHelper.toDockstoreYaml(entries);
     }
 
     @POST
