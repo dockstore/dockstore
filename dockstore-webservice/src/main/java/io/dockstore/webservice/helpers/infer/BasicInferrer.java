@@ -3,6 +3,7 @@ package io.dockstore.webservice.helpers.infer;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +69,7 @@ public abstract class BasicInferrer implements Inferrer {
 
     protected List<String> calculateReferencedPaths(FileTree fileTree, String path) {
         Set<String> referencedPaths = new LinkedHashSet<>();
-        String content = removeComments(fileTree.readFile(path));
+        String content = removeComments(readFile(fileTree, path));
         Matcher matcher = POSSIBLE_PATH.matcher(content);
         while (matcher.find()) {
             String foundPath = matcher.group();
@@ -103,15 +105,23 @@ public abstract class BasicInferrer implements Inferrer {
         throw new UnsupportedOperationException();
     }
 
+    protected String readFile(FileTree tree, String path) {
+        String content = tree.readFile(path);
+        if (content == null) {
+            throw new CustomWebApplicationException("could not find file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return content;
+    }
+
     protected String removeComments(String content) {
         return content.replaceAll("#.*", "");
     }
 
-    protected static boolean lineContainsRegex(String regex, String s) {
+    protected boolean lineContainsRegex(String regex, String s) {
         return Pattern.compile(regex, Pattern.MULTILINE).matcher(s).find();
     }
 
-    protected static String groupFromLineContainingRegex(String regex, int groupIndex, String s) {
+    protected String groupFromLineContainingRegex(String regex, int groupIndex, String s) {
         Matcher matcher = Pattern.compile(regex, Pattern.MULTILINE).matcher(s);
         if (matcher.find()) {
             return matcher.group(groupIndex);
@@ -120,7 +130,7 @@ public abstract class BasicInferrer implements Inferrer {
         }
     }
 
-    protected static <T> List<T> toList(Collection<? extends T> values) {
+    protected <T> List<T> toList(Collection<? extends T> values) {
         return new ArrayList<T>(values);
     }
 }

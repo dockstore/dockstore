@@ -6,10 +6,10 @@ import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
@@ -34,23 +34,18 @@ public class GitHubFileTree implements FileTree {
         this.ref = ref;
         // Read the Zip contents and create an in-memory ZipFile.
         byte[] zipBytes = gitHubSourceCodeRepo.readZip(repository, ref);
-        LOG.info("downloaded Zip " + zipBytes.length);
+        LOG.info("downloaded Zip of GitHub repository: %n bytes".formatted(zipBytes.length));
         SeekableByteChannel zipChannel = new SeekableInMemoryByteChannel(zipBytes);
         try {
             zipFile = new ZipFile(zipChannel);
         } catch (IOException e) {
-            throw new CustomWebApplicationException("could not read zip archive", HttpStatus.SC_BAD_REQUEST);
+            LOG.error("could not read Zipball from GitHub repository");
+            throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
         // Create a Map of absolute paths to Zip file entries.
-        pathToEntry = new LinkedHashMap<>();
-        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
-        while (entries.hasMoreElements()) {
-            ZipArchiveEntry entry = entries.nextElement();
-            if (!entry.isDirectory() && !entry.isUnixSymlink()) {
-                String path = getPathFromEntry(entry);
-                pathToEntry.put(path, entry);
-            }
-        }
+        pathToEntry = Collections.list(zipFile.getEntries()).stream()
+            .filter(entry -> !entry.isDirectory() && !entry.isUnixSymlink())
+            .collect(Collectors.toMap(this::getPathFromEntry, entry -> entry, (valueA, valueB) -> valueA));
     }
 
     @Override
@@ -60,7 +55,8 @@ public class GitHubFileTree implements FileTree {
             try (InputStream in = zipFile.getInputStream(entry)) {
                 return IOUtils.toString(in, StandardCharsets.UTF_8);
             } catch (IOException e) {
-                throw new CustomWebApplicationException("could not read file from zip archive", HttpStatus.SC_BAD_REQUEST);
+                LOG.error("could not extract file from ZipArchiveEntry " + entry);
+                throw new CustomWebApplicationException("could not read file from GitHub repository", HttpStatus.SC_BAD_REQUEST);
             }
         }
         return gitHubSourceCodeRepo.readFile(path, repository, ref);
@@ -79,7 +75,8 @@ public class GitHubFileTree implements FileTree {
     private String getPathFromEntry(ZipArchiveEntry entry) {
         String[] parts = entry.getName().split("/", 2);
         if (parts.length != 2) {
-            throw new CustomWebApplicationException("could not process zip archive", HttpStatus.SC_BAD_REQUEST);
+            LOG.error("could not parse ZipArchiveEntry " + entry);
+            throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
         return "/" + parts[1];
     }

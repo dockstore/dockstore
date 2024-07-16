@@ -46,7 +46,7 @@ public class InferrerHelper {
                 }
                 @Override
                 protected EntryType calculateType(FileTree fileTree, String path) {
-                    String content = fileTree.readFile(path);
+                    String content = readFile(fileTree, path);
                     if (lineContainsRegex("^class:\\s*Workflow", content)) {
                         return EntryType.WORKFLOW;
                     }
@@ -64,7 +64,7 @@ public class InferrerHelper {
                 }
                 @Override
                 protected EntryType calculateType(FileTree fileTree, String path) {
-                    String content = fileTree.readFile(path);
+                    String content = readFile(fileTree, path);
                     if (lineContainsRegex("^workflow\\s", content)) {
                         return EntryType.WORKFLOW;
                     }
@@ -72,7 +72,7 @@ public class InferrerHelper {
                 }
                 @Override
                 protected String calculateName(FileTree fileTree, String path) {
-                    String content = fileTree.readFile(path);
+                    String content = readFile(fileTree, path);
                     return groupFromLineContainingRegex("^workflow\\s+(\\S+)\\s", 1, content);
                 }
             };
@@ -106,7 +106,7 @@ public class InferrerHelper {
                 }
                 @Override
                 protected DescriptorLanguageSubclass calculateSubclass(FileTree fileTree, String path, EntryType type) {
-                    String content = fileTree.readFile(path).toLowerCase();
+                    String content = readFile(fileTree, path).toLowerCase();
                     // Look for some json that sets the "language" field to one of the legal values.
                     for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.valuesForEntryType(type)) {
                         String regex = "\"language\":\\s*\"%s\"".formatted(subclass.getShortName());
