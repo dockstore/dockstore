@@ -512,7 +512,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
 
         if (duplicate != null && duplicate.getId() != workflowId) {
-            LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getWorkflowPath());
+            LOG.info("{}: " + "duplicate workflow found: {}", user.getUsername(), workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Workflow " + workflow.getWorkflowPath() + " already exists.",
                 HttpStatus.SC_BAD_REQUEST);
         }
@@ -567,6 +567,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
+
+        // Update DOI selection
+        oldWorkflow.setDoiSelection(newWorkflow.getDoiSelection());
 
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {

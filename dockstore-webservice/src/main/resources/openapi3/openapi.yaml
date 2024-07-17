@@ -9276,6 +9276,13 @@ components:
           type: array
           items:
             type: string
+        doiSelection:
+          type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9492,6 +9499,13 @@ components:
           type: boolean
         description:
           type: string
+        doiSelection:
+          type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -12108,6 +12122,13 @@ components:
           - Julia
           - other
           - n/a
+        doiSelection:
+          type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
