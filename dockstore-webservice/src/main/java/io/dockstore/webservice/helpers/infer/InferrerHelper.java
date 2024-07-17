@@ -131,7 +131,7 @@ public class InferrerHelper {
                             return subclass;
                         }
                     }
-                    return DescriptorLanguageSubclass.PYTHON;
+                    return null;
                 }
             };
         case SMK:
@@ -243,26 +243,33 @@ public class InferrerHelper {
     }
 
     private void putEntries(Map<String, Object> map, String fieldName, List<Inferrer.Entry> entries, EntryType type) {
-        List<Map<String, Object>> fieldValue = entries.stream().filter(entry -> entry.type() == type).map(this::toMap).toList();
-        if (!fieldValue.isEmpty()) {
-            map.put(fieldName, fieldValue);
+        List<Map<String, Object>> maps = entries.stream()
+            .filter(entry -> entry.type() == type)
+            .map(this::entryToMap)
+            .toList();
+        if (!maps.isEmpty()) {
+            map.put(fieldName, maps);
         }
     }
 
-    private Map<String, Object> toMap(Inferrer.Entry entry) {
+    private Map<String, Object> entryToMap(Inferrer.Entry entry) {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (entry.name() != null) {
-            map.put("name", entry.name());
-        }
+        putString(map, "name", entry.name());
         if (entry.type() == EntryType.NOTEBOOK) {
-            map.put("format", entry.language().toString());
-            map.put("language", entry.subclass().toString());
-            map.put("path", entry.path());
+            putString(map, "format", entry.language());
+            putString(map, "language", entry.subclass());
+            putString(map, "path", entry.path());
         } else {
-            map.put("subclass", entry.language().toString());
-            map.put("primaryDescriptorPath", entry.path());
+            putString(map, "subclass", entry.language());
+            putString(map, "primaryDescriptorPath", entry.path());
         }
         return map;
+    }
+
+    private void putString(Map<String, Object> map, String fieldName, Object value) {
+        if (value != null) {
+            map.put(fieldName, value.toString());
+        }
     }
 
     private void parseDockstoreYaml(String dockstoreYaml) {
