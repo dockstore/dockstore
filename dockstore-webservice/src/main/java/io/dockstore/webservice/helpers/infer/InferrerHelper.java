@@ -271,7 +271,6 @@ public class InferrerHelper {
         } catch (Exception e) {
             String message = "error creating .dockstore.yml";
             LOG.error(message, e);
-            LOG.error(dockstoreYaml, e);
             throw new CustomWebApplicationException(message, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }

@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,13 +57,13 @@ public class GitHubFileTree implements FileTree {
         try {
             zipFile = new ZipFile(zipChannel);
         } catch (IOException e) {
-            LOG.error("could not read Zipball from GitHub repository");
+            LOG.error("could not read zip archive of GitHub repository", e);
             throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
         // Create a Map of absolute paths to Zip file entries.
         pathToEntry = Collections.list(zipFile.getEntries()).stream()
             .filter(entry -> !entry.isDirectory() && !entry.isUnixSymlink())
-            .collect(Collectors.toMap(this::getPathFromEntry, entry -> entry, (valueA, valueB) -> valueA));
+            .collect(Collectors.toMap(this::pathFromEntry, entry -> entry, (valueA, valueB) -> valueA));
     }
 
     @Override
@@ -72,10 +73,11 @@ public class GitHubFileTree implements FileTree {
             try (InputStream in = zipFile.getInputStream(entry)) {
                 return IOUtils.toString(in, StandardCharsets.UTF_8);
             } catch (IOException e) {
-                LOG.error("could not extract file from ZipArchiveEntry " + entry);
+                LOG.error("could not extract file from ZipArchiveEntry: " + cleanString(entry), e);
                 throw new CustomWebApplicationException("could not read file from GitHub repository", HttpStatus.SC_BAD_REQUEST);
             }
         }
+        // Fall back to the old-style way of reading files, to handle symlinks and submodules.
         return gitHubSourceCodeRepo.readFile(path, repository, ref);
     }
 
@@ -89,12 +91,24 @@ public class GitHubFileTree implements FileTree {
         return new ArrayList<>(pathToEntry.keySet());
     }
 
-    private String getPathFromEntry(ZipArchiveEntry entry) {
+    /**
+     * Computes the actual file path from the information in a specified Zip entry by stripping off the leading path component.
+     * In a GitHub Zip archive, all paths begin with a path component that is formed from the repo/ref information.
+     */
+    private String pathFromEntry(ZipArchiveEntry entry) {
         String[] parts = entry.getName().split("/", 2);
         if (parts.length != 2) {
-            LOG.error("could not parse ZipArchiveEntry " + entry);
+            LOG.error("could not parse ZipArchiveEntry: " + cleanString(entry));
             throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
         return "/" + parts[1];
+    }
+
+    private String cleanString(Object obj) {
+        if (obj != null) {
+            return Utilities.cleanForLogging(obj.toString());
+        } else {
+            return "null";
+        }
     }
 }
