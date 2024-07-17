@@ -68,6 +68,7 @@ public class GitHubFileTree implements FileTree {
 
     @Override
     public String readFile(String path) {
+        // If specified file is included in the ZipFile, uncompress its content, convert it to a string, and return it.
         ZipArchiveEntry entry = pathToEntry.get(path);
         if (entry != null) {
             try (InputStream in = zipFile.getInputStream(entry)) {
@@ -77,7 +78,7 @@ public class GitHubFileTree implements FileTree {
                 throw new CustomWebApplicationException("could not read file from GitHub repository", HttpStatus.SC_BAD_REQUEST);
             }
         }
-        // Fall back to the old-style way of reading files, to handle symlinks and submodules.
+        // Otherwise, use our existing GitHub API code [to handle symlinks and submodules].
         return gitHubSourceCodeRepo.readFile(path, repository, ref);
     }
 
@@ -92,8 +93,8 @@ public class GitHubFileTree implements FileTree {
     }
 
     /**
-     * Computes the actual file path from the information in a specified Zip entry by stripping off the leading path component.
-     * In a GitHub Zip archive, all paths begin with a path component that is formed from the repo/ref information.
+     * Computes a file's absolute path, relative to the repo root, from the information in a specified Zip entry.
+     * In a GitHub-served Zipball, all file paths are prepended with a path component formed from the repo/ref information, which this code strips off.
      */
     private String pathFromEntry(ZipArchiveEntry entry) {
         String[] parts = entry.getName().split("/", 2);
