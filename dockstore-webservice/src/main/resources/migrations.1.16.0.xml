@@ -375,4 +375,14 @@
             <column defaultValueBoolean="false" name="approvedaitopic" type="bool"/>
         </addColumn>
     </changeSet>
+    <changeSet id="releaseDate" author="coverbeck">
+        <addColumn tableName="workflowversion">
+            <column name="releasedate" type="TIMESTAMP WITHOUT TIME ZONE">
+            </column>
+        </addColumn>
+        <addColumn tableName="tag">
+            <column name="releasedate" type="TIMESTAMP WITHOUT TIME ZONE">
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
