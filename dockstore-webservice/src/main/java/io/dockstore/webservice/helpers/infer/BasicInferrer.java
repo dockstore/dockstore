@@ -35,6 +35,12 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Provides the infrastructure for Inferrers that handle a particular descriptor language.
+ * See the comments in the `infer` method for an overview of the technique used.
+ * Concrete implementations can/should override various methods to implement language-specific behavior,
+ * most typically the `determineType`, `determineName`, and `determineSubclass` methods.
+ */
 public abstract class BasicInferrer implements Inferrer {
 
     private static final Logger LOG = LoggerFactory.getLogger(BasicInferrer.class);
@@ -51,7 +57,7 @@ public abstract class BasicInferrer implements Inferrer {
         List<String> paths = fileTree.listPaths().stream().filter(this::isDescriptorPath).toList();
         // Remove paths that likely correspond to tests, subtasks, etc.
         paths = removeTestPaths(paths);
-        // Remove paths that are referenced from other descriptors.
+        // Remove paths that are referenced by other descriptors.
         paths = removeReferencedPaths(fileTree, paths);
         // For each path that remains, attempt to infer the entries.
         return paths.stream().flatMap(path -> infer(fileTree, path).stream()).toList();
@@ -84,16 +90,16 @@ public abstract class BasicInferrer implements Inferrer {
         return toList(unreferencedPaths);
     }
 
-    protected List<String> determineReferencedPaths(FileTree fileTree, String path) {
+    protected List<String> determineReferencedPaths(FileTree fileTree, String srcPath) {
         Set<String> referencedPaths = new LinkedHashSet<>();
-        String content = removeComments(readFile(fileTree, path));
+        String content = removeComments(readFile(fileTree, srcPath));
         Matcher matcher = POSSIBLE_PATH.matcher(content);
         while (matcher.find()) {
             String foundPath = matcher.group();
-            if (isDescriptorPath(path)) {
+            if (isDescriptorPath(foundPath)) {
                 try {
-                    String referencedPath = Paths.get(path).resolve(foundPath).normalize().toString();
-                    referencedPaths.add(referencedPath);
+                    String dstPath = Paths.get(srcPath).resolve(foundPath).normalize().toString();
+                    referencedPaths.add(dstPath);
                 } catch (InvalidPathException e) {
                     // If either path was invalid, ignore and continue.
                 }
@@ -104,9 +110,11 @@ public abstract class BasicInferrer implements Inferrer {
 
     protected EntryType determineType(FileTree fileTree, String path) {
         Set<EntryType> entryTypes = language.getEntryTypes();
+        // If this descriptor language only supports one type of entry, return it.
         if (entryTypes.size() == 1) {
             return entryTypes.iterator().next();
         }
+        // Otherwise, this method must be overriden.
         throw new UnsupportedOperationException();
     }
 
@@ -116,9 +124,11 @@ public abstract class BasicInferrer implements Inferrer {
 
     protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
         Set<DescriptorLanguageSubclass> subclasses = DescriptorLanguageSubclass.valuesForEntryType(type);
+        // If this descriptor language only supports one type of subclass, return it.
         if (subclasses.size() == 1) {
             return subclasses.iterator().next();
         }
+        // Otherwise, this method must be overriden.
         throw new UnsupportedOperationException();
     }
 
