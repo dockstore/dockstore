@@ -41,13 +41,13 @@ import org.slf4j.LoggerFactory;
  * Concrete implementations can/should override various methods to implement language-specific behavior,
  * most typically the `determineType`, `determineName`, and `determineSubclass` methods.
  */
-public abstract class BasicInferrer implements Inferrer {
+public abstract class DescriptorLanguageInferrer implements Inferrer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BasicInferrer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DescriptorLanguageInferrer.class);
     private static final Pattern POSSIBLE_PATH = Pattern.compile("[a-zA-Z0-9./_-]+\\.[a-zA-Z0-9]+");
     private final DescriptorLanguage language;
 
-    public BasicInferrer(DescriptorLanguage language) {
+    public DescriptorLanguageInferrer(DescriptorLanguage language) {
         this.language = language;
     }
 

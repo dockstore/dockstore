@@ -69,7 +69,7 @@ public class InferrerHelper {
     public Inferrer getInferrer(DescriptorLanguage language) {
         switch (language) {
         case CWL:
-            return new BasicInferrer(DescriptorLanguage.CWL) {
+            return new DescriptorLanguageInferrer(DescriptorLanguage.CWL) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".cwl");
@@ -87,7 +87,7 @@ public class InferrerHelper {
                 }
             };
         case WDL:
-            return new BasicInferrer(DescriptorLanguage.WDL) {
+            return new DescriptorLanguageInferrer(DescriptorLanguage.WDL) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".wdl");
@@ -107,7 +107,7 @@ public class InferrerHelper {
                 }
             };
         case NEXTFLOW:
-            return new BasicInferrer(DescriptorLanguage.NEXTFLOW) {
+            return new DescriptorLanguageInferrer(DescriptorLanguage.NEXTFLOW) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith("/nextflow.config");
@@ -118,14 +118,14 @@ public class InferrerHelper {
                 }
             };
         case GXFORMAT2:
-            return new BasicInferrer(DescriptorLanguage.GXFORMAT2) {
+            return new DescriptorLanguageInferrer(DescriptorLanguage.GXFORMAT2) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ga");
                 }
             };
         case JUPYTER:
-            return new BasicInferrer(DescriptorLanguage.JUPYTER) {
+            return new DescriptorLanguageInferrer(DescriptorLanguage.JUPYTER) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
                     return path.endsWith(".ipynb");
