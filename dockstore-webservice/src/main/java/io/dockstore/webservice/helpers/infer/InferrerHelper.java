@@ -45,14 +45,27 @@ public class InferrerHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(InferrerHelper.class);
 
+    /**
+     * Infers the details of entries present in the specified file tree, using the Inferrers returned by #getInferrers.
+     * @return a list of inferred entries
+     */
     public List<Inferrer.Entry> infer(FileTree fileTree) {
         return getInferrers().stream().flatMap(inferrer -> inferrer.infer(fileTree).stream()).toList();
     }
 
+    /**
+     * Produces a "standard" list of inferrers.
+     */
     public List<Inferrer> getInferrers() {
+        // Currently, return an Inferrer for each supported descriptor language.
+        // Later, if we add other Inferrers, to support a particular manifest file format, for example, we can include them here.
         return Arrays.stream(DescriptorLanguage.values()).map(this::getInferrer).filter(Objects::nonNull).toList();
     }
 
+    /**
+     * Create an Inferrer for the specified descriptor language.
+     * @returns an Inferrer, or null if the language is not supported
+     */
     public Inferrer getInferrer(DescriptorLanguage language) {
         switch (language) {
         case CWL:
@@ -139,12 +152,16 @@ public class InferrerHelper {
         case SERVICE:
             return null;
         default:
+            // Log and throw, which should make the webservice fail the tests if we add a new descriptor language and forget to adjust this method.
             String message = "no mapping from descriptor language to inferrer";
             LOG.error(message);
             throw new IllegalStateException(message);
         }
     }
 
+    /**
+     * Tweaks the specified entries so that that they have unique names and no duplicate names or paths.
+     */
     public List<Inferrer.Entry> refine(List<Inferrer.Entry> entries) {
         return ensureUniqueNames(legalizeNames(setMissingNames(removeDuplicatePaths(entries))));
     }
@@ -159,19 +176,7 @@ public class InferrerHelper {
     }
 
     private Inferrer.Entry setMissingName(Inferrer.Entry entry) {
-        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), nameFromPath(entry.path()), defaultName(entry)));
-    }
-
-    private String nameFromPath(String path) {
-        String[] pathParts = path.split("/");
-        if (pathParts.length == 0) {
-            return null;
-        }
-        String[] nameParts = pathParts[pathParts.length - 1].split("\\.");
-        if (nameParts.length == 0) {
-            return null;
-        }
-        return nameParts[0];
+        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), defaultName(entry)));
     }
 
     private List<Inferrer.Entry> legalizeNames(List<Inferrer.Entry> entries) {
@@ -180,18 +185,18 @@ public class InferrerHelper {
 
     private Inferrer.Entry legalizeName(Inferrer.Entry entry) {
         String legalName = entry.name()
+            // Remove any character that's not alphanumeric, a hyphen, or an underscore.
             .replaceAll("[^a-zA-Z0-9_-]", "")
+            // Strip hyphens and underscores from the beginning and end.
             .replaceAll("^[_-]+", "")
             .replaceAll("[_-]+$", "")
+            // Reduce runs of multiple hyphens/underscores to a single character.
             .replaceAll("([_-])[_-]+", "$1");
         return entry.changeName(StringUtils.firstNonEmpty(legalName, defaultName(entry)));
     }
 
-    private String defaultName(Inferrer.Entry entry) {
-        return entry.type().getTerm();
-    }
-
     private List<Inferrer.Entry> ensureUniqueNames(List<Inferrer.Entry> entries) {
+        // Compute the set of duplicate names.
         Set<String> names = new HashSet<>();
         Set<String> duplicates = new HashSet<>();
         entries.forEach(entry -> {
@@ -202,6 +207,16 @@ public class InferrerHelper {
             names.add(name);
         });
 
+        // For each name, compute a new name if the name is either:
+        //   a) in the set of duplicate names.
+        //   b) has already been taken.
+        // Create new names by appending an underscore and the value of a counter to the
+        // original name.  For example, given duplicate name "a", we would try the names
+        // "a_1", "a_2", "a_3", ...
+        // Currently, a single counter is used across all names.
+        // In a perfect world, there would be a counter per orginal name, but this code is
+        // already hard to evaluate from a "does it always halt" point-of-view, so let's
+        // keep it simple for now.
         AtomicLong counter = new AtomicLong(1);
         Set<String> taken = new HashSet<>();
         return entries.stream().map(entry -> {
@@ -218,6 +233,25 @@ public class InferrerHelper {
         }).toList();
     }
 
+    private String defaultName(Inferrer.Entry entry) {
+        return StringUtils.firstNonEmpty(nameFromPath(entry.path()), entry.type().getTerm());
+    }
+
+    private String nameFromPath(String path) {
+        String[] pathParts = path.split("/");
+        if (pathParts.length == 0) {
+            return null;
+        }
+        String[] nameParts = pathParts[pathParts.length - 1].split("\\.");
+        if (nameParts.length == 0) {
+            return null;
+        }
+        return nameParts[0];
+    }
+
+    /**
+     * Creates a .dockstore.yml file from the specified inferred entries.
+     */
     @SuppressWarnings("checkstyle:magicnumber")
     public String toDockstoreYaml(List<Inferrer.Entry> entries) {
         // "Refine" the entries to fix issues like missing, duplicate, or illegal names.
