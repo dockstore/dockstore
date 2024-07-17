@@ -105,12 +105,12 @@ public class LimitedSourceFileBuilder {
             } else {
                 byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
                 if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
-                    // Postgres cannot store strings that contain "NUL" characters.
+                    // Postgres cannot store strings that contain "NUL" (value 0) characters.
                     // Thus, Dockstore cannot currently store binary files.
                     // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
                     // https://www.ascii-code.com/character/%E2%90%80
                     file.setContent("Dockstore does not store binary files");
-                    file.setState(SourceFile.State.MESSAGE);
+                    file.setState(SourceFile.State.NOT_STORED);
                     logContentAction(path, "binary file");
                     return;
                 }
@@ -119,7 +119,7 @@ public class LimitedSourceFileBuilder {
                     // A large file is probably up to no good.
                     double megabytes = maximumSize / (double) BYTES_PER_MEGABYTE;
                     file.setContent("Dockstore does not store files of this type over %.1fMB in size".formatted(megabytes));
-                    file.setState(SourceFile.State.MESSAGE);
+                    file.setState(SourceFile.State.NOT_STORED);
                     logContentAction(path, "large file (%n bytes)".formatted(bytes.length));
                     return;
                 }
@@ -127,8 +127,7 @@ public class LimitedSourceFileBuilder {
         }
 
         private static void logContentAction(String path, String why) {
-            String message = "incomplete content for file %s: %s".formatted(path, why);
-            LOG.info(message);
+            LOG.info("incomplete content for file %s: %s".formatted(path, why));
         }
 
         private static long computeMaximumSize(String path) {

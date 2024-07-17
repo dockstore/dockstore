@@ -388,7 +388,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public enum State {
         COMPLETE,
-        MESSAGE,
+        NOT_STORED,
         STUB
     }
 }

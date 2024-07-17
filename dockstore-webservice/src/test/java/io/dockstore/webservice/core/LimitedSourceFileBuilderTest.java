@@ -30,7 +30,7 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(HUGE_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertTrue(file.getContent().startsWith("Dockstore does not store files of this type over"));
-        assertEquals(SourceFile.State.MESSAGE, file.getState());
+        assertEquals(SourceFile.State.NOT_STORED, file.getState());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }
@@ -40,7 +40,7 @@ class LimitedSourceFileBuilderTest {
         SourceFile file = SourceFile.limitedBuilder().type(TYPE).content(BINARY_CONTENT).path(PATH).absolutePath(ABSOLUTE_PATH).build();
         assertEquals(TYPE, file.getType());
         assertEquals("Dockstore does not store binary files", file.getContent());
-        assertEquals(SourceFile.State.MESSAGE, file.getState());
+        assertEquals(SourceFile.State.NOT_STORED, file.getState());
         assertEquals(PATH, file.getPath());
         assertEquals(ABSOLUTE_PATH, file.getAbsolutePath());
     }

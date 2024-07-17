@@ -10772,7 +10772,7 @@ components:
           description: Enumerates the file state
           enum:
           - COMPLETE
-          - MESSAGE
+          - NOT_STORED
           - STUB
         type:
           type: string
