@@ -387,8 +387,18 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public enum State {
+        /**
+         * The full file body is stored in the SourceFile's content field.
+         */
         COMPLETE,
+        /**
+         * The file body is not stored.
+         * The content field contains a message describing why the file's body is not stored.
+         */
         NOT_STORED,
+        /**
+         * The file represents a stub.  The content field is null.
+         */
         STUB
     }
 }
