@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
+import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -249,6 +250,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                 + invalidFileNames;
             throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
+
+        // Check the version to see if it exceeds any limits.
+        LimitHelper.checkVersion(validatedVersion);
 
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
         validatedVersion.setVersionEditor(user);

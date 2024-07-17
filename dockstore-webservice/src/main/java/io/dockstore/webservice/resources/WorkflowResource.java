@@ -65,6 +65,7 @@ import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -374,6 +375,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Use new workflow to update existing workflow
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
+
+        // Check each version to see if it exceeds any limits.
+        existingWorkflow.getWorkflowVersions().forEach(LimitHelper::checkVersion);
+
         // Update file formats in each version and then the entry
         FileFormatHelper.updateFileFormats(existingWorkflow, newWorkflow.getWorkflowVersions(), fileFormatDAO, true);
 
