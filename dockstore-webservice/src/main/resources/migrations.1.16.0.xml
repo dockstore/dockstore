@@ -316,4 +316,19 @@
             WHERE version_metadata.doiurl IS NOT NULL;
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="addStateFieldToSourceFile">
+        <addColumn tableName="sourcefile">
+            <column name="state" type="VARCHAR(255)" value="COMPLETE">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            <comment>Set state for sourcefiles with null content</comment>
+            UPDATE sourcefile SET state = 'STUB' WHERE content IS NULL;
+        </sql>
+        <sql dbms="postgresql">
+            <comment>Set state for binary sourcefiles</comment>
+            UPDATE sourcefile SET state = 'NOT_STORED' WHERE content = 'Dockstore does not store binary files';
+        </sql>
+    </changeSet>
 </databaseChangeLog>
