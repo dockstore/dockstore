@@ -152,6 +152,7 @@ class ZenodoIT {
         foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
         assertFalse(foobar2TagVersion08.isFrozen(), "Version should not be snapshotted for automatic DOI creation");
         assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        foobar2 = workflowsApi.getWorkflow(foobar2Id, "");
         assertEquals(DoiSelectionEnum.DOCKSTORE, foobar2.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
 
         // Should be able to request a user-created DOI for the version even though it has a Dockstore-created DOI
@@ -208,6 +209,7 @@ class ZenodoIT {
 
         tagVersion = workflowsApi.getWorkflowVersionById(workflow.getId(), tagVersion.getId(), "");
         assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
         assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
     }
 
