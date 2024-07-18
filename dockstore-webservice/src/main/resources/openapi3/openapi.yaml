@@ -6857,7 +6857,7 @@ paths:
   /workflows/github/infer/{owner}/{repo}/{ref}:
     get:
       deprecated: true
-      description: Infer the entries of a GitHub reference.
+      description: Infer the entries in the file tree of a GitHub repository reference.
       operationId: inferEntries
       parameters:
       - description: repo owner

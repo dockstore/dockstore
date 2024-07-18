@@ -44,7 +44,8 @@ import org.slf4j.LoggerFactory;
 public abstract class DescriptorLanguageInferrer implements Inferrer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DescriptorLanguageInferrer.class);
-    private static final Pattern POSSIBLE_PATH = Pattern.compile("[a-zA-Z0-9./_-]+\\.[a-zA-Z0-9]+");
+    private static final Pattern POSSIBLE_PATH = Pattern.compile("[./]*+[a-zA-Z0-9/_-]++\\.[a-zA-Z0-9]++");
+
     private final DescriptorLanguage language;
 
     public DescriptorLanguageInferrer(DescriptorLanguage language) {

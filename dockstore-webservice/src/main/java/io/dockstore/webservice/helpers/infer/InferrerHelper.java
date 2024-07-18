@@ -188,10 +188,10 @@ public class InferrerHelper {
             // Remove any character that's not an alphanumeric, hyphen, or underscore.
             .replaceAll("[^a-zA-Z0-9_-]", "")
             // Remove leading and trailing hyphens/underscores.
-            .replaceAll("^[_-]+", "")
-            .replaceAll("[_-]+$", "")
+            .replaceAll("^[_-]++", "")
+            .replaceAll("[_-]++$", "")
             // Reduce remaining runs of hyphens/underscores to a single character.
-            .replaceAll("([_-])[_-]+", "$1");
+            .replaceAll("([_-])[_-]++", "$1");
         return entry.changeName(StringUtils.firstNonEmpty(legalName, nameFromType(entry.type())));
     }
 
