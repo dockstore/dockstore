@@ -144,7 +144,7 @@ public class InferrerHelper {
                             return subclass;
                         }
                     }
-                    return null;
+                    return DescriptorLanguageSubclass.PYTHON;
                 }
             };
         case SMK:
@@ -176,7 +176,7 @@ public class InferrerHelper {
     }
 
     private Inferrer.Entry setMissingName(Inferrer.Entry entry) {
-        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), defaultName(entry)));
+        return entry.changeName(StringUtils.firstNonEmpty(entry.name(), nameFromPath(entry.path()), nameFromType(entry.type())));
     }
 
     private List<Inferrer.Entry> legalizeNames(List<Inferrer.Entry> entries) {
@@ -185,14 +185,14 @@ public class InferrerHelper {
 
     private Inferrer.Entry legalizeName(Inferrer.Entry entry) {
         String legalName = entry.name()
-            // Remove any character that's not alphanumeric, a hyphen, or an underscore.
+            // Remove any character that's not an alphanumeric, hyphen, or underscore.
             .replaceAll("[^a-zA-Z0-9_-]", "")
-            // Strip hyphens and underscores from the beginning and end.
+            // Remove leading and trailing hyphens/underscores.
             .replaceAll("^[_-]+", "")
             .replaceAll("[_-]+$", "")
-            // Reduce runs of multiple hyphens/underscores to a single character.
+            // Reduce remaining runs of hyphens/underscores to a single character.
             .replaceAll("([_-])[_-]+", "$1");
-        return entry.changeName(StringUtils.firstNonEmpty(legalName, defaultName(entry)));
+        return entry.changeName(StringUtils.firstNonEmpty(legalName, nameFromType(entry.type())));
     }
 
     private List<Inferrer.Entry> ensureUniqueNames(List<Inferrer.Entry> entries) {
@@ -233,10 +233,6 @@ public class InferrerHelper {
         }).toList();
     }
 
-    private String defaultName(Inferrer.Entry entry) {
-        return StringUtils.firstNonEmpty(nameFromPath(entry.path()), entry.type().getTerm());
-    }
-
     private String nameFromPath(String path) {
         String[] pathParts = path.split("/");
         if (pathParts.length == 0) {
@@ -247,6 +243,10 @@ public class InferrerHelper {
             return null;
         }
         return nameParts[0];
+    }
+
+    private String nameFromType(EntryType type) {
+        return type.getTerm();
     }
 
     /**

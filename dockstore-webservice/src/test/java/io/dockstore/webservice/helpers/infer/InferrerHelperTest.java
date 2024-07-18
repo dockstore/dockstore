@@ -41,7 +41,7 @@ class InferrerHelperTest {
     void init() {
         inferrerHelper = new InferrerHelper();
         fileTree = new SyntheticFileTree();
-        random = new Random();
+        random = new Random(123);
     }
 
     @Test
