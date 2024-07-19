@@ -569,8 +569,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
 
-        // Update DOI selection
-        oldWorkflow.setDoiSelection(newWorkflow.getDoiSelection());
+        // Update DOI selection if the workflow has DOIs for the selection
+        if (oldWorkflow.getConceptDois().containsKey(newWorkflow.getDoiSelection())) {
+            oldWorkflow.setDoiSelection(newWorkflow.getDoiSelection());
+        }
 
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {

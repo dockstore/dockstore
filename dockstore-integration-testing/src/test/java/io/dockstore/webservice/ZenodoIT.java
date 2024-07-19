@@ -249,6 +249,7 @@ class ZenodoIT {
         workflowsApi.refresh1(workflow.getId(), false);
         workflow = workflowsApi.getWorkflow(workflow.getId(), "versions");
         assertTrue(workflow.getConceptDois().isEmpty(), "Should not have any automatic DOIs because it's unpublished");
+        assertEquals(DoiSelectionEnum.USER, workflow.getDoiSelection(), "Default should be USER");
 
         // Get a valid tag
         WorkflowVersion tagVersion = getWorkflowVersion(workflow, "1.1").orElse(null);
@@ -261,6 +262,12 @@ class ZenodoIT {
         assertNotNull(workflow.getConceptDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic concept DOI");
         assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
         assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
+
+        // Change DOI selection to GITHUB. It should be ignored because there are no GitHub DOIs for the workflow
+        workflow.setDoiSelection(DoiSelectionEnum.GITHUB);
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "The DOI selection should not change");
     }
 
     @Test
