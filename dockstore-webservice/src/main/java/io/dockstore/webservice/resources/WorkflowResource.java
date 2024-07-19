@@ -498,7 +498,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateWorkflow", description = "Update the workflow with the given workflow.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateWorkflow", summary = "Update some of the workflow with the given workflow.",
+            description = "Updates descriptor type, default workflow path, default test parameter file path, default version, forum URL, manual topic, topic selection, and DOI selection", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "updateWorkflow", value = "Update the workflow with the given workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class,
         notes = "Updates descriptor type (if stub), default workflow path, default file path, and default version")
@@ -539,7 +540,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return (Workflow) updateDefaultVersionHelper(version, workflowId, user);
     }
 
-    // Used to update workflow manually (not refresh)
+    // Used to update some of the workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
         if ((Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) && !Objects

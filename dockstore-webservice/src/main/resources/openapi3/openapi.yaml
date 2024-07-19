@@ -7675,7 +7675,9 @@ paths:
       tags:
       - workflows
     put:
-      description: Update the workflow with the given workflow.
+      description: "Updates descriptor type, default workflow path, default test parameter\
+        \ file path, default version, forum URL, manual topic, topic selection, and\
+        \ DOI selection"
       operationId: updateWorkflow
       parameters:
       - in: path
@@ -7698,6 +7700,7 @@ paths:
           description: default response
       security:
       - BEARER: []
+      summary: Update some of the workflow with the given workflow.
       tags:
       - workflows
   /workflows/{workflowId}/DOIEditLink:
