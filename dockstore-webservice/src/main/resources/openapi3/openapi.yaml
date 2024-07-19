@@ -10781,6 +10781,13 @@ components:
         path:
           type: string
           description: Path to sourcefile relative to its parent
+        state:
+          type: string
+          description: Enumerates the file state
+          enum:
+          - COMPLETE
+          - NOT_STORED
+          - STUB
         type:
           type: string
           description: Enumerates the type of file
@@ -10815,6 +10822,7 @@ components:
       required:
       - absolutePath
       - path
+      - state
       - type
     SourceFileMetadata:
       type: object
