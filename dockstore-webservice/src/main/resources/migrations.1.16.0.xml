@@ -331,4 +331,31 @@
             UPDATE sourcefile SET state = 'NOT_STORED' WHERE content = 'Dockstore does not store binary files';
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addDoiSelection">
+        <addColumn tableName="apptool">
+            <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

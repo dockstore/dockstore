@@ -7675,7 +7675,9 @@ paths:
       tags:
       - workflows
     put:
-      description: Update the workflow with the given workflow.
+      description: "Updates descriptor type, default workflow path, default test parameter\
+        \ file path, default version, forum URL, manual topic, topic selection, and\
+        \ DOI selection"
       operationId: updateWorkflow
       parameters:
       - in: path
@@ -7698,6 +7700,7 @@ paths:
           description: default response
       security:
       - BEARER: []
+      summary: Update some of the workflow with the given workflow.
       tags:
       - workflows
   /workflows/{workflowId}/DOIEditLink:
@@ -9276,6 +9279,13 @@ components:
           type: array
           items:
             type: string
+        doiSelection:
+          type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9492,6 +9502,13 @@ components:
           type: boolean
         description:
           type: string
+        doiSelection:
+          type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -12116,6 +12133,13 @@ components:
           - Julia
           - other
           - n/a
+        doiSelection:
+          type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
