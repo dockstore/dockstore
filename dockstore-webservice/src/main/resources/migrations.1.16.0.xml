@@ -318,7 +318,7 @@
     </changeSet>
     <changeSet author="svonworl" id="addStateFieldToSourceFile">
         <addColumn tableName="sourcefile">
-            <column name="state" type="VARCHAR(255)" value="COMPLETE">
+            <column name="state" type="VARCHAR(255)" defaultValue="COMPLETE">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
