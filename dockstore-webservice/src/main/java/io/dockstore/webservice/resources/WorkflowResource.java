@@ -512,7 +512,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
 
         if (duplicate != null && duplicate.getId() != workflowId) {
-            LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getWorkflowPath());
+            LOG.info("{}: duplicate workflow found: {}", user.getUsername(), workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Workflow " + workflow.getWorkflowPath() + " already exists.",
                 HttpStatus.SC_BAD_REQUEST);
         }
@@ -523,6 +523,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
+    }
 
     }
 
@@ -566,6 +567,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)
                 || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+        }
+
+        // If the user chose an AI topic, it means that they have reviewed and approved it
+        if (newWorkflow.getTopicSelection() == TopicSelection.AI) {
+            oldWorkflow.setApprovedAITopic(true);
         }
 
         if (newWorkflow.getDefaultVersion() != null) {

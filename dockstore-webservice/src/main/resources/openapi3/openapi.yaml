@@ -9221,6 +9221,9 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        approvedAITopic:
+          type: boolean
+          description: Indicates if the topicAI has been approved by the user
         archived:
           type: boolean
         authors:
@@ -9456,6 +9459,9 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        approvedAITopic:
+          type: boolean
+          description: Indicates if the topicAI has been approved by the user
         archived:
           type: boolean
         authors:
@@ -12053,6 +12059,9 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        approvedAITopic:
+          type: boolean
+          description: Indicates if the topicAI has been approved by the user
         archived:
           type: boolean
         authors:

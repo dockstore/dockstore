@@ -331,4 +331,21 @@
             UPDATE sourcefile SET state = 'NOT_STORED' WHERE content = 'Dockstore does not store binary files';
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="trackApprovedAITopic">
+        <addColumn tableName="apptool">
+            <column defaultValueBoolean="false" name="approvedaitopic" type="bool"/>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column defaultValueBoolean="false" name="approvedaitopic" type="bool"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column defaultValueBoolean="false" name="approvedaitopic" type="bool"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column defaultValueBoolean="false" name="approvedaitopic" type="bool"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column defaultValueBoolean="false" name="approvedaitopic" type="bool"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
