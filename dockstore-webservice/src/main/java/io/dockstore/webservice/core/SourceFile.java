@@ -164,7 +164,7 @@ public class SourceFile implements Comparable<SourceFile> {
     @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "VARCHAR(255) default 'COMPLETE'", nullable = false)
     @Enumerated(EnumType.STRING)
     @Schema(description = "Enumerates the file state", requiredMode = RequiredMode.REQUIRED)
     private State state = State.COMPLETE;
