@@ -433,6 +433,11 @@ public class DockerRepoResource
             originalTool.setTopicSelection(newTool.getTopicSelection());
         }
 
+        // If the user chose an AI topic, it means that they have reviewed and approved it
+        if (newTool.getTopicSelection() == TopicSelection.AI) {
+            originalTool.setApprovedAITopic(true);
+        }
+
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());
             originalTool.setPrivateAccess(newTool.isPrivateAccess());
