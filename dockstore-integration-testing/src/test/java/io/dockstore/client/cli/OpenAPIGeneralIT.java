@@ -136,7 +136,7 @@ class OpenAPIGeneralIT extends BaseIT {
         hostedTool.setTopicSelection(DockstoreTool.TopicSelectionEnum.AI);
         dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
-        assertTrue(hostedTool.isApprovedAITopic());
+        assertTrue(dockstoreTool.isApprovedAITopic());
         assertEquals("AI topic", dockstoreTool.getTopic());
     }
 
@@ -178,7 +178,7 @@ class OpenAPIGeneralIT extends BaseIT {
         dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
         assertEquals("AI topic", dockstoreTool.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
-        assertTrue(toolTest.isApprovedAITopic());
+        assertTrue(dockstoreTool.isApprovedAITopic());
     }
 
     /**

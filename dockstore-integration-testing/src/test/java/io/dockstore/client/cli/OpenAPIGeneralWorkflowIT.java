@@ -105,6 +105,6 @@ class OpenAPIGeneralWorkflowIT extends BaseIT {
         updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         assertEquals("AI topic", updatedWorkflow.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, updatedWorkflow.getTopicSelection());
-        assertTrue(workflow.isApprovedAITopic());
+        assertTrue(updatedWorkflow.isApprovedAITopic());
     }
 }
