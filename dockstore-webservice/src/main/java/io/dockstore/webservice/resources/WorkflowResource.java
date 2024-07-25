@@ -526,8 +526,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return result;
     }
 
-    }
-
     @PUT
     @Timed
     @UnitOfWork
