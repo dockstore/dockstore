@@ -662,6 +662,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             () -> new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND));
 
         entry.setTopicAI(updateAITopicRequest.getAiTopic());
+        entry.setApprovedAITopic(false);
         versionReturned.setAiTopicProcessed(true);
         // Set topic selection to AI if the manual and automatic topics are empty
         if (StringUtils.isEmpty(entry.getTopicManual()) && StringUtils.isEmpty(entry.getTopicAutomatic())) {
