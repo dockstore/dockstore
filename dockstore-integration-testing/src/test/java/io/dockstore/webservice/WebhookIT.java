@@ -3,6 +3,7 @@ package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.LAMBDA_RETRY;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.LAMBDA_ERROR;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubBranchDeletion;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstallation;
@@ -68,6 +69,7 @@ import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.client.JerseyClientBuilder;
 import jakarta.ws.rs.client.Client;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -2179,12 +2181,24 @@ class WebhookIT extends BaseIT {
         final ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(openAPIWebClient);
         handleGitHubRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", USER_2_USERNAME);
-        handleGitHubTaggedRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "0.1");
+        final Date publishedDate = new Date();
+        handleGitHubTaggedRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "0.1", publishedDate);
         final List<Workflow> workflows = workflowsApi.getAllWorkflowByPath("github.com/" + DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML);
         final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflows.get(0).getId());
         final Long releaseDate = workflowVersions.stream().filter(v -> v.getName().equals("0.1")).findFirst()
                 .map(v -> v.getVersionMetadata().getReleaseDate()).get();
-        System.out.println(new java.sql.Timestamp(releaseDate));
-        assertNotNull(releaseDate);
+        assertEquals(publishedDate.getTime(), releaseDate);
+
+        // Release for a tag without the version in Dockstore
+        try {
+            handleGitHubTaggedRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "doesnotexist", publishedDate);
+            fail("Should throw an exception for an unknown tag");
+        } catch (ApiException ex) {
+            assertEquals(LAMBDA_RETRY, ex.getCode());
+        }
+
+        // Workflow doesn't exist, should just return 2xx
+        handleGitHubTaggedRelease(workflowsApi, "DockstoreTestUser2/UnregisteredWorkflow", "0.1", new Date());
     }
+
 }

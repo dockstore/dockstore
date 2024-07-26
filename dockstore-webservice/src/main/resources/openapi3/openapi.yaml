@@ -12114,8 +12114,8 @@ components:
       description: Details about the release
       properties:
         published_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         tag_name:
           type: string
           description: Name of the tag associated with the release

@@ -92,9 +92,9 @@ public final class GitHubAppHelper {
         handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, true);
     }
 
-    public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName) {
+    public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName, Date date) {
         final ReleasePayload releasePayload = new ReleasePayload();
-        releasePayload.setRelease(new io.dockstore.openapi.client.model.WebhookRelease().tagName(tagName).publishedAt(new Date()));
+        releasePayload.setRelease(new io.dockstore.openapi.client.model.WebhookRelease().tagName(tagName).publishedAt(date.getTime()));
         releasePayload.setAction(io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED.toString());
         releasePayload.setRepository(new io.dockstore.openapi.client.model.WebhookRepository().fullName(repository));
         workflowsApi.handleGitHubTaggedRelease(releasePayload, generateXGitHubDelivery());
