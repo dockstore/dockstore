@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
  */
 public final class Constants {
     public static final int LAMBDA_FAILURE = 418; // Tell lambda to not try again
+    /**
+     * Custom HTTP status code to tell the lambda to retry without returning a 5xx status code
+     */
+    public static final int LAMBDA_RETRY = 440;
     public static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows,"
             + " authentication can be provided for restricted workflows";
     public static final String DOCKSTORE_YML_PATH = "/.dockstore.yml";

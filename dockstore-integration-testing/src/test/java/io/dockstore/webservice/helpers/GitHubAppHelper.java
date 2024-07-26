@@ -8,8 +8,10 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Installation;
 import io.dockstore.openapi.client.model.InstallationRepositoriesPayload;
 import io.dockstore.openapi.client.model.PushPayload;
+import io.dockstore.openapi.client.model.ReleasePayload;
 import io.dockstore.openapi.client.model.Sender;
 import io.dockstore.openapi.client.model.WebhookRepository;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -90,6 +92,14 @@ public final class GitHubAppHelper {
         handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, true);
     }
 
+    public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName) {
+        final ReleasePayload releasePayload = new ReleasePayload();
+        releasePayload.setRelease(new io.dockstore.openapi.client.model.WebhookRelease().tagName(tagName).publishedAt(new Date()));
+        releasePayload.setAction(io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED.toString());
+        releasePayload.setRepository(new io.dockstore.openapi.client.model.WebhookRepository().fullName(repository));
+        workflowsApi.handleGitHubTaggedRelease(releasePayload, generateXGitHubDelivery());
+    }
+
     /**
      * Generates a random GUID to use as the X-GitHub-Delivery header.
      * @return
@@ -97,4 +107,5 @@ public final class GitHubAppHelper {
     public static String generateXGitHubDelivery() {
         return UUID.randomUUID().toString();
     }
+
 }

@@ -7,6 +7,7 @@ import static io.dockstore.webservice.helpers.GitHubAppHelper.LAMBDA_ERROR;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubBranchDeletion;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstallation;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubTaggedRelease;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubUninstallation;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
@@ -1478,7 +1479,7 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflow.getWorkflowVersions().size());
 
         Long userId = usersApi.getUser().getId();
-        List<io.dockstore.openapi.client.model.Workflow> usersAppTools = usersApi.userAppTools(userId);
+        List<Workflow> usersAppTools = usersApi.userAppTools(userId);
         assertEquals(1, usersAppTools.size());
 
         handleGitHubRelease(client, DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS, "refs/heads/invalid-workflow", USER_2_USERNAME);
@@ -2171,5 +2172,19 @@ class WebhookIT extends BaseIT {
         LambdaEvent event = new UsersApi(webClient).getUserGitHubEvents(0, 1, null, null, null).get(0);
         assertTrue(event.getMessage().contains("file"));
         assertFalse(event.isSuccess());
+    }
+
+    @Test
+    void testHandleGitHubTaggedRelease() {
+        final ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(openAPIWebClient);
+        handleGitHubRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", USER_2_USERNAME);
+        handleGitHubTaggedRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "0.1");
+        final List<Workflow> workflows = workflowsApi.getAllWorkflowByPath("github.com/" + DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML);
+        final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflows.get(0).getId());
+        final Long releaseDate = workflowVersions.stream().filter(v -> v.getName().equals("0.1")).findFirst()
+                .map(v -> v.getVersionMetadata().getReleaseDate()).get();
+        System.out.println(new java.sql.Timestamp(releaseDate));
+        assertNotNull(releaseDate);
     }
 }

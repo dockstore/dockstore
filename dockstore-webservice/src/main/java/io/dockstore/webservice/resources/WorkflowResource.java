@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
+import static io.dockstore.webservice.Constants.LAMBDA_RETRY;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
@@ -62,6 +63,7 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.core.webhook.ReleasePayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -2093,14 +2095,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
+    /**
+     * Handles GitHub push events. It does not handle release events, despite its name and its path.
+     *
+     * Ideally we would rename it, but that would require updating the lambda and GitHub delivery code as well.
+     *
+     * {@code handleGitHubTaggedRelease} handles release events.
+     *
+     * @param user
+     * @param deliveryId
+     * @param payload
+     */
     @POST
     @Path("/github/release")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
+    @Operation(description = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
@@ -2206,6 +2219,63 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 
+    /**
+     * Handles a GitHub release event. Stores the release timestamp of a release being published in {@code VersionMetadata.setReleaseDate()}.
+     *
+     * Successful handling of this event is dependent on the push event for the tag associated with the release having created the
+     * {@code WorkflowVersion}. Since the order in which we get events is not fixed, we need retry if the version does not exist.
+     *
+     * <ol>
+     *     <li>We get the release event and the corresponding workflow version exists</li>
+     *     <li>The workflow doesn't exist in Dockstore. The creation of a new workflow will handle this</li>
+     *     <li>The workflow exists, but the workflow version for the release event doesn't</li>
+     * </ol>
+     *
+     * For the last case we have to keep retrying.
+     *
+     * @param user
+     * @param deliveryId
+     * @param payload
+     * @return
+     */
+    @POST
+    @Path("/github/taggedrelease")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"curator", "admin"})
+    @Operation(description = "Handles a release event on GitHub.")
+    public Response handleGitHubTaggedRelease(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @RequestBody(description = "GitHub App repository release event payload", required = true) ReleasePayload payload) {
+        final String actionString = payload.getAction();
+        final Optional<ReleasePayload.Action> optionalAction = ReleasePayload.Action.findAction(actionString);
+        if (optionalAction.isEmpty()) {
+            return ignoreReleaseAction(actionString);
+        }
+        final ReleasePayload.Action action = optionalAction.get();
+        switch (action) {
+        case CREATED, EDITED, PRE_RELEASED, RELEASED -> {
+            return ignoreReleaseAction(actionString);
+        }
+        case DELETED, UNPUBLISHED -> {
+            // Not sure if we should do this; since we will use this field to detect if there's a DOI, the DOI will still exist even if release is deleted.
+            findWorkflowVersions(payload).stream().forEach(wv -> wv.getVersionMetadata().setReleaseDate(null));
+        }
+        case PUBLISHED -> {
+            final List<WorkflowVersion> workflowVersions = findWorkflowVersions(payload);
+            workflowVersions.stream().filter(Objects::nonNull).forEach(wv -> wv.getVersionMetadata().setReleaseDate(payload.getRelease().getPublishedAt()));
+            if (workflowVersions.stream().anyMatch(Objects::isNull)) {
+                // A null workflow version means we found a workflow for the release, but not the version. The push event may not
+                // have yet been processed.
+                return Response.status(LAMBDA_RETRY).build();
+            }
+        }
+        default -> throw new IllegalStateException("Unexpected value: " + action);
+        }
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
     @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")
     @UnitOfWork(readOnly = true)
@@ -2238,5 +2308,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         return orcidAuthorInfo;
+    }
+
+    private Response ignoreReleaseAction(String action) {
+        LOG.info("Ignoring action in release payload: {}", action);
+        return Response.status(HttpStatus.SC_OK).build();
+    }
+
+    private List<WorkflowVersion> findWorkflowVersions(ReleasePayload payload) {
+        final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
+        return workflows.stream().map(workflow -> workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), payload.getRelease().getTagName())).toList();
     }
 }

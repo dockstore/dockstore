@@ -255,10 +255,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
     private Set<EntryVersion> entryVersions = new HashSet<>();
 
-    @Column(nullable = true)
-    @Schema(type = "integer", format = "int64", description = "The timestamp of a version control release, such as a GitHub release")
-    private Timestamp releaseDate;
-
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
@@ -699,14 +695,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setAiTopicProcessed(boolean aiTopicProcessed) {
         this.aiTopicProcessed = aiTopicProcessed;
-    }
-
-    public Timestamp getReleaseDate() {
-        return releaseDate;
-    }
-
-    public void setReleaseDate(Timestamp releaseDate) {
-        this.releaseDate = releaseDate;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

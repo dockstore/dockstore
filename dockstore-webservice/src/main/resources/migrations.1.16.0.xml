@@ -376,11 +376,7 @@
         </addColumn>
     </changeSet>
     <changeSet id="releaseDate" author="coverbeck">
-        <addColumn tableName="workflowversion">
-            <column name="releasedate" type="TIMESTAMP WITHOUT TIME ZONE">
-            </column>
-        </addColumn>
-        <addColumn tableName="tag">
+        <addColumn tableName="version_metadata">
             <column name="releasedate" type="TIMESTAMP WITHOUT TIME ZONE">
             </column>
         </addColumn>
