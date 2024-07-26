@@ -2220,18 +2220,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Handles a GitHub release event. Stores the release timestamp of a release being published in {@code VersionMetadata.setReleaseDate()}.
+     * Handles GitHub release events by storing the release timestamp of a published release in {@code VersionMetadata.setReleaseDate()}.
      *
      * Successful handling of this event is dependent on the push event for the tag associated with the release having created the
-     * {@code WorkflowVersion}. Since the order in which we get events is not fixed, we need retry if the version does not exist.
+     * {@code WorkflowVersion}. Since the order in which we get events is not deterministic, we retry if the version does not exist, in case
+     * it gets created later.
+     *
+     * Below are the possible scenarios. Note that a single GitHub repo can correspond to many workflows, with each workflow potentially
+     * having a version corresponding the tag associated with the release.
      *
      * <ol>
-     *     <li>We get the release event and the corresponding workflow version exists</li>
-     *     <li>The workflow doesn't exist in Dockstore. The creation of a new workflow will handle this</li>
-     *     <li>The workflow exists, but the workflow version for the release event doesn't</li>
+     *     <li>The corresponding workflow versions for the release event exist. Update all the versions with the release date.</li>
+     *     <li>No workflows for the release's GitHub repo exist. Do nothing, and return a 2xx status code.</li>
+     *     <li>The workflows exist, but at least one workflow version corresponding to the release's tag doesn't. Update the versions
+     *     that do exist, and return a {@code LAMBDA_RETRY} status code, indicating that the lambda should retry again, in case a push
+     *     event ends up creating the workflow version later.</li>
      * </ol>
-     *
-     * For the last case we have to keep retrying.
      *
      * @param user
      * @param deliveryId
@@ -2259,7 +2263,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             return ignoreReleaseAction(actionString);
         }
         case DELETED, UNPUBLISHED -> {
-            // Not sure if we should do this; since we will use this field to detect if there's a DOI, the DOI will still exist even if release is deleted.
             findWorkflowVersions(payload).stream().forEach(wv -> wv.getVersionMetadata().setReleaseDate(null));
         }
         case PUBLISHED -> {
@@ -2312,9 +2315,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     private Response ignoreReleaseAction(String action) {
         LOG.info("Ignoring action in release payload: {}", action);
-        return Response.status(HttpStatus.SC_OK).build();
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 
+    /**
+     * Returns a list of workflow versions from multiple workflows corresponding to a release's GitHub repo and tag.
+     *
+     * Entries in the list can be <code>null</code>! A null entry means a workflow was found, but there is no workflow version
+     * corresponding to the release's tag.
+     *
+     * @param payload
+     * @return
+     */
     private List<WorkflowVersion> findWorkflowVersions(ReleasePayload payload) {
         final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
         return workflows.stream().map(workflow -> workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), payload.getRelease().getTagName())).toList();
