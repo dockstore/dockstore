@@ -102,6 +102,7 @@ class OpenAPIGeneralWorkflowIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + workflow.getId());
         assertFalse(workflow.isApprovedAITopic());
         workflow.setTopicSelection(TopicSelectionEnum.AI);
+        workflow.setApprovedAITopic(true);
         updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         assertEquals("AI topic", updatedWorkflow.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, updatedWorkflow.getTopicSelection());

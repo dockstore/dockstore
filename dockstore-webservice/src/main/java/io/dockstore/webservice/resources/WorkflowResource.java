@@ -568,10 +568,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
 
-        // If the user chose an AI topic, it means that they have reviewed and approved it
-        if (newWorkflow.getTopicSelection() == TopicSelection.AI) {
-            oldWorkflow.setApprovedAITopic(true);
-        }
+        oldWorkflow.setApprovedAITopic(newWorkflow.isApprovedAITopic());
 
         // Update DOI selection if the workflow has DOIs for the selection
         if (oldWorkflow.getConceptDois().containsKey(newWorkflow.getDoiSelection())) {

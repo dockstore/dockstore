@@ -109,6 +109,7 @@ class OpenAPIGeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + workflow.getId());
         assertFalse(workflow.isApprovedAITopic());
         hostedWorkflow.setTopicSelection(Workflow.TopicSelectionEnum.AI);
+        hostedWorkflow.setApprovedAITopic(true);
         workflow = workflowsApi.updateWorkflow(hostedWorkflow.getId(), hostedWorkflow);
         assertEquals(Workflow.TopicSelectionEnum.AI, workflow.getTopicSelection());
         assertTrue(workflow.isApprovedAITopic());
@@ -134,6 +135,7 @@ class OpenAPIGeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("update tool set topicai = 'AI topic' where id = " + hostedTool.getId());
         assertFalse(hostedTool.isApprovedAITopic());
         hostedTool.setTopicSelection(DockstoreTool.TopicSelectionEnum.AI);
+        hostedTool.setApprovedAITopic(true);
         dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
         assertTrue(dockstoreTool.isApprovedAITopic());
@@ -175,6 +177,7 @@ class OpenAPIGeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("update tool set topicai = 'AI topic' where id = " + toolTest.getId());
         assertFalse(toolTest.isApprovedAITopic());
         toolTest.setTopicSelection(TopicSelectionEnum.AI);
+        toolTest.setApprovedAITopic(true);
         dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
         assertEquals("AI topic", dockstoreTool.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
