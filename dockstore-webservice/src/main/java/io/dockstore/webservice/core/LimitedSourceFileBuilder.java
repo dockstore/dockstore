@@ -37,6 +37,7 @@ public class LimitedSourceFileBuilder {
 
     private DescriptorLanguage.FileType type;
     private String content;
+    private SourceFile.State state;
     private String path;
     private String absolutePath;
 
@@ -92,26 +93,45 @@ public class LimitedSourceFileBuilder {
         }
 
         private static void setContentWithLimits(SourceFile file, String content, String path) {
-            String limitedContent = content;
-            if (content != null) {
+            // Set the properties to default values.
+            file.setContent(content);
+            file.setState(SourceFile.State.COMPLETE);
+            // Check the content and override the above settings, if necessary.
+            if (content == null) {
+                file.setContent(null);
+                file.setState(SourceFile.State.STUB);
+                logContentAction(path, "stub");
+                return;
+            } else {
                 byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-                long maximumSize = computeMaximumSize(path);
-                // A large file is probably up to no good.
-                if (bytes.length > maximumSize) {
-                    limitedContent = String.format("Dockstore does not store files of this type over %.1fMB in size", maximumSize / (double) BYTES_PER_MEGABYTE);
-                }
-                // Postgresql cannot store strings that contain "NUL" characters.
-                // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
-                // https://www.ascii-code.com/character/%E2%90%80
                 if (Bytes.indexOf(bytes, Byte.decode("0x00")) != -1) {
-                    limitedContent = "Dockstore does not store binary files";
+                    // Postgres cannot store strings that contain "NUL" (value 0) characters.
+                    // Thus, Dockstore cannot currently store binary files.
+                    // https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER
+                    // https://www.ascii-code.com/character/%E2%90%80
+                    file.setContent("Dockstore does not store binary files");
+                    file.setState(SourceFile.State.NOT_STORED);
+                    logContentAction(path, "binary file");
+                    return;
+                }
+                long maximumSize = computeMaximumSize(path);
+                if (bytes.length > maximumSize) {
+                    // A large file is probably up to no good.
+                    double megabytes = maximumSize / (double) BYTES_PER_MEGABYTE;
+                    file.setContent("Dockstore does not store files of this type over %.1fMB in size".formatted(megabytes));
+                    file.setState(SourceFile.State.NOT_STORED);
+                    logContentAction(path, "large file (%n bytes)".formatted(bytes.length));
+                    return;
                 }
             }
-            file.setContent(limitedContent);
+        }
+
+        private static void logContentAction(String path, String why) {
+            LOG.info("incomplete content for file %s: %s".formatted(path, why));
         }
 
         private static long computeMaximumSize(String path) {
-            // Jupyter notebooks can contain embedded images, making them larger, on average.
+            // Jupyter notebook files can contain embedded images, making them tend to be larger.
             if (StringUtils.endsWith(path, ".ipynb")) {
                 return NOTEBOOK_MAXIMUM_FILE_SIZE;
             }

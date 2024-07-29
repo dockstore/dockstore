@@ -340,6 +340,10 @@ public final class ZenodoHelper {
         String conceptDoi = publishedDeposit.getConceptdoi();
 
         ZenodoDoiResult zenodoDoiResult = new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
+        // A user-requested DOI takes highest precedence
+        if (doiInitiator == DoiInitiator.USER || workflow.getConceptDois().isEmpty()) {
+            workflow.setDoiSelection(doiInitiator);
+        }
         workflowVersion.getDois().put(doiInitiator, getDoiFromDatabase(DoiType.VERSION, doiInitiator, zenodoDoiResult.doiUrl()));
         workflow.getConceptDois().put(doiInitiator, getDoiFromDatabase(DoiType.CONCEPT, doiInitiator, zenodoDoiResult.conceptDoi()));
 

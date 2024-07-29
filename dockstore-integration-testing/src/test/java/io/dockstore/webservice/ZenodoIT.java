@@ -55,6 +55,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.AccessLink;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.DoiSelectionEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
@@ -151,6 +152,8 @@ class ZenodoIT {
         foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
         assertFalse(foobar2TagVersion08.isFrozen(), "Version should not be snapshotted for automatic DOI creation");
         assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        foobar2 = workflowsApi.getWorkflow(foobar2Id, "");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, foobar2.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
 
         // Should be able to request a user-created DOI for the version even though it has a Dockstore-created DOI
         foobar2TagVersion08.setFrozen(true);
@@ -159,6 +162,7 @@ class ZenodoIT {
         foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
         foobar2TagVersion08 = getWorkflowVersion(foobar2, "0.8").orElse(null);
         assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.USER.name()).getName());
+        assertEquals(DoiSelectionEnum.USER, foobar2.getDoiSelection(), "DOI selection should update to USER since it takes highest precedence");
 
         // Release a different tag. Should automatically create DOI
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
@@ -166,6 +170,7 @@ class ZenodoIT {
         WorkflowVersion foobar2TagVersion09 = getWorkflowVersion(foobar2, "0.9").orElse(null);
         assertNotNull(foobar2TagVersion09);
         assertNotNull(foobar2TagVersion09.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        assertEquals(DoiSelectionEnum.USER, foobar2.getDoiSelection(), "DOI selection should be USER since it takes highest precedence");
 
         // Release a branch. Should not automatically create a DOI because it's not a tag
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
@@ -173,6 +178,13 @@ class ZenodoIT {
         WorkflowVersion foobar2BranchVersion = getWorkflowVersion(foobar2, "master").orElse(null);
         assertNotNull(foobar2BranchVersion);
         assertFalse(foobar2BranchVersion.getDois().containsKey(DoiInitiator.DOCKSTORE.name()));
+
+        // Test updating the DOI selection
+        assertEquals(DoiSelectionEnum.USER, foobar2.getDoiSelection());
+        foobar2.setDoiSelection(DoiSelectionEnum.DOCKSTORE);
+        workflowsApi.updateWorkflow(foobar2Id, foobar2);
+        foobar2 = workflowsApi.getWorkflow(foobar2Id, "versions");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, foobar2.getDoiSelection());
     }
 
     @Test
@@ -197,6 +209,8 @@ class ZenodoIT {
 
         tagVersion = workflowsApi.getWorkflowVersionById(workflow.getId(), tagVersion.getId(), "");
         assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
     }
 
     @Test
@@ -220,6 +234,7 @@ class ZenodoIT {
         tagVersion = getWorkflowVersion(workflow, "0.8").orElse(null);
         assertNotNull(workflow.getConceptDois().get(DoiInitiator.DOCKSTORE.name()).getName());
         assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
     }
 
     @Test
@@ -234,6 +249,7 @@ class ZenodoIT {
         workflowsApi.refresh1(workflow.getId(), false);
         workflow = workflowsApi.getWorkflow(workflow.getId(), "versions");
         assertTrue(workflow.getConceptDois().isEmpty(), "Should not have any automatic DOIs because it's unpublished");
+        assertEquals(DoiSelectionEnum.USER, workflow.getDoiSelection(), "Default should be USER");
 
         // Get a valid tag
         WorkflowVersion tagVersion = getWorkflowVersion(workflow, "1.1").orElse(null);
@@ -245,6 +261,13 @@ class ZenodoIT {
         tagVersion = workflowsApi.getWorkflowVersionById(workflow.getId(), tagVersion.getId(), "");
         assertNotNull(workflow.getConceptDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic concept DOI");
         assertNotNull(tagVersion.getDois().get(DoiInitiator.DOCKSTORE.name()).getName(), "Should have automatic DOI because it's a valid published tag");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
+
+        // Change DOI selection to GITHUB. It should be ignored because there are no GitHub DOIs for the workflow
+        workflow.setDoiSelection(DoiSelectionEnum.GITHUB);
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, workflow.getDoiSelection(), "The DOI selection should not change");
     }
 
     @Test
@@ -318,6 +341,7 @@ class ZenodoIT {
         assertNotNull(workflow.getConceptDois().get(DoiInitiator.USER.name()));
         master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
         assertNotNull(master.getDois().get(DoiInitiator.USER.name()).getName());
+        assertEquals(DoiSelectionEnum.USER, workflow.getDoiSelection());
 
         // unpublish workflow
         workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));

@@ -269,6 +269,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
     private Map<DoiInitiator, Doi> conceptDois = new HashMap<>();
 
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "The Digital Object Identifier (DOI) to display publicly")
+    @Column(nullable = false, columnDefinition = "varchar(32) default 'USER'")
+    private DoiInitiator doiSelection = DoiInitiator.USER;
+
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
@@ -420,6 +425,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public void setConceptDois(Map<DoiInitiator, Doi> conceptDois) {
         this.conceptDois.clear();
         this.conceptDois.putAll(conceptDois);
+    }
+
+    public DoiInitiator getDoiSelection() {
+        return this.doiSelection;
+    }
+
+    public void setDoiSelection(DoiInitiator doiSelection) {
+        this.doiSelection = doiSelection;
     }
 
     @JsonIgnore // Don't surface this, just a helper method
