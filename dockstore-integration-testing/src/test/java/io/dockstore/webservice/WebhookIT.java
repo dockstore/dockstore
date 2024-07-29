@@ -2018,6 +2018,7 @@ class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + foobar.getId());
         assertFalse(foobar.isApprovedAITopic());
         foobar.setTopicSelection(TopicSelectionEnum.AI);
+        foobar.setApprovedAITopic(true);
         workflowClient.updateWorkflow(foobar.getId(), foobar);
 
         // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
