@@ -94,9 +94,8 @@ public final class GitHubHelper {
         } catch (InterruptedException e) {
             String msg = "Something interrupted creating a fork on: " + repositoryName;
             LOG.error(msg, e);
-            Thread.currentThread().interrupt();
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        return null;
     }
 
     public static String getGitHubAccessToken(String code, String githubClientID, String githubClientSecret) {

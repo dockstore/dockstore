@@ -26,7 +26,6 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
-import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
@@ -148,7 +147,7 @@ class ExtendedNextflowIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
 
-        handleGitHubRelease(openWorkflowApi, DockstoreTesting.WORKFLOW_NEXTFLOW_DOCKSTORE_YML, "refs/heads/nfcore", USER_1_USERNAME);
+        handleGitHubRelease(openWorkflowApi, WORKFLOW_NEXTFLOW_DOCKSTORE_YML, "refs/heads/nfcore", USER_1_USERNAME);
 
 
         // see what state the metadata is in, before the fix (#5919) this will remain as foobar
