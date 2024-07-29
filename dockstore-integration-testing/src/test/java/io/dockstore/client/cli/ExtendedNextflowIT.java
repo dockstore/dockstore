@@ -15,6 +15,8 @@
  */
 package io.dockstore.client.cli;
 
+import static io.dockstore.common.RepositoryConstants.DockstoreTesting.WORKFLOW_NEXTFLOW_DOCKSTORE_YML;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,8 +26,10 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
@@ -33,7 +37,9 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import java.util.List;
+import java.util.Optional;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -54,7 +60,8 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 class ExtendedNextflowIT extends BaseIT {
 
     // workflow with a bin directory
-    private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser/ampa-nf";
+    private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB + "/DockstoreTestUser/ampa-nf";
+    private static final String DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW = SourceControl.GITHUB + "/" + WORKFLOW_NEXTFLOW_DOCKSTORE_YML;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -76,7 +83,7 @@ class ExtendedNextflowIT extends BaseIT {
     }
 
     @Test
-    void testNextflowSecondaryFiles() throws Exception {
+    void testNextflowSecondaryFiles() {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -108,6 +115,47 @@ class ExtendedNextflowIT extends BaseIT {
         assertEquals(1, refreshGithub.getAuthors().size());
         assertEquals("test.user@test.com", refreshGithub.getAuthors().get(0).getName());
         assertEquals("Fast automated prediction of protein antimicrobial regions", refreshGithub.getDescription());
+    }
+
+    @Test
+    void testNextflowYml() {
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/ampa-nf", "/nextflow.config", "",
+            DescriptorLanguage.NEXTFLOW.getShortName(), "");
+        assertNotSame("", workflow.getWorkflowName());
+
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
+        // need to set paths properly
+        workflowByPathGithub.setWorkflowPath("/nextflow.config");
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
+        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
+
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
+        Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+
+        // check that metadata made it through properly
+        Optional<WorkflowVersion> nfcore = refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore")).findFirst();
+        assertTrue(nfcore.isPresent() &&  "Nextflow !>=23.04.1".equals(nfcore.get().getVersionMetadata().getEngineVersions().get(0)));
+
+        // override
+        testingPostgres.runUpdateStatement("update version_metadata set engineversions = 'foobar'");
+
+        // do a github release  and see if the engine version changes
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+
+        handleGitHubRelease(openWorkflowApi, DockstoreTesting.WORKFLOW_NEXTFLOW_DOCKSTORE_YML, "refs/heads/nfcore", USER_1_USERNAME);
+
+
+        // see what state the metadata is in, before the fix (#5919) this will remain as foobar
+        io.dockstore.openapi.client.model.Workflow workflowByPath = openWorkflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, "versions");
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> opennfcore = workflowByPath.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore"))
+            .findFirst();
+        assertTrue(opennfcore.isPresent() &&  "Nextflow !>=23.04.1".equals(opennfcore.get().getVersionMetadata().getEngineVersions().get(0)));
     }
 
     @Test
