@@ -63,7 +63,7 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
-import io.dockstore.webservice.helpers.CachedFileTree;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
@@ -2116,7 +2116,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create FileTree.
         String ownerAndRepo = owner + "/" + repo;
-        FileTree fileTree = new CachedFileTree(new GitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+        FileTree fileTree = new CachingFileTree(new GitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
 
         // Infer entries.
         LOG.error("Inferring entries");

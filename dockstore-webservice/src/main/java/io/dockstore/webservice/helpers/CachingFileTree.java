@@ -21,14 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CachedFileTree implements FileTree {
+public class CachingFileTree implements FileTree {
 
     private Map<String, String> pathToContent = new HashMap<>();
     private Map<String, List<String>> pathToFiles = new HashMap<>();
     private List<String> paths;
     private FileTree fileTree;
 
-    public CachedFileTree(FileTree fileTree) {
+    public CachingFileTree(FileTree fileTree) {
         this.fileTree = fileTree;
     }
 
