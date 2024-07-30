@@ -202,7 +202,13 @@ class ExtendedTRSApiIT extends BaseIT {
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertTrue(workflow.isApprovedAITopic());
 
-        // Update AI topic. approvedAITopic should be reset to false
+        // Update AI topic with the same AI topic. approvedAITopic should still be true because the AI topic has not changed
+        extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertTrue(workflow.isApprovedAITopic(), "Should still be true because the AI topic has not changed");
+
+        // Update AI topic with a new AI topic
+        updateAITopicRequest.setAiTopic("This is a brand new AI topic");
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertFalse(workflow.isApprovedAITopic(), "Should be false because it's a new AI topic");
