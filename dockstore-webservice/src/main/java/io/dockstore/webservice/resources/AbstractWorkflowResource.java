@@ -1008,9 +1008,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     existingWorkflowVersion.getVersionMetadata().setParsedInformationSet(remoteWorkflowVersion.getVersionMetadata().getParsedInformationSet());
                     existingWorkflowVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(remoteWorkflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
 
-
-
-
                     updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
                             workflow.getDescriptorType());
                 }
