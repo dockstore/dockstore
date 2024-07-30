@@ -36,9 +36,9 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GitHubFileTree implements FileTree {
+public class ZipGitHubFileTree implements FileTree {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GitHubFileTree.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZipGitHubFileTree.class);
 
     private final GitHubSourceCodeRepo gitHubSourceCodeRepo;
     private final String repository;
@@ -46,7 +46,7 @@ public class GitHubFileTree implements FileTree {
     private final ZipFile zipFile;
     private final Map<String, ZipArchiveEntry> pathToEntry;
 
-    public GitHubFileTree(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String ref) {
+    public ZipGitHubFileTree(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String ref) {
         this.gitHubSourceCodeRepo = gitHubSourceCodeRepo;
         this.repository = repository;
         this.ref = ref;

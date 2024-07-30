@@ -67,7 +67,6 @@ import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
-import io.dockstore.webservice.helpers.GitHubFileTree;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -77,6 +76,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
 import io.dockstore.webservice.helpers.infer.Inferrer;
 import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
@@ -2116,7 +2116,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create FileTree.
         String ownerAndRepo = owner + "/" + repo;
-        FileTree fileTree = new CachingFileTree(new GitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
 
         // Infer entries.
         LOG.error("Inferring entries");
