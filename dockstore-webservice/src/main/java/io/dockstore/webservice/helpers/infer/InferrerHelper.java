@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -217,7 +217,7 @@ public class InferrerHelper {
         // In a perfect world, there would be a counter per orginal name, but this code is
         // already hard to evaluate from a "does it always halt" point-of-view, so let's
         // keep it simple for now.
-        AtomicLong counter = new AtomicLong(1);
+        MutableLong counter = new MutableLong(1);
         Set<String> taken = new HashSet<>();
         return entries.stream().map(entry -> {
             String name = entry.name();
