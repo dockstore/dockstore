@@ -388,10 +388,6 @@
             <column name="latestreleasedate" type="TIMESTAMP WITHOUT TIME ZONE">
             </column>
         </addColumn>
-        <addColumn tableName="tool">
-            <column name="latestreleasedate" type="TIMESTAMP WITHOUT TIME ZONE">
-            </column>
-        </addColumn>
         <addColumn tableName="workflow">
             <column name="latestreleasedate" type="TIMESTAMP WITHOUT TIME ZONE">
             </column>
