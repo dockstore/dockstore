@@ -347,11 +347,6 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
-        <addColumn tableName="tool">
-            <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
-                <constraints nullable="false"/>
-            </column>
-        </addColumn>
         <addColumn tableName="workflow">
             <column defaultValue="USER" name="doiselection" type="varchar(32 BYTE)">
                 <constraints nullable="false"/>
