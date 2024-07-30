@@ -12073,11 +12073,6 @@ components:
           type: boolean
           description: Whether the version has everything needed to run without restricted
             access permissions
-        releaseDate:
-          type: integer
-          format: int64
-          description: "The timestamp of a version control release, such as a GitHub\
-            \ release"
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -12255,6 +12250,11 @@ components:
         last_modified_date:
           type: integer
           format: int64
+        latestReleaseDate:
+          type: integer
+          format: int64
+          description: "The timestamp of the most recent version control release,\
+            \ such as a GitHub release"
         licenseInformation:
           $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:

@@ -157,10 +157,6 @@ public class VersionMetadata {
     @ApiModelProperty(value = "The engine versions this workflow version can run on")
     private List<String> engineVersions = new ArrayList<>();
 
-    @Column(nullable = true)
-    @Schema(type = "integer", format = "int64", description = "The timestamp of a version control release, such as a GitHub release")
-    private Timestamp releaseDate;
-
     public long getId() {
         return id;
     }
@@ -225,13 +221,5 @@ public class VersionMetadata {
 
     public void setDois(Map<DoiInitiator, Doi> dois) {
         this.dois = dois;
-    }
-
-    public Timestamp getReleaseDate() {
-        return releaseDate;
-    }
-
-    public void setReleaseDate(Timestamp releaseDate) {
-        this.releaseDate = releaseDate;
     }
 }
