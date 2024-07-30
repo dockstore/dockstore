@@ -184,15 +184,20 @@ public class InferrerHelper {
     }
 
     private Inferrer.Entry legalizeName(Inferrer.Entry entry) {
-        String legalName = entry.name()
-            // Remove any character that's not an alphanumeric, hyphen, or underscore.
-            .replaceAll("[^a-zA-Z0-9_-]", "")
-            // Remove leading and trailing hyphens/underscores.
-            .replaceAll("^[_-]++", "")
-            .replaceAll("[_-]++$", "")
-            // Reduce remaining runs of hyphens/underscores to a single character.
-            .replaceAll("([_-])[_-]++", "$1");
+        String legalName = collapseHyphensAndUnderscores(trimHyphensAndUnderscores(removeNonNameCharacters(entry.name())));
         return entry.changeName(StringUtils.firstNonEmpty(legalName, nameFromType(entry.type())));
+    }
+
+    private String removeNonNameCharacters(String s) {
+        return s.replaceAll("[^a-zA-Z0-9_-]", "");
+    }
+
+    private String trimHyphensAndUnderscores(String s) {
+        return StringUtils.stripEnd(StringUtils.stripStart(s, "_-"), "_-");
+    }
+
+    private String collapseHyphensAndUnderscores(String s) {
+        return s.replaceAll("([_-])[_-]++", "$1");
     }
 
     private List<Inferrer.Entry> ensureUniqueNames(List<Inferrer.Entry> entries) {
