@@ -21,12 +21,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implements a FileTree that wraps a specified FileTree, delegates to
+ * the underlying FileTree's methods, saves the returned values, and
+ * returns the saved value when a method is invoked multiple times with
+ * the same arguments.
+ *
+ * For example, the first call to `readFile("/foo.txt")` is delegated
+ * to the underlying FileTree, and the resulting content is saved and
+ * returned.  For subsequent calls to `readFile("/foo.txt")`, the saved
+ * content is returned, and the underlying FileTree is not used.
+ *
+ * Useful for avoiding repeated accesses to a FileTree-abstracted
+ * resource when the code makes multiple passes over the same files,
+ * without needing to explicitly propagate the retrieved information
+ * (by passing it down the call stack, saving it in a variable, etc).
+ */
 public class CachingFileTree implements FileTree {
 
-    private Map<String, String> pathToContent = new HashMap<>();
-    private Map<String, List<String>> pathToFiles = new HashMap<>();
+    private final FileTree fileTree;
+    private final Map<String, String> pathToContent = new HashMap<>();
+    private final Map<String, List<String>> pathToFiles = new HashMap<>();
     private List<String> paths;
-    private FileTree fileTree;
 
     public CachingFileTree(FileTree fileTree) {
         this.fileTree = fileTree;
