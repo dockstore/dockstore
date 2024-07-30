@@ -25,9 +25,11 @@ import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,6 +47,8 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DescriptorLanguageInferrer.class);
     private static final Pattern POSSIBLE_PATH = Pattern.compile("[./]*+[a-zA-Z0-9/_-]++\\.[a-zA-Z0-9]++");
+    private static final int MAX_REFERENCED_PATH_LENGTH = 64;
+    private static final Pattern NON_PATH_CHARACTERS = Pattern.compile("[^.a-zA-Z0-9/_-]");
 
     private final DescriptorLanguage language;
 
@@ -92,21 +96,24 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
     }
 
     protected List<String> determineReferencedPaths(FileTree fileTree, String srcPath) {
-        Set<String> referencedPaths = new LinkedHashSet<>();
         String content = removeComments(readFile(fileTree, srcPath));
-        Matcher matcher = POSSIBLE_PATH.matcher(content);
-        while (matcher.find()) {
-            String foundPath = matcher.group();
-            if (isDescriptorPath(foundPath)) {
-                try {
-                    String dstPath = Paths.get(srcPath).resolve(foundPath).normalize().toString();
-                    referencedPaths.add(dstPath);
-                } catch (InvalidPathException e) {
-                    // If either path was invalid, ignore and continue.
-                }
-            }
+        String[] chunks = NON_PATH_CHARACTERS.split(content);
+        return Arrays.stream(chunks)
+            .filter(chunk -> chunk.length() <= MAX_REFERENCED_PATH_LENGTH)
+            .filter(chunk -> POSSIBLE_PATH.matcher(chunk).matches())
+            .filter(this::isDescriptorPath)
+            .map(foundPath -> toAbsolutePath(srcPath, foundPath))
+            .flatMap(Optional::stream)
+            .toList();
+    }
+
+    private Optional<String> toAbsolutePath(String currentPath, String relativeOrAbsolutePath) {
+        try {
+            return Optional.of(Paths.get(currentPath).resolve(relativeOrAbsolutePath).normalize().toString());
+        } catch (InvalidPathException e) {
+            // If either path was invalid, ignore and continue.
+            return Optional.empty();
         }
-        return toList(referencedPaths);
     }
 
     protected EntryType determineType(FileTree fileTree, String path) {
