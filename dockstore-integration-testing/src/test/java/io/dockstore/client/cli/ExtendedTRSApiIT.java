@@ -188,11 +188,30 @@ class ExtendedTRSApiIT extends BaseIT {
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals(aiTopic, workflow.getTopicAI());
         assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection()); // Topic selection is unchanged because an automatic topic exists
+
         // Set topic automatic to null and update AI topic again. The topic selection should automatically be AI
         testingPostgres.runUpdateStatement("update workflow set topicautomatic = null where id = " + workflow.getId());
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals(TopicSelectionEnum.AI, workflow.getTopicSelection());
+        assertFalse(workflow.isApprovedAITopic(), "Should be false because the user didn't approve the AI topic");
+
+        // User approves AI topic
+        workflow.setApprovedAITopic(true);
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertTrue(workflow.isApprovedAITopic());
+
+        // Update AI topic with the same AI topic. approvedAITopic should still be true because the AI topic has not changed
+        extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertTrue(workflow.isApprovedAITopic(), "Should still be true because the AI topic has not changed");
+
+        // Update AI topic with a new AI topic
+        updateAITopicRequest.setAiTopic("This is a brand new AI topic");
+        extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertFalse(workflow.isApprovedAITopic(), "Should be false because it's a new AI topic");
     }
 
     @Test
