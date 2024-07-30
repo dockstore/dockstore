@@ -46,9 +46,19 @@ import org.slf4j.LoggerFactory;
 public abstract class DescriptorLanguageInferrer implements Inferrer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DescriptorLanguageInferrer.class);
+    /**
+     * Regular expression that matches pathlike strings, composed of the currently-legal SourceFile path characters.
+     */
     private static final Pattern POSSIBLE_PATH = Pattern.compile("[./]*+[a-zA-Z0-9/_-]++\\.[a-zA-Z0-9]++");
-    private static final int MAX_REFERENCED_PATH_LENGTH = 64;
+    /**
+     * Regular expression that matches characters that are not allowed in SourceFile paths.
+     */
     private static final Pattern NON_PATH_CHARACTERS = Pattern.compile("[^.a-zA-Z0-9/_-]");
+    /**
+     * The maximum length of a string that we will consider as a potential referenced path.
+     * Used to avoid testing very long pathlike-strings, which are probably _not_ actually paths.
+     */
+    private static final int MAX_REFERENCED_PATH_LENGTH = 64;
 
     private final DescriptorLanguage language;
 
