@@ -2108,21 +2108,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
         @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
         @Parameter(name = "ref", description = "reference", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
-        LOG.error(String.format("INFER %s %s %s", owner, repo, gitReference));
-        user = userDAO.findById(user.getId());
+        // Get GitHub tokens.
+        List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
+        if (tokens.isEmpty()) {
+            throw new CustomWebApplicationException("Could not find GitHub token.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         // Create github source code repo.
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokenDAO.findGithubByUserId(user.getId()).get(0));
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
 
         // Create FileTree.
         String ownerAndRepo = owner + "/" + repo;
         FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
 
         // Infer entries.
-        LOG.error("Inferring entries");
         InferrerHelper inferrerHelper = new InferrerHelper();
         List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
-        entries.forEach(e -> LOG.error("Inferred entry: " + e));
 
         // Create and return .dockstore.yml
         return inferrerHelper.toDockstoreYaml(entries);
