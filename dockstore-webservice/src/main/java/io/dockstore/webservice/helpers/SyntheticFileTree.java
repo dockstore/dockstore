@@ -22,6 +22,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implements a memory-based FileTree, empty upon construction, to which
+ * files are added via the `addFile` method.  Useful to unit test code that
+ * uses FileTrees, without needing to create an actual tree of files (on
+ * GitHub, the local filesystem, within a resource file, etc) and then
+ * reference it via a compatible FileTree implementation.
+ */
 public class SyntheticFileTree implements FileTree {
 
     private Map<String, String> pathToContent = new HashMap<>();
@@ -48,6 +55,11 @@ public class SyntheticFileTree implements FileTree {
         return new ArrayList<>(pathToContent.keySet());
     }
 
+    /**
+     * Adds a file to the file tree.
+     * @param path absolute path of the file
+     * @param content content of the file
+     */
     public void addFile(String path, String content) {
         pathToContent.put(path, content);
     }
