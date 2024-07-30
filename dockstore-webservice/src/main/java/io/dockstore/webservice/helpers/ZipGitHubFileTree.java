@@ -36,6 +36,19 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Abstracts the file tree corresponding to a reference to a GitHub repository.
+ *
+ * Upon initialization, this implementation retrieves a Zipball of the ref/repo
+ * file tree and constructs a path-to-ZipArchiveEntry map corresponding to normal
+ * (non-symlink) files.  Sebsequently, on demand, the map is used to extract file
+ * contents and a list of paths.
+ *
+ * The zip file and path-to-entry map do not include submodule files or paths
+ * that contain a symlink component.  If `readFile` can't find a path in the map,
+ * we attempt to read the file via `GitHubSourceCodeRepo.readFile`, which
+ * supports symlinks and submodules.
+ */
 public class ZipGitHubFileTree implements FileTree {
 
     private static final Logger LOG = LoggerFactory.getLogger(ZipGitHubFileTree.class);
@@ -60,7 +73,7 @@ public class ZipGitHubFileTree implements FileTree {
             LOG.error("could not read zip archive of GitHub repository", e);
             throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
-        // Create a Map of absolute paths to Zip file entries.
+        // Create a Map of absolute paths to Zip file entries for normal (non-symlink) files.
         pathToEntry = Collections.list(zipFile.getEntries()).stream()
             .filter(entry -> !entry.isDirectory() && !entry.isUnixSymlink())
             .collect(Collectors.toMap(this::pathFromEntry, entry -> entry, (valueA, valueB) -> valueA));
@@ -74,7 +87,7 @@ public class ZipGitHubFileTree implements FileTree {
             try (InputStream in = zipFile.getInputStream(entry)) {
                 return IOUtils.toString(in, StandardCharsets.UTF_8);
             } catch (IOException e) {
-                LOG.error("could not extract file from ZipArchiveEntry: " + cleanString(entry), e);
+                LOG.error("could not extract file from ZipArchiveEntry: " + stringifyAndClean(entry), e);
                 throw new CustomWebApplicationException("could not read file from GitHub repository", HttpStatus.SC_BAD_REQUEST);
             }
         }
@@ -94,18 +107,18 @@ public class ZipGitHubFileTree implements FileTree {
 
     /**
      * Computes a file's absolute path, relative to the repo root, from the information in a specified Zip entry.
-     * In a GitHub-served Zipball, all file paths are prepended with a path component formed from the repo/ref information, which this code strips off.
+     * In a GitHub Zipball, all file paths are prepended with a path component formed from the repo/ref information, which this code strips off.
      */
     private String pathFromEntry(ZipArchiveEntry entry) {
         String[] parts = entry.getName().split("/", 2);
         if (parts.length != 2) {
-            LOG.error("could not parse ZipArchiveEntry: " + cleanString(entry));
+            LOG.error("could not parse ZipArchiveEntry: " + stringifyAndClean(entry));
             throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
         return "/" + parts[1];
     }
 
-    private String cleanString(Object obj) {
+    private String stringifyAndClean(Object obj) {
         if (obj != null) {
             return Utilities.cleanForLogging(obj.toString());
         } else {
