@@ -971,6 +971,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setKernelImagePath(remoteWorkflowVersion.getKernelImagePath());
                 existingWorkflowVersion.setReadMePath(remoteWorkflowVersion.getReadMePath());
                 existingWorkflowVersion.setDescriptionAndDescriptionSource(remoteWorkflowVersion.getDescription(), remoteWorkflowVersion.getDescriptionSource());
+                    // this kinda sucks but needs to be updated with workflow metadata too
+                    existingWorkflowVersion.getVersionMetadata().setEngineVersions(remoteWorkflowVersion.getVersionMetadata().getEngineVersions());
+                    existingWorkflowVersion.getVersionMetadata().setDescriptorTypeVersions(remoteWorkflowVersion.getVersionMetadata().getDescriptorTypeVersions());
+                    existingWorkflowVersion.getVersionMetadata().setParsedInformationSet(remoteWorkflowVersion.getVersionMetadata().getParsedInformationSet());
+                    existingWorkflowVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(remoteWorkflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
                     workflow.getDescriptorType());
                 updatedWorkflowVersion = existingWorkflowVersion;
