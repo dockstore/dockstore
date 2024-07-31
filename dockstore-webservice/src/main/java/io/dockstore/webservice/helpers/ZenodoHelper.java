@@ -48,6 +48,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -368,6 +369,10 @@ public final class ZenodoHelper {
         if (doi == null) {
             long doiId = doiDAO.create(new Doi(doiType, doiInitiator, doiName));
             return doiDAO.findById(doiId);
+        }
+        return doi;
+    }
+
     public static List<String> findDOIsForGitHubRepo(ApiClient zenodoClient, String gitHubRepo) {
         final ArrayList<String> dois = new ArrayList<>();
         final PreviewApi previewApi = new PreviewApi(zenodoClient);

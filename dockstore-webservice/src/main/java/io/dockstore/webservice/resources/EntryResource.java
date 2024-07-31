@@ -744,7 +744,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 .distinct()
                 .collect(Collectors.toList());
         final io.swagger.zenodo.client.ApiClient zenodoClient = ZenodoHelper.createApiClient(zenodoUrl);
-        zenodoClient.setBasePath("https://zenodo.org/api"); // TODO: Don't merge this!
         final long millis = 500; // Rate limit is 133 per minute
 
         final List<RepoDoi> reposWithDois = gitHubRepos.stream().map(repo -> {
