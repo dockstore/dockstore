@@ -2107,7 +2107,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
         @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
-        @Parameter(name = "ref", description = "reference", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
         // Get GitHub tokens.
         List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
         if (tokens.isEmpty()) {
