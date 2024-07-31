@@ -41,11 +41,11 @@ public class CachingFileTree implements FileTree {
 
     private final FileTree fileTree;
     /**
-     * Maps file paths to cached file content.
+     * Maps file paths to saved file content.
      */
     private final Map<String, String> filePathToContent = new HashMap<>();
     /**
-     * Maps directory paths to cached directory contents.
+     * Maps directory paths to saved directory contents.
      */
     private final Map<String, List<String>> dirPathToFiles = new HashMap<>();
     private List<String> paths;
