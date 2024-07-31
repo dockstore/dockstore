@@ -71,7 +71,7 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         // Get a list of paths that are probably descriptors.
         List<String> paths = fileTree.listPaths().stream().filter(this::isDescriptorPath).toList();
         // Remove paths that likely correspond to tests, subtasks, etc.
-        paths = removeTestPaths(paths);
+        paths = removeNonPrimaryPaths(paths);
         // Remove paths that are referenced by other descriptors.
         paths = removeReferencedPaths(fileTree, paths);
         // For each path that remains, attempt to infer the entries.
@@ -92,7 +92,11 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
 
     protected abstract boolean isDescriptorPath(String path);
 
-    protected List<String> removeTestPaths(List<String> paths) {
+    /**
+     * Remove the paths that probably don't represent primary descriptors
+     * that the user would want to reference in their .dockstore.yml
+     */
+    protected List<String> removeNonPrimaryPaths(List<String> paths) {
         return paths.stream().filter(path -> {
             String lower = path.toLowerCase();
             return !(lower.contains("test") || lower.contains("archive") || lower.contains("debug"));
