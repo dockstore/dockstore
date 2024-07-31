@@ -40,8 +40,14 @@ import java.util.Map;
 public class CachingFileTree implements FileTree {
 
     private final FileTree fileTree;
-    private final Map<String, String> pathToContent = new HashMap<>();
-    private final Map<String, List<String>> pathToFiles = new HashMap<>();
+    /**
+     * Maps file paths to cached file content.
+     */
+    private final Map<String, String> filePathToContent = new HashMap<>();
+    /**
+     * Maps directory paths to cached directory contents.
+     */
+    private final Map<String, List<String>> dirPathToFiles = new HashMap<>();
     private List<String> paths;
 
     public CachingFileTree(FileTree fileTree) {
@@ -50,21 +56,21 @@ public class CachingFileTree implements FileTree {
 
     @Override
     public String readFile(String filePath) {
-        if (pathToContent.containsKey(filePath)) {
-            return pathToContent.get(filePath);
+        if (filePathToContent.containsKey(filePath)) {
+            return filePathToContent.get(filePath);
         }
         String content = fileTree.readFile(filePath);
-        pathToContent.put(filePath, content);
+        filePathToContent.put(filePath, content);
         return content;
     }
 
     @Override
     public List<String> listFiles(String dirPath) {
-        if (pathToFiles.containsKey(dirPath)) {
-            return pathToFiles.get(dirPath);
+        if (dirPathToFiles.containsKey(dirPath)) {
+            return dirPathToFiles.get(dirPath);
         }
         List<String> files = fileTree.listFiles(dirPath);
-        pathToFiles.put(dirPath, files);
+        dirPathToFiles.put(dirPath, files);
         return files;
     }
 
