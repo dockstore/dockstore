@@ -23,7 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SyntheticFileTreeHelperTest {
+public class SyntheticFileTreeTest {
 
     @Test
     void testEmpty() {
@@ -65,6 +65,14 @@ public class SyntheticFileTreeHelperTest {
         sameElements(List.of("2.txt"), fileTree.listFiles("/dir"));
         sameElements(List.of(), fileTree.listFiles("/dir/2.txt"));
         sameElements(List.of("/1.txt", "/dir/2.txt"), fileTree.listPaths());
+    }
+
+    @Test
+    void testDuplicateDirectories() {
+        final SyntheticFileTree fileTree = new SyntheticFileTree();
+        fileTree.addFile("/a/1.txt", "one");
+        fileTree.addFile("/a/2.txt", "two");
+        sameElements(List.of("a"), fileTree.listFiles("/"));
     }
 
     private void sameElements(Collection<String> a, Collection<String> b) {

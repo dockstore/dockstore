@@ -19,9 +19,30 @@ package io.dockstore.webservice.helpers;
 
 import java.util.List;
 
+/**
+ * Abstracts read-only access to a tree of files.
+ * Methods with analogs in `SourceCodeRepoInterface` are intended to have the sam semantics.
+ */
 public interface FileTree {
 
+    /**
+     * Reads the content of the specified file.
+     * @param path absolute path of the file
+     * @returns contents of the file, or null if the file did not exist
+     */
     String readFile(String path);
+
+    /**
+     * Lists the files and subdirectories in a specified directory.
+     * Does not recursively list the contents of subdirectories.
+     * @param pathToDirectory absolute path of the directory
+     * @returns list of the files and subdirectories
+     */
     List<String> listFiles(String pathToDirectory);
+
+    /**
+     * Enumerate the paths of all normal (non-directory/symlink/submodule/etc) files in this file tree.
+     * @returns list of the absolute paths, relative to the file tree root
+     */
     List<String> listPaths();
 }

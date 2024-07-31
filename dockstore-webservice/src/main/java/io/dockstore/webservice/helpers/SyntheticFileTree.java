@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Implements a memory-based FileTree, empty upon construction, to which
@@ -42,12 +43,16 @@ public class SyntheticFileTree implements FileTree {
     @Override
     public List<String> listFiles(String dirPath) {
         String normalizedDirPath = addSlash(dirPath);
-        return pathToContent.keySet().stream()
+        // Find the paths that begin with the specified path,
+        // strip the specified path from the front, and
+        // extract the first component of the remaining path.
+        // Collect to a set to eliminate duplicate directory results.
+        return new ArrayList<>(pathToContent.keySet().stream()
             .filter(path -> path.startsWith(normalizedDirPath))
             .map(path -> path.substring(normalizedDirPath.length()))
             .filter(path -> !path.isEmpty())
             .map(path -> path.split(SLASH)[0])
-            .toList();
+            .collect(Collectors.toSet()));
     }
 
     @Override
