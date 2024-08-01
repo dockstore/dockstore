@@ -1,6 +1,9 @@
 package io.dockstore.common;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Enum for available entry types on Dockstore
@@ -23,5 +26,9 @@ public enum EntryType {
 
     public String getTerm() {
         return term;
+    }
+
+    public Set<DescriptorLanguageSubclass> getSubclasses() {
+        return Arrays.stream(DescriptorLanguageSubclass.values()).filter(subclass -> subclass.getEntryTypes().contains(this)).collect(Collectors.toSet());
     }
 }

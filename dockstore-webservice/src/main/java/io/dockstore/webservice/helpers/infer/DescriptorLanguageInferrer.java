@@ -148,7 +148,7 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
     }
 
     protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
-        Set<DescriptorLanguageSubclass> subclasses = DescriptorLanguageSubclass.valuesForEntryType(type);
+        Set<DescriptorLanguageSubclass> subclasses = type.getSubclasses();
         // If this descriptor language only supports one type of subclass, return it.
         if (subclasses.size() == 1) {
             return subclasses.iterator().next();

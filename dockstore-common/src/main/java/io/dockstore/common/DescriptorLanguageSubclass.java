@@ -28,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public enum DescriptorLanguageSubclass {
     DOCKER_COMPOSE("docker-compose", SERVICE),
@@ -83,9 +82,5 @@ public enum DescriptorLanguageSubclass {
         final Optional<DescriptorLanguageSubclass> first = Arrays.stream(DescriptorLanguageSubclass.values())
             .filter(subclass -> subclass.getShortName().equalsIgnoreCase(descriptorSubclass)).findFirst();
         return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
-    }
-
-    public static Set<DescriptorLanguageSubclass> valuesForEntryType(EntryType type) {
-        return Arrays.stream(values()).filter(subclass -> subclass.getEntryTypes().contains(type)).collect(Collectors.toSet());
     }
 }

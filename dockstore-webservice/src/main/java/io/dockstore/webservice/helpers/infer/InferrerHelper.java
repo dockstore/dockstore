@@ -138,7 +138,7 @@ public class InferrerHelper {
                 protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
                     String content = readFile(fileTree, path).toLowerCase();
                     // Look for some json that sets the "language" field to one of the legal values.
-                    for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.valuesForEntryType(type)) {
+                    for (DescriptorLanguageSubclass subclass: type.getSubclasses()) {
                         String regex = "\"language\":\\s*\"%s\"".formatted(subclass.getShortName());
                         if (Pattern.compile(regex).matcher(content).find()) {
                             return subclass;
