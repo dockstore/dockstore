@@ -19,9 +19,11 @@ public enum EntryType {
     NOTEBOOK("notebook");
 
     private final String term;
+    private Set<DescriptorLanguageSubclass> subclasses;
 
     EntryType(String term) {
         this.term = term;
+        subclasses = Arrays.stream(DescriptorLanguageSubclass.values()).filter(subclass -> subclass.getEntryTypes().contains(this)).collect(Collectors.toSet());
     }
 
     public String getTerm() {
@@ -29,6 +31,6 @@ public enum EntryType {
     }
 
     public Set<DescriptorLanguageSubclass> getSubclasses() {
-        return Arrays.stream(DescriptorLanguageSubclass.values()).filter(subclass -> subclass.getEntryTypes().contains(this)).collect(Collectors.toSet());
+        return subclasses;
     }
 }
