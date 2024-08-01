@@ -2097,9 +2097,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Handles GitHub push events. It does not handle release events, despite its name and its path.
-     *
-     * Ideally we would rename it, but that would require updating the lambda and GitHub delivery code as well.
+     * Handles GitHub push events. The path and initial method name incorrectly refer to it as handling release events, but it does not.
+     * The method was renamed to indicate it handles push events, but the path and operationId use the old name to avoid breaking clients.
      *
      * {@code handleGitHubTaggedRelease} handles release events.
      *
@@ -2113,10 +2112,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(description = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", operationId = "handleGitHubRelease", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+    public void handleGitHubPush(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
         @RequestBody(description = "GitHub push event payload", required = true) PushPayload payload) {
 
