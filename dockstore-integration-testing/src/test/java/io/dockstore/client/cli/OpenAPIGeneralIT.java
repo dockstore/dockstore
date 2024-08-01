@@ -18,6 +18,7 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -106,9 +107,12 @@ class OpenAPIGeneralIT extends BaseIT {
 
         // Hosted workflow should be able to select AI topic
         testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + workflow.getId());
+        assertFalse(workflow.isApprovedAITopic());
         hostedWorkflow.setTopicSelection(Workflow.TopicSelectionEnum.AI);
+        hostedWorkflow.setApprovedAITopic(true);
         workflow = workflowsApi.updateWorkflow(hostedWorkflow.getId(), hostedWorkflow);
         assertEquals(Workflow.TopicSelectionEnum.AI, workflow.getTopicSelection());
+        assertTrue(workflow.isApprovedAITopic());
         assertEquals("AI topic", workflow.getTopic());
     }
 
@@ -129,9 +133,12 @@ class OpenAPIGeneralIT extends BaseIT {
 
         // Should allow AI selection change
         testingPostgres.runUpdateStatement("update tool set topicai = 'AI topic' where id = " + hostedTool.getId());
+        assertFalse(hostedTool.isApprovedAITopic());
         hostedTool.setTopicSelection(DockstoreTool.TopicSelectionEnum.AI);
+        hostedTool.setApprovedAITopic(true);
         dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
+        assertTrue(dockstoreTool.isApprovedAITopic());
         assertEquals("AI topic", dockstoreTool.getTopic());
     }
 
@@ -168,10 +175,13 @@ class OpenAPIGeneralIT extends BaseIT {
 
         // Set tool's topicSelection to AI
         testingPostgres.runUpdateStatement("update tool set topicai = 'AI topic' where id = " + toolTest.getId());
+        assertFalse(toolTest.isApprovedAITopic());
         toolTest.setTopicSelection(TopicSelectionEnum.AI);
+        toolTest.setApprovedAITopic(true);
         dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
         assertEquals("AI topic", dockstoreTool.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
+        assertTrue(dockstoreTool.isApprovedAITopic());
     }
 
     /**

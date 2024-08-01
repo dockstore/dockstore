@@ -433,6 +433,8 @@ public class DockerRepoResource
             originalTool.setTopicSelection(newTool.getTopicSelection());
         }
 
+        originalTool.setApprovedAITopic(newTool.isApprovedAITopic());
+
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());
             originalTool.setPrivateAccess(newTool.isPrivateAccess());

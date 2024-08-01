@@ -446,6 +446,7 @@ public class ElasticListener implements StateListenerInterface {
         // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
         detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setTopicSelection(entry.getTopicSelection());
+        detachedEntry.setApprovedAITopic(entry.isApprovedAITopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
 

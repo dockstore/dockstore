@@ -2016,7 +2016,9 @@ class WebhookIT extends BaseIT {
 
         // Update topic selection to AI for workflow 'foobar'.
         testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + foobar.getId());
+        assertFalse(foobar.isApprovedAITopic());
         foobar.setTopicSelection(TopicSelectionEnum.AI);
+        foobar.setApprovedAITopic(true);
         workflowClient.updateWorkflow(foobar.getId(), foobar);
 
         // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
@@ -2028,6 +2030,7 @@ class WebhookIT extends BaseIT {
         assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
         assertEquals("AI topic", foobar.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, foobar.getTopicSelection(), "Topic selection should remain the same if it was not MANUAL when there's an empty string 'topic'");
+        assertTrue(foobar.isApprovedAITopic());
         foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
         assertNull(foobar2.getTopicManual());
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
