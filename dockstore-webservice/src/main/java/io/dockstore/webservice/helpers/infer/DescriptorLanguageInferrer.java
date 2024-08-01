@@ -25,7 +25,6 @@ import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -47,19 +46,15 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DescriptorLanguageInferrer.class);
     /**
-     * Regular expression that matches pathlike strings, composed of the currently-legal SourceFile path characters.
+     * Regular expression that matches the non-space characters that can separate paths from other content.
      */
-    private static final Pattern POSSIBLE_PATH = Pattern.compile("[./]*+[a-zA-Z0-9/_-]++\\.[a-zA-Z0-9]++");
+    protected static final Pattern NON_SPACE_SEPARATORS = Pattern.compile("[!-,:-@\\[-^`{-~]+");
     /**
-     * Regular expression that matches characters that are not allowed in SourceFile paths.
+     * The minimum length of a string that we will consider as a potential referenced path.
      */
-    private static final Pattern NON_PATH_CHARACTERS = Pattern.compile("[^.a-zA-Z0-9/_-]");
-    /**
-     * The maximum length of a string that we will consider as a potential referenced path.
-     * Used to avoid testing very long pathlike-strings, which are probably _not_ actually paths.
-     */
-    private static final int MAX_REFERENCED_PATH_LENGTH = 64;
-
+    private static final int MIN_REFERENCED_PATH_LENGTH = 4;
+    private static final String SPACE = " ";
+    private static final String DOT = ".";
     private final DescriptorLanguage language;
 
     public DescriptorLanguageInferrer(DescriptorLanguage language) {
@@ -111,14 +106,22 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
 
     protected List<String> determineReferencedPaths(FileTree fileTree, String srcPath) {
         String content = removeComments(readFile(fileTree, srcPath));
-        String[] chunks = NON_PATH_CHARACTERS.split(content);
-        return Arrays.stream(chunks)
-            .filter(chunk -> chunk.length() <= MAX_REFERENCED_PATH_LENGTH)
-            .filter(chunk -> POSSIBLE_PATH.matcher(chunk).matches())
-            .filter(this::isDescriptorPath)
-            .map(foundPath -> toAbsolutePath(srcPath, foundPath))
-            .flatMap(Optional::stream)
-            .toList();
+        List<String> paths = new ArrayList<>();
+        for (String chunk: NON_SPACE_SEPARATORS.split(content)) {
+            if (isReferencedPath(chunk)) {
+                toAbsolutePath(srcPath, chunk).ifPresent(paths::add);
+            }
+            for (String subChunk: chunk.split(SPACE)) {
+                if (isReferencedPath(subChunk)) {
+                    toAbsolutePath(srcPath, subChunk).ifPresent(paths::add);
+                }
+            }
+        }
+        return paths;
+    }
+
+    protected boolean isReferencedPath(String possiblePath) {
+        return possiblePath.length() >= MIN_REFERENCED_PATH_LENGTH && possiblePath.contains(DOT) && isDescriptorPath(possiblePath);
     }
 
     private Optional<String> toAbsolutePath(String currentPath, String relativeOrAbsolutePath) {
