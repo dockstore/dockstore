@@ -530,7 +530,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
-
     }
 
     @PUT
@@ -574,6 +573,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
+
+        oldWorkflow.setApprovedAITopic(newWorkflow.isApprovedAITopic());
 
         // Update DOI selection if the workflow has DOIs for the selection
         if (oldWorkflow.getConceptDois().containsKey(newWorkflow.getDoiSelection())) {
