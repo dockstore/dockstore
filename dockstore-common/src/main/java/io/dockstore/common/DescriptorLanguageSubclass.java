@@ -26,6 +26,7 @@ import static io.dockstore.common.EntryType.WORKFLOW;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,6 +46,11 @@ public enum DescriptorLanguageSubclass {
 
     NOT_APPLICABLE("n/a", Set.of(SERVICE, WORKFLOW, APPTOOL, TOOL));
 
+    static {
+        entryTypeToSubclasses = Arrays.stream(EntryType.values()).collect(Collectors.toMap(type -> type, type -> Arrays.stream(values()).filter(subclass -> subclass.getEntryTypes().contains(type)).collect(Collectors.toSet())));
+    }
+
+    private static Map<EntryType, Set<DescriptorLanguageSubclass>> entryTypeToSubclasses;
     private final String shortName;
 
     private Set<EntryType> entryTypes;
@@ -86,6 +92,6 @@ public enum DescriptorLanguageSubclass {
     }
 
     public static Set<DescriptorLanguageSubclass> valuesForEntryType(EntryType type) {
-        return Arrays.stream(values()).filter(subclass -> subclass.getEntryTypes().contains(type)).collect(Collectors.toSet());
+        return entryTypeToSubclasses.getOrDefault(type, Set.of());
     }
 }
