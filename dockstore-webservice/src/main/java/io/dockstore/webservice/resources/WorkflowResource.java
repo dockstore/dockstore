@@ -2248,7 +2248,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
             final Timestamp publishedAt = payload.getRelease().getPublishedAt();
             workflows.stream().filter(w -> Objects.isNull(w.getLatestReleaseDate()) || w.getLatestReleaseDate().before(publishedAt))
-                    .forEach(w -> w.setLatestReleaseDate(publishedAt));
+                    .forEach(w -> {
+                        LOG.info("Setting latestReleaseDate for workflow {}", w.getWorkflowPath());
+                        w.setLatestReleaseDate(publishedAt);
+                    });
         }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
