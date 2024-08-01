@@ -2244,6 +2244,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (optionalAction.isEmpty() || PUBLISHED != optionalAction.get()) {
             LOG.info("Ignoring action in release event: {}", actionString);
         } else {
+            createReleaseLambdaEvent(deliveryId, payload);
             final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
             final Timestamp publishedAt = payload.getRelease().getPublishedAt();
             workflows.stream().filter(w -> Objects.isNull(w.getLatestReleaseDate()) || w.getLatestReleaseDate().before(publishedAt))
@@ -2253,6 +2254,24 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     });
         }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    private LambdaEvent createReleaseLambdaEvent(String deliveryId, ReleasePayload payload) {
+        final String username = payload.getSender().getLogin();
+        final Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
+        final LambdaEvent lambdaEvent = new LambdaEvent();
+        final String orgRepo = payload.getRepository().getFullName();
+        final String[] splitRepo = orgRepo.split("/");
+        final String org = splitRepo[0];
+        final String repo = splitRepo[1];
+        lambdaEvent.setType(LambdaEvent.LambdaEventType.RELEASE);
+        lambdaEvent.setDeliveryId(deliveryId);
+        lambdaEvent.setOrganization(org);
+        lambdaEvent.setRepository(repo);
+        lambdaEvent.setReference("refs/tags/" + payload.getRelease().getTagName());
+        triggerUser.ifPresent(lambdaEvent::setUser);
+        lambdaEventDAO.create(lambdaEvent);
+        return lambdaEvent;
     }
 
     @GET

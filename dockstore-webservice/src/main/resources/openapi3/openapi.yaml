@@ -10151,6 +10151,7 @@ components:
           - INSTALL
           - UNINSTALL
           - PUBLISH
+          - RELEASE
     Language:
       type: object
       properties:

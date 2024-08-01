@@ -1,6 +1,7 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
+import static io.dockstore.webservice.core.webhook.ReleasePayload.*;
 
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.openapi.client.ApiClient;
@@ -10,6 +11,7 @@ import io.dockstore.openapi.client.model.InstallationRepositoriesPayload;
 import io.dockstore.openapi.client.model.PushPayload;
 import io.dockstore.openapi.client.model.ReleasePayload;
 import io.dockstore.openapi.client.model.Sender;
+import io.dockstore.openapi.client.model.WebhookRelease;
 import io.dockstore.openapi.client.model.WebhookRepository;
 import java.util.Date;
 import java.util.List;
@@ -92,11 +94,12 @@ public final class GitHubAppHelper {
         handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, true);
     }
 
-    public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName, Date date) {
+    public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName, Date date, String username) {
         final ReleasePayload releasePayload = new ReleasePayload();
-        releasePayload.setRelease(new io.dockstore.openapi.client.model.WebhookRelease().tagName(tagName).publishedAt(date.getTime()));
-        releasePayload.setAction(io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED.toString());
-        releasePayload.setRepository(new io.dockstore.openapi.client.model.WebhookRepository().fullName(repository));
+        releasePayload.setRelease(new WebhookRelease().tagName(tagName).publishedAt(date.getTime()));
+        releasePayload.setAction(Action.PUBLISHED.toString());
+        releasePayload.setRepository(new WebhookRepository().fullName(repository));
+        releasePayload.setSender(new Sender().login(username));
         workflowsApi.handleGitHubTaggedRelease(releasePayload, generateXGitHubDelivery());
     }
 
