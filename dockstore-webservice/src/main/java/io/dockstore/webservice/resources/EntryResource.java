@@ -737,7 +737,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @Operation(operationId = "updateEntryToGetDOIs", description = "", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<RepoDoi> updateEntryToGetDOIs(@Parameter(hidden = true) @Auth User user) {
-        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+        //        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+        final List<Workflow> allPublished = workflowDAO.findAllByPath("github.com/david4096/wdl-bootcamp-june", false);
         final List<String> gitHubRepos = allPublished.stream()
                 .filter(workflow -> workflow.getSourceControl() == SourceControl.GITHUB)
                 .map(workflow -> workflow.getOrganization() + '/' + workflow.getRepository())

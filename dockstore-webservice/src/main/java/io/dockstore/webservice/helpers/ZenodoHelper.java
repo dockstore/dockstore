@@ -41,6 +41,7 @@ import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
+import io.swagger.zenodo.client.model.Record;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
 import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
@@ -382,9 +383,16 @@ public final class ZenodoHelper {
         final List<Hit> hits = records.getHits().getHits();
         System.out.println(gitHubRepo + " has " + hits.size() + " hits");
         final List<Hit> matches = hits.stream().filter(hit -> hit.getMetadata().getRelatedIdentifiers() != null && hit.getMetadata().getRelatedIdentifiers().stream()
-                .anyMatch(ri -> ri.getIdentifier() != null && ri.getIdentifier().contains(gitHubRepo))).collect(Collectors.toList());
+                .anyMatch(ri -> ri.getIdentifier() != null && ri.getIdentifier().contains(gitHubRepo))).toList();
         if (!matches.isEmpty()) {
-            dois.addAll(matches.stream().map(Hit::getDoiUrl).toList());
+            final List<String> newDois = matches.stream().map(Hit::getDoiUrl).toList();
+            matches.stream().forEach(match -> {
+                final Record record = previewApi.getRecord(String.valueOf(match.getId()));
+                System.out.println("record = " + record);
+                final SearchResult recordVersions = previewApi.getRecordVersions(String.valueOf(match.getId()));
+                System.out.println("recordVersions = " + recordVersions);
+            });
+            dois.addAll(newDois);
             System.out.println("matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier() = " + matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier());
         }
         return dois;
