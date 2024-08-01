@@ -1,7 +1,7 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
-import static io.dockstore.webservice.core.webhook.ReleasePayload.*;
+import static io.dockstore.webservice.core.webhook.ReleasePayload.Action;
 
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.openapi.client.ApiClient;
