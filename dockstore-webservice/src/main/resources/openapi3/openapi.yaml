@@ -6872,7 +6872,7 @@ paths:
         required: true
         schema:
           type: string
-      - description: reference
+      - description: "reference, could contain slashes which need to be urlencoded"
         in: path
         name: ref
         required: true
