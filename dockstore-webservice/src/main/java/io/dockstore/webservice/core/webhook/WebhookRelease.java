@@ -31,7 +31,7 @@ public class WebhookRelease {
     private String tagName;
 
     @JsonProperty("published_at")
-    @JsonFormat(shape = Shape.STRING, pattern = "YYYY-MM-DD'T'HH:MM:ss.SSS'Z'")
+    @JsonFormat(shape = Shape.STRING, pattern = "YYYY-MM-DD'T'HH:MM:ss'Z'")
     @Schema(type = "integer", format = "int64")
     private Timestamp publishedAt;
 

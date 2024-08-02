@@ -6931,6 +6931,8 @@ paths:
           content:
             application/json: {}
           description: default response
+      security:
+      - BEARER: []
       tags:
       - workflows
   /workflows/hostedEntry:

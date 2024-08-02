@@ -2235,15 +2235,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handles a release event on GitHub.")
+    @Operation(description = "Handles a release event on GitHub.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Response handleGitHubTaggedRelease(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true)
+            @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
             @RequestBody(description = "GitHub App repository release event payload", required = true) ReleasePayload payload) {
         final String actionString = payload.getAction();
         final Optional<ReleasePayload.Action> optionalAction = ReleasePayload.Action.findAction(actionString);
-        if (optionalAction.isEmpty() || PUBLISHED != optionalAction.get()) {
-            LOG.info("Ignoring action in release event: {}", actionString);
-        } else {
+        if (optionalAction.isPresent() && optionalAction.get() == PUBLISHED) { // Zenodo will only create DOIs for published relesaes
             createReleaseLambdaEvent(deliveryId, payload);
             final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
             final Timestamp publishedAt = payload.getRelease().getPublishedAt();
@@ -2252,6 +2251,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         LOG.info("Setting latestReleaseDate for workflow {}", w.getWorkflowPath());
                         w.setLatestReleaseDate(publishedAt);
                     });
+        } else {
+            LOG.info("Ignoring action in release event: {}", actionString);
         }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
