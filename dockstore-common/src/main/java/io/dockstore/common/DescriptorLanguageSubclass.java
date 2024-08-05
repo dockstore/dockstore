@@ -25,9 +25,13 @@ import static io.dockstore.common.EntryType.TOOL;
 import static io.dockstore.common.EntryType.WORKFLOW;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public enum DescriptorLanguageSubclass {
     DOCKER_COMPOSE("docker-compose", SERVICE),
@@ -43,6 +47,11 @@ public enum DescriptorLanguageSubclass {
     OTHER("other", NOTEBOOK),
 
     NOT_APPLICABLE("n/a", Set.of(SERVICE, WORKFLOW, APPTOOL, TOOL));
+
+    static final ImmutableMap<EntryType, Set<DescriptorLanguageSubclass>> ENUM_MAP = Arrays.stream(EntryType.values())
+        .collect(Maps.toImmutableEnumMap(type -> type, type -> Arrays.stream(values()).filter(subclass -> subclass.getEntryTypes().contains(type)).collect(Collectors.toSet())));
+
+    static final ImmutableMap<String, DescriptorLanguageSubclass> STRING_MAP = ImmutableMap.copyOf(Stream.of(DescriptorLanguageSubclass.values()).collect(Collectors.toMap(value -> value.shortName.toLowerCase(), value -> value)));
 
     private final String shortName;
 
@@ -79,8 +88,10 @@ public enum DescriptorLanguageSubclass {
         if (descriptorSubclass == null) {
             return null;
         }
-        final Optional<DescriptorLanguageSubclass> first = Arrays.stream(DescriptorLanguageSubclass.values())
-            .filter(subclass -> subclass.getShortName().equalsIgnoreCase(descriptorSubclass)).findFirst();
-        return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
+        return Optional.ofNullable(STRING_MAP.get(descriptorSubclass.toLowerCase())).orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
+    }
+
+    public static Set<DescriptorLanguageSubclass> valuesForEntryType(EntryType type) {
+        return ENUM_MAP.getOrDefault(type, Set.of());
     }
 }
