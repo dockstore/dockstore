@@ -21,7 +21,6 @@ import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,7 +65,7 @@ public class ZipGitHubFileTree implements FileTree {
         // Read the Zip contents and create an in-memory ZipFile.
         byte[] zipBytes = gitHubSourceCodeRepo.readZip(repository, ref);
         LOG.info("downloaded Zip of GitHub repository: %n bytes".formatted(zipBytes.length));
-        SeekableByteChannel zipChannel = new SeekableInMemoryByteChannel(zipBytes);
+        SeekableInMemoryByteChannel zipChannel = new SeekableInMemoryByteChannel(zipBytes);
         try {
             zipFile = new ZipFile(zipChannel);
         } catch (IOException e) {
