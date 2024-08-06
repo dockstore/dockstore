@@ -207,7 +207,7 @@ jobs:
       - run:
           name: build sam-cli
           command: |
-            pip3 install aws-sam-cli
+            pip3 install aws-sam-cli==1.121.0
             sudo apt install unzip
             wget -O wdl-parsing.zip https://github.com/dockstore/lambda/releases/download/0.2.2-SNAPSHOT/wdl-parsing.zip
             unzip wdl-parsing.zip
