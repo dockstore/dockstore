@@ -13,7 +13,11 @@ fi
 if [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
     pip3 install -r dockstore-webservice/src/main/resources/requirements/1.13.0/requirements3.txt
 elif [ "${TESTING_PROFILE}" == "language-parsing-tests" ]; then
-    pip3 install -r dockstore-webservice/src/main/resources/requirements/1.14.0/requirements3.txt
+    #pip3 install -r dockstore-webservice/src/main/resources/requirements/1.14.0/requirements3.txt
+    apt-get update
+    # https://stackoverflow.com/questions/44331836/apt-get-install-tzdata-noninteractive needed by cwltool
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+    apt-get -qq --yes --force-yes install cwltool
 else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.14.0/requirements3.txt
 fi
