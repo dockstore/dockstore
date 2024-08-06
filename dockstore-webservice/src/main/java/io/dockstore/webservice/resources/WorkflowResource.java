@@ -20,6 +20,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
@@ -62,6 +63,7 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.core.webhook.ReleasePayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -126,6 +128,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -2093,16 +2096,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
+    /**
+     * Handles GitHub push events. The path and initial method name incorrectly refer to it as handling release events, but it does not.
+     * The method was renamed to indicate it handles push events, but the path and operationId use the old name to avoid breaking clients.
+     *
+     * {@code handleGitHubTaggedRelease} handles release events.
+     *
+     * @param user
+     * @param deliveryId
+     * @param payload
+     */
     @POST
     @Path("/github/release")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
+    @Operation(description = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", operationId = "handleGitHubRelease",
+            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+    public void handleGitHubPush(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
         @RequestBody(description = "GitHub push event payload", required = true) PushPayload payload) {
 
@@ -2206,6 +2220,62 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 
+    /**
+     * Handles GitHub release events by storing the release timestamp of a published release in the workflows based on the GitHub repo.
+     *
+     * Uses the term &quot;taggedRelease&quot; to distinguish from the misnamed <code>handleGitHubRelease</code> method.
+     *
+     * @param user
+     * @param deliveryId
+     * @param payload
+     * @return
+     */
+    @POST
+    @Path("/github/taggedrelease")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"curator", "admin"})
+    @Operation(description = "Handles a release event on GitHub.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Response handleGitHubTaggedRelease(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true)
+            @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @RequestBody(description = "GitHub App repository release event payload", required = true) ReleasePayload payload) {
+        final String actionString = payload.getAction();
+        final Optional<ReleasePayload.Action> optionalAction = ReleasePayload.Action.findAction(actionString);
+        if (optionalAction.isPresent() && optionalAction.get() == PUBLISHED) { // Zenodo will only create DOIs for published relesaes
+            createReleaseLambdaEvent(deliveryId, payload);
+            final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
+            final Timestamp publishedAt = payload.getRelease().getPublishedAt();
+            workflows.stream().filter(w -> Objects.isNull(w.getLatestReleaseDate()) || w.getLatestReleaseDate().before(publishedAt))
+                    .forEach(w -> {
+                        LOG.info("Setting latestReleaseDate for workflow {}", w.getWorkflowPath());
+                        w.setLatestReleaseDate(publishedAt);
+                    });
+        } else {
+            LOG.info("Ignoring action in release event: {}", actionString);
+        }
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    private LambdaEvent createReleaseLambdaEvent(String deliveryId, ReleasePayload payload) {
+        final String username = payload.getSender().getLogin();
+        final Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
+        final LambdaEvent lambdaEvent = new LambdaEvent();
+        final String orgRepo = payload.getRepository().getFullName();
+        final String[] splitRepo = orgRepo.split("/");
+        final String org = splitRepo[0];
+        final String repo = splitRepo[1];
+        lambdaEvent.setType(LambdaEvent.LambdaEventType.RELEASE);
+        lambdaEvent.setDeliveryId(deliveryId);
+        lambdaEvent.setOrganization(org);
+        lambdaEvent.setRepository(repo);
+        lambdaEvent.setReference("refs/tags/" + payload.getRelease().getTagName());
+        triggerUser.ifPresent(lambdaEvent::setUser);
+        lambdaEventDAO.create(lambdaEvent);
+        return lambdaEvent;
+    }
+
     @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")
     @UnitOfWork(readOnly = true)
@@ -2239,4 +2309,5 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         return orcidAuthorInfo;
     }
+
 }

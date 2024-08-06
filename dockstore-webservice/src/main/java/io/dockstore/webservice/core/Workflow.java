@@ -44,6 +44,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
+import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
@@ -160,6 +161,10 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
     private WorkflowVersion actualDefaultVersion;
+
+    @Column(nullable = true)
+    @Schema(type = "integer", format = "int64", description = "The timestamp of the most recent version control release, such as a GitHub release")
+    private Timestamp latestReleaseDate;
 
     protected Workflow() {
         workflowVersions = new TreeSet<>();
@@ -393,6 +398,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Override
     public boolean isDeletable() {
         return super.isDeletable() && !isIsChecker();
+    }
+
+    public Timestamp getLatestReleaseDate() {
+        return latestReleaseDate;
+    }
+
+    public void setLatestReleaseDate(Timestamp latestReleaseDate) {
+        this.latestReleaseDate = latestReleaseDate;
     }
 
     public static class DescriptorLanguageConverter implements AttributeConverter<DescriptorLanguage, String> {

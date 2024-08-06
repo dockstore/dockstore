@@ -6882,8 +6882,8 @@ paths:
       - workflows
   /workflows/github/release:
     post:
-      description: Handle a release of a repository on GitHub. Will create a workflow/service
-        and version when necessary.
+      description: Handle a push event on GitHub. Will create a workflow/service and
+        version when necessary.
       operationId: handleGitHubRelease
       parameters:
       - description: A GUID to identify the GitHub webhook delivery
@@ -6898,6 +6898,33 @@ paths:
             schema:
               $ref: '#/components/schemas/PushPayload'
         description: GitHub push event payload
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/github/taggedrelease:
+    post:
+      description: Handles a release event on GitHub.
+      operationId: handleGitHubTaggedRelease
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleasePayload'
+        description: GitHub App repository release event payload
         required: true
       responses:
         default:
@@ -10126,6 +10153,7 @@ components:
           - INSTALL
           - UNINSTALL
           - PUBLISH
+          - RELEASE
     Language:
       type: object
       properties:
@@ -10636,6 +10664,29 @@ components:
           type: string
         url:
           type: string
+    ReleasePayload:
+      type: object
+      properties:
+        action:
+          type: string
+          description: The action which the event describes
+        draft:
+          type: boolean
+          description: Whether this is a draft release
+        installation:
+          $ref: '#/components/schemas/Installation'
+        release:
+          $ref: '#/components/schemas/WebhookRelease'
+        repository:
+          $ref: '#/components/schemas/WebhookRepository'
+        sender:
+          $ref: '#/components/schemas/Sender'
+      required:
+      - action
+      - draft
+      - installation
+      - release
+      - sender
     Repository:
       type: object
       properties:
@@ -12056,6 +12107,19 @@ components:
         versionId:
           type: integer
           format: int64
+    WebhookRelease:
+      type: object
+      description: Details about the release
+      properties:
+        published_at:
+          type: integer
+          format: int64
+        tag_name:
+          type: string
+          description: Name of the tag associated with the release
+          example: mytag
+      required:
+      - tag_name
     WebhookRepository:
       type: object
       description: The repository where the GitHub webhook event occurred
@@ -12189,6 +12253,11 @@ components:
         last_modified_date:
           type: integer
           format: int64
+        latestReleaseDate:
+          type: integer
+          format: int64
+          description: "The timestamp of the most recent version control release,\
+            \ such as a GitHub release"
         licenseInformation:
           $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:
