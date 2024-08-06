@@ -35,9 +35,6 @@ public class WebhookRelease {
     @Schema(type = "integer", format = "int64")
     private Timestamp publishedAt;
 
-    public WebhookRelease() {
-    }
-
     public String getTagName() {
         return tagName;
     }

@@ -94,6 +94,14 @@ public final class GitHubAppHelper {
         handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, true);
     }
 
+    /**
+     * Sends a release event to the web service
+     * @param workflowsApi
+     * @param repository
+     * @param tagName
+     * @param date
+     * @param username
+     */
     public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName, Date date, String username) {
         final ReleasePayload releasePayload = new ReleasePayload();
         releasePayload.setRelease(new WebhookRelease().tagName(tagName).publishedAt(date.getTime()));
