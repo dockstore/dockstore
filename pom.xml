@@ -47,7 +47,7 @@
         <postgresql.version>42.2.23</postgresql.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.22.2</maven-failsafe.version>
-        <maven-java.version>17</maven-java.version>
+        <maven-java.version>21</maven-java.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -523,7 +523,7 @@
 				    -->
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[17.0.3,22.0)</version>
+                                    <version>[21.0.0,22.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -684,7 +684,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.8.0</version>
+                <version>1.11.0</version>
                 <executions>
                     <execution>
                         <id>sort-imports</id>
