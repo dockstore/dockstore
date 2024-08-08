@@ -32,7 +32,7 @@ executors:
           - discovery.type: single-node
     resource_class: medium+
   machine_integration_test_exec:
-    machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
+    machine: # run the steps with Ubuntu VM
       image: ubuntu-2204:2024.04.4
     environment:
       PGHOST: 127.0.0.1
