@@ -104,7 +104,7 @@ public final class GitHubAppHelper {
      */
     public static void handleGitHubTaggedRelease(WorkflowsApi workflowsApi, String repository, String tagName, Date date, String username) {
         final ReleasePayload releasePayload = new ReleasePayload();
-        releasePayload.setRelease(new WebhookRelease().tagName(tagName).publishedAt(date.getTime()));
+        releasePayload.setRelease(new WebhookRelease().tagName(tagName).publishedAt(date));
         releasePayload.setAction(Action.PUBLISHED.toString());
         releasePayload.setRepository(new WebhookRepository().fullName(repository));
         releasePayload.setSender(new Sender().login(username));

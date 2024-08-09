@@ -21,6 +21,8 @@ import static com.fasterxml.jackson.annotation.JsonFormat.Shape;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.dockstore.webservice.helpers.TimestampDeserializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 
@@ -30,9 +32,22 @@ public class WebhookRelease {
     @Schema(name = "tag_name", description = "Name of the tag associated with the release", requiredMode = Schema.RequiredMode.REQUIRED, example = "mytag")
     private String tagName;
 
+    /**
+     * In the JSON sent by GitHub, this value is a string, without milliseconds, e.g., 2024-07-23T21:30:12Z.
+     *
+     * The Java generated OpenAPI adds milliseconds when serializing to JSON, e.g., 2024-07-23T21:30:12.123Z. We use the generated Java
+     * OpenAPI in dockstore-support to both resend events and to deserialize from S3, so we need to handle both.
+     *
+     * The default Jackson deserializer is com.fasterxml.jackson.databind.deser.std.DateDeserializers.TimestampDeserializer, which uses
+     * a SimpleDateFormat, which doesn't support optional values.
+     *
+     * The @JsonDeserialize uses a custom deserializer that can read in either case; the @JsonFormat annotation always serializes
+     * without the millis.
+     */
     @JsonProperty("published_at")
-    @JsonFormat(shape = Shape.STRING, pattern = "YYYY-MM-DD'T'HH:MM:ss'Z'")
-    @Schema(type = "integer", format = "int64")
+    @JsonDeserialize(using = TimestampDeserializer.class)
+    @JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    @Schema(type = "String", format = "date-time")
     private Timestamp publishedAt;
 
     public String getTagName() {
