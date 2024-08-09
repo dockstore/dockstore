@@ -408,22 +408,35 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
+    protected List<String> identifyImportantBranches(String repository, long installationId) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        List<String> importantBranches = gitHubSourceCodeRepo.listBranchesByImportance(repository);
+        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        gitHubSourceCodeRepo.reportOnRateLimit("identifyImportantBranches", startRateLimit, endRateLimit);
+        return importantBranches;
+    }
+
     /**
      * Identify git references that may be worth trying to handle as a github apps release event
      * @param repository
      * @param installationId
      * @return
      */
-    protected Set<String> identifyGitReferencesToRelease(String repository, long installationId) {
+    protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> importantBranches) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
+        List<String> importantReferences = importantBranches.stream().map(branch -> "refs/heads/" + branch).toList();
         // see if there is a .dockstore.yml on any branch that was just added
-        Set<String> branchCandidates = new HashSet<>(gitHubSourceCodeRepo.detectDockstoreYml(repository));
+        List<String> releasableReferences = gitHubSourceCodeRepo.detectDockstoreYml(repository, importantReferences);
 
         GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
         gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
-        return branchCandidates;
+        return releasableReferences;
+    }
+
+    protected void inferAndDeliverDockstoreYml(String repository, long installationId, String branch) {
     }
 
     /**

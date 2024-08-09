@@ -2183,16 +2183,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
 
         if (added) {
-            // make some educated guesses whether we should try to retrospectively release some old versions
+            // for each added repository, try to retrospectively release some old versions, and
+            // if we don't find any releasable branches, infer a dockstore.yml and deliver it to the user
             // note that for large organizations, this loop could be quite large if many repositories are added at the same time
             for (String repository: repositories) {
-                final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
-                for (String gitReference: strings) {
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                            Utilities.cleanForLogging(username)));
+                final List<String> importantBranches = identifyImportantBranches(repository, installationId);
+                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, importantBranches);
+                if (releasableReferences.isEmpty()) {
+                    if (!importantBranches.isEmpty()) {
+                        String mostImportantBranch = importantBranches.get(0);
+                        inferAndDeliverDockstoreYml(repository, installationId, mostImportantBranch);
                     }
-                    githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
+                } else {
+                    for (String gitReference: releasableReferences) {
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                                Utilities.cleanForLogging(username)));
+                        }
+                        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
+                    }
                 }
             }
         }
