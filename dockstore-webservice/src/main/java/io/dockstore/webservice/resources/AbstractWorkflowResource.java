@@ -47,6 +47,7 @@ import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.RateLimitHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -409,11 +410,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected List<String> identifyImportantBranches(String repository, long installationId) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
-        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        List<String> importantBranches = gitHubSourceCodeRepo.listBranchesByImportance(repository);
-        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        gitHubSourceCodeRepo.reportOnRateLimit("identifyImportantBranches", startRateLimit, endRateLimit);
-        return importantBranches;
+        try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
+            return gitHubSourceCodeRepo.listBranchesByImportance(repository);
+        }
     }
 
     /**
@@ -424,15 +423,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> importantBranches) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
-        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-
-        List<String> importantReferences = importantBranches.stream().map(branch -> "refs/heads/" + branch).toList();
-        // see if there is a .dockstore.yml on any branch that was just added
-        List<String> releasableReferences = gitHubSourceCodeRepo.detectDockstoreYml(repository, importantReferences);
-
-        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
-        return releasableReferences;
+        try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
+            List<String> importantReferences = importantBranches.stream().map(branch -> "refs/heads/" + branch).toList();
+            return gitHubSourceCodeRepo.detectDockstoreYml(repository, importantReferences);
+        }
     }
 
     protected void inferAndDeliverDockstoreYml(String repository, long installationId, String branch) {
