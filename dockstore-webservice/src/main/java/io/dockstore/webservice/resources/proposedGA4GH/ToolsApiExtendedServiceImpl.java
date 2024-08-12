@@ -30,6 +30,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.UpdateAITopicRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -48,8 +49,10 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -63,6 +66,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -127,6 +132,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static WorkflowDAO workflowDAO = null;
     private static AppToolDAO appToolDAO = null;
     private static NotebookDAO notebookDAO = null;
+    private static BioWorkflowDAO bioWorkflowDAO = null;
+    private static ServiceDAO serviceDAO = null;
     private static WorkflowVersionDAO workflowVersionDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
@@ -151,6 +158,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setNotebookDAO(NotebookDAO notebookDAO) {
         ToolsApiExtendedServiceImpl.notebookDAO = notebookDAO;
+    }
+
+    public static void setBioWorkflowDAO(BioWorkflowDAO bioWorkflowDAO) {
+        ToolsApiExtendedServiceImpl.bioWorkflowDAO = bioWorkflowDAO;
+    }
+
+    public static void setServiceDAO(ServiceDAO serviceDAO) {
+        ToolsApiExtendedServiceImpl.serviceDAO = serviceDAO;
     }
 
     public static void setWorkflowVersionDAO(WorkflowVersionDAO workflowVersionDAO) {
@@ -514,6 +529,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
+            version.get().setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
             return Response.noContent().build();
         } catch (JsonProcessingException | AwsServiceException | SdkClientException e) {
             LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
@@ -522,7 +538,18 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics) {
+    public Response getEntryVersionsToAggregate() {
+        List<EntryLiteAndVersionName> entryAndVersionNames = new ArrayList<>();
+        entryAndVersionNames.addAll(toolDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(bioWorkflowDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(notebookDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(appToolDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(serviceDAO.findEntryVersionsToAggregate());
+        return Response.ok(entryAndVersionNames).build();
+    }
+
+    @Override
+    public Response setAggregatedMetrics(String id, String versionId, Map<Partner, Metrics> aggregatedMetrics) {
         // Check that the entry and version exists
         Entry<?, ?> entry;
         try {
@@ -537,7 +564,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
-        version.getMetricsByPlatform().put(platform, aggregatedMetrics);
+        version.getMetricsByPlatform().clear();
+        version.getMetricsByPlatform().putAll(aggregatedMetrics);
+        version.setLatestMetricsAggregationDate(Timestamp.from(Instant.now()));
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
         return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
@@ -642,6 +671,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             } else {
                 executionsResponseBody.getExecutionResponses().add(new ExecutionResponse(executionId, HttpStatus.SC_NOT_FOUND, EXECUTION_NOT_FOUND_ERROR));
             }
+        }
+
+        if (executionsResponseBody.getExecutionResponses().stream().anyMatch(executionResponse -> executionResponse.getStatus() == HttpStatus.SC_OK)) {
+            version.setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
         }
 
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();

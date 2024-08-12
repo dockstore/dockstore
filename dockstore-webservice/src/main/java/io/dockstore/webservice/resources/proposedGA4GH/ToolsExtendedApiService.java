@@ -46,7 +46,9 @@ public abstract class ToolsExtendedApiService {
 
     public abstract Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions);
 
-    public abstract Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics);
+    public abstract Response getEntryVersionsToAggregate();
+
+    public abstract Response setAggregatedMetrics(String id, String versionId, Map<Partner, Metrics> aggregatedMetrics);
     public abstract Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) throws NotFoundException;
     public abstract Response getExecution(String id, String versionId, Partner platform, String executionId, User user) throws NotFoundException;
     public abstract Response updateExecutionMetrics(String id, String versionId, Partner platform, User user, String description, ExecutionsRequestBody executionId);

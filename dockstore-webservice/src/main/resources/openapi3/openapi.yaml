@@ -437,6 +437,31 @@ paths:
       summary: List entries of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/entryVersionsToAggregate:
+    get:
+      description: This endpoint gets entry versions that have new execution metrics
+        to aggregate.
+      operationId: getEntryVersionsToAggregate
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Entry versions to aggregate retrieved successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      summary: Get entry versions that have new execution metrics to aggregate.
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/organizations:
     get:
       description: This endpoint returns list of all organizations.
@@ -658,32 +683,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: Platform that the tool was executed on
-        in: query
-        name: platform
-        required: true
-        schema:
-          type: string
-          enum:
-          - GALAXY
-          - TERRA
-          - DNA_STACK
-          - DNA_NEXUS
-          - CGC
-          - NHLBI_BIODATA_CATALYST
-          - ANVIL
-          - CAVATICA
-          - NEXTFLOW_TOWER
-          - ELWAZI
-          - AGC
-          - OTHER
-          - ALL
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Metrics'
-        description: Aggregated metrics to add to the version
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Metrics'
+        description: A map of aggregated metrics for platforms to set as the version's
+          metrics
         required: true
       responses:
         "200":
@@ -9441,6 +9449,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9621,6 +9631,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9637,6 +9649,29 @@ components:
           items:
             $ref: '#/components/schemas/Version'
           uniqueItems: true
+    EntryLite:
+      type: object
+      properties:
+        entryPath:
+          type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
+        lastUpdated:
+          type: string
+          format: date-time
+        prettyPath:
+          type: string
+        trsId:
+          type: string
+    EntryLiteAndVersionName:
+      type: object
+      properties:
+        entryLite:
+          $ref: '#/components/schemas/EntryLite'
+        versionName:
+          type: string
     EntryType:
       type: string
       description: Entry type
@@ -11066,6 +11101,14 @@ components:
         last_built:
           type: integer
           format: int64
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         metricsByPlatform:
           type: object
           additionalProperties:
@@ -11982,6 +12025,14 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         metricsByPlatform:
           type: object
           additionalProperties:
@@ -12327,6 +12378,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         type:
           type: string
         userIdToOrcidPutCode:
@@ -12435,6 +12488,14 @@ components:
         last_modified:
           type: integer
           format: int64
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         legacyVersion:
           type: boolean
         metricsByPlatform:

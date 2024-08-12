@@ -29,6 +29,7 @@ import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
@@ -226,6 +227,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
     public List<T> findMyEntriesPublished(long userId) {
         return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
+    }
+
+    public List<EntryLiteAndVersionName> findEntryVersionsToAggregate() {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteVersionsToAggregate", EntryLiteAndVersionName.class).list();
     }
 
     /**

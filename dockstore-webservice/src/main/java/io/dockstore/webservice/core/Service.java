@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice.core;
 
-import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
@@ -37,6 +36,9 @@ import jakarta.persistence.Transient;
             + "FROM Service s LEFT JOIN s.workflowVersions v "
             + "WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
             + "GROUP BY s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Service.getEntryLiteVersionsToAggregate", query =
+        "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteService(e.sourceControl, e.organization, e.repository, e.workflowName), v.name) "
+            + "FROM Service e, Version v where e.id = v.parent.id and (v.latestMetricsSubmissionDate > v.latestMetricsAggregationDate or (v.latestMetricsSubmissionDate is not null and v.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.Service.getEntriesByUserId", query = "SELECT s FROM Service s WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 public class Service extends Workflow {
@@ -58,11 +60,6 @@ public class Service extends Workflow {
     @Override
     public Service createEmptyEntry() {
         return new Service();
-    }
-
-    @Override
-    public EntryType getEntryType() {
-        return EntryType.SERVICE;
     }
 
     @Override
