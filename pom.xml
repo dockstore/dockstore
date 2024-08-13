@@ -510,6 +510,7 @@
                                          keysmap.list and mvn dependency:tree. Weird -->
                                         <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
                                         <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                        <exclude>org.eclipse.jetty:jetty-webapp</exclude>
                                     </excludes>
                                 </requireUpperBoundDeps>
                                 <requireMavenVersion>

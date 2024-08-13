@@ -346,13 +346,13 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlets</artifactId>
-      <version>11.0.16</version>
+      <version>11.0.22</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>11.0.16</version>
+      <version>11.0.22</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -370,13 +370,13 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
-      <version>11.0.16</version>
+      <version>11.0.22</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-http</artifactId>
-      <version>11.0.16</version>
+      <version>11.0.22</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
