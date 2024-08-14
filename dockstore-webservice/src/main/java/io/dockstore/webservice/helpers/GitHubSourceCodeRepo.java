@@ -100,7 +100,6 @@ import org.kohsuke.github.GHException;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHMyself.RepositoryListFilter;
-import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -1479,16 +1478,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         reportOnRateLimit("syncTopics", startRateLimit, endRateLimit);
 
         return numOfEntriesNotUpdatedWithTopic;
-    }
-
-    public void listUsers(String reposistory) throws IOException {
-        final String org = reposistory.split("/")[0];
-        final GHRepository repository = github.getRepository(reposistory);
-        final List<GHUser> repositoryCollaborators = repository.listCollaborators(GHRepository.CollaboratorAffiliation.DIRECT).toList();
-        System.out.println("repositoryCollaborators = " + repositoryCollaborators);
-        final GHOrganization organization = github.getOrganization(org);
-        final List<GHUser> orgMembers = organization.listMembers().toList();
-        System.out.println("orgMembers = " + orgMembers);
     }
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {

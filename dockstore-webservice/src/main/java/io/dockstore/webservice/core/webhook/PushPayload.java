@@ -17,8 +17,10 @@
 
 package io.dockstore.webservice.core.webhook;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import java.util.List;
 
 /**
  * A subset of fields available in a GitHub webhook push payload. The fields in this class are fields that the webservice uses.
@@ -32,6 +34,15 @@ public class PushPayload extends Payload {
     // The following description is directly quoted from the above github doc
     @Schema(description = "The SHA of the most recent commit on ref after the push", requiredMode = RequiredMode.NOT_REQUIRED, example = "6d96270004515a0486bb7f76196a72b40c55a47f")
     private String after;
+
+    // The GitHub doc says "object or null", sigh
+    @Schema(description = "The head commit")
+    @JsonProperty("head_commit")
+    private GitCommit headCommit;
+
+    // The following description is the first sentence directly quoted from the above GitHub doc
+    @Schema(description = "An array of commit objects describing the pushed commits")
+    private List<GitCommit> commits;
 
     public PushPayload() {
     }
@@ -50,6 +61,22 @@ public class PushPayload extends Payload {
 
     public void setAfter(String after) {
         this.after = after;
+    }
+
+    public GitCommit getHeadCommit() {
+        return headCommit;
+    }
+
+    public void setHeadCommit(GitCommit gitCommit) {
+        this.headCommit = gitCommit;
+    }
+
+    public List<GitCommit> getCommits() {
+        return commits;
+    }
+
+    public void setCommits(List<GitCommit> commits) {
+        this.commits = commits;
     }
 
     @Override
