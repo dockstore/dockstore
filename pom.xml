@@ -510,6 +510,7 @@
                                          keysmap.list and mvn dependency:tree. Weird -->
                                         <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
                                         <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                        <!-- This should be removed when we move to a newer dropwizard  -->
                                         <exclude>org.eclipse.jetty:jetty-webapp</exclude>
                                     </excludes>
                                 </requireUpperBoundDeps>
