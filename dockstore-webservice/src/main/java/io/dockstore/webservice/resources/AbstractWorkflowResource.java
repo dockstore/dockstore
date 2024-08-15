@@ -597,7 +597,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param deliveryId The GitHub delivery ID, used to group lambda events that belong to the same GitHub webook invocation
      * @return New lambda event
      */
-    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type, boolean isSuccessful, String deliveryId) {
+    LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type, boolean isSuccessful, String deliveryId) {
         LambdaEvent lambdaEvent = new LambdaEvent();
         String[] repo = repository.split("/");
         lambdaEvent.setOrganization(repo[0]);
