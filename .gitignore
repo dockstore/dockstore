@@ -69,3 +69,6 @@ dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 dockstore-integration-testing/src/test/resources/secrets.tar
 
 dockstore-webservice/src/main/resources/openapi3/unsortedopenapi.yaml
+
+# this gets generated
+bom-internal/.flattened-pom.xml
