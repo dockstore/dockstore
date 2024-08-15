@@ -20,13 +20,17 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.hibernate.TransactionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Provider
 public class TransactionExceptionMapper implements ExceptionMapper<TransactionException> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionExceptionMapper.class);
+
     @Override
     public Response toResponse(TransactionException e) {
-
+        LOGGER.warn("failure caught by TransactionExceptionMapper", e);
         return processResponse(e);
     }
 
