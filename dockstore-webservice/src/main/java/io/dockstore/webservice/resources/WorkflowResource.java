@@ -2244,7 +2244,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String actionString = payload.getAction();
         final Optional<ReleasePayload.Action> optionalAction = ReleasePayload.Action.findAction(actionString);
         if (optionalAction.isPresent() && optionalAction.get() == PUBLISHED) { // Zenodo will only create DOIs for published relesaes
-            createReleaseLambdaEvent(deliveryId, payload);
+            final LambdaEvent lambdaEvent = createBasicEvent(payload.getRepository().getFullName(),
+                    "refs/tags/" + payload.getRelease().getTagName(), payload.getSender().getLogin(), LambdaEvent.LambdaEventType.RELEASE,
+                    true, deliveryId);
+            lambdaEventDAO.create(lambdaEvent);
             final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
             final Timestamp publishedAt = payload.getRelease().getPublishedAt();
             workflows.stream().filter(w -> Objects.isNull(w.getLatestReleaseDate()) || w.getLatestReleaseDate().before(publishedAt))
@@ -2256,24 +2259,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.info("Ignoring action in release event: {}", actionString);
         }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
-    }
-
-    private LambdaEvent createReleaseLambdaEvent(String deliveryId, ReleasePayload payload) {
-        final String username = payload.getSender().getLogin();
-        final Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        final LambdaEvent lambdaEvent = new LambdaEvent();
-        final String orgRepo = payload.getRepository().getFullName();
-        final String[] splitRepo = orgRepo.split("/");
-        final String org = splitRepo[0];
-        final String repo = splitRepo[1];
-        lambdaEvent.setType(LambdaEvent.LambdaEventType.RELEASE);
-        lambdaEvent.setDeliveryId(deliveryId);
-        lambdaEvent.setOrganization(org);
-        lambdaEvent.setRepository(repo);
-        lambdaEvent.setReference("refs/tags/" + payload.getRelease().getTagName());
-        triggerUser.ifPresent(lambdaEvent::setUser);
-        lambdaEventDAO.create(lambdaEvent);
-        return lambdaEvent;
     }
 
     @GET
