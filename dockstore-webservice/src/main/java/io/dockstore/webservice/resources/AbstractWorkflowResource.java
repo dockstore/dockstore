@@ -1272,13 +1272,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     protected GitHubUsernames gitHubUsernamesFromPushPayload(PushPayload payload) {
         final Set<String> userNames = new HashSet<>();
-        final ArrayList<GitCommit> gitCommits = new ArrayList<>(payload.getCommits()); // Per GitHub doc, getCommits() is never null
+        final ArrayList<GitCommit> gitCommits = new ArrayList<>();
+        if (payload.getCommits() != null) { // It should never be null per GitHub doc, but we have some test data with it; easiest to just check
+            gitCommits.addAll(payload.getCommits());
+        }
         if (payload.getHeadCommit() != null) { // But this one can be null
             gitCommits.add(payload.getHeadCommit());
         }
         gitCommits.stream().forEach(commit -> {
-            userNames.add(commit.getCommiter().username());
-            userNames.add(commit.getAuthor().username());
+            if (commit.getCommiter() != null && commit.getCommiter().username() != null) {
+                userNames.add(commit.getCommiter().username());
+            }
+            if (commit.getAuthor() != null && commit.getAuthor().username() != null) {
+                userNames.add(commit.getAuthor().username());
+            }
         });
         final String senderUsername = payload.getSender().getLogin();
         userNames.remove(senderUsername);
