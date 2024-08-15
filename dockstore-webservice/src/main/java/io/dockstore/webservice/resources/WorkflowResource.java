@@ -2244,8 +2244,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String actionString = payload.getAction();
         final Optional<ReleasePayload.Action> optionalAction = ReleasePayload.Action.findAction(actionString);
         if (optionalAction.isPresent() && optionalAction.get() == PUBLISHED) { // Zenodo will only create DOIs for published relesaes
-            createBasicEvent(payload.getRepository().getFullName(), "refs/tags/" + payload.getRelease().getTagName(),
-                    payload.getSender().getLogin(), LambdaEvent.LambdaEventType.RELEASE, true, deliveryId);
+            final LambdaEvent lambdaEvent = createBasicEvent(payload.getRepository().getFullName(),
+                    "refs/tags/" + payload.getRelease().getTagName(), payload.getSender().getLogin(), LambdaEvent.LambdaEventType.RELEASE,
+                    true, deliveryId);
+            lambdaEventDAO.create(lambdaEvent);
             final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
             final Timestamp publishedAt = payload.getRelease().getPublishedAt();
             workflows.stream().filter(w -> Objects.isNull(w.getLatestReleaseDate()) || w.getLatestReleaseDate().before(publishedAt))
