@@ -443,7 +443,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, GitHubUsernames gitHubUsernames, String gitReference, long installationId, String deliveryId, String afterCommit, boolean throwIfNotSuccessful) {
+    protected void githubWebhookRelease(String repository, GitHubUsernames gitHubUsernames, String gitReference, long installationId, String deliveryId, String afterCommit,
+            boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -469,9 +470,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, gitHubUsernames, dockstoreYml, Service.class, deliveryId);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, BioWorkflow.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, BioWorkflow.class,
+                    deliveryId);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, AppTool.class, deliveryId);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, Notebook.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, Notebook.class,
+                    deliveryId);
 
         } catch (Exception ex) {
 
