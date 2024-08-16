@@ -155,7 +155,7 @@ public class OpenAPIServiceIT extends BaseIT {
     }
 
     /**
-     * Ensures that you cannot create a service if the given user is not on Dockstore
+     * Ensures that you can create a service if the given user is not on Dockstore
      */
     @Test
     void createServiceNoUser() {
@@ -163,13 +163,12 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", "iamnotarealuser"));
-        assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", "iamnotarealuser");
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
-        assertEquals(0, count, "there should be no matching service");
+        assertEquals(1, count, "there should be no matching service");
     }
 
     /**

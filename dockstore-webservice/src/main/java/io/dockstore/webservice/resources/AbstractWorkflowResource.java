@@ -32,6 +32,7 @@ import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -670,6 +671,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         boolean isSuccessful = true;
         TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
 
+        final List<User> otherUsers = usersWithRepoPermissions(repository, usernames.otherUsers());
+
         for (Workflowish wf : yamlWorkflows) {
             if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                 boolean logged = false;
@@ -678,9 +681,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                     // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
                     User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, usernames.sender(), false);
-                    final List<User> otherUsers = usernames.otherUsers().stream()
-                            .map(u -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, u, false)).filter(Objects::nonNull)
-                            .toList();
 
                     // Update the workflow version in its own database transaction.
                     Pair<Workflow, WorkflowVersion> result = transactionHelper.transaction(() -> {
@@ -690,7 +690,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
-                        workflow.getUsers().addAll(otherUsers);
+                        workflow.getUsers().addAll(otherUsers.stream().map(User::getId).map(userDAO::findById).toList()); // Because of Hibernate transactions, safest to lookup users again
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
 
                         // Create some events.
@@ -733,6 +733,41 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
         return isSuccessful;
+    }
+
+    /**
+     * Returns users whose corresponding GitHub accounts have permissions to <code>repository</code>.
+     *
+     * A GitHub push event can contain 1 to many users. There's the sender of the event, and possibly users who have commits in the push
+     * event, both authors (writers of the code), and committers, e.g., a cherry-picker -- Joe cherry-picks author Jane's commit.
+     *
+     * A push event can contain many commits, going back in time. When Dockstore gets the push event, it's possible an author may not
+     * have permissions to the repo, e.g., their work was committed from a forked repo. And perhaps the committer is no longer a member
+     * of the org. We assume the sender has permissions, because they just caused the event to be pushed.
+     *
+     * We use this method to find users that currently have permissions to a GitHub repo.
+     *
+     * @param repository
+     * @param usernames
+     * @return
+     */
+    private List<User> usersWithRepoPermissions(String repository, Set<String> usernames) {
+        return usernames.stream()
+                .map(username -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false))
+                .filter(Objects::nonNull) //
+                .filter(user -> {
+                    // We know user has a GitHub profile because of the preceding lines
+                    final User.Profile profile = user.getUserProfiles().get(TokenType.GITHUB_COM.toString());
+                    final Token gitHubToken = tokenDAO.findTokenByGitHubUsername(profile.username);
+                    if (gitHubToken != null) { // probably redundant
+                        final GitHubSourceCodeRepo userSourceCodeRepo = new GitHubSourceCodeRepo(profile.username,
+                                gitHubToken.getContent());
+                        // Get a map of all repos the user has permissions to
+                        final Map<String, String> map = userSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+                        return map.values().contains(repository);
+                    }
+                    return false;
+                }).toList();
     }
 
     private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference, String deliveryId) {
@@ -1271,7 +1306,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return
      */
     protected GitHubUsernames gitHubUsernamesFromPushPayload(PushPayload payload) {
-        final Set<String> userNames = new HashSet<>();
+        final Set<String> commitUsernames = new HashSet<>();
         final ArrayList<GitCommit> gitCommits = new ArrayList<>();
         if (payload.getCommits() != null) { // It should never be null per GitHub doc, but we have some test data with it; easiest to just check
             gitCommits.addAll(payload.getCommits());
@@ -1281,15 +1316,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         gitCommits.stream().forEach(commit -> {
             if (commit.getCommiter() != null && commit.getCommiter().username() != null) {
-                userNames.add(commit.getCommiter().username());
+                commitUsernames.add(commit.getCommiter().username());
             }
             if (commit.getAuthor() != null && commit.getAuthor().username() != null) {
-                userNames.add(commit.getAuthor().username());
+                commitUsernames.add(commit.getAuthor().username());
             }
         });
         final String senderUsername = payload.getSender().getLogin();
-        userNames.remove(senderUsername);
-        return new GitHubUsernames(senderUsername, userNames);
+        commitUsernames.remove(senderUsername); // If the sender is also a committer, remove the sender
+        return new GitHubUsernames(senderUsername, commitUsernames);
     }
 
 
