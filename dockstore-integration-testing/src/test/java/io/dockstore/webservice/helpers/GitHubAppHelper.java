@@ -57,7 +57,7 @@ public final class GitHubAppHelper {
             gitHubUser.setName("Name does not matter");
             final GitCommit gitCommit = new GitCommit();
             gitCommit.setAuthor(gitHubUser);
-            gitCommit.setCommiter(gitHubUser);
+            gitCommit.setCommitter(gitHubUser);
             return gitCommit;
         }).toList();
         pushPayload.setCommits(gitCommits);

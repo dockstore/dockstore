@@ -9968,7 +9968,7 @@ components:
       properties:
         author:
           $ref: '#/components/schemas/GitHubUser'
-        commiter:
+        committer:
           $ref: '#/components/schemas/GitHubUser'
     GitHubUser:
       type: object
