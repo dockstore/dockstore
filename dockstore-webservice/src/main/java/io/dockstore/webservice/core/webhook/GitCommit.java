@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class GitCommit {
 
     private GitHubUser author;
-    private GitHubUser commiter;
+    private GitHubUser committer;
 
     public GitHubUser getAuthor() {
         return author;
@@ -33,12 +33,12 @@ public class GitCommit {
         this.author = author;
     }
 
-    public GitHubUser getCommiter() {
-        return commiter;
+    public GitHubUser getCommitter() {
+        return committer;
     }
 
-    public void setCommiter(GitHubUser commiter) {
-        this.commiter = commiter;
+    public void setCommitter(GitHubUser committer) {
+        this.committer = committer;
     }
 
     public record GitHubUser(String username, String name, String email) {}

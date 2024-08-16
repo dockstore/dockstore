@@ -1318,8 +1318,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             gitCommits.add(payload.getHeadCommit());
         }
         gitCommits.stream().forEach(commit -> {
-            if (commit.getCommiter() != null && commit.getCommiter().username() != null) {
-                commitUsernames.add(commit.getCommiter().username());
+            if (commit.getCommitter() != null && commit.getCommitter().username() != null) {
+                commitUsernames.add(commit.getCommitter().username());
             }
             if (commit.getAuthor() != null && commit.getAuthor().username() != null) {
                 commitUsernames.add(commit.getAuthor().username());
