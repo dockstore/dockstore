@@ -23,6 +23,7 @@ public class CollectionEntry implements Serializable {
     private String versionName;
     private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
+    private String topic;
     private List<String> labels = new ArrayList<String>();
     @JsonProperty("categories")
     private List<CategorySummary> categorySummaries = new ArrayList<>();
@@ -44,17 +45,18 @@ public class CollectionEntry implements Serializable {
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Deprecated
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String topic, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPathFromFragments(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
+        setTopic(topic);
     }
 
 
@@ -71,17 +73,18 @@ public class CollectionEntry implements Serializable {
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Deprecated
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false);
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, boolean verified)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String topic, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPathFromFragments(registry, organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
+        setTopic(topic);
     }
 
     private void setEntryPathFromFragments(String sourceControl, String organization, String repository, String entryName) {
@@ -158,5 +161,13 @@ public class CollectionEntry implements Serializable {
 
     public void setCategorySummaries(List<CategorySummary> categorySummaries) {
         this.categorySummaries = categorySummaries;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }
