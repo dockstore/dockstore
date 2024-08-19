@@ -127,21 +127,6 @@ of the source tree. For information on installing it on your platform check <htt
 
 If you're on mac with homebrew use `brew install git-secrets`.
 
-### Dockstore Command Line
-
-The dockstore command line should be installed in a location in your path.
-
-  /dockstore-client/bin/dockstore
-
-You then need to setup a `~/.dockstore/config` file with the following contents:
-
-```
-token: <dockstore_token_from_web_app>
-server-url: http://www.dockstore.org:8080
-```
-
-If you are working with a custom-built or updated dockstore client you will need to update the jar in: `~/.dockstore/config/self-installs`.
-
 ### Swagger Client Generation 
 
 We use the swagger-codegen-maven-plugin to generate several sections of code which are not checked in. 
