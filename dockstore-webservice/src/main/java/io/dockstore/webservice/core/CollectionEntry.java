@@ -45,18 +45,17 @@ public class CollectionEntry implements Serializable {
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Deprecated
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, null, false);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String topic, String versionName, boolean verified)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPathFromFragments(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
-        setTopic(topic);
     }
 
 
@@ -73,18 +72,17 @@ public class CollectionEntry implements Serializable {
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Deprecated
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, null, false);
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String topic, String versionName, boolean verified)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPathFromFragments(registry, organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
-        setTopic(topic);
     }
 
     private void setEntryPathFromFragments(String sourceControl, String organization, String repository, String entryName) {

@@ -101,7 +101,7 @@ class CollectionHelper {
             entry.setVerified(!versionDAO.findEntryVersionsWithVerifiedPlatforms(entry.getId()).isEmpty());
             List<CategorySummary> summaries = entryDAO.findCategorySummariesByEntryId(entry.getId());
             entry.setCategorySummaries(summaries);
-            entry.setTopic(entry.getTopic());
+            entry.setTopic(entryDAO.getGenericEntryById(entry.getId()).getTopic());
             switch (entry.getEntryType()) {
             case "tool":
                 entry.setDescriptorTypes(entryDAO.getToolsDescriptorTypes(entry.getId()));
