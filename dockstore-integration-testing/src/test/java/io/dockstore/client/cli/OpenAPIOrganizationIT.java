@@ -29,11 +29,13 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.*;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Event.TypeEnum;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.EventSearchType;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,9 +92,12 @@ public class OpenAPIOrganizationIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClientOpenApiUser);
         Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                 "");
+        final Workflow workflowByPathGithub = workflowsApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", WorkflowSubClass.BIOWORKFLOW, null);
+
         workflow.setTopicAutomatic("topic");
         workflow.setTopicSelection(Workflow.TopicSelectionEnum.AUTOMATIC);
 
+        workflowsApi.refresh1(workflowByPathGithub.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), workflow.getWorkflowVersions().get(0).getId());
