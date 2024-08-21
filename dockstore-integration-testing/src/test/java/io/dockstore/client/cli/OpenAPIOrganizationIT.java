@@ -20,15 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.*;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Event.TypeEnum;
 import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.resources.EventSearchType;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,5 +70,32 @@ public class OpenAPIOrganizationIT extends BaseIT {
         // test to see that we can see events on an organization the user is a part of
         events = eventsApi.getEvents(EventSearchType.SELF_ORGANIZATIONS.toString(), 10, 0);
         assertTrue(events.size() > 0 && events.stream().anyMatch(e -> e.getType() == TypeEnum.CREATE_ORG) && events.stream().anyMatch(e -> e.getType() == TypeEnum.MODIFY_ORG));
+    }
+
+    @Test
+    void testCollectionEntryTopic() {
+        final ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientOpenApiUser);
+
+        Organization organization = OrganizationIT.openApiStubOrgObject();
+        organization = organizationsApiAdmin.createOrganization(organization);
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        Collection collection = OrganizationIT.openApiStubCollectionObject();
+        organizationsApiAdmin.createCollection(collection, organization.getId());
+
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClientOpenApiUser);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
+                "");
+        workflow.setTopicAutomatic("topic");
+        workflow.setTopicSelection(Workflow.TopicSelectionEnum.AUTOMATIC);
+
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), workflow.getWorkflowVersions().get(0).getId());
+        Collection addedCollection = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
+
+        assertEquals("topic", addedCollection.getEntries().get(0).getTopic());
+
     }
 }
