@@ -29,7 +29,6 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
-import io.dockstore.openapi.client.model.*;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Event.TypeEnum;
