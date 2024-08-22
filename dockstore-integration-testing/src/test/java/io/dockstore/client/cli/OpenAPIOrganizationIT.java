@@ -97,16 +97,13 @@ public class OpenAPIOrganizationIT extends BaseIT {
                 "");
         final Workflow workflowByPathGithub = workflowsApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", WorkflowSubClass.BIOWORKFLOW, null);
 
-        workflow.setTopicAutomatic("topic");
-        workflow.setTopicSelection(Workflow.TopicSelectionEnum.AUTOMATIC);
-
         workflowsApi.refresh1(workflowByPathGithub.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null);
         Collection addedCollection = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
 
-        assertEquals("topic", addedCollection.getEntries().get(0).getTopic());
+        assertEquals("viral-ngs: complete pipelines", addedCollection.getEntries().get(0).getTopic());
 
     }
 }
