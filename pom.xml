@@ -45,7 +45,7 @@
         <openapi-annotations-version>2.2.9</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.4.4</postgresql.version>
-        <maven-surefire.version>3.0.0-M5</maven-surefire.version>
+        <maven-surefire.version>3.4.0</maven-surefire.version>
         <maven-failsafe.version>2.22.2</maven-failsafe.version>
         <maven-java.version>17</maven-java.version>
 
