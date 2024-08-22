@@ -88,8 +88,9 @@ public class OpenAPIOrganizationIT extends BaseIT {
         organization = organizationsApiAdmin.createOrganization(organization);
         organizationsApiAdmin.approveOrganization(organization.getId());
 
-        Collection collection = OrganizationIT.openApiStubCollectionObject();
-        organizationsApiAdmin.createCollection(collection, organization.getId());
+        Collection stubCollection = OrganizationIT.openApiStubCollectionObject();
+
+        Collection collection = organizationsApiAdmin.createCollection(stubCollection, organization.getId());
 
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
