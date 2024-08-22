@@ -168,7 +168,7 @@ public class OpenAPIServiceIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
-        assertEquals(1, count, "there should be no matching service");
+        assertEquals(1, count, "there should be one matching service");
     }
 
     /**

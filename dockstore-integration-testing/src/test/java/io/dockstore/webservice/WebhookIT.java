@@ -1068,8 +1068,9 @@ class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
+        // Test starts from scratch
         final Long userlessWorkflows = testingPostgres.runSelectStatement(
-                "select count(*) from workflow w where w.id not in (select userid from user_entry)", long.class);
+                "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
         assertEquals(1, userlessWorkflows);
     }
 

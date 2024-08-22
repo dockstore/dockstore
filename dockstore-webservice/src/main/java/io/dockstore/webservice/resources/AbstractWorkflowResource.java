@@ -872,11 +872,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         Workflow workflowToUpdate = null;
         // Create workflow if one does not exist
         if (workflow.isEmpty()) {
-            // Commented this out as part of SEAB-5994
-            // Ensure that a Dockstore user exists to add to the workflow
-            // if (user == null) {
-            //    throw new CustomWebApplicationException("User does not have an account on Dockstore.", LAMBDA_FAILURE);
-            // }
 
             StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 

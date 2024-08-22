@@ -19,7 +19,7 @@ package io.dockstore.webservice.core.webhook;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Information about the head commit on a GitHub push event")
+@Schema(description = "Information about a commit on a GitHub push event. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push, under commits and head_commit")
 public class GitCommit {
 
     private GitHubUser author;

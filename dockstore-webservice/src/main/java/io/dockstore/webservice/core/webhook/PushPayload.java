@@ -35,7 +35,7 @@ public class PushPayload extends Payload {
     @Schema(description = "The SHA of the most recent commit on ref after the push", requiredMode = RequiredMode.NOT_REQUIRED, example = "6d96270004515a0486bb7f76196a72b40c55a47f")
     private String after;
 
-    // The GitHub doc says "object or null", sigh
+    // The following description is directly quoted from the above github doc
     @Schema(description = "The head commit")
     @JsonProperty("head_commit")
     private GitCommit headCommit;

@@ -9964,7 +9964,8 @@ components:
           type: string
     GitCommit:
       type: object
-      description: Information about the head commit on a GitHub push event
+      description: "Information about a commit on a GitHub push event. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push,\
+        \ under commits and head_commit"
       properties:
         author:
           $ref: '#/components/schemas/GitHubUser'
