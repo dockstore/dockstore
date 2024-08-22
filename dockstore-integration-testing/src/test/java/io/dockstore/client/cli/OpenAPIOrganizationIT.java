@@ -81,6 +81,9 @@ public class OpenAPIOrganizationIT extends BaseIT {
         final ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientOpenApiUser);
 
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+
+
         Organization organization = OrganizationIT.openApiStubOrgObject();
         organization = organizationsApiAdmin.createOrganization(organization);
         organizationsApiAdmin.approveOrganization(organization.getId());
@@ -88,7 +91,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
         Collection collection = OrganizationIT.openApiStubCollectionObject();
         organizationsApiAdmin.createCollection(collection, organization.getId());
 
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClientOpenApiUser);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                 "");
         final Workflow workflowByPathGithub = workflowsApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", WorkflowSubClass.BIOWORKFLOW, null);
