@@ -93,7 +93,8 @@ public class OpenAPIOrganizationIT extends BaseIT {
         Collection collection = organizationsApiAdmin.createCollection(stubCollection, organization.getId());
 
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines",
+                "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                 "");
         final Workflow workflowByPathGithub = workflowsApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", WorkflowSubClass.BIOWORKFLOW, null);
 
