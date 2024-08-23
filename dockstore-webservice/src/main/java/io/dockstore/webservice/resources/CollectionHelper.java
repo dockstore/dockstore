@@ -17,7 +17,11 @@
 package io.dockstore.webservice.resources;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.*;
+import io.dockstore.webservice.core.CategorySummary;
+import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import java.util.ArrayList;
