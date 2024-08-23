@@ -24,6 +24,8 @@ public class CollectionEntry implements Serializable {
     private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
     private String topic;
+    private Entry.TopicSelection topicSelection;
+    private boolean isApprovedAITopic;
     private List<String> labels = new ArrayList<String>();
     @JsonProperty("categories")
     private List<CategorySummary> categorySummaries = new ArrayList<>();
@@ -167,5 +169,21 @@ public class CollectionEntry implements Serializable {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public Entry.TopicSelection getTopicSelection() {
+        return topicSelection;
+    }
+
+    public void setTopicSelection(Entry.TopicSelection topicSelection) {
+        this.topicSelection = topicSelection;
+    }
+
+    public boolean getIsApprovedAITopic() {
+        return isApprovedAITopic;
+    }
+
+    public void setIsApprovedAITopic(boolean approvedAITopic) {
+        this.isApprovedAITopic = approvedAITopic;
     }
 }
