@@ -3052,10 +3052,17 @@ paths:
       - BEARER: []
       tags:
       - curation
-  /entries/updateEntryToGetDOIs:
+  /entries/updateDois:
     post:
-      deprecated: true
-      operationId: updateEntryToGetDOIs
+      description: "Searches Zenodo for DOIs referencing GitHub repos, and updates\
+        \ Dockstore entries with them"
+      operationId: updateDois
+      parameters:
+      - description: "Optional GitHub full repository name, e.g., myorg/myrepo"
+        in: query
+        name: orgRepo
+        schema:
+          type: string
       responses:
         default:
           content:
@@ -3063,7 +3070,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RepoDoi'
+                  $ref: '#/components/schemas/GitHubRepoDois'
           description: default response
       security:
       - BEARER: []
@@ -9979,6 +9986,17 @@ components:
           type: string
         url:
           type: string
+    GitHubRepoDois:
+      type: object
+      properties:
+        conceptDoi:
+          type: string
+        repo:
+          type: string
+        tagAndDoi:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagAndDoi'
     HealthCheckResult:
       type: object
       properties:
@@ -10704,15 +10722,6 @@ components:
       - installation
       - release
       - sender
-    RepoDoi:
-      type: object
-      properties:
-        dois:
-          type: array
-          items:
-            type: string
-        repo:
-          type: string
     Repository:
       type: object
       properties:
@@ -11164,6 +11173,13 @@ components:
       required:
       - name
       - reference
+    TagAndDoi:
+      type: object
+      properties:
+        doi:
+          type: string
+        gitHubTag:
+          type: string
     TaskExecutions:
       type: object
       allOf:

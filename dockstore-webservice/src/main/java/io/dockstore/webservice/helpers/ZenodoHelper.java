@@ -41,7 +41,6 @@ import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
-import io.swagger.zenodo.client.model.Record;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
 import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
@@ -49,7 +48,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -64,6 +62,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
@@ -86,6 +86,11 @@ public final class ZenodoHelper {
     public static final String NO_DOCKSTORE_DOI = "The entry does not have DOIs created by Dockstore's Zenodo account.";
     public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
     public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
+    /**
+     * The Zenodo API has a rate limit of 133 requests per minute, authorized and unauthorized. Pausing every half second will allow
+     * 120 requests per minute, not including request/response times.
+     */
+    public static final long THROTTLE_FOR_RATE_LIMIT = 500;
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
@@ -374,29 +379,94 @@ public final class ZenodoHelper {
         return doi;
     }
 
-    public static List<String> findDOIsForGitHubRepo(ApiClient zenodoClient, String gitHubRepo) {
-        final ArrayList<String> dois = new ArrayList<>();
+    /**
+     * Searches for Zenodo DOIs issued against the GitHub repository <code>gitHubRepo</code>.
+     * <p>
+     * The Zenodo API returns an ElasticSearch response. What we do is:
+     *
+     * <ol>
+     *     <li>Make a request to <code>https://zenodo.org/api/records?q=[urlencoded gitHubRepo]</code></li>
+     *     <li>Look in the response for hits.hits[].metadata.relatedIdentifiers[] for an identifier that contains <code>gitHubrepo</code></li>
+     *     <li>If there's a match, we get the DOI for the most recent version and use it in the next step</li>
+     *     <li>If there's a match, we send another request to <code>https://zenodo.org/api/records/[DOI ID from  previous step]/versions</code> to get all the DOIs </li>
+     * </ol>
+     *
+     * @param gitHubRepo the github repo in org/repo form, e.g., dockstore/dockstore-cli
+     * @return
+     */
+    public static List<GitHubRepoDois> findDoisForGitHubRepo(String gitHubRepo) {
+        // Here's a sample identifier that we look for: https://github.com/coverbeck/cwlviewer/tree/ThirdTestTag
+        final ApiClient zenodoClient = createZenodoClient(null);
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         final String query = URLEncoder.encode('"' + gitHubRepo + '"');
-        final int pageSize = 100;
+        final int pageSize = 100; // Arbitrary
         final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
-        final List<Hit> hits = records.getHits().getHits();
-        System.out.println(gitHubRepo + " has " + hits.size() + " hits");
-        final List<Hit> matches = hits.stream().filter(hit -> hit.getMetadata().getRelatedIdentifiers() != null && hit.getMetadata().getRelatedIdentifiers().stream()
-                .anyMatch(ri -> ri.getIdentifier() != null && ri.getIdentifier().contains(gitHubRepo))).toList();
-        if (!matches.isEmpty()) {
-            final List<String> newDois = matches.stream().map(Hit::getDoiUrl).toList();
-            matches.stream().forEach(match -> {
-                final Record record = previewApi.getRecord(String.valueOf(match.getId()));
-                System.out.println("record = " + record);
-                final SearchResult recordVersions = previewApi.getRecordVersions(String.valueOf(match.getId()));
-                System.out.println("recordVersions = " + recordVersions);
-            });
-            dois.addAll(newDois);
-            System.out.println("matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier() = " + matches.get(0).getMetadata().getRelatedIdentifiers().get(0).getIdentifier());
-        }
-        return dois;
+        throttleZenodoRequests();
+        final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
+        return dois.stream()
+                .map(conceptAndDoi -> {
+                    final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
+                    throttleZenodoRequests();
+                    final List<TagAndDoi> taggedVersions = findTaggedVersions(recordVersions.getHits().getHits(), gitHubRepo);
+                    return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
+                })
+                .toList();
     }
+
+    /**
+     * Returns the list of DOIs created by the GitHub-Zenodo integration. DOIs created by the integration have
+     * a metadata[].related_identifer whose value is of the pattern https://github.com/[repo]/[org]/tree/[tagName], e.g.,
+     * https://github.com/dockstore/dockstore-cli/tree/1.15
+     * @param hits
+     * @return
+     */
+    static List<ConceptAndDoi> findGitHubIntegrationDois(List<Hit> hits, String gitHubRepo) {
+        return hits.stream()
+                .filter(hit -> Objects.nonNull(hit.getMetadata()))
+                .filter(hit ->
+                    hit.getMetadata().getRelatedIdentifiers().stream()
+                            .anyMatch(relatedIdentifier -> tagFromRelatedIdentifier(gitHubRepo, relatedIdentifier.getIdentifier()).isPresent()))
+                .map(hit -> new ConceptAndDoi(hit.getConceptdoi(), hit.getDoi()))
+                .toList();
+    }
+
+    /**
+     * Finds a list of GitHub tags with their associated DOIs
+     * @param hits
+     * @param gitHubRepo
+     * @return
+     */
+    static List<TagAndDoi> findTaggedVersions(List<Hit> hits, String gitHubRepo) {
+        return hits.stream().map(hit -> {
+            final String doi = hit.getDoi();
+            final Optional<String> maybeTag = hit.getMetadata().getRelatedIdentifiers().stream().map(relatedIdentifier -> {
+                final String identifier = relatedIdentifier.getIdentifier();
+                return tagFromRelatedIdentifier(gitHubRepo, identifier);
+            }).filter(Optional::isPresent).map(Optional::get).findFirst();
+            return maybeTag.map(tag -> new TagAndDoi(tag, doi)).orElse(null);
+        }).filter(Objects::nonNull).toList();
+    }
+
+    public static Optional<String> tagFromRelatedIdentifier(String gitHubRepo, String ri) {
+        final Pattern pattern = Pattern.compile("^https://github.com/%s/tree/(\\S*)$".formatted(gitHubRepo));
+        final Matcher matcher = pattern.matcher(ri);
+        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    public static SearchResult getRecordVersions(ApiClient zenodoClient, String doi) {
+        final PreviewApi previewApi = new PreviewApi(zenodoClient);
+        return previewApi.getRecordVersions(idFromZenodoDoi(doi));
+    }
+
+    public static void throttleZenodoRequests() {
+        try {
+            Thread.sleep(ZenodoHelper.THROTTLE_FOR_RATE_LIMIT);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 
     public static ApiClient createApiClient(String basePath) {
         ApiClient zenodoClient = new ApiClient();
@@ -407,24 +477,14 @@ public final class ZenodoHelper {
     }
 
     /**
-     * extract a digital object identifier (DOI) from a DOI target URL
-     * @param doiUrl digital object identifier
-     * @return the DOI as a string
+     * Returns the Zenodo id from a Zenodo DOI; the id is needed for API requests. For example, for the Zenodo
+     * DOI <code>10.5281/zenodo.5104875</code>, returns <code>5104875</code>
+     * @param zenodoDoi
+     * @return
      */
-    protected static String extractDoiFromDoiUrl(String doiUrl) {
-        // Remove the 'https://doi.org/' etc. prefix from the DOI
-        // e.g. https://doi.org/10.5072/zenodo.372767
-        String doi = doiUrl;
-        try {
-            URI uri = new URI(doiUrl);
-            doi = StringUtils.stripStart(uri.getPath(), "/");
-
-        } catch (URISyntaxException e) {
-            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
-        }
-        return doi;
+    static String idFromZenodoDoi(String zenodoDoi) {
+        return StringUtils.substringAfterLast(zenodoDoi, '.');
     }
-
 
     /**
      * Create a workflow alias that uses a digital object identifier
@@ -940,5 +1000,22 @@ public final class ZenodoHelper {
 
     public record ZenodoDoiResult(String doiAlias, String doiUrl, String conceptDoi) {
     }
+
+    /**
+     * The discovered DOIs for a GitHub repo.
+     * @param repo - the GitHub repo, in org/repo format, e.g., dockstore/dockstore-cli
+     * @param conceptDoi
+     * @param tagAndDoi
+     */
+    public record GitHubRepoDois(String repo, String conceptDoi, List<TagAndDoi> tagAndDoi) {}
+
+    /**
+     * The name of a GitHub tag and the DOI that was created for it.
+     * @param gitHubTag the name of the GitHub tag, e.g., "1.0.1" (not a GitHub reference)
+     * @param doi the doi
+     */
+    public record TagAndDoi(String gitHubTag, String doi) {}
+
+    public record ConceptAndDoi(String conceptDoi, String doi) {}
 
 }

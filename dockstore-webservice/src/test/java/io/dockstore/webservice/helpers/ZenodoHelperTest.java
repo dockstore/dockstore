@@ -7,7 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.FixtureUtility;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -17,12 +21,15 @@ import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Doi.DoiType;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import io.swagger.zenodo.client.model.SearchResult;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -172,6 +179,33 @@ class ZenodoHelperTest {
         assertEquals(DoiInitiator.USER, getDoiBasedOnOrderOfPrecedence(dois).getInitiator());
     }
 
+    @Test
+    void testIdFromZenodoDoi() {
+        assertEquals("5104875", ZenodoHelper.idFromZenodoDoi("10.5281/zenodo.5104875"));
+        assertNull(ZenodoHelper.idFromZenodoDoi(null));
+        assertEquals("", ZenodoHelper.idFromZenodoDoi("notavaliddoi"));
+    }
+
+    @Test
+    void testFindGitHubIntegrationDois() throws JsonProcessingException {
+        final SearchResult searchResult = deserialize(FixtureUtility.fixture("fixtures/zenodoListRecords.json"));
+        final List<ZenodoHelper.ConceptAndDoi> dois = ZenodoHelper.findGitHubIntegrationDois(searchResult.getHits().getHits(), "coverbeck/cwlviewer");
+        assertEquals(List.of(new ZenodoHelper.ConceptAndDoi("10.5281/zenodo.11094520", "10.5281/zenodo.11099749")), dois);
+    }
+
+
+    @Test
+    void testTaggedVersions() throws JsonProcessingException {
+        final SearchResult searchResult = deserialize(FixtureUtility.fixture("fixtures/zenodoVersions.json"));
+        final List<TagAndDoi> taggedVersions = ZenodoHelper.findTaggedVersions(searchResult.getHits().getHits(), "coverbeck/cwlviewer");
+        final List<TagAndDoi> expected = List.of(
+                new TagAndDoi("FourthTestTag", "10.5281/zenodo.11099749"),
+                new TagAndDoi("ThirdTestTag", "10.5281/zenodo.11095575"),
+                new TagAndDoi("SecondTestTag", "10.5281/zenodo.11095507"),
+                new TagAndDoi("testtag", "10.5281/zenodo.11094521"));
+        assertEquals(expected, taggedVersions);
+    }
+
     private DockstoreWebserviceConfiguration createDockstoreConfiguration() {
         final DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.getExternalConfig().setBasePath("/api/");
@@ -179,4 +213,11 @@ class ZenodoHelperTest {
         config.getExternalConfig().setScheme("https");
         return config;
     }
+    private static SearchResult deserialize(String fixture) throws JsonProcessingException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        final SearchResult searchResult = objectMapper.readValue(fixture, SearchResult.class);
+        return searchResult;
+    }
+
 }

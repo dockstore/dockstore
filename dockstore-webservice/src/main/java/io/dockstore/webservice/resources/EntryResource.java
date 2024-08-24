@@ -21,13 +21,13 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.SyncStatus;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidPutCode;
@@ -39,6 +39,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -54,6 +55,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -97,8 +99,9 @@ import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -141,6 +144,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
+    private final WorkflowVersionDAO workflowVersionDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
@@ -223,7 +227,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, EventDAO eventDAO, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
-        WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
+        WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
         this.eventDAO = eventDAO;
@@ -233,6 +237,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
+        this.workflowVersionDAO = workflowVersionDAO;
         this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -728,46 +733,55 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return sourceFile.getPath().equals(path);
     }
 
-
+    /**
+     * Scans Zenodo for DOIs issued against GitHub repos with registered entries in Dockstore, updating the Dockstore entries
+     * with those DOIs.
+     *
+     * @param user
+     * @param orgRepoFilter - optional filter to scope to a single GitHub repository in the format myorg/myrepo
+     * @return
+     */
     @POST
-    @RolesAllowed("admin")
-    @Path("/updateEntryToGetDOIs")
-    @Deprecated
+    @RolesAllowed({"admin", "curator"})
+    @Path("/updateDois")
     @UnitOfWork
     @Timed
-    @Operation(operationId = "updateEntryToGetDOIs", description = "", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<RepoDoi> updateEntryToGetDOIs(@Parameter(hidden = true) @Auth User user) {
-        //        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
-        final List<Workflow> allPublished = workflowDAO.findAllByPath("github.com/david4096/wdl-bootcamp-june", false);
-        final List<String> gitHubRepos = allPublished.stream()
-                .filter(workflow -> workflow.getSourceControl() == SourceControl.GITHUB)
-                .map(workflow -> workflow.getOrganization() + '/' + workflow.getRepository())
-                .distinct()
-                .collect(Collectors.toList());
-        final io.swagger.zenodo.client.ApiClient zenodoClient = ZenodoHelper.createApiClient(zenodoUrl);
-        final long millis = 500; // Rate limit is 133 per minute
+    @Operation(operationId = "updateDois", description = "Searches Zenodo for DOIs referencing GitHub repos, and updates Dockstore entries with them", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<ZenodoHelper.GitHubRepoDois> updateDois(@Parameter(hidden = true) @Auth User user,
+            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo") @QueryParam("orgRepo") String orgRepoFilter) {
+        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+        final Map<String, List<Workflow>> repoToWorkflowsMap = allPublished.stream()
+                .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
 
-        final List<RepoDoi> reposWithDois = gitHubRepos.stream().map(repo -> {
-            try {
-                Thread.sleep(Duration.ofMillis(millis).toMillis());
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            final List<String> dois = ZenodoHelper.findDOIsForGitHubRepo(zenodoClient, repo);
-            if (!dois.isEmpty()) {
-                return new RepoDoi(repo, dois);
-            }
-            return null;
-        }).filter(Objects::nonNull).toList();
-        System.out.println("reposWithDois.size() = " + reposWithDois.size());
-        final List<RepoDoi> reposWithOneWorkflow = reposWithDois.stream().filter(repoDoi -> {
-            final String[] split = repoDoi.repo().split("/");
-            final String org = split[0];
-            final String repoName = split[1];
-            return allPublished.stream().filter(w -> w.getOrganization().equals(org) && w.getRepository().equals(repoName)).toList().size()
-                    == 1;
-        }).toList();
-        return reposWithOneWorkflow;
+        final List<ZenodoHelper.GitHubRepoDois> gitHubRepoDois = repoToWorkflowsMap.keySet().stream().sorted()
+                .filter(repo -> StringUtils.isBlank(orgRepoFilter) || orgRepoFilter.equals(repo))
+                .map(ZenodoHelper::findDoisForGitHubRepo)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .toList();
+
+        gitHubRepoDois.stream().forEach(gitHubRepoDoi -> {
+            final String repo = gitHubRepoDoi.repo();
+            final String conceptDoi = gitHubRepoDoi.conceptDoi();
+            final List<Workflow> workflows = repoToWorkflowsMap.get(repo);
+            workflows.stream().forEach(workflow -> {
+                final boolean noDois = workflow.getConceptDois().isEmpty();
+                workflow.getConceptDois().put(Doi.DoiInitiator.GITHUB, ZenodoHelper.getDoiFromDatabase(Doi.DoiType.CONCEPT, Doi.DoiInitiator.GITHUB, conceptDoi));
+                gitHubRepoDoi.tagAndDoi().stream().forEach(tagAndDoi -> {
+                    final WorkflowVersion workflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(
+                            workflow.getId(), tagAndDoi.gitHubTag());
+                    if (workflowVersion != null) {
+                        final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
+                                tagAndDoi.doi());
+                        workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
+                    }
+                });
+                if (noDois) {
+                    workflow.setDoiSelection(Doi.DoiInitiator.GITHUB);
+                }
+            });
+        });
+        return gitHubRepoDois;
     }
 
     /**
