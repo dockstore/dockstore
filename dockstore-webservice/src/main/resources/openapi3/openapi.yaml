@@ -9014,10 +9014,20 @@ components:
         id:
           type: integer
           format: int64
+        isApprovedAITopic:
+          type: boolean
         labels:
           type: array
           items:
             type: string
+        topic:
+          type: string
+        topicSelection:
+          type: string
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - AI
         verified:
           type: boolean
         versionName:
