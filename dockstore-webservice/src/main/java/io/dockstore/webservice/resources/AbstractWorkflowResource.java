@@ -32,12 +32,15 @@ import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.webhook.GitCommit;
+import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
@@ -68,6 +71,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -431,7 +435,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * - Create services and workflows when necessary
      * - Add or update version for corresponding service and workflow
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param username Username of GitHub user that triggered action
+     * @param gitHubUsernames Usernames of GitHub user that triggered action, as well as other users that may have committed
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
      * @param deliveryId The GitHub delivery ID, used to group all lambda events that were created during this GitHub webhook release
@@ -439,18 +443,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, String afterCommit, boolean throwIfNotSuccessful) {
+    protected void githubWebhookRelease(String repository, GitHubUsernames gitHubUsernames, String gitReference, long installationId, String deliveryId, String afterCommit,
+            boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
         boolean isSuccessful = true;
 
+        final String sender = gitHubUsernames.sender();
         try {
             // Ignore the push event if the "after" hash exists and does not match the current ref head hash.
             if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
                 LOG.info("ignoring push event, repository={}, reference={}, deliveryId={}, afterCommit={}", repository, gitReference, deliveryId, afterCommit);
-                lambdaEventDAO.create(createIgnoredEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, deliveryId));
+                lambdaEventDAO.create(createIgnoredEvent(repository, gitReference, sender, LambdaEvent.LambdaEventType.PUSH, deliveryId));
                 return;
             }
 
@@ -463,21 +469,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // '&=' does not short-circuit, ensuring that all of the lists are processed.
             // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, deliveryId);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, deliveryId);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, deliveryId);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, username, dockstoreYml, Notebook.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, gitHubUsernames, dockstoreYml, Service.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, BioWorkflow.class,
+                    deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, AppTool.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, gitHubUsernames, dockstoreYml, Notebook.class,
+                    deliveryId);
 
         } catch (Exception ex) {
 
             // If an exception propagates to here, log something helpful and abort .dockstore.yml processing.
             isSuccessful = false;
             String msg = "Error handling push event for repository " + repository + " and reference " + gitReference + ":\n- " + generateMessageFromException(ex) + "\nTerminated processing of .dockstore.yml";
-            LOG.info("User " + username + ": " + msg, ex);
+            LOG.info("User " + sender + ": " + msg, ex);
 
             // Make an entry in the github apps logs.
             new TransactionHelper(sessionFactory).transaction(() -> {
-                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId);
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, sender, LambdaEvent.LambdaEventType.PUSH, false, deliveryId);
                 setEventMessage(lambdaEvent, msg);
                 lambdaEventDAO.create(lambdaEvent);
             });
@@ -487,7 +495,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         } finally {
             GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, sender, gitReference, isSuccessful);
         }
 
         if (!isSuccessful && throwIfNotSuccessful) {
@@ -652,12 +660,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId Installation id needed to setup GitHub apps
-     * @param username       Name of user that triggered action
+     * @param usernames       User that triggered action and other users in the payload
      * @param dockstoreYml
      * @param deliveryId The GitHub delivery ID, used to identify events that belong to the same GitHub webhook invocation
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
-    private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, long installationId, String username,
+    private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, long installationId, GitHubUsernames usernames,
             final SourceFile dockstoreYml, Class<?> workflowType, String deliveryId) {
 
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
@@ -666,6 +674,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         boolean isSuccessful = true;
         TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
 
+        final List<User> otherUsers = usersWithRepoPermissions(repository, usernames.otherUsers());
+
         for (Workflowish wf : yamlWorkflows) {
             if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                 boolean logged = false;
@@ -673,7 +683,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
 
                     // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, usernames.sender(), false);
 
                     // Update the workflow version in its own database transaction.
                     Pair<Workflow, WorkflowVersion> result = transactionHelper.transaction(() -> {
@@ -683,12 +693,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
+                        workflow.getUsers().addAll(otherUsers.stream().map(User::getId).map(userDAO::findById).toList()); // Because of Hibernate transactions, safest to lookup users again
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
 
                         // Create some events.
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
 
-                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, true, deliveryId, computeWorkflowName(wf));
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, usernames.sender(), LambdaEvent.LambdaEventType.PUSH, true, deliveryId, computeWorkflowName(wf));
                         setEventMessage(lambdaEvent, createValidationsMessage(workflow, version));
                         lambdaEventDAO.create(lambdaEvent);
 
@@ -716,7 +727,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                             computeTermFromClass(workflowType), computeWorkflowName(wf), generateMessageFromException(ex));
                         LOG.error(message, ex);
                         transactionHelper.transaction(() -> {
-                            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
+                            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, usernames.sender(), LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
                             setEventMessage(lambdaEvent, message);
                             lambdaEventDAO.create(lambdaEvent);
                         });
@@ -725,6 +736,41 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
         return isSuccessful;
+    }
+
+    /**
+     * Returns users whose corresponding GitHub accounts have permissions to <code>repository</code>.
+     *
+     * A GitHub push event can contain 1 to many users. There's the sender of the event, and possibly users who have commits in the push
+     * event, both authors (writers of the code), and committers, e.g., a cherry-picker -- Joe cherry-picks author Jane's commit.
+     *
+     * A push event can contain many commits, going back in time. When Dockstore gets the push event, it's possible an author may not
+     * have permissions to the repo, e.g., their work was committed from a forked repo. And perhaps the committer is no longer a member
+     * of the org. We assume the sender has permissions, because they just caused the event to be pushed.
+     *
+     * We use this method to find users that currently have permissions to a GitHub repo.
+     *
+     * @param repository
+     * @param usernames
+     * @return
+     */
+    private List<User> usersWithRepoPermissions(String repository, Set<String> usernames) {
+        return usernames.stream()
+                .map(username -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false))
+                .filter(Objects::nonNull) //
+                .filter(user -> {
+                    // We know user has a GitHub profile because of the preceding lines
+                    final User.Profile profile = user.getUserProfiles().get(TokenType.GITHUB_COM.toString());
+                    final Token gitHubToken = tokenDAO.findTokenByGitHubUsername(profile.username);
+                    if (gitHubToken != null) { // probably redundant
+                        final GitHubSourceCodeRepo userSourceCodeRepo = new GitHubSourceCodeRepo(profile.username,
+                                gitHubToken.getContent());
+                        // Get a map of all repos the user has permissions to
+                        final Map<String, String> map = userSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+                        return map.values().contains(repository);
+                    }
+                    return false;
+                }).toList();
     }
 
     private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference, String deliveryId) {
@@ -826,10 +872,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         Workflow workflowToUpdate = null;
         // Create workflow if one does not exist
         if (workflow.isEmpty()) {
-            // Ensure that a Dockstore user exists to add to the workflow
-            if (user == null) {
-                throw new CustomWebApplicationException("User does not have an account on Dockstore.", LAMBDA_FAILURE);
-            }
 
             StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
@@ -1244,6 +1286,46 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflow;
     }
 
+    /**
+     * Returns all the GitHub usernames from a push payload. There are several usernames in the payload, which may all be the same, or
+     * might be different. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+     *
+     * <ol>
+     *     <li>sender.login - the user who triggered the event, e.g., I think, they created a new branch and pushed it</li>
+     *     <li>There is a headCommit field and a commits field, the first may have a single GitCommit, the second has an array of GitCommits. A GitCommit
+     *     contains:</li>
+     *     <ul>
+     *     <li>commit.author - the user who wrote the code</li>
+     *     <li>commit.commiter - the user who committed the code, e.g., they cherry-picked a commit to another branch,
+     *     or the author committed via the GitHub UI (web-flow is the user in the second case)</li>
+     *     </ul>
+     * </ol>
+     * @param payload
+     * @return
+     */
+    protected GitHubUsernames gitHubUsernamesFromPushPayload(PushPayload payload) {
+        final Set<String> commitUsernames = new HashSet<>();
+        final ArrayList<GitCommit> gitCommits = new ArrayList<>();
+        if (payload.getCommits() != null) { // It should never be null per GitHub doc, but we have some test data with it; easiest to just check
+            gitCommits.addAll(payload.getCommits());
+        }
+        if (payload.getHeadCommit() != null) { // But this one can be null
+            gitCommits.add(payload.getHeadCommit());
+        }
+        gitCommits.stream().forEach(commit -> {
+            if (commit.getCommitter() != null && commit.getCommitter().username() != null) {
+                commitUsernames.add(commit.getCommitter().username());
+            }
+            if (commit.getAuthor() != null && commit.getAuthor().username() != null) {
+                commitUsernames.add(commit.getAuthor().username());
+            }
+        });
+        final String senderUsername = payload.getSender().getLogin();
+        commitUsernames.remove(senderUsername); // If the sender is also a committer, remove the sender
+        return new GitHubUsernames(senderUsername, commitUsernames);
+    }
+
+
     private void createAndSetDiscourseTopic(Workflow workflow) {
         if (workflow.getTopicId() == null) {
             try {
@@ -1268,4 +1350,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
     }
+
+    /**
+     * The GitHub usernames from a GitHub Webhook delivery payload. The payload can have several references to a GitHub usernames, and those
+     * usernames may all be the same or different.
+     * @param sender - the sender of the GitHub webhook delivery
+     * @param otherUsers - other users, not including the sender, that can be in the delivery.
+     */
+    public record GitHubUsernames(String sender, Set<String> otherUsers) {}
 }

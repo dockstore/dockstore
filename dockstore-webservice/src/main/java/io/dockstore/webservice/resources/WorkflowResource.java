@@ -2128,8 +2128,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-
-        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, afterCommit, true);
+        githubWebhookRelease(repository, gitHubUsernamesFromPushPayload(payload), gitReference, installationId, deliveryId, afterCommit, true);
     }
 
     @POST
@@ -2192,7 +2191,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                             Utilities.cleanForLogging(username)));
                     }
-                    githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
+                    githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
                 }
             }
         }
