@@ -1,0 +1,486 @@
+{
+  "hits": {
+    "hits": [
+      {
+        "created": "2024-05-01T19:59:44.480803+00:00",
+        "modified": "2024-05-01T19:59:44.638646+00:00",
+        "id": 11099749,
+        "conceptrecid": "11094520",
+        "doi": "10.5281/zenodo.11099749",
+        "conceptdoi": "10.5281/zenodo.11094520",
+        "doi_url": "https://doi.org/10.5281/zenodo.11099749",
+        "metadata": {
+          "title": "dockstore-testing/workflow-dockstore-yml: Fourth Test Tag",
+          "doi": "10.5281/zenodo.11099749",
+          "publication_date": "2024-05-01",
+          "description": "<p>A description of the 4th test tag.</p>",
+          "access_right": "open",
+          "creators": [
+            {
+              "name": "Mark Robinson",
+              "affiliation": "@aws"
+            },
+            {
+              "name": "Stian Soiland-Reyes",
+              "affiliation": "eScience lab, University of Manchester"
+            },
+            {
+              "name": "Michael R. Crusoe",
+              "affiliation": "@common-workflow-language"
+            }
+          ],
+          "related_identifiers": [
+            {
+              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/FourthTestTag",
+              "relation": "isSupplementTo",
+              "resource_type": "software",
+              "scheme": "url"
+            }
+          ],
+          "version": "FourthTestTag",
+          "resource_type": {
+            "title": "Software",
+            "type": "software"
+          },
+          "license": {
+            "id": "cc-by-4.0"
+          },
+          "relations": {
+            "version": [
+              {
+                "index": 3,
+                "is_last": true,
+                "parent": {
+                  "pid_type": "recid",
+                  "pid_value": "11094520"
+                }
+              }
+            ]
+          }
+        },
+        "title": "dockstore-testing/workflow-dockstore-yml: Fourth Test Tag",
+        "links": {
+          "self": "https://zenodo.org/api/records/11099749",
+          "self_html": "https://zenodo.org/records/11099749",
+          "self_doi": "https://zenodo.org/doi/10.5281/zenodo.11099749",
+          "doi": "https://doi.org/10.5281/zenodo.11099749",
+          "parent": "https://zenodo.org/api/records/11094520",
+          "parent_html": "https://zenodo.org/records/11094520",
+          "parent_doi": "https://zenodo.org/doi/10.5281/zenodo.11094520",
+          "self_iiif_manifest": "https://zenodo.org/api/iiif/record:11099749/manifest",
+          "self_iiif_sequence": "https://zenodo.org/api/iiif/record:11099749/sequence/default",
+          "files": "https://zenodo.org/api/records/11099749/files",
+          "media_files": "https://zenodo.org/api/records/11099749/media-files",
+          "archive": "https://zenodo.org/api/records/11099749/files-archive",
+          "archive_media": "https://zenodo.org/api/records/11099749/media-files-archive",
+          "latest": "https://zenodo.org/api/records/11099749/versions/latest",
+          "latest_html": "https://zenodo.org/records/11099749/latest",
+          "draft": "https://zenodo.org/api/records/11099749/draft",
+          "versions": "https://zenodo.org/api/records/11099749/versions",
+          "access_links": "https://zenodo.org/api/records/11099749/access/links",
+          "access_grants": "https://zenodo.org/api/records/11099749/access/grants",
+          "access_users": "https://zenodo.org/api/records/11099749/access/users",
+          "access_request": "https://zenodo.org/api/records/11099749/access/request",
+          "access": "https://zenodo.org/api/records/11099749/access",
+          "reserve_doi": "https://zenodo.org/api/records/11099749/draft/pids/doi",
+          "communities": "https://zenodo.org/api/records/11099749/communities",
+          "communities-suggestions": "https://zenodo.org/api/records/11099749/communities-suggestions",
+          "requests": "https://zenodo.org/api/records/11099749/requests"
+        },
+        "updated": "2024-05-01T19:59:44.638646+00:00",
+        "recid": "11099749",
+        "revision": 4,
+        "files": [
+          {
+            "id": "a6d6c113-18c8-4e89-9211-42ff3acb2a22",
+            "key": "dockstore-testing/workflow-dockstore-yml-FourthTestTag.zip",
+            "size": 7363521,
+            "checksum": "md5:c77f171d1f9425ecfdc493355e3d8178",
+            "links": {
+              "self": "https://zenodo.org/api/records/11099749/files/dockstore-testing/workflow-dockstore-yml-FourthTestTag.zip/content"
+            }
+          }
+        ],
+        "owners": [
+          {
+            "id": "67314"
+          }
+        ],
+        "status": "published",
+        "stats": {
+          "downloads": 5,
+          "unique_downloads": 5,
+          "views": 59,
+          "unique_views": 56,
+          "version_downloads": 2,
+          "version_unique_downloads": 2,
+          "version_unique_views": 21,
+          "version_views": 22
+        },
+        "state": "done",
+        "submitted": true
+      },
+      {
+        "created": "2024-05-01T00:20:40.682716+00:00",
+        "modified": "2024-05-01T00:20:40.835635+00:00",
+        "id": 11095575,
+        "conceptrecid": "11094520",
+        "doi": "10.5281/zenodo.11095575",
+        "conceptdoi": "10.5281/zenodo.11094520",
+        "doi_url": "https://doi.org/10.5281/zenodo.11095575",
+        "metadata": {
+          "title": "dockstore-testing/workflow-dockstore-yml: ThirdTestTag",
+          "doi": "10.5281/zenodo.11095575",
+          "publication_date": "2024-05-01",
+          "description": "A web application to view and share Common Workflow Language workflows",
+          "access_right": "open",
+          "creators": [
+            {
+              "name": "Mark Robinson",
+              "affiliation": "@aws"
+            },
+            {
+              "name": "Stian Soiland-Reyes",
+              "affiliation": "eScience lab, University of Manchester"
+            },
+            {
+              "name": "Michael R. Crusoe",
+              "affiliation": "@common-workflow-language"
+            }
+          ],
+          "related_identifiers": [
+            {
+              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/ThirdTestTag",
+              "relation": "isSupplementTo",
+              "resource_type": "software",
+              "scheme": "url"
+            }
+          ],
+          "version": "ThirdTestTag",
+          "resource_type": {
+            "title": "Software",
+            "type": "software"
+          },
+          "license": {
+            "id": "cc-by-4.0"
+          },
+          "relations": {
+            "version": [
+              {
+                "index": 2,
+                "is_last": false,
+                "parent": {
+                  "pid_type": "recid",
+                  "pid_value": "11094520"
+                }
+              }
+            ]
+          }
+        },
+        "title": "dockstore-testing/workflow-dockstore-yml: ThirdTestTag",
+        "links": {
+          "self": "https://zenodo.org/api/records/11095575",
+          "self_html": "https://zenodo.org/records/11095575",
+          "self_doi": "https://zenodo.org/doi/10.5281/zenodo.11095575",
+          "doi": "https://doi.org/10.5281/zenodo.11095575",
+          "parent": "https://zenodo.org/api/records/11094520",
+          "parent_html": "https://zenodo.org/records/11094520",
+          "parent_doi": "https://zenodo.org/doi/10.5281/zenodo.11094520",
+          "self_iiif_manifest": "https://zenodo.org/api/iiif/record:11095575/manifest",
+          "self_iiif_sequence": "https://zenodo.org/api/iiif/record:11095575/sequence/default",
+          "files": "https://zenodo.org/api/records/11095575/files",
+          "media_files": "https://zenodo.org/api/records/11095575/media-files",
+          "archive": "https://zenodo.org/api/records/11095575/files-archive",
+          "archive_media": "https://zenodo.org/api/records/11095575/media-files-archive",
+          "latest": "https://zenodo.org/api/records/11095575/versions/latest",
+          "latest_html": "https://zenodo.org/records/11095575/latest",
+          "draft": "https://zenodo.org/api/records/11095575/draft",
+          "versions": "https://zenodo.org/api/records/11095575/versions",
+          "access_links": "https://zenodo.org/api/records/11095575/access/links",
+          "access_grants": "https://zenodo.org/api/records/11095575/access/grants",
+          "access_users": "https://zenodo.org/api/records/11095575/access/users",
+          "access_request": "https://zenodo.org/api/records/11095575/access/request",
+          "access": "https://zenodo.org/api/records/11095575/access",
+          "reserve_doi": "https://zenodo.org/api/records/11095575/draft/pids/doi",
+          "communities": "https://zenodo.org/api/records/11095575/communities",
+          "communities-suggestions": "https://zenodo.org/api/records/11095575/communities-suggestions",
+          "requests": "https://zenodo.org/api/records/11095575/requests"
+        },
+        "updated": "2024-05-01T00:20:40.835635+00:00",
+        "recid": "11095575",
+        "revision": 4,
+        "files": [
+          {
+            "id": "9b2c20f0-fb6e-4bf2-82f6-00fe542373c0",
+            "key": "dockstore-testing/workflow-dockstore-yml-ThirdTestTag.zip",
+            "size": 7356945,
+            "checksum": "md5:75a09c51a5f4dff266ab4dc0010d1c61",
+            "links": {
+              "self": "https://zenodo.org/api/records/11095575/files/dockstore-testing/workflow-dockstore-yml-ThirdTestTag.zip/content"
+            }
+          }
+        ],
+        "owners": [
+          {
+            "id": "67314"
+          }
+        ],
+        "status": "published",
+        "stats": {
+          "downloads": 5,
+          "unique_downloads": 5,
+          "views": 59,
+          "unique_views": 56,
+          "version_downloads": 2,
+          "version_unique_downloads": 2,
+          "version_unique_views": 11,
+          "version_views": 11
+        },
+        "state": "done",
+        "submitted": true
+      },
+      {
+        "created": "2024-04-30T23:51:20.623813+00:00",
+        "modified": "2024-04-30T23:51:20.775841+00:00",
+        "id": 11095507,
+        "conceptrecid": "11094520",
+        "doi": "10.5281/zenodo.11095507",
+        "conceptdoi": "10.5281/zenodo.11094520",
+        "doi_url": "https://doi.org/10.5281/zenodo.11095507",
+        "metadata": {
+          "title": "dockstore-testing/workflow-dockstore-yml: SecondTestTag",
+          "doi": "10.5281/zenodo.11095507",
+          "publication_date": "2024-04-30",
+          "description": "A web application to view and share Common Workflow Language workflows",
+          "access_right": "open",
+          "creators": [
+            {
+              "name": "Mark Robinson",
+              "affiliation": "@aws"
+            },
+            {
+              "name": "Stian Soiland-Reyes",
+              "affiliation": "eScience lab, University of Manchester"
+            },
+            {
+              "name": "Michael R. Crusoe",
+              "affiliation": "@common-workflow-language"
+            }
+          ],
+          "related_identifiers": [
+            {
+              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/SecondTestTag",
+              "relation": "isSupplementTo",
+              "resource_type": "software",
+              "scheme": "url"
+            }
+          ],
+          "version": "SecondTestTag",
+          "resource_type": {
+            "title": "Software",
+            "type": "software"
+          },
+          "license": {
+            "id": "cc-by-4.0"
+          },
+          "relations": {
+            "version": [
+              {
+                "index": 1,
+                "is_last": false,
+                "parent": {
+                  "pid_type": "recid",
+                  "pid_value": "11094520"
+                }
+              }
+            ]
+          }
+        },
+        "title": "dockstore-testing/workflow-dockstore-yml: SecondTestTag",
+        "links": {
+          "self": "https://zenodo.org/api/records/11095507",
+          "self_html": "https://zenodo.org/records/11095507",
+          "self_doi": "https://zenodo.org/doi/10.5281/zenodo.11095507",
+          "doi": "https://doi.org/10.5281/zenodo.11095507",
+          "parent": "https://zenodo.org/api/records/11094520",
+          "parent_html": "https://zenodo.org/records/11094520",
+          "parent_doi": "https://zenodo.org/doi/10.5281/zenodo.11094520",
+          "self_iiif_manifest": "https://zenodo.org/api/iiif/record:11095507/manifest",
+          "self_iiif_sequence": "https://zenodo.org/api/iiif/record:11095507/sequence/default",
+          "files": "https://zenodo.org/api/records/11095507/files",
+          "media_files": "https://zenodo.org/api/records/11095507/media-files",
+          "archive": "https://zenodo.org/api/records/11095507/files-archive",
+          "archive_media": "https://zenodo.org/api/records/11095507/media-files-archive",
+          "latest": "https://zenodo.org/api/records/11095507/versions/latest",
+          "latest_html": "https://zenodo.org/records/11095507/latest",
+          "draft": "https://zenodo.org/api/records/11095507/draft",
+          "versions": "https://zenodo.org/api/records/11095507/versions",
+          "access_links": "https://zenodo.org/api/records/11095507/access/links",
+          "access_grants": "https://zenodo.org/api/records/11095507/access/grants",
+          "access_users": "https://zenodo.org/api/records/11095507/access/users",
+          "access_request": "https://zenodo.org/api/records/11095507/access/request",
+          "access": "https://zenodo.org/api/records/11095507/access",
+          "reserve_doi": "https://zenodo.org/api/records/11095507/draft/pids/doi",
+          "communities": "https://zenodo.org/api/records/11095507/communities",
+          "communities-suggestions": "https://zenodo.org/api/records/11095507/communities-suggestions",
+          "requests": "https://zenodo.org/api/records/11095507/requests"
+        },
+        "updated": "2024-04-30T23:51:20.775841+00:00",
+        "recid": "11095507",
+        "revision": 4,
+        "files": [
+          {
+            "id": "d29287c5-7097-47ab-88bc-fb9b48479e0b",
+            "key": "dockstore-testing/workflow-dockstore-yml-SecondTestTag.zip",
+            "size": 7363521,
+            "checksum": "md5:c77f171d1f9425ecfdc493355e3d8178",
+            "links": {
+              "self": "https://zenodo.org/api/records/11095507/files/dockstore-testing/workflow-dockstore-yml-SecondTestTag.zip/content"
+            }
+          }
+        ],
+        "owners": [
+          {
+            "id": "67314"
+          }
+        ],
+        "status": "published",
+        "stats": {
+          "downloads": 5,
+          "unique_downloads": 5,
+          "views": 59,
+          "unique_views": 56,
+          "version_downloads": 0,
+          "version_unique_downloads": 0,
+          "version_unique_views": 6,
+          "version_views": 8
+        },
+        "state": "done",
+        "submitted": true
+      },
+      {
+        "created": "2024-04-30T17:46:11.529743+00:00",
+        "modified": "2024-04-30T17:46:11.744676+00:00",
+        "id": 11094521,
+        "conceptrecid": "11094520",
+        "doi": "10.5281/zenodo.11094521",
+        "conceptdoi": "10.5281/zenodo.11094520",
+        "doi_url": "https://doi.org/10.5281/zenodo.11094521",
+        "metadata": {
+          "title": "dockstore-testing/workflow-dockstore-yml: testtag",
+          "doi": "10.5281/zenodo.11094521",
+          "publication_date": "2024-04-30",
+          "description": "A web application to view and share Common Workflow Language workflows",
+          "access_right": "open",
+          "creators": [
+            {
+              "name": "Mark Robinson",
+              "affiliation": "@aws"
+            },
+            {
+              "name": "Stian Soiland-Reyes",
+              "affiliation": "eScience lab, University of Manchester"
+            },
+            {
+              "name": "Michael R. Crusoe",
+              "affiliation": "@common-workflow-language"
+            }
+          ],
+          "related_identifiers": [
+            {
+              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/testtag",
+              "relation": "isSupplementTo",
+              "resource_type": "software",
+              "scheme": "url"
+            }
+          ],
+          "version": "testtag",
+          "resource_type": {
+            "title": "Software",
+            "type": "software"
+          },
+          "license": {
+            "id": "cc-by-4.0"
+          },
+          "relations": {
+            "version": [
+              {
+                "index": 0,
+                "is_last": false,
+                "parent": {
+                  "pid_type": "recid",
+                  "pid_value": "11094520"
+                }
+              }
+            ]
+          }
+        },
+        "title": "dockstore-testing/workflow-dockstore-yml: testtag",
+        "links": {
+          "self": "https://zenodo.org/api/records/11094521",
+          "self_html": "https://zenodo.org/records/11094521",
+          "self_doi": "https://zenodo.org/doi/10.5281/zenodo.11094521",
+          "doi": "https://doi.org/10.5281/zenodo.11094521",
+          "parent": "https://zenodo.org/api/records/11094520",
+          "parent_html": "https://zenodo.org/records/11094520",
+          "parent_doi": "https://zenodo.org/doi/10.5281/zenodo.11094520",
+          "self_iiif_manifest": "https://zenodo.org/api/iiif/record:11094521/manifest",
+          "self_iiif_sequence": "https://zenodo.org/api/iiif/record:11094521/sequence/default",
+          "files": "https://zenodo.org/api/records/11094521/files",
+          "media_files": "https://zenodo.org/api/records/11094521/media-files",
+          "archive": "https://zenodo.org/api/records/11094521/files-archive",
+          "archive_media": "https://zenodo.org/api/records/11094521/media-files-archive",
+          "latest": "https://zenodo.org/api/records/11094521/versions/latest",
+          "latest_html": "https://zenodo.org/records/11094521/latest",
+          "draft": "https://zenodo.org/api/records/11094521/draft",
+          "versions": "https://zenodo.org/api/records/11094521/versions",
+          "access_links": "https://zenodo.org/api/records/11094521/access/links",
+          "access_grants": "https://zenodo.org/api/records/11094521/access/grants",
+          "access_users": "https://zenodo.org/api/records/11094521/access/users",
+          "access_request": "https://zenodo.org/api/records/11094521/access/request",
+          "access": "https://zenodo.org/api/records/11094521/access",
+          "reserve_doi": "https://zenodo.org/api/records/11094521/draft/pids/doi",
+          "communities": "https://zenodo.org/api/records/11094521/communities",
+          "communities-suggestions": "https://zenodo.org/api/records/11094521/communities-suggestions",
+          "requests": "https://zenodo.org/api/records/11094521/requests"
+        },
+        "updated": "2024-04-30T17:46:11.744676+00:00",
+        "recid": "11094521",
+        "revision": 4,
+        "files": [
+          {
+            "id": "5e5e150d-9db1-4653-a2d1-60063abe3bbe",
+            "key": "dockstore-testing/workflow-dockstore-yml-testtag.zip",
+            "size": 7363521,
+            "checksum": "md5:c77f171d1f9425ecfdc493355e3d8178",
+            "links": {
+              "self": "https://zenodo.org/api/records/11094521/files/dockstore-testing/workflow-dockstore-yml-testtag.zip/content"
+            }
+          }
+        ],
+        "owners": [
+          {
+            "id": "67314"
+          }
+        ],
+        "status": "published",
+        "stats": {
+          "downloads": 5,
+          "unique_downloads": 5,
+          "views": 59,
+          "unique_views": 56,
+          "version_downloads": 1,
+          "version_unique_downloads": 1,
+          "version_unique_views": 18,
+          "version_views": 18
+        },
+        "state": "done",
+        "submitted": true
+      }
+    ],
+    "total": 4
+  },
+  "links": {
+    "self": "https://zenodo.org/api/records/11099749/versions?allversions=True&page=1&size=5&sort=version"
+  }
+}

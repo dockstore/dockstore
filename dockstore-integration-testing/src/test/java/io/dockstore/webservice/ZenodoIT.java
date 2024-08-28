@@ -22,6 +22,7 @@ import static io.dockstore.client.cli.BaseIT.getAnonymousOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWorkflowVersion;
+import static io.dockstore.common.Hoverfly.ZENODO_DOI_SEARCH;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_URL;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
@@ -406,5 +407,23 @@ class ZenodoIT {
         exception = assertThrows(ApiException.class, () -> workflowsApi.getDOIEditLink(workflowId));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
         assertTrue(exception.getMessage().contains(ACCESS_LINK_DOESNT_EXIST));
+    }
+
+    @Test
+    void testGitHubZenodoDoiDiscovery(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().setDockstoreZenodoAccessToken(null);
+        hoverfly.simulate(ZENODO_DOI_SEARCH);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+
+        final List<Workflow> workflows = workflowsApi.getAllWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML);
+        workflows.forEach(workflow -> workflowsApi.publish1(workflow.getId(), new PublishRequest().publish(true)));
+        workflowsApi.updateDois(null);
+
+        final List<Workflow> updatedWorkflows = workflowsApi.getAllWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML);
+        updatedWorkflows.forEach(workflow -> assertNotNull(workflow.getConceptDois().get(DoiInitiator.GITHUB)));
+
     }
 }

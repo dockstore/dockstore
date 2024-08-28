@@ -3052,31 +3052,6 @@ paths:
       - BEARER: []
       tags:
       - curation
-  /entries/updateDois:
-    post:
-      description: "Searches Zenodo for DOIs referencing GitHub repos, and updates\
-        \ Dockstore entries with them"
-      operationId: updateDois
-      parameters:
-      - description: "Optional GitHub full repository name, e.g., myorg/myrepo, to\
-          \ only update entries for that repository"
-        in: query
-        name: filter
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - entries
   /entries/updateLanguageVersions:
     post:
       description: Update language versions
@@ -7626,6 +7601,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SharedWorkflows'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/updateDois:
+    post:
+      description: "Searches Zenodo for DOIs referencing GitHub repos, and updates\
+        \ Dockstore entries with them"
+      operationId: updateDois
+      parameters:
+      - description: "Optional GitHub full repository name, e.g., myorg/myrepo, to\
+          \ only update entries for that repository"
+        in: query
+        name: filter
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []

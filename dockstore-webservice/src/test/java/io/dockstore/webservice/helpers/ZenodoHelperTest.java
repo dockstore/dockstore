@@ -215,6 +215,7 @@ class ZenodoHelperTest {
         assertEquals("1.16", ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/tree/1.16").get());
     }
 
+
     private DockstoreWebserviceConfiguration createDockstoreConfiguration() {
         final DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.getExternalConfig().setBasePath("/api/");

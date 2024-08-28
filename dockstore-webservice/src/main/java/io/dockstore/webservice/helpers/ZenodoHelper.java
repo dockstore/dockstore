@@ -86,11 +86,6 @@ public final class ZenodoHelper {
     public static final String NO_DOCKSTORE_DOI = "The entry does not have DOIs created by Dockstore's Zenodo account.";
     public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
     public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
-    /**
-     * The Zenodo API has a rate limit of 133 requests per minute, authorized and unauthorized. Pausing every half second will allow
-     * 120 requests per minute, not including request/response times.
-     */
-    public static final long THROTTLE_FOR_RATE_LIMIT = 500;
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")

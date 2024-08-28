@@ -42,6 +42,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
@@ -131,6 +132,7 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -143,6 +145,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
@@ -2294,5 +2297,93 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         return orcidAuthorInfo;
     }
+
+    /**
+     * Scans Zenodo for DOIs issued against GitHub repos with registered workflows in Dockstore, updating the Dockstore workflows
+     * with those DOIs.
+     *
+     * @param user
+     * @param filter - optional filter to scope to a single GitHub repository in the format myorg/myrepo
+     * @return
+     */
+    @POST
+    @RolesAllowed({"admin", "curator"})
+    @Path("/updateDois")
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "updateDois", description = "Searches Zenodo for DOIs referencing GitHub repos, and updates Dockstore entries with them", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> updateDois(@Parameter(hidden = true) @Auth User user,
+            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository") @QueryParam("filter") String filter) {
+        final List<Workflow> publishedWorkflows = getPublishedGitHubWorkflows(filter);
+
+        // Get a map of GitHub repos to Dockstore workflows
+        final Map<String, List<Workflow>> repoToWorkflowsMap = publishedWorkflows.stream()
+                .filter(w -> w.getSourceControl() == SourceControl.GITHUB)
+                .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
+
+        final List<ZenodoHelper.GitHubRepoDois> gitHubRepoDois = repoToWorkflowsMap.keySet().stream().sorted()
+                .map(ZenodoHelper::findDoisForGitHubRepo)
+                .flatMap(Collection::stream)
+                .toList();
+
+        final Set<Workflow> updatedWorkflows = new HashSet<>();
+        gitHubRepoDois.stream().forEach(gitHubRepoDoi -> {
+            final String repo = gitHubRepoDoi.repo();
+            final String conceptDoi = gitHubRepoDoi.conceptDoi();
+            final List<Workflow> workflows = repoToWorkflowsMap.get(repo);
+            workflows.stream().forEach(workflow -> {
+                final Doi existingGitHubDoi = workflow.getConceptDois().get(Doi.DoiInitiator.GITHUB);
+                if (existingGitHubDoi != null && conceptDoi.equals(existingGitHubDoi.getName())) {
+                    LOG.warn("Skipping DOI %s for workflow %s because it already has a Zenodo DOI from GitHub".formatted(conceptDoi, workflow.getWorkflowPath()));
+                } else {
+                    final boolean noDoiToStart = workflow.getConceptDois().isEmpty();
+                    if (existingGitHubDoi == null) { // No Concept DOI yet, add it.
+                        workflow.getConceptDois().put(Doi.DoiInitiator.GITHUB,
+                                ZenodoHelper.getDoiFromDatabase(Doi.DoiType.CONCEPT, Doi.DoiInitiator.GITHUB, conceptDoi));
+                        updatedWorkflows.add(workflow);
+                    }
+                    // Add version DOI(s) to new or existing Concept DOI.
+                    gitHubRepoDoi.tagAndDoi().stream().forEach(tagAndDoi -> {
+                        final WorkflowVersion workflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(
+                                workflow.getId(), tagAndDoi.gitHubTag());
+                        if (workflowVersion != null) {
+                            if (workflowVersion.getDois().get(Doi.DoiInitiator.GITHUB) == null) {
+                                final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
+                                        tagAndDoi.doi());
+                                workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
+                                updatedWorkflows.add(workflow);
+                            }
+                        }
+                    });
+                    if (noDoiToStart) {
+                        // The default DOI selection is USER. If there was no DOI to begin with, set it to GITHUB so it will show up in the UI.
+                        workflow.setDoiSelection(Doi.DoiInitiator.GITHUB);
+                    }
+                }
+            });
+        });
+        return updatedWorkflows.stream().toList();
+    }
+
+    /**
+     * Returns a list of published GitHub workflows. If <code>optionalFilter</code> is set, then only returns workflows for that GitHub
+     * organization and repository. Throws a CustomWebApplicationException if <code>optionalFilter</code> is set, and its format is not
+     * <code>[organization]/[repository]</code>.
+     * @param optionalFilter a filter in the format "organization/repository", or null/empty
+     * @return
+     */
+    private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter) {
+        if (StringUtils.isNotBlank(optionalFilter)) {
+            final String[] split = optionalFilter.split("/");
+            if (split.length != 2) {
+                throw new CustomWebApplicationException("Filter '%s' must be of the format org/repo".formatted(optionalFilter), HttpStatus.SC_BAD_REQUEST);
+            }
+            final String org = split[0];
+            final String repository = split[1];
+            return workflowDAO.findByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
+        }
+        return workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+    }
+
 
 }

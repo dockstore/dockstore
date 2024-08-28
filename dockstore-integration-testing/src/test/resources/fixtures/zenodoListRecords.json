@@ -1,0 +1,171 @@
+{
+  "hits": {
+    "hits": [
+      {
+        "created": "2024-05-01T19:59:44.480803+00:00",
+        "modified": "2024-05-01T19:59:44.638646+00:00",
+        "id": 11099749,
+        "conceptrecid": "11094520",
+        "doi": "10.5281/zenodo.11099749",
+        "conceptdoi": "10.5281/zenodo.11094520",
+        "doi_url": "https://doi.org/10.5281/zenodo.11099749",
+        "metadata": {
+          "title": "dockstore-testing/workflow-dockstore-yml: Fourth Test Tag",
+          "doi": "10.5281/zenodo.11099749",
+          "publication_date": "2024-05-01",
+          "description": "<p>A description of the 4th test tag.</p>",
+          "access_right": "open",
+          "creators": [
+            {
+              "name": "Mark Robinson",
+              "affiliation": "@aws"
+            },
+            {
+              "name": "Stian Soiland-Reyes",
+              "affiliation": "eScience lab, University of Manchester"
+            },
+            {
+              "name": "Michael R. Crusoe",
+              "affiliation": "@common-workflow-language"
+            }
+          ],
+          "related_identifiers": [
+            {
+              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/FourthTestTag",
+              "relation": "isSupplementTo",
+              "resource_type": "software",
+              "scheme": "url"
+            }
+          ],
+          "version": "FourthTestTag",
+          "resource_type": {
+            "title": "Software",
+            "type": "software"
+          },
+          "license": {
+            "id": "cc-by-4.0"
+          },
+          "relations": {
+            "version": [
+              {
+                "index": 3,
+                "is_last": true,
+                "parent": {
+                  "pid_type": "recid",
+                  "pid_value": "11094520"
+                }
+              }
+            ]
+          }
+        },
+        "title": "dockstore-testing/workflow-dockstore-yml: Fourth Test Tag",
+        "links": {
+          "self": "https://zenodo.org/api/records/11099749",
+          "self_html": "https://zenodo.org/records/11099749",
+          "self_doi": "https://zenodo.org/doi/10.5281/zenodo.11099749",
+          "doi": "https://doi.org/10.5281/zenodo.11099749",
+          "parent": "https://zenodo.org/api/records/11094520",
+          "parent_html": "https://zenodo.org/records/11094520",
+          "parent_doi": "https://zenodo.org/doi/10.5281/zenodo.11094520",
+          "self_iiif_manifest": "https://zenodo.org/api/iiif/record:11099749/manifest",
+          "self_iiif_sequence": "https://zenodo.org/api/iiif/record:11099749/sequence/default",
+          "files": "https://zenodo.org/api/records/11099749/files",
+          "media_files": "https://zenodo.org/api/records/11099749/media-files",
+          "archive": "https://zenodo.org/api/records/11099749/files-archive",
+          "archive_media": "https://zenodo.org/api/records/11099749/media-files-archive",
+          "latest": "https://zenodo.org/api/records/11099749/versions/latest",
+          "latest_html": "https://zenodo.org/records/11099749/latest",
+          "draft": "https://zenodo.org/api/records/11099749/draft",
+          "versions": "https://zenodo.org/api/records/11099749/versions",
+          "access_links": "https://zenodo.org/api/records/11099749/access/links",
+          "access_grants": "https://zenodo.org/api/records/11099749/access/grants",
+          "access_users": "https://zenodo.org/api/records/11099749/access/users",
+          "access_request": "https://zenodo.org/api/records/11099749/access/request",
+          "access": "https://zenodo.org/api/records/11099749/access",
+          "reserve_doi": "https://zenodo.org/api/records/11099749/draft/pids/doi",
+          "communities": "https://zenodo.org/api/records/11099749/communities",
+          "communities-suggestions": "https://zenodo.org/api/records/11099749/communities-suggestions",
+          "requests": "https://zenodo.org/api/records/11099749/requests"
+        },
+        "updated": "2024-05-01T19:59:44.638646+00:00",
+        "recid": "11099749",
+        "revision": 4,
+        "files": [
+          {
+            "id": "a6d6c113-18c8-4e89-9211-42ff3acb2a22",
+            "key": "dockstore-testing/workflow-dockstore-yml-FourthTestTag.zip",
+            "size": 7363521,
+            "checksum": "md5:c77f171d1f9425ecfdc493355e3d8178",
+            "links": {
+              "self": "https://zenodo.org/api/records/11099749/files/dockstore-testing/workflow-dockstore-yml-FourthTestTag.zip/content"
+            }
+          }
+        ],
+        "owners": [
+          {
+            "id": "67314"
+          }
+        ],
+        "status": "published",
+        "stats": {
+          "downloads": 5,
+          "unique_downloads": 5,
+          "views": 59,
+          "unique_views": 56,
+          "version_downloads": 2,
+          "version_unique_downloads": 2,
+          "version_unique_views": 21,
+          "version_views": 22
+        },
+        "state": "done",
+        "submitted": true
+      }
+    ],
+    "total": 1
+  },
+  "aggregations": {
+    "access_status": {
+      "buckets": [
+        {
+          "key": "open",
+          "doc_count": 1,
+          "label": "Open",
+          "is_selected": false
+        }
+      ],
+      "label": "Access status"
+    },
+    "resource_type": {
+      "buckets": [
+        {
+          "key": "software",
+          "doc_count": 1,
+          "label": "Software",
+          "is_selected": false,
+          "inner": {
+            "buckets": []
+          }
+        }
+      ],
+      "label": "Resource types"
+    },
+    "subject": {
+      "buckets": [],
+      "label": "Subjects"
+    },
+    "file_type": {
+      "buckets": [
+        {
+          "key": "zip",
+          "doc_count": 1,
+          "label": "ZIP",
+          "is_selected": false
+        }
+      ],
+      "label": "File type"
+    }
+  },
+  "links": {
+    "self": "https://zenodo.org/api/records?page=1&q=%22dockstore-testing%2Fworkflow-dockstore-yml%22&size=100&sort=bestmatch"
+  }
+}
