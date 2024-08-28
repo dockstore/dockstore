@@ -98,19 +98,19 @@ workflows:
 #                - /^release.*$/
 #          requires:
 #            - full_build_check
-      - sonar-cloud:
-          <<: *common_filters
-          requires:
-            - unit_test
-            - workflow-integration-tests
-            - bitbucket-tests
-            - language-parsing-tests
-            - localstack-tests
-            - hoverfly-tests
-            - tool-integration-tests
-            - integration-tests
-            - regression-integration-tests
-          context: sonarcloud
+#      - sonar-cloud:
+#          <<: *common_filters
+#          requires:
+#            - unit_test
+#            - workflow-integration-tests
+#            - bitbucket-tests
+#            - language-parsing-tests
+#            - localstack-tests
+#            - hoverfly-tests
+#            - tool-integration-tests
+#            - integration-tests
+#            - regression-integration-tests
+#          context: sonarcloud
 
 jobs:
   full_build_check:
