@@ -3058,9 +3058,10 @@ paths:
         \ Dockstore entries with them"
       operationId: updateDois
       parameters:
-      - description: "Optional GitHub full repository name, e.g., myorg/myrepo"
+      - description: "Optional GitHub full repository name, e.g., myorg/myrepo, to\
+          \ only update entries for that repository"
         in: query
-        name: orgRepo
+        name: filter
         schema:
           type: string
       responses:
@@ -3070,7 +3071,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/GitHubRepoDois'
+                  $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -9986,17 +9987,6 @@ components:
           type: string
         url:
           type: string
-    GitHubRepoDois:
-      type: object
-      properties:
-        conceptDoi:
-          type: string
-        repo:
-          type: string
-        tagAndDoi:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagAndDoi'
     HealthCheckResult:
       type: object
       properties:
@@ -11173,13 +11163,6 @@ components:
       required:
       - name
       - reference
-    TagAndDoi:
-      type: object
-      properties:
-        doi:
-          type: string
-        gitHubTag:
-          type: string
     TaskExecutions:
       type: object
       allOf:

@@ -386,27 +386,25 @@ public final class ZenodoHelper {
      *
      * <ol>
      *     <li>Make a request to <code>https://zenodo.org/api/records?q=[urlencoded gitHubRepo]</code></li>
-     *     <li>Look in the response for hits.hits[].metadata.relatedIdentifiers[] for an identifier that contains <code>gitHubrepo</code></li>
-     *     <li>If there's a match, we get the DOI for the most recent version and use it in the next step</li>
-     *     <li>If there's a match, we send another request to <code>https://zenodo.org/api/records/[DOI ID from  previous step]/versions</code> to get all the DOIs </li>
+     *     <li>Look in the response for hits.hits[].metadata.relatedIdentifiers[] for an identifier that is <code>https://github.com/[org]/[repo]/tree/[tag]</code></li>
+     *     <li>If there is no match, we're done. If there's a match, we have the most recent DOI version against the repo and use in the next step</li>
+     *     <li>Then send another request to <code>https://zenodo.org/api/records/[DOI ID from  previous step]/versions</code> to get all the
+     *     DOIs associated with that DOI</li>
      * </ol>
      *
      * @param gitHubRepo the github repo in org/repo form, e.g., dockstore/dockstore-cli
      * @return
      */
     public static List<GitHubRepoDois> findDoisForGitHubRepo(String gitHubRepo) {
-        // Here's a sample identifier that we look for: https://github.com/coverbeck/cwlviewer/tree/ThirdTestTag
-        final ApiClient zenodoClient = createZenodoClient(null);
+        final ApiClient zenodoClient = createDockstoreZenodoClient();
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         final String query = URLEncoder.encode('"' + gitHubRepo + '"');
-        final int pageSize = 100; // Arbitrary
+        final int pageSize = 100; // Arbitrary, seems like a safe guess.
         final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
-        throttleZenodoRequests();
         final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
         return dois.stream()
                 .map(conceptAndDoi -> {
                     final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
-                    throttleZenodoRequests();
                     final List<TagAndDoi> taggedVersions = findTaggedVersions(recordVersions.getHits().getHits(), gitHubRepo);
                     return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
                 })
@@ -422,7 +420,7 @@ public final class ZenodoHelper {
      */
     static List<ConceptAndDoi> findGitHubIntegrationDois(List<Hit> hits, String gitHubRepo) {
         return hits.stream()
-                .filter(hit -> Objects.nonNull(hit.getMetadata()))
+                .filter(hit -> Objects.nonNull(hit.getMetadata()) && Objects.nonNull(hit.getMetadata().getRelatedIdentifiers()))
                 .filter(hit ->
                     hit.getMetadata().getRelatedIdentifiers().stream()
                             .anyMatch(relatedIdentifier -> tagFromRelatedIdentifier(gitHubRepo, relatedIdentifier.getIdentifier()).isPresent()))
@@ -431,49 +429,34 @@ public final class ZenodoHelper {
     }
 
     /**
-     * Finds a list of GitHub tags with their associated DOIs
+     * Returns a list of GitHub tags with their associated DOIs from a Zenodo ElasticSearch response
      * @param hits
      * @param gitHubRepo
      * @return
      */
     static List<TagAndDoi> findTaggedVersions(List<Hit> hits, String gitHubRepo) {
-        return hits.stream().map(hit -> {
-            final String doi = hit.getDoi();
-            final Optional<String> maybeTag = hit.getMetadata().getRelatedIdentifiers().stream().map(relatedIdentifier -> {
-                final String identifier = relatedIdentifier.getIdentifier();
-                return tagFromRelatedIdentifier(gitHubRepo, identifier);
-            }).filter(Optional::isPresent).map(Optional::get).findFirst();
-            return maybeTag.map(tag -> new TagAndDoi(tag, doi)).orElse(null);
-        }).filter(Objects::nonNull).toList();
+        return hits.stream()
+                .filter(hit -> Objects.nonNull(hit.getMetadata()) && Objects.nonNull(hit.getMetadata().getRelatedIdentifiers()))
+                .map(hit -> {
+                    final String doi = hit.getDoi();
+                    final Optional<String> maybeTag = hit.getMetadata().getRelatedIdentifiers().stream()
+                            .map(relatedIdentifier -> tagFromRelatedIdentifier(gitHubRepo, relatedIdentifier.getIdentifier()))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .findFirst(); // We only support 1 DOI per initiator
+                    return maybeTag.map(tag -> new TagAndDoi(tag, doi)).orElse(null);
+                }).filter(Objects::nonNull).toList();
     }
 
-    public static Optional<String> tagFromRelatedIdentifier(String gitHubRepo, String ri) {
+    static Optional<String> tagFromRelatedIdentifier(String gitHubRepo, String ri) {
         final Pattern pattern = Pattern.compile("^https://github.com/%s/tree/(\\S*)$".formatted(gitHubRepo));
         final Matcher matcher = pattern.matcher(ri);
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
-    public static SearchResult getRecordVersions(ApiClient zenodoClient, String doi) {
+    static SearchResult getRecordVersions(ApiClient zenodoClient, String doi) {
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         return previewApi.getRecordVersions(idFromZenodoDoi(doi));
-    }
-
-    public static void throttleZenodoRequests() {
-        try {
-            Thread.sleep(ZenodoHelper.THROTTLE_FOR_RATE_LIMIT);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-
-    public static ApiClient createApiClient(String basePath) {
-        ApiClient zenodoClient = new ApiClient();
-        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoUrlApi = basePath + "/api";
-        zenodoClient.setBasePath(zenodoUrlApi);
-        return zenodoClient;
     }
 
     /**

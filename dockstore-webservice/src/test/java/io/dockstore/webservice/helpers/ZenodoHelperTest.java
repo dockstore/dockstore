@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -204,6 +205,14 @@ class ZenodoHelperTest {
                 new TagAndDoi("SecondTestTag", "10.5281/zenodo.11095507"),
                 new TagAndDoi("testtag", "10.5281/zenodo.11094521"));
         assertEquals(expected, taggedVersions);
+    }
+
+    @Test
+    void testTagFromRelatedIdentifier() {
+        assertEquals(Optional.empty(), ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/mytag"));
+        assertEquals(Optional.empty(), ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "nonsense-icalstring"));
+        assertEquals("mytag", ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/tree/mytag").get());
+        assertEquals("1.16", ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/tree/1.16").get());
     }
 
     private DockstoreWebserviceConfiguration createDockstoreConfiguration() {
