@@ -52,7 +52,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -138,7 +137,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
-    private final WorkflowVersionDAO workflowVersionDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
@@ -151,7 +149,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
-    private final String zenodoUrl;
 
     private IntFunction<List<Workflow>> getWorkflows = offset -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
 
@@ -221,7 +218,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, EventDAO eventDAO, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
-        WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO, DockstoreWebserviceConfiguration configuration) {
+        WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
         this.eventDAO = eventDAO;
@@ -231,7 +228,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
-        this.workflowVersionDAO = workflowVersionDAO;
         this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -248,7 +244,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         hostName = configuration.getExternalConfig().getHostname();
         isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
-        zenodoUrl = configuration.getZenodoUrl();
     }
 
     @GET
@@ -727,6 +722,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return sourceFile.getPath().equals(path);
     }
 
+
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
      * @param id entry id
@@ -821,14 +817,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 
-    io.swagger.zenodo.client.ApiClient createZenodoClient() {
-        io.swagger.zenodo.client.ApiClient zenodoClient = new io.swagger.zenodo.client.ApiClient();
-        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoUrlApi = zenodoUrl + "/api";
-        zenodoClient.setBasePath(zenodoUrlApi);
-        return zenodoClient;
-    }
-
     /**
      * Need this class because the values need to be accessed from a lambda, and a lambda can
      * only access "effectively final" variables from outside the lambda.
@@ -839,8 +827,5 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         private int processedEntries = 0;
         private boolean done = false;
     }
-
-    public record RepoDoi(String repo, List<String> dois) {}
-
 
 }
