@@ -242,14 +242,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "The aggregated metrics for executions of this version, grouped by platform", position = 26)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
-    @Column()
-    @Schema(description = "The timestamp of the last metrics submission", type = "integer", format = "int64")
-    private Timestamp latestMetricsSubmissionDate;
-
-    @Column()
-    @Schema(description = "The timestamp of the last metrics aggregation", type = "integer", format = "int64")
-    private Timestamp latestMetricsAggregationDate;
-
     @Column(columnDefinition = "varchar")
     @Convert(converter = UserFilesConverter.class)
     @ApiModelProperty(value = "The user-specified files for the version.")
@@ -679,22 +671,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
         this.metricsByPlatform = metricsByPlatform;
-    }
-
-    public Timestamp getLatestMetricsSubmissionDate() {
-        return latestMetricsSubmissionDate;
-    }
-
-    public void setLatestMetricsSubmissionDate(Timestamp latestMetricsSubmissionDate) {
-        this.latestMetricsSubmissionDate = latestMetricsSubmissionDate;
-    }
-
-    public Timestamp getLatestMetricsAggregationDate() {
-        return latestMetricsAggregationDate;
-    }
-
-    public void setLatestMetricsAggregationDate(Timestamp latestMetricsAggregationDate) {
-        this.latestMetricsAggregationDate = latestMetricsAggregationDate;
     }
 
     public List<String> getUserFiles() {

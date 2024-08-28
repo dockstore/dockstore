@@ -46,7 +46,7 @@ import jakarta.persistence.Table;
             + "GROUP BY w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntryLiteVersionsToAggregate", query =
         "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteWorkflow(e.sourceControl, e.organization, e.repository, e.workflowName), v.name) "
-            + "FROM BioWorkflow e, Version v where e.id = v.parent.id and (v.latestMetricsSubmissionDate > v.latestMetricsAggregationDate or (v.latestMetricsSubmissionDate is not null and v.latestMetricsAggregationDate is null))"),
+            + "FROM BioWorkflow e, Version v where e.id = v.parent.id and (v.versionMetadata.latestMetricsSubmissionDate > v.versionMetadata.latestMetricsAggregationDate or (v.versionMetadata.latestMetricsSubmissionDate is not null and v.versionMetadata.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntriesByUserId", query = "SELECT w FROM BioWorkflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getPublishedEntriesByUserId", query = "SELECT w FROM BioWorkflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 

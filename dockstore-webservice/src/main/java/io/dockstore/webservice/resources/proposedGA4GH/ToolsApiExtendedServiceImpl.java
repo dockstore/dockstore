@@ -529,7 +529,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
-            version.get().setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
+            version.get().getVersionMetadata().setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
             return Response.noContent().build();
         } catch (JsonProcessingException | AwsServiceException | SdkClientException e) {
             LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
@@ -566,7 +566,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
         version.getMetricsByPlatform().clear();
         version.getMetricsByPlatform().putAll(aggregatedMetrics);
-        version.setLatestMetricsAggregationDate(Timestamp.from(Instant.now()));
+        version.getVersionMetadata().setLatestMetricsAggregationDate(Timestamp.from(Instant.now()));
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
         return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
@@ -674,7 +674,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
 
         if (executionsResponseBody.getExecutionResponses().stream().anyMatch(executionResponse -> executionResponse.getStatus() == HttpStatus.SC_OK)) {
-            version.setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
+            version.getVersionMetadata().setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
         }
 
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();

@@ -39,7 +39,7 @@ import jakarta.persistence.Transient;
             + "GROUP BY n.sourceControl, n.organization, n.repository, n.workflowName, n.dbUpdateDate"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.getEntryLiteVersionsToAggregate", query =
         "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteNotebook(e.sourceControl, e.organization, e.repository, e.workflowName), v.name) "
-            + "FROM Notebook e, Version v where e.id = v.parent.id and (v.latestMetricsSubmissionDate > v.latestMetricsAggregationDate or (v.latestMetricsSubmissionDate is not null and v.latestMetricsAggregationDate is null))"),
+            + "FROM Notebook e, Version v where e.id = v.parent.id and (v.versionMetadata.latestMetricsSubmissionDate > v.versionMetadata.latestMetricsAggregationDate or (v.versionMetadata.latestMetricsSubmissionDate is not null and v.versionMetadata.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.NotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName) from Notebook n where n.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate",
             query = "SELECT new io.dockstore.webservice.core.database.RSSNotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName, n.lastUpdated, n.description) "

@@ -157,6 +157,14 @@ public class VersionMetadata {
     @ApiModelProperty(value = "The engine versions this workflow version can run on")
     private List<String> engineVersions = new ArrayList<>();
 
+    @Column()
+    @Schema(description = "The timestamp of the last metrics submission", type = "integer", format = "int64")
+    private Timestamp latestMetricsSubmissionDate;
+
+    @Column()
+    @Schema(description = "The timestamp of the last metrics aggregation", type = "integer", format = "int64")
+    private Timestamp latestMetricsAggregationDate;
+
     public long getId() {
         return id;
     }
@@ -221,5 +229,21 @@ public class VersionMetadata {
 
     public void setDois(Map<DoiInitiator, Doi> dois) {
         this.dois = dois;
+    }
+
+    public Timestamp getLatestMetricsSubmissionDate() {
+        return latestMetricsSubmissionDate;
+    }
+
+    public void setLatestMetricsSubmissionDate(Timestamp latestMetricsSubmissionDate) {
+        this.latestMetricsSubmissionDate = latestMetricsSubmissionDate;
+    }
+
+    public Timestamp getLatestMetricsAggregationDate() {
+        return latestMetricsAggregationDate;
+    }
+
+    public void setLatestMetricsAggregationDate(Timestamp latestMetricsAggregationDate) {
+        this.latestMetricsAggregationDate = latestMetricsAggregationDate;
     }
 }

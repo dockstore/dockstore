@@ -92,7 +92,7 @@ import org.hibernate.annotations.Filter;
             + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate"),
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteVersionsToAggregate", query =
         "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(e.registry, e.namespace, e.name, e.toolname), v.name) "
-            + "FROM Tool e, Version v where e.id = v.parent.id and (v.latestMetricsSubmissionDate > v.latestMetricsAggregationDate or (v.latestMetricsSubmissionDate is not null and v.latestMetricsAggregationDate is null))"),
+            + "FROM Tool e, Version v where e.id = v.parent.id and (v.versionMetadata.latestMetricsSubmissionDate > v.versionMetadata.latestMetricsAggregationDate or (v.versionMetadata.latestMetricsSubmissionDate is not null and v.versionMetadata.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespace", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace"),
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository"),
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),

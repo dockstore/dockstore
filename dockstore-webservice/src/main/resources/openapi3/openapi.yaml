@@ -11136,14 +11136,6 @@ components:
         last_built:
           type: integer
           format: int64
-        latestMetricsAggregationDate:
-          type: integer
-          format: int64
-          description: The timestamp of the last metrics aggregation
-        latestMetricsSubmissionDate:
-          type: integer
-          format: int64
-          description: The timestamp of the last metrics submission
         metricsByPlatform:
           type: object
           additionalProperties:
@@ -12060,14 +12052,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        latestMetricsAggregationDate:
-          type: integer
-          format: int64
-          description: The timestamp of the last metrics aggregation
-        latestMetricsSubmissionDate:
-          type: integer
-          format: int64
-          description: The timestamp of the last metrics submission
         metricsByPlatform:
           type: object
           additionalProperties:
@@ -12154,6 +12138,14 @@ components:
         id:
           type: integer
           format: int64
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         parsedInformationSet:
           type: array
           items:
@@ -12523,14 +12515,6 @@ components:
         last_modified:
           type: integer
           format: int64
-        latestMetricsAggregationDate:
-          type: integer
-          format: int64
-          description: The timestamp of the last metrics aggregation
-        latestMetricsSubmissionDate:
-          type: integer
-          format: int64
-          description: The timestamp of the last metrics submission
         legacyVersion:
           type: boolean
         metricsByPlatform:
