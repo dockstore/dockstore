@@ -422,6 +422,7 @@ class ZenodoIT {
         // is already a test for that.
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
+        workflowsApi.updateDois(null);
         final List<Workflow> workflows = workflowsApi.getAllWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML);
         workflows.forEach(workflow -> assertNotNull(workflow.getConceptDois().get(DoiInitiator.GITHUB)));
 
