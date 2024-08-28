@@ -1060,19 +1060,35 @@ class WebhookIT extends BaseIT {
     }
 
     /**
-     * This tests the GitHub release process does not work for users that do not exist on Dockstore
+     * This tests the GitHub release process works for users that do not exist on Dockstore
      */
     @Test
     void testGitHubReleaseNoWorkflowOnDockstoreNoUser() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
-        try {
-            handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
-            fail("Should not reach this statement.");
-        } catch (ApiException ex) {
-            assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow when user does not exist on Dockstore.");
-        }
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
+        // Test starts from scratch
+        final Long userlessWorkflows = testingPostgres.runSelectStatement(
+                "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
+        assertEquals(1, userlessWorkflows);
+    }
+
+    /**
+     * Test that if a webhook committer, but not the sender, is a Dockstore user, the workflow gets added to the commiter
+     */
+    @Test
+    void testGitHubReleaseNoWorkflowSenderNotADockstoreUser() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+        // Only the 1 workflow is in the DB, verify that it has USER_2_USERNAME as a user, even though they were not the sender of the event
+        final String workflowUser = testingPostgres.runSelectStatement(
+                "select username from enduser e where e.id in (select ue.userid from user_entry ue where ue.entryid = (select w.id from workflow w where w.repository = 'workflow-dockstore-yml'))",
+                String.class);
+        assertEquals(USER_2_USERNAME, workflowUser);
+
     }
 
     /**
