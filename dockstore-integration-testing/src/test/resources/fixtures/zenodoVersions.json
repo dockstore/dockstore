@@ -248,7 +248,7 @@
         "conceptdoi": "10.5281/zenodo.11094520",
         "doi_url": "https://doi.org/10.5281/zenodo.11095507",
         "metadata": {
-          "title": "dockstore-testing/workflow-dockstore-yml: SecondTestTag",
+          "title": "dockstore-testing/workflow-dockstore-yml: 0.8",
           "doi": "10.5281/zenodo.11095507",
           "publication_date": "2024-04-30",
           "description": "A web application to view and share Common Workflow Language workflows",
@@ -269,13 +269,13 @@
           ],
           "related_identifiers": [
             {
-              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/SecondTestTag",
+              "identifier": "https://github.com/dockstore-testing/workflow-dockstore-yml/tree/0.8",
               "relation": "isSupplementTo",
               "resource_type": "software",
               "scheme": "url"
             }
           ],
-          "version": "SecondTestTag",
+          "version": "0.8",
           "resource_type": {
             "title": "Software",
             "type": "software"
@@ -296,7 +296,7 @@
             ]
           }
         },
-        "title": "dockstore-testing/workflow-dockstore-yml: SecondTestTag",
+        "title": "dockstore-testing/workflow-dockstore-yml: 0.8",
         "links": {
           "self": "https://zenodo.org/api/records/11095507",
           "self_html": "https://zenodo.org/records/11095507",
@@ -331,11 +331,11 @@
         "files": [
           {
             "id": "d29287c5-7097-47ab-88bc-fb9b48479e0b",
-            "key": "dockstore-testing/workflow-dockstore-yml-SecondTestTag.zip",
+            "key": "dockstore-testing/workflow-dockstore-yml-0.8.zip",
             "size": 7363521,
             "checksum": "md5:c77f171d1f9425ecfdc493355e3d8178",
             "links": {
-              "self": "https://zenodo.org/api/records/11095507/files/dockstore-testing/workflow-dockstore-yml-SecondTestTag.zip/content"
+              "self": "https://zenodo.org/api/records/11095507/files/dockstore-testing/workflow-dockstore-yml-0.8.zip/content"
             }
           }
         ],
