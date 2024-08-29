@@ -57,60 +57,60 @@ workflows:
           <<: *common_filters
           requires:
             - build
-#      - unit_test:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - workflow-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - full_build_check
-#          context: sonarcloud
-#      - bitbucket-tests:
-#          <<: *common_filters
-#          requires:
-#            - full_build_check
-#      - language-parsing-tests:
-#          <<: *common_filters
-#          requires:
-#            - full_build_check
-#      - localstack-tests:
-#          <<: *common_filters
-#          requires:
-#            - full_build_check
+      - unit_test:
+          <<: *common_filters
+          requires:
+            - build
+      - workflow-integration-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
+          context: sonarcloud
+      - bitbucket-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
+      - localstack-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
       - hoverfly-tests:
           <<: *common_filters
           requires:
             - full_build_check
-#      - tool-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - full_build_check
-#      - integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - full_build_check
-#      - regression-integration-tests:
-#          filters:
-#            branches:
-#              only:
-#                - master
-#                - /^release.*$/
-#          requires:
-#            - full_build_check
-#      - sonar-cloud:
-#          <<: *common_filters
-#          requires:
-#            - unit_test
-#            - workflow-integration-tests
-#            - bitbucket-tests
-#            - language-parsing-tests
-#            - localstack-tests
-#            - hoverfly-tests
-#            - tool-integration-tests
-#            - integration-tests
-#            - regression-integration-tests
-#          context: sonarcloud
+      - tool-integration-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
+      - integration-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
+          requires:
+            - full_build_check
+      - sonar-cloud:
+          <<: *common_filters
+          requires:
+            - unit_test
+            - workflow-integration-tests
+            - bitbucket-tests
+            - language-parsing-tests
+            - localstack-tests
+            - hoverfly-tests
+            - tool-integration-tests
+            - integration-tests
+            - regression-integration-tests
+          context: sonarcloud
 
 jobs:
   full_build_check:
