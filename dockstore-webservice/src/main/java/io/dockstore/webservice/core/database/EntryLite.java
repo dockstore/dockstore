@@ -25,7 +25,7 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
     private final String entryPath;
     private final String trsId;
 
-    EntryLite(Entry<?, ?> entry, Date entryUpdated, Date versionUpdated) {
+    EntryLite(S entry, Date entryUpdated, Date versionUpdated) {
         if (entryUpdated != null) {
             //choose the greater update time between overall entry and most recently updated version
             this.lastUpdated = versionUpdated == null ? entryUpdated : (entryUpdated.getTime() > versionUpdated.getTime() ? entryUpdated : versionUpdated);
@@ -62,7 +62,7 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
         return this.trsId;
     }
 
-    public static Workflow createWorkflowish(Workflow workflowish, final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
+    public static <W extends Workflow> W createWorkflowish(W workflowish, final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
         workflowish.setSourceControl(sourceControl);
         workflowish.setOrganization(organization);
         workflowish.setRepository(repository);
