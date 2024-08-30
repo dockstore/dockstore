@@ -513,6 +513,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiExtendedServiceImpl.setNotebookDAO(notebookDAO);
+        ToolsApiExtendedServiceImpl.setBioWorkflowDAO(bioWorkflowDAO);
+        ToolsApiExtendedServiceImpl.setServiceDAO(serviceDAO);
         ToolsApiExtendedServiceImpl.setWorkflowVersionDAO(workflowVersionDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 

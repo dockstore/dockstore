@@ -393,4 +393,12 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="ktran (generated)" id="trackLatestMetricsSubmissionAndAggregationDate">
+        <addColumn tableName="version_metadata">
+            <column name="latestmetricsaggregationdate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="latestmetricssubmissiondate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
