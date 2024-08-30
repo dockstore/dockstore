@@ -723,8 +723,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     isSuccessful = false;
                     rethrowIfFatal(ex);
                     if (!logged) {
-                        final String message = String.format("Failed to create %s '%s':%n- %s",
-                            computeTermFromClass(workflowType), computeWorkflowName(wf), generateMessageFromException(ex));
+                        final String message = "Failed to create %s:%n- %s".formatted(computeWorkflowPhrase(workflowType, wf), generateMessageFromException(ex));
                         LOG.error(message, ex);
                         transactionHelper.transaction(() -> {
                             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, usernames.sender(), LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
@@ -818,7 +817,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).toList();
         StringBuilder stringBuilder = new StringBuilder();
         if (!validations.isEmpty()) {
-            stringBuilder.append(String.format("Successfully created %s '%s', but encountered validation errors:%n", workflow.getEntryType().getTerm(), computeWorkflowName(workflow)));
+            stringBuilder.append("Successfully created %s, but encountered validation errors:%n".formatted(computeWorkflowPhrase(workflow)));
             validations.forEach(validation -> addValidationToMessage(validation, stringBuilder));
         }
         return stringBuilder.toString();
@@ -839,6 +838,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private String computeWorkflowName(Workflow workflow) {
         return workflow.getWorkflowName();
+    }
+
+    private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {
+        return computeWorkflowPhrase(computeTermFromClass(workflowType), computeWorkflowName(workflow));
+    }
+
+    private String computeWorkflowPhrase(Workflow workflow) {
+        return computeWorkflowPhrase(workflow.getEntryType().getTerm(), computeWorkflowName(workflow));
+    }
+
+    private String computeWorkflowPhrase(String term, String name) {
+        if (name != null) {
+            return "%s '%s'".formatted(term, name);
+        } else {
+            return term;
+        }
     }
 
     private String generateMessageFromException(Exception ex) {
