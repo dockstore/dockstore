@@ -890,16 +890,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
+            if (workflowType != Service.class) {
+                workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath);
+            }
+
             if (workflowType == Notebook.class) {
                 YamlNotebook yamlNotebook = (YamlNotebook)wf;
                 workflowToUpdate = gitHubSourceCodeRepo.initializeNotebookFromGitHub(repository, yamlNotebook.getFormat(), yamlNotebook.getLanguage(), workflowName);
             } else if (workflowType == BioWorkflow.class) {
-                workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, AppTool.class);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, wf.getSubclass().toString(), null);
             } else if (workflowType == AppTool.class) {
-                workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, BioWorkflow.class);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else {
                 throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, notebooks, and services are supported by GitHub Apps.", LAMBDA_FAILURE);

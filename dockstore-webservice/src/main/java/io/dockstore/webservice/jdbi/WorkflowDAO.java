@@ -19,8 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -187,27 +186,18 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     /**
-     * Find if a path already exists in the BioWorkflow or Apptool table since we do not want duplicate names between them.
-     * If creating an apptool, check the workflow table and vice versa.
-     *
+     * Find if a path already exists in the BioWorkflow, Apptool, or Notebook tables, since we do not want duplicate names between them.
      * @param path
-     * @param clazz the table you want to check for a duplicate for
      * @return
      */
-    public <T extends Workflow> void checkForDuplicateAcrossTables(String path, Class<T> clazz) {
-        final List<Workflow> workflows = findByPath(path, false);
-        final List<Workflow> filteredWorkflows = workflows.stream()
-            .filter(workflow -> workflow.getClass() == BioWorkflow.class || workflow.getClass() == AppTool.class)
-            .toList();
+    public <T extends Workflow> void checkForDuplicateAcrossTables(String path) {
+        final Optional<Workflow> existing = findByPath(path, false).stream()
+            .filter(workflow -> workflow.getClass() != Service.class)
+            .findFirst();
 
-        if (filteredWorkflows.size() > 0) {
-            String workflowType;
-            if (clazz == AppTool.class) {
-                workflowType = "tool";
-            } else {
-                workflowType = "workflow";
-            }
-            throw new CustomWebApplicationException("A " + workflowType + " with the same path already exists. Add the 'name' field to the entry you are currently trying to register to give it a unique path.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        if (existing.isPresent()) {
+            String term = existing.get().getEntryType().getTerm();
+            throw new CustomWebApplicationException("A " + term + " with the same path already exists. Add the 'name' field to the entry you are currently trying to register to give it a unique path.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
