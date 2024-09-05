@@ -395,20 +395,25 @@ public final class ZenodoHelper {
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         final String query = URLEncoder.encode('"' + gitHubRepo + '"');
         final int pageSize = 100; // Arbitrary, seems like a safe guess.
-        final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
-        final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
-        return dois.stream()
-                .map(conceptAndDoi -> {
-                    final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
-                    final List<TagAndDoi> taggedVersions = findTaggedVersions(recordVersions.getHits().getHits(), gitHubRepo);
-                    return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
-                })
-                .toList();
+        try {
+            final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
+            final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
+            return dois.stream()
+                    .map(conceptAndDoi -> {
+                        final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
+                        final List<TagAndDoi> taggedVersions = findTaggedVersions(recordVersions.getHits().getHits(), gitHubRepo);
+                        return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
+                    })
+                    .toList();
+        } catch (ApiException e) {
+            LOG.error("Error discovering DOIs for GitHub repo %s".formatted(gitHubRepo), e);
+            return List.of();
+        }
     }
 
     /**
      * Returns the list of DOIs created by the GitHub-Zenodo integration. DOIs created by the integration have
-     * a metadata[].related_identifer whose value is of the pattern https://github.com/[repo]/[org]/tree/[tagName], e.g.,
+     * a metadata[].related_identifer whose value is of the pattern https://github.com/[org]/[repo]/tree/[tagName], e.g.,
      * https://github.com/dockstore/dockstore-cli/tree/1.15
      * @param hits
      * @return

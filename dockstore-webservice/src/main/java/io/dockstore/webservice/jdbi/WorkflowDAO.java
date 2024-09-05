@@ -276,7 +276,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     }
 
-    public List<Workflow> findByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository) {
+    public List<Workflow> findPublishedByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganizationAndRepository")
                 .setParameter("sourcecontrol", sourceControl)
                 .setParameter("organization", organization)

@@ -76,6 +76,8 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
+import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
+import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -2321,48 +2323,93 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 .filter(w -> w.getSourceControl() == SourceControl.GITHUB)
                 .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
 
-        final List<ZenodoHelper.GitHubRepoDois> gitHubRepoDois = repoToWorkflowsMap.keySet().stream().sorted()
+        final List<GitHubRepoDois> gitHubRepoDois = repoToWorkflowsMap.keySet().stream().sorted()
                 .map(ZenodoHelper::findDoisForGitHubRepo)
                 .flatMap(Collection::stream)
                 .toList();
 
         final Set<Workflow> updatedWorkflows = new HashSet<>();
         gitHubRepoDois.stream().forEach(gitHubRepoDoi -> {
-            final String repo = gitHubRepoDoi.repo();
-            final String conceptDoi = gitHubRepoDoi.conceptDoi();
-            final List<Workflow> workflows = repoToWorkflowsMap.get(repo);
+            final List<Workflow> workflows = repoToWorkflowsMap.get(gitHubRepoDoi.repo());
             workflows.stream().forEach(workflow -> {
-                final Doi existingGitHubDoi = workflow.getConceptDois().get(Doi.DoiInitiator.GITHUB);
-                if (existingGitHubDoi != null && conceptDoi.equals(existingGitHubDoi.getName())) {
-                    LOG.warn("Skipping DOI %s for workflow %s because it already has a Zenodo DOI from GitHub".formatted(conceptDoi, workflow.getWorkflowPath()));
-                } else {
-                    final boolean noDoiToStart = workflow.getConceptDois().isEmpty();
-                    if (existingGitHubDoi == null) { // No Concept DOI yet, add it.
-                        workflow.getConceptDois().put(Doi.DoiInitiator.GITHUB,
-                                ZenodoHelper.getDoiFromDatabase(Doi.DoiType.CONCEPT, Doi.DoiInitiator.GITHUB, conceptDoi));
+                try {
+                    if (updateWorkflowWithDois(workflow, gitHubRepoDoi)) {
                         updatedWorkflows.add(workflow);
                     }
-                    // Add version DOI(s) to new or existing Concept DOI.
-                    gitHubRepoDoi.tagAndDoi().stream().forEach(tagAndDoi -> {
-                        final WorkflowVersion workflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(
-                                workflow.getId(), tagAndDoi.gitHubTag());
-                        if (workflowVersion != null) {
-                            if (workflowVersion.getDois().get(Doi.DoiInitiator.GITHUB) == null) {
-                                final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
-                                        tagAndDoi.doi());
-                                workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
-                                updatedWorkflows.add(workflow);
-                            }
-                        }
-                    });
-                    if (noDoiToStart) {
-                        // The default DOI selection is USER. If there was no DOI to begin with, set it to GITHUB so it will show up in the UI.
-                        workflow.setDoiSelection(Doi.DoiInitiator.GITHUB);
-                    }
+                } catch (Exception e) {
+                    LOG.error("Error updating workflow %s with DOIs".formatted(workflow.getWorkflowPath()), e);
                 }
             });
         });
         return updatedWorkflows.stream().toList();
+    }
+
+    /**
+     * Updates a workflow with DOIs discovered from Zenodo for a GitHub repository.
+     *
+     * <ul>
+     *     <li>If the workflow doesn't have a concept DOI for the GitHub initiator adds it, then updates the versions with the version DOIs</li>
+     *     <li>If the workflow's existing concept DOI for the GitHub initiator matches the discovered concept DOI, then updates the version DOIs</li>
+     *     <li>If the workflow's exising concept DOI for the the GitHub initiator DOES NOT match the discovered concept DOI, does nothing. Because
+     *     we do not support multiple concept DOIs from the same initiator, and it doesn't make sense to have version DOIs that don't
+     *     match the concept DOI.</li>
+     * </ul>
+     *
+     * @param workflow
+     * @param gitHubRepoDoi
+     * @return true if the workflow was updated, false otherwise
+     */
+    private boolean updateWorkflowWithDois(Workflow workflow, GitHubRepoDois gitHubRepoDoi) {
+        boolean updatedWorkflow = false;
+        final String conceptDoi = gitHubRepoDoi.conceptDoi();
+        final Doi existingGitHubDoi = workflow.getConceptDois().get(DoiInitiator.GITHUB);
+        if (existingGitHubDoi != null && !conceptDoi.equals(existingGitHubDoi.getName())) {
+            LOG.debug("Skipping DOI %s for workflow %s because it already has a Zenodo DOI from GitHub".formatted(conceptDoi, workflow.getWorkflowPath()));
+        } else {
+            final boolean noDoiToStart = workflow.getConceptDois().isEmpty();
+            if (existingGitHubDoi == null) { // No Concept DOI yet, add it.
+                workflow.getConceptDois().put(DoiInitiator.GITHUB,
+                        ZenodoHelper.getDoiFromDatabase(Doi.DoiType.CONCEPT, DoiInitiator.GITHUB, conceptDoi));
+                updatedWorkflow = true;
+            }
+            // Add version DOI(s) to the workflow versions
+            if (updateWorkflowVersionsWithZenodoDois(workflow, gitHubRepoDoi.tagAndDoi())) {
+                updatedWorkflow = true;
+            }
+            if (noDoiToStart) {
+                // The default DOI selection is USER. If there was no DOI to begin with, set it to GITHUB so it will show up in the UI.
+                workflow.setDoiSelection(DoiInitiator.GITHUB);
+            }
+            if (updatedWorkflow) {
+                LOG.info("Updated workflow {} with DOIs from Zenodo DOIs {}", workflow.getWorkflowPath(), gitHubRepoDoi);
+            }
+        }
+        return updatedWorkflow;
+    }
+
+    /**
+     * Updates all workflow versions of <code>workflow</code> that match a tag in <code>tagsAndDois</code> with the corresponding DOI.
+     *
+     * Returns true if any workflow version was updated.
+     * @param workflow
+     * @param tagsAndDois
+     * @return true if any of the workflow version were updated, false other wise
+     */
+    private boolean updateWorkflowVersionsWithZenodoDois(Workflow workflow, List<TagAndDoi> tagsAndDois) {
+        boolean workflowUpdated = false;
+        for (TagAndDoi tagAndDoi: tagsAndDois) {
+            final WorkflowVersion workflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(
+                    workflow.getId(), tagAndDoi.gitHubTag());
+            if (workflowVersion != null) {
+                if (workflowVersion.getDois().get(Doi.DoiInitiator.GITHUB) == null) {
+                    final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
+                            tagAndDoi.doi());
+                    workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
+                    workflowUpdated = true;
+                }
+            }
+        }
+        return workflowUpdated;
     }
 
     /**
@@ -2380,7 +2427,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
             final String org = split[0];
             final String repository = split[1];
-            return workflowDAO.findByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
+            return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
         }
         return workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
     }
