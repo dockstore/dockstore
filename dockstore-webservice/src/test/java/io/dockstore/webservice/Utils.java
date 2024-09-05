@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Utilities and reusaable code for unit tests
  */
-public class Utils {
+public final class Utils {
 
     private Utils() {
 
