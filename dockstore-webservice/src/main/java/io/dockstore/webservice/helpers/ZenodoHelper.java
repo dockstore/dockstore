@@ -49,7 +49,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -380,8 +379,7 @@ public final class ZenodoHelper {
      * The Zenodo API returns an ElasticSearch response. What we do is:
      *
      * <ol>
-     *     <li>Make a request to <code>https://zenodo.org/api/records?q=[urlencoded gitHubRepo]</code></li>
-     *     <li>Look in the response for hits.hits[].metadata.relatedIdentifiers[] for an identifier that is <code>https://github.com/[org]/[repo]/tree/[tag]</code></li>
+     *     <li>Make a request to <code>https://zenodo.org/api/records?q=/https:\/\/github.com\/org\/repo\/tree\/.*&#47;</code></li>
      *     <li>If there is no match, we're done. If there's a match, we have the most recent DOI version against the repo and use in the next step</li>
      *     <li>Then send another request to <code>https://zenodo.org/api/records/[DOI ID from  previous step]/versions</code> to get all the
      *     DOIs associated with that DOI</li>
@@ -393,8 +391,8 @@ public final class ZenodoHelper {
     public static List<GitHubRepoDois> findDoisForGitHubRepo(String gitHubRepo) {
         final ApiClient zenodoClient = createDockstoreZenodoClient();
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
-        final String query = URLEncoder.encode('"' + gitHubRepo + '"');
-        final int pageSize = 100; // Arbitrary, seems like a safe guess.
+        final String query = "metadata.related_identifiers.identifier:/https:\\/\\/github.com\\/%s\\/tree\\/.+/".formatted(gitHubRepo.replace("/", "\\/"));
+        final int pageSize = 1; // We can only handle 1 DOI for a GitHub initiator, so no point asking for more
         try {
             final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
             final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
@@ -420,10 +418,6 @@ public final class ZenodoHelper {
      */
     static List<ConceptAndDoi> findGitHubIntegrationDois(List<Hit> hits, String gitHubRepo) {
         return hits.stream()
-                .filter(hit -> Objects.nonNull(hit.getMetadata()) && Objects.nonNull(hit.getMetadata().getRelatedIdentifiers()))
-                .filter(hit ->
-                    hit.getMetadata().getRelatedIdentifiers().stream()
-                            .anyMatch(relatedIdentifier -> tagFromRelatedIdentifier(gitHubRepo, relatedIdentifier.getIdentifier()).isPresent()))
                 .map(hit -> new ConceptAndDoi(hit.getConceptdoi(), hit.getDoi()))
                 .toList();
     }
