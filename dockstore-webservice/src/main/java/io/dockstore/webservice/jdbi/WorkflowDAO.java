@@ -283,6 +283,11 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
                 .setParameter("repository", repository));
     }
 
+    public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControl")
+                .setParameter("sourcecontrol", sourceControl));
+    }
+
     public List<Workflow> findByGitUrl(String giturl) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));

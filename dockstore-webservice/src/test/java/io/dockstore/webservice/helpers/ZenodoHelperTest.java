@@ -8,13 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.FixtureUtility;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.Utils;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
@@ -181,15 +180,9 @@ class ZenodoHelperTest {
     }
 
     @Test
-    void testIdFromZenodoDoi() {
-        assertEquals("5104875", ZenodoHelper.idFromZenodoDoi("10.5281/zenodo.5104875"));
-        assertNull(ZenodoHelper.idFromZenodoDoi(null));
-        assertEquals("", ZenodoHelper.idFromZenodoDoi("notavaliddoi"));
-    }
-
-    @Test
     void testFindGitHubIntegrationDois() throws JsonProcessingException {
-        final SearchResult searchResult = deserialize(FixtureUtility.fixture("fixtures/zenodoListRecords.json"));
+        String fixture = FixtureUtility.fixture("fixtures/zenodoListRecords.json");
+        final SearchResult searchResult = Utils.jsonStringToObject(fixture, SearchResult.class);
         final List<ZenodoHelper.ConceptAndDoi> dois = ZenodoHelper.findGitHubIntegrationDois(searchResult.getHits().getHits(), "coverbeck/cwlviewer");
         assertEquals(List.of(new ZenodoHelper.ConceptAndDoi("10.5281/zenodo.11094520", "10.5281/zenodo.11099749")), dois);
     }
@@ -197,7 +190,8 @@ class ZenodoHelperTest {
 
     @Test
     void testTaggedVersions() throws JsonProcessingException {
-        final SearchResult searchResult = deserialize(FixtureUtility.fixture("fixtures/zenodoVersions.json"));
+        String fixture = FixtureUtility.fixture("fixtures/zenodoVersions.json");
+        final SearchResult searchResult = Utils.jsonStringToObject(fixture, SearchResult.class);
         final List<TagAndDoi> taggedVersions = ZenodoHelper.findTaggedVersions(searchResult.getHits().getHits(), "coverbeck/cwlviewer");
         final List<TagAndDoi> expected = List.of(
                 new TagAndDoi("FourthTestTag", "10.5281/zenodo.11099749"),
@@ -222,12 +216,6 @@ class ZenodoHelperTest {
         config.getExternalConfig().setHostname("dockstore.org");
         config.getExternalConfig().setScheme("https");
         return config;
-    }
-    private static SearchResult deserialize(String fixture) throws JsonProcessingException {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        final SearchResult searchResult = objectMapper.readValue(fixture, SearchResult.class);
-        return searchResult;
     }
 
 }

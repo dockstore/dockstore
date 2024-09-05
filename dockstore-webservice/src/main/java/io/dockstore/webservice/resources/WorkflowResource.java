@@ -2323,6 +2323,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 .filter(w -> w.getSourceControl() == SourceControl.GITHUB)
                 .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
 
+        // Query Zenodo for DOIs issued against the GitHub repositories
         final List<GitHubRepoDois> gitHubRepoDois = repoToWorkflowsMap.keySet().stream().sorted()
                 .map(ZenodoHelper::findDoisForGitHubRepo)
                 .flatMap(Collection::stream)
@@ -2400,13 +2401,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (TagAndDoi tagAndDoi: tagsAndDois) {
             final WorkflowVersion workflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(
                     workflow.getId(), tagAndDoi.gitHubTag());
-            if (workflowVersion != null) {
-                if (workflowVersion.getDois().get(Doi.DoiInitiator.GITHUB) == null) {
-                    final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
-                            tagAndDoi.doi());
-                    workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
-                    workflowUpdated = true;
-                }
+            if (workflowVersion != null && workflowVersion.getDois().get(Doi.DoiInitiator.GITHUB) == null) {
+                final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
+                        tagAndDoi.doi());
+                workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
+                workflowUpdated = true;
             }
         }
         return workflowUpdated;
@@ -2429,8 +2428,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             final String repository = split[1];
             return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
         }
-        return workflowDAO.findAllPublished(0, Integer.MAX_VALUE, null, null, null);
+        return workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB);
     }
-
-
 }

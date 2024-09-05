@@ -456,17 +456,7 @@ public final class ZenodoHelper {
 
     static SearchResult getRecordVersions(ApiClient zenodoClient, String doi) {
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
-        return previewApi.getRecordVersions(idFromZenodoDoi(doi));
-    }
-
-    /**
-     * Returns the Zenodo id from a Zenodo DOI; the id is needed for API requests. For example, for the Zenodo
-     * DOI <code>10.5281/zenodo.5104875</code>, returns <code>5104875</code>
-     * @param zenodoDoi
-     * @return
-     */
-    static String idFromZenodoDoi(String zenodoDoi) {
-        return StringUtils.substringAfterLast(zenodoDoi, '.');
+        return previewApi.getRecordVersions(extractRecordIdFromDoi(doi));
     }
 
     /**
