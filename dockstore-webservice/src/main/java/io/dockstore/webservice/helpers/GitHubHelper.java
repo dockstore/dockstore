@@ -143,32 +143,26 @@ public final class GitHubHelper {
 
     /**
      * Based on GitHub username, find the corresponding user
+     *
      * @param tokenDAO
      * @param userDAO
      * @param username GitHub username
-     * @param allowFail If true, throw a failure if user cannot be found
      * @return user with given GitHub username
      */
-    public static User findUserByGitHubUsername(TokenDAO tokenDAO, UserDAO userDAO, String username, boolean allowFail) {
+    public static User findUserByGitHubUsername(TokenDAO tokenDAO, UserDAO userDAO, String username) {
         // Find user by github name
         String msg = "No user with GitHub username " + Utilities.cleanForLogging(username) + " exists on Dockstore.";
         Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
         if (userGitHubToken == null) {
             LOG.info(msg);
-            if (allowFail) {
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            } else {
-                return null;
-            }
+            return null;
         }
 
         // Get user object for github token
         User sendingUser = userDAO.findById(userGitHubToken.getUserId());
         if (sendingUser == null) {
             LOG.info(msg);
-            if (allowFail) {
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
         return sendingUser;

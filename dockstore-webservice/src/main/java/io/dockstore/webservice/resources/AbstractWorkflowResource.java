@@ -393,7 +393,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                         if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
                             // Unpublish the workflow if it was published and no longer has any versions
-                            User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, false);
+                            User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username);
                             publishWorkflow(workflow, false, user);
                         } else {
                             // Otherwise, update the public state
@@ -683,7 +683,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
 
                     // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, usernames.sender(), false);
+                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, usernames.sender());
 
                     // Update the workflow version in its own database transaction.
                     Pair<Workflow, WorkflowVersion> result = transactionHelper.transaction(() -> {
@@ -758,7 +758,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     private List<User> usersWithRepoPermissions(String repository, Set<String> usernames) {
         return usernames.stream()
-                .map(username -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false))
+                .map(username -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username))
                 .filter(Objects::nonNull) //
                 .filter(user -> {
                     // We know user has a GitHub profile because of the preceding lines
