@@ -2365,7 +2365,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String conceptDoi = gitHubRepoDoi.conceptDoi();
         final Doi existingGitHubDoi = workflow.getConceptDois().get(DoiInitiator.GITHUB);
         if (existingGitHubDoi != null && !conceptDoi.equals(existingGitHubDoi.getName())) {
-            LOG.debug("Skipping DOI %s for workflow %s because it already has a Zenodo DOI from GitHub".formatted(conceptDoi, workflow.getWorkflowPath()));
+            LOG.warn("Skipping DOI %s for workflow %s because it already has a Zenodo DOI from GitHub".formatted(conceptDoi, workflow.getWorkflowPath()));
         } else {
             final boolean noDoiToStart = workflow.getConceptDois().isEmpty();
             if (existingGitHubDoi == null) { // No Concept DOI yet, add it.
