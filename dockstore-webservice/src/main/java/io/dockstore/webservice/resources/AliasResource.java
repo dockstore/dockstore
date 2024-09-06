@@ -100,7 +100,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
     @Override
     public WorkflowVersion getAndCheckResource(User user, Long workflowVersionId) {
-        return AliasHelper.getAndCheckWorkflowVersionResource(workflowResource, workflowDAO, workflowVersionDAO, user, workflowVersionId);
+        return AliasHelper.getAndCheckWorkflowVersionResource(workflowResource, workflowDAO, workflowVersionDAO, Optional.ofNullable(user), workflowVersionId);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
     @Override
     public WorkflowVersion addAliasesAndCheck(User user, Long id, String aliases, boolean blockFormat) {
-        return AliasHelper.addWorkflowVersionAliasesAndCheck(workflowResource, workflowDAO, workflowVersionDAO, user, id, aliases, blockFormat);
+        return AliasHelper.addWorkflowVersionAliasesAndCheck(workflowResource, workflowDAO, workflowVersionDAO, Optional.ofNullable(user), id, aliases, blockFormat);
 
     }
 }

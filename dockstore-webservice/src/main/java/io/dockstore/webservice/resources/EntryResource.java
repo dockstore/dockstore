@@ -316,7 +316,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         if (entry.isArchived() != archive) {
             entry.setArchived(archive);
-            eventDAO.archiveEvent(archive, user, entry);
+            eventDAO.archiveEvent(archive, Optional.of(user), entry);
             PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
             LOG.info("Set archived = {} on entry {}", archive, entry.getEntryPath());
         }

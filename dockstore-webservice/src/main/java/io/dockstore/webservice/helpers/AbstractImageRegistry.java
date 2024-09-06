@@ -548,7 +548,7 @@ public abstract class AbstractImageRegistry {
                     tag.setParent(tool);
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
-                    eventDAO.createAddTagToEntryEvent(user, tool, tag);
+                    eventDAO.createAddTagToEntryEvent(Optional.of(user), tool, tag);
                     tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {

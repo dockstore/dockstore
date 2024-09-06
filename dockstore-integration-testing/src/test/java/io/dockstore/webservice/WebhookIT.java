@@ -1072,6 +1072,9 @@ class WebhookIT extends BaseIT {
         final Long userlessWorkflows = testingPostgres.runSelectStatement(
                 "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
         assertEquals(1, userlessWorkflows);
+
+        // See https://ucsc-cgl.atlassian.net/browse/SEAB-5994?focusedCommentId=48145 -- publishing an ownerless workflow throws an exception
+        handleGitHubRelease(client, "dockstore-testing/simple-notebook", "refs/tags/simple-published-v1", "thisisafakeuser");
     }
 
     /**

@@ -138,7 +138,7 @@ public final class ZenodoHelper {
      * @param authenticatedResourceInterface
      * @return
      */
-    public static void automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+    public static void automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
         if (StringUtils.isEmpty(dockstoreZenodoAccessToken)) {
             LOG.error("Dockstore Zenodo access token not found for automatic DOI creation, skipping");
             return;
@@ -164,7 +164,7 @@ public final class ZenodoHelper {
      * @param workflowOwner
      * @param authenticatedResourceInterface
      */
-    public static void automaticallyRegisterDockstoreDOIForRecentTags(Workflow workflow, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+    public static void automaticallyRegisterDockstoreDOIForRecentTags(Workflow workflow, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
         final List<WorkflowVersion> recentTags = workflowVersionDAO.getTagsByWorkflowIdOrderedByLastModified(workflow.getId(), AUTOMATIC_DOI_CREATION_VERSIONS_LIMIT);
         for (WorkflowVersion tag: recentTags) {
             automaticallyRegisterDockstoreDOI(workflow, tag, workflowOwner, authenticatedResourceInterface);
@@ -257,7 +257,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      */
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
-            WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface, DoiInitiator doiInitiator) {
+            WorkflowVersion workflowVersion, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface, DoiInitiator doiInitiator) {
 
         LOG.info("Registering {} Zenodo DOI for workflow {}, version {}", doiInitiator.name(), workflow.getWorkflowPath(), workflowVersion.getName());
         // Create Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
@@ -900,22 +900,23 @@ public final class ZenodoHelper {
      * @param workflowVersion
      * @param user
      */
-    public static void checkCanRegisterDoi(Workflow workflow, WorkflowVersion workflowVersion, User user, DoiInitiator doiInitiator) {
+    public static void checkCanRegisterDoi(Workflow workflow, WorkflowVersion workflowVersion, Optional<User> user, DoiInitiator doiInitiator) {
         final String workflowNameAndVersion = workflowNameAndVersion(workflow, workflowVersion);
+        final String username = user.map(User::getUsername).orElse("n/a");
 
         if (!workflow.getIsPublished()) {
-            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, PUBLISHED_ENTRY_REQUIRED);
+            LOG.error("{}: Could not generate DOI for {}. {}", username, workflowNameAndVersion, PUBLISHED_ENTRY_REQUIRED);
             throw new CustomWebApplicationException(PUBLISHED_ENTRY_REQUIRED, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only require snapshotting for user-created DOIs
         if (doiInitiator == DoiInitiator.USER && !workflowVersion.isFrozen()) {
-            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, FROZEN_VERSION_REQUIRED);
+            LOG.error("{}: Could not generate DOI for {}. {}", username, workflowNameAndVersion, FROZEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, FROZEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
         }
 
         if (workflowVersion.isHidden()) {
-            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED);
+            LOG.error("{}: Could not generate DOI for {}. {}", username, workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
         }
 
