@@ -190,7 +190,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @param path
      * @return
      */
-    public <T extends Workflow> void checkForDuplicateAcrossTables(String path) {
+    public void checkForDuplicateAcrossTables(String path) {
         final Optional<Workflow> existing = findByPath(path, false).stream()
             .filter(workflow -> workflow.getClass() != Service.class)
             .findFirst();
