@@ -195,10 +195,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             .filter(workflow -> workflow.getClass() != Service.class)
             .findFirst();
 
-        if (existing.isPresent()) {
-            String term = existing.get().getEntryType().getTerm();
+        existing.ifPresent(e -> {
+            String term = e.getEntryType().getTerm();
             throw new CustomWebApplicationException("A " + term + " with the same path already exists. Add the 'name' field to the entry you are currently trying to register to give it a unique path.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
+        });
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
