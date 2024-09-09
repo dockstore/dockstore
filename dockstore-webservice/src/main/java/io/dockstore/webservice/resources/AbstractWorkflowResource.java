@@ -692,7 +692,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         final boolean latestTagAsDefault = wf.getLatestTagAsDefault();
                         final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
-                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
+                        WorkflowAndExisted workflowAndExisted = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
+                        Workflow workflow = workflowAndExisted.workflow;
+                        boolean existed = workflowAndExisted.existed;
+
                         workflow.getUsers().addAll(otherUsers.stream().map(User::getId).map(userDAO::findById).toList()); // Because of Hibernate transactions, safest to lookup users again
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, latestTagAsDefault, yamlAuthors);
 
@@ -700,7 +703,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         eventDAO.createAddTagToEntryEvent(user, workflow, version);
 
                         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, usernames.sender(), LambdaEvent.LambdaEventType.PUSH, true, deliveryId, computeWorkflowName(wf));
-                        setEventMessage(lambdaEvent, createValidationsMessage(workflow, version));
+                        setEventMessage(lambdaEvent, createValidationsMessage(workflow, version, existed));
                         lambdaEventDAO.create(lambdaEvent);
 
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference, deliveryId);
@@ -723,7 +726,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     isSuccessful = false;
                     rethrowIfFatal(ex);
                     if (!logged) {
-                        final String message = "Failed to create %s:%n- %s".formatted(computeWorkflowPhrase(workflowType, wf), generateMessageFromException(ex));
+                        final String message = "Failed to process %s:%n- %s".formatted(computeWorkflowPhrase(workflowType, wf), generateMessageFromException(ex));
                         LOG.error(message, ex);
                         transactionHelper.transaction(() -> {
                             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, usernames.sender(), LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
@@ -813,11 +816,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return "entry";
     }
 
-    private String createValidationsMessage(Workflow workflow, WorkflowVersion version) {
+    private String createValidationsMessage(Workflow workflow, WorkflowVersion version, boolean existed) {
         List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).toList();
         StringBuilder stringBuilder = new StringBuilder();
         if (!validations.isEmpty()) {
-            stringBuilder.append("Successfully created %s, but encountered validation errors:%n".formatted(computeWorkflowPhrase(workflow)));
+            String verb = existed ? "updated" : "created";
+            String workflowPhrase = computeWorkflowPhrase(workflow);
+            stringBuilder.append("Successfully %s %s, but encountered validation errors:%n".formatted(verb, workflowPhrase));
             validations.forEach(validation -> addValidationToMessage(validation, stringBuilder));
         }
         return stringBuilder.toString();
@@ -877,16 +882,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @param workflowName User that triggered action
      * @param gitHubSourceCodeRepo Source Code Repo
-     * @return New or updated workflow
+     * @return New or updated workflow, and whether it existed prior to this method's invocation
      */
-    private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, Workflowish wf, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    private WorkflowAndExisted createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, Workflowish wf, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
-        Optional<T> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
-
-        Workflow workflowToUpdate = null;
+        Optional<T> existingWorkflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
+        Workflow workflowToUpdate;
         // Create workflow if one does not exist
-        if (workflow.isEmpty()) {
+        if (existingWorkflow.isEmpty()) {
 
             StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
@@ -912,7 +916,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 LOG.info("Workflow {} has been created.", Utilities.cleanForLogging(dockstoreWorkflowPath));
             }
         } else {
-            workflowToUpdate = workflow.get();
+            workflowToUpdate = existingWorkflow.get();
             gitHubSourceCodeRepo.updateWorkflowInfo(workflowToUpdate, repository); // Update info that can change between GitHub releases
 
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
@@ -948,7 +952,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        return workflowToUpdate;
+        return new WorkflowAndExisted(workflowToUpdate, existingWorkflow.isPresent());
     }
 
     private void checkCompatibleTypeAndSubclass(Workflow existing, Workflowish update) {
@@ -1375,4 +1379,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param otherUsers - other users, not including the sender, that can be in the delivery.
      */
     public record GitHubUsernames(String sender, Set<String> otherUsers) {}
+
+    private record WorkflowAndExisted(Workflow workflow, boolean existed) {}
 }
