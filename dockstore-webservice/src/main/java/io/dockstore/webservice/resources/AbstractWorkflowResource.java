@@ -845,15 +845,26 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflow.getWorkflowName();
     }
 
+    /**
+     * Convert the specified workflow information into an identifying string that can be shown to the end user (in the app logs, exception messages, etc).
+     * @param workflowType type of the workflow
+     * @param workflowish description of the workflow
+     * @return string describing the workflow
+     */
     private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {
-        return computeWorkflowPhrase(computeTermFromClass(workflowType), computeWorkflowName(workflow));
+        return formatTermAndName(computeTermFromClass(workflowType), computeWorkflowName(workflow));
     }
 
+    /**
+     * Convert the specified workflow into an identifying string that can be shown to the end user (in the app logs, exception messages, etc).
+     * @param workflow workflow to be converted
+     * @return string describing the workflow
+     */
     private String computeWorkflowPhrase(Workflow workflow) {
-        return computeWorkflowPhrase(workflow.getEntryType().getTerm(), computeWorkflowName(workflow));
+        return formatTermAndName(workflow.getEntryType().getTerm(), computeWorkflowName(workflow));
     }
 
-    private String computeWorkflowPhrase(String term, String name) {
+    private String formatTermAndName(String term, String name) {
         if (name != null) {
             return "%s '%s'".formatted(term, name);
         } else {
