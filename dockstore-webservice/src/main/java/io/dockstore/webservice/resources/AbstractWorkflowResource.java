@@ -944,9 +944,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Check that the workflow is writable
         checkWritability(workflowToUpdate);
 
-        if (user.isPresent()) {
-            workflowToUpdate.getUsers().add(user.get());
-        }
+        user.ifPresent(workflowToUpdate.getUsers()::add);
 
         // Update the manual topic if it's not blank in the .dockstore.yml.
         // Purposefully not clearing the manual topic when it's null in the .dockstore.yml because another version may have set it

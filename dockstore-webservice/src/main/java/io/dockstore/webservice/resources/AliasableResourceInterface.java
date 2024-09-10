@@ -69,7 +69,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     static void checkAliases(Set<String>  aliases, Optional<User> user, boolean blockAliasesWithZenodoFormat) {
         // Admins and curators do not have restrictions on alias format
-        if (user.isPresent() && user.get().isCurator() || user.get().getIsAdmin()) {
+        if (user.isPresent() && (user.get().isCurator() || user.get().getIsAdmin())) {
             return;
         }
         checkAliasFormat(aliases, blockAliasesWithZenodoFormat);
