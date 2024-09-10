@@ -22,6 +22,7 @@ import static io.dockstore.client.cli.BaseIT.getAnonymousOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWorkflowVersion;
+import static io.dockstore.common.Hoverfly.ZENODO_DOI_SEARCH;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_URL;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
@@ -53,6 +54,7 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.AccessLink;
+import io.dockstore.openapi.client.model.Doi;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.DoiSelectionEnum;
@@ -104,6 +106,16 @@ class ZenodoIT {
     public final SystemOut systemOut = new SystemOut();
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
+
+    /**
+     * The Concept DOI from the fixtures/zenodoListRecords.json and fixtures/zenodoVersions.json
+     */
+    private static final String CONCEPT_DOI = "10.5281/zenodo.11094520";
+    /**
+     * The version DOI from the fixtures/zenodoListRecords.json and fixtures/zenodoVersions.json
+     */
+    private static final String VERSION_DOI = "10.5281/zenodo.11095507";
+    private static final String FAKE_VERSION_DOI = "10.5281/zenodo.11095506";
 
     private static TestingPostgres testingPostgres;
 
@@ -407,4 +419,72 @@ class ZenodoIT {
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
         assertTrue(exception.getMessage().contains(ACCESS_LINK_DOESNT_EXIST));
     }
+
+    @Test
+    void testGitHubZenodoDoiDiscovery(Hoverfly hoverfly) {
+        hoverfly.simulate(ZENODO_DOI_SEARCH);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
+
+        final List<Workflow> workflows = workflowsApi.updateDois(null);
+        workflows.forEach(workflow -> {
+            assertEquals(CONCEPT_DOI, workflow.getConceptDois().get(DoiInitiator.GITHUB.toString()).getName());
+            assertEquals(DoiSelectionEnum.GITHUB, workflow.getDoiSelection());
+            final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+            workflowVersions.stream().filter(w -> "0.8".equals(w.getName())).forEach(wv -> {
+                final Doi doi = wv.getDois().get(DoiInitiator.GITHUB.toString());
+                assertEquals(VERSION_DOI, doi.getName());
+            });
+        });
+    }
+
+    @Test
+    void testUpdateDoisFilter(Hoverfly hoverfly) {
+        hoverfly.simulate(ZENODO_DOI_SEARCH);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
+
+        assertEquals(List.of(), workflowsApi.updateDois("foo/bar"), "No workflows are in foo/bar");
+        final ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.updateDois("NotAnOrgSlashRepoFormat"));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
+        assertEquals(2, workflowsApi.updateDois(DockstoreTesting.WORKFLOW_DOCKSTORE_YML).size(), "Should update 2 workflows");
+    }
+
+    @Test
+    void testExistingConceptDoiNotOverwritten(Hoverfly hoverfly) {
+        hoverfly.simulate(ZENODO_DOI_SEARCH);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
+
+        List<Workflow> workflows = workflowsApi.updateDois(null);
+        final String conceptDoiName = workflows.get(0).getConceptDois().get(DoiSelectionEnum.GITHUB.name()).getName();
+        assertEquals(0, workflowsApi.updateDois(null).size(), "No workflows should be updated there are no new DOIs");
+
+        // Hack to remove GITHUB initiator version DOIs; need to change name because of DB constraint that names must be unique
+        testingPostgres.runUpdateStatement("update doi set name ='" + FAKE_VERSION_DOI + "', initiator = 'DOCKSTORE' where type = 'VERSION'");
+        workflows = workflowsApi.updateDois(null);
+        assertEquals(2, workflows.size(), "Concept DOI exists, but version DOIs are new");
+        workflowsApi.getWorkflowVersions(workflows.get(0).getId()).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
+                "Version DOI for GitHub initiator should be set"));
+
+        testingPostgres.runUpdateStatement("update doi set name = '" + conceptDoiName.replace('7', '8') + "' where type = 'CONCEPT'");
+        assertEquals(0, workflowsApi.updateDois(null).size(), "There is a new concept DOI, but the existing concept DOI takes precedence");
+
+    }
+
 }
