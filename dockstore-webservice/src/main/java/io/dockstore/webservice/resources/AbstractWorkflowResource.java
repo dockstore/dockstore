@@ -852,7 +852,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return string describing the workflow
      */
     private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {
-        return formatTermAndName(computeTermFromClass(workflowType), computeWorkflowName(workflow));
+        return formatWorkflowTermAndName(computeTermFromClass(workflowType), computeWorkflowName(workflow));
     }
 
     /**
@@ -861,10 +861,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return string describing the workflow
      */
     private String computeWorkflowPhrase(Workflow workflow) {
-        return formatTermAndName(workflow.getEntryType().getTerm(), computeWorkflowName(workflow));
+        return formatWorkflowTermAndName(workflow.getEntryType().getTerm(), computeWorkflowName(workflow));
     }
 
-    private String formatTermAndName(String term, String name) {
+    private String formatWorkflowTermAndName(String term, String name) {
         if (name != null) {
             return "%s '%s'".formatted(term, name);
         } else {
