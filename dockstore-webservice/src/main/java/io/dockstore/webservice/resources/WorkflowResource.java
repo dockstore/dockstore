@@ -40,7 +40,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
-import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
@@ -2035,8 +2034,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Check that there isn't a duplicate in the Apptool table.
-        workflowDAO.checkForDuplicateAcrossTables(workflow.getWorkflowPath(), AppTool.class);
+        // Check that there isn't another entry with the same path.
+        workflowDAO.checkForDuplicateAcrossTables(workflow.getWorkflowPath());
         final long workflowID = workflowDAO.create(workflow);
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
