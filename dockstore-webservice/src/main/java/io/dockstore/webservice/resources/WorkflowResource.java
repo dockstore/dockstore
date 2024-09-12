@@ -305,7 +305,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "completely refresh all versions, even if they have not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
-        automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
+        automaticallyRegisterDockstoreDOIForRecentTags(workflow, Optional.of(user), this);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
     }
@@ -611,13 +611,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkCanRegisterDoi(workflow, workflowVersion, user, DoiInitiator.USER);
+        checkCanRegisterDoi(workflow, workflowVersion, Optional.of(user), DoiInitiator.USER);
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
         ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
-        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this, DoiInitiator.USER);
+        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, Optional.of(user), this, DoiInitiator.USER);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkNotNullEntry(result);
@@ -775,9 +775,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         checkNotArchived(workflow);
 
-        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
+        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), Optional.of(userDAO.findById(user.getId())));
         if (request.getPublish()) {
-            automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
+            automaticallyRegisterDockstoreDOIForRecentTags(workflow, Optional.of(user), this);
         }
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
         return publishedWorkflow;
@@ -1850,7 +1850,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkerWorkflow = (BioWorkflow) workflowDAO.findById(id);
         PublicStateManager.getInstance().handleIndexUpdate(checkerWorkflow, StateManagerMode.UPDATE);
         if (isPublished) {
-            eventDAO.publishEvent(true, userDAO.findById(user.getId()), checkerWorkflow);
+            eventDAO.publishEvent(true, Optional.of(userDAO.findById(user.getId())), checkerWorkflow);
         }
 
         // Update original entry with checker id
