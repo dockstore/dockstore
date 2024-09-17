@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.core;
 
-import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
@@ -38,6 +37,9 @@ import jakarta.persistence.Transient;
             + "FROM AppTool a LEFT JOIN a.workflowVersions v "
             + "WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
             + "GROUP BY a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.getEntryLiteVersionsToAggregate", query =
+        "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteAppTool(e.sourceControl, e.organization, e.repository, e.workflowName), v.name) "
+            + "FROM AppTool e, Version v where e.id = v.parent.id and (v.versionMetadata.latestMetricsSubmissionDate > v.versionMetadata.latestMetricsAggregationDate or (v.versionMetadata.latestMetricsSubmissionDate is not null and v.versionMetadata.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublishedPaths",
             query = "SELECT new io.dockstore.webservice.core.database.AppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName) "
                     + "from AppTool c where c.isPublished = true"),
@@ -57,11 +59,6 @@ public class AppTool extends Workflow {
     @Override
     public AppTool createEmptyEntry() {
         return new AppTool();
-    }
-
-    @Override
-    public EntryType getEntryType() {
-        return EntryType.APPTOOL;
     }
 
     @Override

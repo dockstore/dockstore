@@ -19,7 +19,7 @@ public class ConstraintExceptionMapper implements ExceptionMapper<ConstraintViol
 
     @Override
     public Response toResponse(ConstraintViolationException exception) {
-        LOGGER.debug("failure caught by ConstraintExceptionMapper", exception);
+        LOGGER.warn("failure caught by ConstraintExceptionMapper", exception);
         return getResponse(exception);
     }
 

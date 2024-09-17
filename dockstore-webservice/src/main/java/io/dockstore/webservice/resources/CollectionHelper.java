@@ -20,6 +20,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
@@ -100,6 +101,10 @@ class CollectionHelper {
             entry.setLabels(labelStrings);
             entry.setVerified(!versionDAO.findEntryVersionsWithVerifiedPlatforms(entry.getId()).isEmpty());
             List<CategorySummary> summaries = entryDAO.findCategorySummariesByEntryId(entry.getId());
+            Entry<?, ?> genericEntry = entryDAO.getGenericEntryById(entry.getId());
+            entry.setTopicSelection(genericEntry.getTopicSelection());
+            entry.setIsApprovedAITopic(genericEntry.isApprovedAITopic());
+            entry.setTopic(genericEntry.getTopic());
             entry.setCategorySummaries(summaries);
             switch (entry.getEntryType()) {
             case "tool":

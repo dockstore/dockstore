@@ -437,6 +437,31 @@ paths:
       summary: List entries of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/entryVersionsToAggregate:
+    get:
+      description: This endpoint gets entry versions that have new execution metrics
+        to aggregate.
+      operationId: getEntryVersionsToAggregate
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Entry versions to aggregate retrieved successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      summary: Get entry versions that have new execution metrics to aggregate.
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/organizations:
     get:
       description: This endpoint returns list of all organizations.
@@ -658,32 +683,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: Platform that the tool was executed on
-        in: query
-        name: platform
-        required: true
-        schema:
-          type: string
-          enum:
-          - GALAXY
-          - TERRA
-          - DNA_STACK
-          - DNA_NEXUS
-          - CGC
-          - NHLBI_BIODATA_CATALYST
-          - ANVIL
-          - CAVATICA
-          - NEXTFLOW_TOWER
-          - ELWAZI
-          - AGC
-          - OTHER
-          - ALL
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Metrics'
-        description: Aggregated metrics to add to the version
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Metrics'
+        description: A map of aggregated metrics for platforms to set as the version's
+          metrics
         required: true
       responses:
         "200":
@@ -6917,8 +6925,8 @@ paths:
       - workflows
   /workflows/github/release:
     post:
-      description: Handle a release of a repository on GitHub. Will create a workflow/service
-        and version when necessary.
+      description: Handle a push event on GitHub. Will create a workflow/service and
+        version when necessary.
       operationId: handleGitHubRelease
       parameters:
       - description: A GUID to identify the GitHub webhook delivery
@@ -6933,6 +6941,33 @@ paths:
             schema:
               $ref: '#/components/schemas/PushPayload'
         description: GitHub push event payload
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/github/taggedrelease:
+    post:
+      description: Handles a release event on GitHub.
+      operationId: handleGitHubTaggedRelease
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleasePayload'
+        description: GitHub App repository release event payload
         required: true
       responses:
         default:
@@ -7609,6 +7644,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SharedWorkflows'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/updateDois:
+    post:
+      description: "Searches Zenodo for DOIs referencing GitHub repos, and updates\
+        \ Dockstore entries with them"
+      operationId: updateDois
+      parameters:
+      - description: "Optional GitHub full repository name, e.g., myorg/myrepo, to\
+          \ only update entries for that repository"
+        in: query
+        name: filter
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -9022,10 +9082,20 @@ components:
         id:
           type: integer
           format: int64
+        isApprovedAITopic:
+          type: boolean
         labels:
           type: array
           items:
             type: string
+        topic:
+          type: string
+        topicSelection:
+          type: string
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - AI
         verified:
           type: boolean
         versionName:
@@ -9449,6 +9519,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9629,6 +9701,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9645,6 +9719,29 @@ components:
           items:
             $ref: '#/components/schemas/Version'
           uniqueItems: true
+    EntryLite:
+      type: object
+      properties:
+        entryPath:
+          type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
+        lastUpdated:
+          type: string
+          format: date-time
+        prettyPath:
+          type: string
+        trsId:
+          type: string
+    EntryLiteAndVersionName:
+      type: object
+      properties:
+        entryLite:
+          $ref: '#/components/schemas/EntryLite'
+        versionName:
+          type: string
     EntryType:
       type: string
       description: Entry type
@@ -9970,6 +10067,24 @@ components:
           type: string
         url:
           type: string
+    GitCommit:
+      type: object
+      description: "Information about a commit on a GitHub push event. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push,\
+        \ under commits and head_commit"
+      properties:
+        author:
+          $ref: '#/components/schemas/GitHubUser'
+        committer:
+          $ref: '#/components/schemas/GitHubUser'
+    GitHubUser:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
     HealthCheckResult:
       type: object
       properties:
@@ -10161,6 +10276,7 @@ components:
           - INSTALL
           - UNINSTALL
           - PUBLISH
+          - RELEASE
     Language:
       type: object
       properties:
@@ -10646,6 +10762,13 @@ components:
             type: string
             description: The SHA of the most recent commit on ref after the push
             example: 6d96270004515a0486bb7f76196a72b40c55a47f
+          commits:
+            type: array
+            description: An array of commit objects describing the pushed commits
+            items:
+              $ref: '#/components/schemas/GitCommit'
+          head_commit:
+            $ref: '#/components/schemas/GitCommit'
           ref:
             type: string
             description: The full git ref that was pushed
@@ -10671,6 +10794,29 @@ components:
           type: string
         url:
           type: string
+    ReleasePayload:
+      type: object
+      properties:
+        action:
+          type: string
+          description: The action which the event describes
+        draft:
+          type: boolean
+          description: Whether this is a draft release
+        installation:
+          $ref: '#/components/schemas/Installation'
+        release:
+          $ref: '#/components/schemas/WebhookRelease'
+        repository:
+          $ref: '#/components/schemas/WebhookRepository'
+        sender:
+          $ref: '#/components/schemas/Sender'
+      required:
+      - action
+      - draft
+      - installation
+      - release
+      - sender
     Repository:
       type: object
       properties:
@@ -12052,6 +12198,14 @@ components:
         id:
           type: integer
           format: int64
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         parsedInformationSet:
           type: array
           items:
@@ -12091,6 +12245,19 @@ components:
         versionId:
           type: integer
           format: int64
+    WebhookRelease:
+      type: object
+      description: Details about the release
+      properties:
+        published_at:
+          type: string
+          format: date-time
+        tag_name:
+          type: string
+          description: Name of the tag associated with the release
+          example: mytag
+      required:
+      - tag_name
     WebhookRepository:
       type: object
       description: The repository where the GitHub webhook event occurred
@@ -12224,6 +12391,11 @@ components:
         last_modified_date:
           type: integer
           format: int64
+        latestReleaseDate:
+          type: integer
+          format: int64
+          description: "The timestamp of the most recent version control release,\
+            \ such as a GitHub release"
         licenseInformation:
           $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:
@@ -12293,6 +12465,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         type:
           type: string
         userIdToOrcidPutCode:

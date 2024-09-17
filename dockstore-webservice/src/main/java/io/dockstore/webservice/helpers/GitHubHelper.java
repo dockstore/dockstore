@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.resources.TokenResource.HTTP_TRANSPORT;
 import static io.dockstore.webservice.resources.TokenResource.JSON_FACTORY;
 
@@ -34,6 +33,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHLicense;
 import org.kohsuke.github.GHPullRequest;
@@ -143,34 +143,27 @@ public final class GitHubHelper {
 
     /**
      * Based on GitHub username, find the corresponding user
+     *
      * @param tokenDAO
      * @param userDAO
      * @param username GitHub username
-     * @param allowFail If true, throw a failure if user cannot be found
      * @return user with given GitHub username
      */
-    public static User findUserByGitHubUsername(TokenDAO tokenDAO, UserDAO userDAO, String username, boolean allowFail) {
+    public static Optional<User> findUserByGitHubUsername(TokenDAO tokenDAO, UserDAO userDAO, String username) {
         // Find user by github name
         String msg = "No user with GitHub username " + Utilities.cleanForLogging(username) + " exists on Dockstore.";
         Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
         if (userGitHubToken == null) {
             LOG.info(msg);
-            if (allowFail) {
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            } else {
-                return null;
-            }
+            return Optional.empty();
         }
 
         // Get user object for github token
         User sendingUser = userDAO.findById(userGitHubToken.getUserId());
         if (sendingUser == null) {
             LOG.info(msg);
-            if (allowFail) {
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
         }
 
-        return sendingUser;
+        return Optional.ofNullable(sendingUser);
     }
 }

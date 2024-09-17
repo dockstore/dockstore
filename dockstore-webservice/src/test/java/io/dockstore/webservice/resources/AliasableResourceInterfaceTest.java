@@ -7,6 +7,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class AliasableResourceInterfaceTest {
             // If it is not acceptable then an exception is generated
             try {
                 AliasableResourceInterface.checkAliases(Collections.singleton(invalidPrefix + "_some_random_alias_suffix"),
-                        user, true);
+                        Optional.of(user), true);
                 fail("An alias with an invalid prefix " + invalidPrefix + " was reported to be OK.");
             } catch (CustomWebApplicationException ex) {
                 assertTrue(ex.getMessage().contains("Please create aliases without these prefixes"));
@@ -51,7 +52,7 @@ class AliasableResourceInterfaceTest {
         Set<String> alisesWithInvalidPrefixes = Arrays.stream(AliasableResourceInterface.INVALID_PREFIXES)
                 .map(invalidPrefix -> invalidPrefix + "_some_random_alias_suffix").collect(Collectors.toSet());
 
-        AliasableResourceInterface.checkAliases(alisesWithInvalidPrefixes, user, true);
+        AliasableResourceInterface.checkAliases(alisesWithInvalidPrefixes, Optional.of(user), true);
     }
 
     @Test
@@ -65,7 +66,7 @@ class AliasableResourceInterfaceTest {
             // If it is not acceptable then an exception is generated
             try {
 
-                AliasableResourceInterface.checkAliases(Collections.singleton(zenodoDOI), user, true);
+                AliasableResourceInterface.checkAliases(Collections.singleton(zenodoDOI), Optional.of(user), true);
             } catch (CustomWebApplicationException ex) {
                 assertTrue(ex.getMessage().contains("Please create aliases without this format"));
             }
@@ -85,7 +86,7 @@ class AliasableResourceInterfaceTest {
         user.setCurator(isCurator);
 
         Set<String> zendodoDOIs = Set.of(ZENODO_DOI_ALIASES);
-        AliasableResourceInterface.checkAliases(zendodoDOIs, user, true);
+        AliasableResourceInterface.checkAliases(zendodoDOIs, Optional.of(user), true);
     }
 
     @Test
@@ -95,7 +96,7 @@ class AliasableResourceInterfaceTest {
         user.setCurator(false);
 
         Set<String> zendodoDOIs = Set.of(ZENODO_DOI_ALIASES);
-        AliasableResourceInterface.checkAliases(zendodoDOIs, user, false);
+        AliasableResourceInterface.checkAliases(zendodoDOIs, Optional.of(user), false);
     }
 
 }

@@ -21,6 +21,7 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -187,25 +188,27 @@ public class EventDAO extends AbstractDAO<Event> {
         currentSession().flush();
     }
 
-    public void createAddTagToEntryEvent(User user, Entry entry, Version version) {
+    public void createAddTagToEntryEvent(Optional<User> user, Entry entry, Version version) {
         if (version.getReferenceType() == Version.ReferenceType.TAG) {
-            Event event = entry.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();
+            final Builder builder = entry.getEventBuilder().withType(EventType.ADD_VERSION_TO_ENTRY).withVersion(version);
+            user.ifPresent(builder::withInitiatorUser);
+            final Event event = builder.build();
             create(event);
         }
     }
 
-    public <T extends Entry> void publishEvent(boolean publish, User user, T entry) {
+    public <T extends Entry> void publishEvent(boolean publish, Optional<User> user, T entry) {
         createEntryEvent(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY, user, entry);
     }
 
-    public <T extends Entry> void archiveEvent(boolean archive, User user, T entry) {
+    public <T extends Entry> void archiveEvent(boolean archive, Optional<User> user, T entry) {
         createEntryEvent(archive ? EventType.ARCHIVE_ENTRY : EventType.UNARCHIVE_ENTRY, user, entry);
     }
 
-    private <T extends Entry> void createEntryEvent(EventType type, User user, T entry) {
+    private <T extends Entry> void createEntryEvent(EventType type, Optional<User> user, T entry) {
         final Builder builder = entry.getEventBuilder()
-            .withType(type)
-            .withUser(user).withInitiatorUser(user);
+            .withType(type);
+        user.ifPresent(u -> builder.withInitiatorUser(u).withUser(u));
         final Event event = builder.build();
         create(event);
     }

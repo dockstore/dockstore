@@ -31,7 +31,7 @@ public class PersistenceExceptionMapper implements ExceptionMapper<PersistenceEx
 
     @Override
     public Response toResponse(PersistenceException e) {
-        LOGGER.debug("failure caught by PersistenceExceptionMapper", e);
+        LOGGER.warn("failure caught by PersistenceExceptionMapper", e);
         if (e.getCause() instanceof ConstraintViolationException) {
             return ConstraintExceptionMapper.getResponse((ConstraintViolationException) e.getCause());
         } else {

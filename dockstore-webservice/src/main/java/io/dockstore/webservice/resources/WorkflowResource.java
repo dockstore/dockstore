@@ -20,6 +20,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
@@ -39,8 +40,8 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
-import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
@@ -62,6 +63,7 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.core.webhook.ReleasePayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -76,6 +78,8 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
+import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
+import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
 import io.dockstore.webservice.helpers.ZipGitHubFileTree;
 import io.dockstore.webservice.helpers.infer.Inferrer;
 import io.dockstore.webservice.helpers.infer.InferrerHelper;
@@ -132,8 +136,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,6 +152,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
@@ -304,7 +311,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "completely refresh all versions, even if they have not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
-        automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
+        automaticallyRegisterDockstoreDOIForRecentTags(workflow, Optional.of(user), this);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
     }
@@ -610,13 +617,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkCanRegisterDoi(workflow, workflowVersion, user, DoiInitiator.USER);
+        checkCanRegisterDoi(workflow, workflowVersion, Optional.of(user), DoiInitiator.USER);
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
         ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
-        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, user, this, DoiInitiator.USER);
+        ZenodoHelper.registerZenodoDOI(zenodoClient, workflow, workflowVersion, Optional.of(user), this, DoiInitiator.USER);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkNotNullEntry(result);
@@ -774,9 +781,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         checkNotArchived(workflow);
 
-        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
+        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), Optional.of(userDAO.findById(user.getId())));
         if (request.getPublish()) {
-            automaticallyRegisterDockstoreDOIForRecentTags(workflow, user, this);
+            automaticallyRegisterDockstoreDOIForRecentTags(workflow, Optional.of(user), this);
         }
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
         return publishedWorkflow;
@@ -1849,7 +1856,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkerWorkflow = (BioWorkflow) workflowDAO.findById(id);
         PublicStateManager.getInstance().handleIndexUpdate(checkerWorkflow, StateManagerMode.UPDATE);
         if (isPublished) {
-            eventDAO.publishEvent(true, userDAO.findById(user.getId()), checkerWorkflow);
+            eventDAO.publishEvent(true, Optional.of(userDAO.findById(user.getId())), checkerWorkflow);
         }
 
         // Update original entry with checker id
@@ -2033,8 +2040,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Check that there isn't a duplicate in the Apptool table.
-        workflowDAO.checkForDuplicateAcrossTables(workflow.getWorkflowPath(), AppTool.class);
+        // Check that there isn't another entry with the same path.
+        workflowDAO.checkForDuplicateAcrossTables(workflow.getWorkflowPath());
         final long workflowID = workflowDAO.create(workflow);
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
@@ -2130,16 +2137,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return inferrerHelper.toDockstoreYaml(entries);
     }
 
+    /**
+     * Handles GitHub push events. The path and initial method name incorrectly refer to it as handling release events, but it does not.
+     * The method was renamed to indicate it handles push events, but the path and operationId use the old name to avoid breaking clients.
+     *
+     * {@code handleGitHubTaggedRelease} handles release events.
+     *
+     * @param user
+     * @param deliveryId
+     * @param payload
+     */
     @POST
     @Path("/github/release")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
+    @Operation(description = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", operationId = "handleGitHubRelease",
+            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Handle a push event on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+    public void handleGitHubPush(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
         @RequestBody(description = "GitHub push event payload", required = true) PushPayload payload) {
 
@@ -2151,8 +2169,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-
-        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, afterCommit, true);
+        githubWebhookRelease(repository, gitHubUsernamesFromPushPayload(payload), gitReference, installationId, deliveryId, afterCommit, true);
     }
 
     @POST
@@ -2215,7 +2232,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                             Utilities.cleanForLogging(username)));
                     }
-                    githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, null, false);
+                    githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
                 }
             }
         }
@@ -2240,6 +2257,47 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
         githubWebhookDelete(repository, gitReference, username, installationId, deliveryId);
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    /**
+     * Handles GitHub release events by storing the release timestamp of a published release in the workflows based on the GitHub repo.
+     *
+     * Uses the term &quot;taggedRelease&quot; to distinguish from the misnamed <code>handleGitHubRelease</code> method.
+     *
+     * @param user
+     * @param deliveryId
+     * @param payload
+     * @return
+     */
+    @POST
+    @Path("/github/taggedrelease")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"curator", "admin"})
+    @Operation(description = "Handles a release event on GitHub.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Response handleGitHubTaggedRelease(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true)
+            @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @RequestBody(description = "GitHub App repository release event payload", required = true) ReleasePayload payload) {
+        final String actionString = payload.getAction();
+        final Optional<ReleasePayload.Action> optionalAction = ReleasePayload.Action.findAction(actionString);
+        if (optionalAction.isPresent() && optionalAction.get() == PUBLISHED) { // Zenodo will only create DOIs for published relesaes
+            final LambdaEvent lambdaEvent = createBasicEvent(payload.getRepository().getFullName(),
+                    "refs/tags/" + payload.getRelease().getTagName(), payload.getSender().getLogin(), LambdaEvent.LambdaEventType.RELEASE,
+                    true, deliveryId);
+            lambdaEventDAO.create(lambdaEvent);
+            final List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + payload.getRepository().getFullName(), false);
+            final Timestamp publishedAt = payload.getRelease().getPublishedAt();
+            workflows.stream().filter(w -> Objects.isNull(w.getLatestReleaseDate()) || w.getLatestReleaseDate().before(publishedAt))
+                    .forEach(w -> {
+                        LOG.info("Setting latestReleaseDate for workflow {}", w.getWorkflowPath());
+                        w.setLatestReleaseDate(publishedAt);
+                    });
+        } else {
+            LOG.info("Ignoring action in release event: {}", actionString);
+        }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 
@@ -2275,5 +2333,136 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         return orcidAuthorInfo;
+    }
+
+    /**
+     * Scans Zenodo for DOIs issued against GitHub repos with registered workflows in Dockstore, updating the Dockstore workflows
+     * with those DOIs.
+     *
+     * @param user
+     * @param filter - optional filter to scope to a single GitHub repository in the format myorg/myrepo
+     * @return
+     */
+    @POST
+    @RolesAllowed({"admin", "curator"})
+    @Path("/updateDois")
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "updateDois", description = "Searches Zenodo for DOIs referencing GitHub repos, and updates Dockstore entries with them", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> updateDois(@Parameter(hidden = true) @Auth User user,
+            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository") @QueryParam("filter") String filter) {
+        final List<Workflow> publishedWorkflows = getPublishedGitHubWorkflows(filter);
+
+        // Get a map of GitHub repos to Dockstore workflows
+        final Map<String, List<Workflow>> repoToWorkflowsMap = publishedWorkflows.stream()
+                .filter(w -> w.getSourceControl() == SourceControl.GITHUB)
+                .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
+
+        // Query Zenodo for DOIs issued against the GitHub repositories
+        final List<GitHubRepoDois> gitHubRepoDois = repoToWorkflowsMap.keySet().stream().sorted()
+                .map(ZenodoHelper::findDoisForGitHubRepo)
+                .flatMap(Collection::stream)
+                .toList();
+
+        final Set<Workflow> updatedWorkflows = new HashSet<>();
+        gitHubRepoDois.stream().forEach(gitHubRepoDoi -> {
+            final List<Workflow> workflows = repoToWorkflowsMap.get(gitHubRepoDoi.repo());
+            workflows.stream().forEach(workflow -> {
+                try {
+                    if (updateWorkflowWithDois(workflow, gitHubRepoDoi)) {
+                        updatedWorkflows.add(workflow);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Error updating workflow %s with DOIs".formatted(workflow.getWorkflowPath()), e);
+                }
+            });
+        });
+        return updatedWorkflows.stream().toList();
+    }
+
+    /**
+     * Updates a workflow with DOIs discovered from Zenodo for a GitHub repository.
+     *
+     * <ul>
+     *     <li>If the workflow doesn't have a concept DOI for the GitHub initiator adds it, then updates the versions with the version DOIs</li>
+     *     <li>If the workflow's existing concept DOI for the GitHub initiator matches the discovered concept DOI, then updates the version DOIs</li>
+     *     <li>If the workflow's exising concept DOI for the the GitHub initiator DOES NOT match the discovered concept DOI, does nothing. Because
+     *     we do not support multiple concept DOIs from the same initiator, and it doesn't make sense to have version DOIs that don't
+     *     match the concept DOI.</li>
+     * </ul>
+     *
+     * @param workflow
+     * @param gitHubRepoDoi
+     * @return true if the workflow was updated, false otherwise
+     */
+    private boolean updateWorkflowWithDois(Workflow workflow, GitHubRepoDois gitHubRepoDoi) {
+        boolean updatedWorkflow = false;
+        final String conceptDoi = gitHubRepoDoi.conceptDoi();
+        final Doi existingGitHubDoi = workflow.getConceptDois().get(DoiInitiator.GITHUB);
+        if (existingGitHubDoi != null && !conceptDoi.equals(existingGitHubDoi.getName())) {
+            LOG.warn("Skipping DOI %s for workflow %s because it already has a Zenodo DOI from GitHub".formatted(conceptDoi, workflow.getWorkflowPath()));
+        } else {
+            final boolean noDoiToStart = workflow.getConceptDois().isEmpty();
+            if (existingGitHubDoi == null) { // No Concept DOI yet, add it.
+                workflow.getConceptDois().put(DoiInitiator.GITHUB,
+                        ZenodoHelper.getDoiFromDatabase(Doi.DoiType.CONCEPT, DoiInitiator.GITHUB, conceptDoi));
+                updatedWorkflow = true;
+            }
+            // Add version DOI(s) to the workflow versions
+            if (updateWorkflowVersionsWithZenodoDois(workflow, gitHubRepoDoi.tagAndDoi())) {
+                updatedWorkflow = true;
+            }
+            if (noDoiToStart) {
+                // The default DOI selection is USER. If there was no DOI to begin with, set it to GITHUB so it will show up in the UI.
+                workflow.setDoiSelection(DoiInitiator.GITHUB);
+            }
+            if (updatedWorkflow) {
+                LOG.info("Updated workflow {} with DOIs from Zenodo DOIs {}", workflow.getWorkflowPath(), gitHubRepoDoi);
+            }
+        }
+        return updatedWorkflow;
+    }
+
+    /**
+     * Updates all workflow versions of <code>workflow</code> that match a tag in <code>tagsAndDois</code> with the corresponding DOI.
+     *
+     * Returns true if any workflow version was updated.
+     * @param workflow
+     * @param tagsAndDois
+     * @return true if any of the workflow version were updated, false other wise
+     */
+    private boolean updateWorkflowVersionsWithZenodoDois(Workflow workflow, List<TagAndDoi> tagsAndDois) {
+        boolean workflowUpdated = false;
+        for (TagAndDoi tagAndDoi: tagsAndDois) {
+            final WorkflowVersion workflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(
+                    workflow.getId(), tagAndDoi.gitHubTag());
+            if (workflowVersion != null && workflowVersion.getDois().get(Doi.DoiInitiator.GITHUB) == null) {
+                final Doi versionDoi = ZenodoHelper.getDoiFromDatabase(Doi.DoiType.VERSION, Doi.DoiInitiator.GITHUB,
+                        tagAndDoi.doi());
+                workflowVersion.getDois().put(Doi.DoiInitiator.GITHUB, versionDoi);
+                workflowUpdated = true;
+            }
+        }
+        return workflowUpdated;
+    }
+
+    /**
+     * Returns a list of published GitHub workflows. If <code>optionalFilter</code> is set, then only returns workflows for that GitHub
+     * organization and repository. Throws a CustomWebApplicationException if <code>optionalFilter</code> is set, and its format is not
+     * <code>[organization]/[repository]</code>.
+     * @param optionalFilter a filter in the format "organization/repository", or null/empty
+     * @return
+     */
+    private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter) {
+        if (StringUtils.isNotBlank(optionalFilter)) {
+            final String[] split = optionalFilter.split("/");
+            if (split.length != 2) {
+                throw new CustomWebApplicationException("Filter '%s' must be of the format org/repo".formatted(optionalFilter), HttpStatus.SC_BAD_REQUEST);
+            }
+            final String org = split[0];
+            final String repository = split[1];
+            return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
+        }
+        return workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB);
     }
 }

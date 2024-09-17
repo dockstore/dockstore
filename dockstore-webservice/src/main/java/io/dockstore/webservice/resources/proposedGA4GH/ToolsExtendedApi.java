@@ -21,6 +21,7 @@ import io.dockstore.common.Partner;
 import io.dockstore.common.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.api.UpdateAITopicRequest;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
@@ -48,6 +49,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -209,6 +211,22 @@ public class ToolsExtendedApi {
         return delegate.setSourceFileMetadata(type, id, versionId, platform, platformVersion, relativePath, verified, metadata);
     }
 
+    @GET
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin"})
+    @Path("/entryVersionsToAggregate")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getEntryVersionsToAggregate", summary = GetEntryVersionsToAggregate.SUMMARY, description = GetEntryVersionsToAggregate.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = GetEntryVersionsToAggregate.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class)))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = GetEntryVersionsToAggregate.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Response getEntryVersionsToAggregate(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.getEntryVersionsToAggregate();
+    }
+
     @POST
     @UnitOfWork
     @RolesAllowed({"curator", "admin", "platformPartner"})
@@ -262,10 +280,9 @@ public class ToolsExtendedApi {
     public Response aggregatedMetricsPut(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
         @ApiParam(value = AggregatedMetricsPut.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
-        @ApiParam(value = AggregatedMetricsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid @HasMetrics Metrics aggregatedMetrics,
+        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @NotEmpty Map<Partner, @Valid @HasMetrics Metrics> aggregatedMetrics,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
-        return delegate.setAggregatedMetrics(id, versionId, platform, aggregatedMetrics);
+        return delegate.setAggregatedMetrics(id, versionId, aggregatedMetrics);
     }
 
     @GET
@@ -398,8 +415,7 @@ public class ToolsExtendedApi {
         public static final String DESCRIPTION = "This endpoint adds aggregated metrics for a workflow that was executed on a platform";
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
-        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
-        public static final String AGGREGATED_METRICS_DESCRIPTION = "Aggregated metrics to add to the version";
+        public static final String AGGREGATED_METRICS_DESCRIPTION = "A map of aggregated metrics for platforms to set as the version's metrics";
         public static final String OK_RESPONSE = "Aggregated metrics added successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to add aggregated metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
@@ -437,6 +453,13 @@ public class ToolsExtendedApi {
         public static final String EXECUTIONS_DESCRIPTION = "Individual execution metrics to submit.";
         public static final String OK_RESPONSE = "Execution metrics submitted successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit execution metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
+    private static final class GetEntryVersionsToAggregate {
+        public static final String SUMMARY = "Get entry versions that have new execution metrics to aggregate.";
+        public static final String DESCRIPTION = "This endpoint gets entry versions that have new execution metrics to aggregate.";
+        public static final String OK_RESPONSE = "Entry versions to aggregate retrieved successfully.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 

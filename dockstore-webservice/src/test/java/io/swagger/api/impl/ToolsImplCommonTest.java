@@ -19,12 +19,12 @@ import static io.dockstore.webservice.DockstoreWebserviceApplication.GA4GH_API_P
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.Utils;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
@@ -299,8 +299,7 @@ class ToolsImplCommonTest {
 
     @SuppressWarnings("checkstyle:MethodLength")
     private void convertDockstoreWorkflowToTool(String toolname, boolean isService) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        ObjectMapper mapper = Utils.getObjectMapper();
         final String reference1 = "aaa";
         final String reference2 = "bbb";
         final String reference3 = "ccc";

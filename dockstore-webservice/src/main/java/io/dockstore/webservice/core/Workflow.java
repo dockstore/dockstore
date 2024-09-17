@@ -44,6 +44,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
+import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
@@ -74,6 +75,8 @@ import org.hibernate.annotations.Filter;
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPathWithoutUser", query = "SELECT w FROM Workflow w WHERE w.sourceControl = :sourcecontrol AND w.organization = :organization AND w.repository = :repository and :user not in elements(w.users) "),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganizationAndRepository", query = "SELECT w FROM Workflow w WHERE w.sourceControl = :sourcecontrol AND w.organization = :organization AND w.repository = :repository and w.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedBySourceControl", query = "SELECT w FROM Workflow w WHERE w.sourceControl = :sourcecontrol and w.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname AND c.isPublished = true"),
@@ -84,7 +87,7 @@ import org.hibernate.annotations.Filter;
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationsWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) in :organizations AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent.id"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedOrganizations", query = "SELECT distinct lower(organization) FROM Workflow w WHERE w.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
@@ -160,6 +163,10 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
     private WorkflowVersion actualDefaultVersion;
+
+    @Column(nullable = true)
+    @Schema(type = "integer", format = "int64", description = "The timestamp of the most recent version control release, such as a GitHub release")
+    private Timestamp latestReleaseDate;
 
     protected Workflow() {
         workflowVersions = new TreeSet<>();
@@ -393,6 +400,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Override
     public boolean isDeletable() {
         return super.isDeletable() && !isIsChecker();
+    }
+
+    public Timestamp getLatestReleaseDate() {
+        return latestReleaseDate;
+    }
+
+    public void setLatestReleaseDate(Timestamp latestReleaseDate) {
+        this.latestReleaseDate = latestReleaseDate;
     }
 
     public static class DescriptorLanguageConverter implements AttributeConverter<DescriptorLanguage, String> {

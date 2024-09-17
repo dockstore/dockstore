@@ -31,6 +31,7 @@ import io.dockstore.common.EntryType;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -393,13 +394,15 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public abstract String getEntryPath();
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public abstract EntryType getEntryType();
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract EntryTypeMetadata getEntryTypeMetadata();
 
     @JsonIgnore
     public abstract boolean isHosted();
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public EntryType getEntryType() {
+        return getEntryTypeMetadata().getType();
+    }
 
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
@@ -957,6 +960,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.gitVisibility = gitVisibility;
     }
 
+    @JsonProperty
+    public String getTrsId() {
+        return getEntryTypeMetadata().getTrsPrefix() + getEntryPath();
+    }
+
     public record EntryIdAndPartner(long entryId, Partner partner) {
+    }
+
+    public record EntryLiteAndVersionName(EntryLite entryLite, String versionName) {
     }
 }
