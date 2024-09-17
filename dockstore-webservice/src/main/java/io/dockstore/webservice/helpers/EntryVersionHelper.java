@@ -43,6 +43,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang3.ObjectUtils;
@@ -462,6 +464,27 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return new TreeSet<>(sourceFiles);
 
     }
+
+    default Optional<U> determineBestVersion(T entry) {
+        U defaultVersion = entry.getActualDefaultVersion();
+        if (defaultVersion != null) {
+            return Optional.of(defaultVersion);
+        }
+
+        Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
+        Set<U> versions = entry.getWorkflowVersions();
+        Stream<U> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
+        Stream<U> validVersions = versions.stream().filter(U::isValid);
+        Stream<U> allVersions = versions.stream();
+        return youngestVersion(mainlineVersions)
+            .or(() -> youngestVersion(validVersions))
+            .or(() -> youngestVersion(allVersions));
+    }
+
+    default Optional<U> youngestVersion(Stream<U> versions) {
+        return versions.max(Comparator.comparing(U::getId));
+    }
+
     /**
      * Looks like this is used just to denote which descriptor is the primary descriptor
      */
