@@ -42,6 +42,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -73,7 +74,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -379,10 +379,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // If the default version is going to be deleted, select a new default version
                     Version defaultVersion = workflow.getActualDefaultVersion();
                     if (defaultVersion != null && shouldDeleteVersion.test(defaultVersion)) {
-                        Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
-                            .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
-                            .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
-                        workflow.setActualDefaultVersion(max.orElse(null));
+                        Set<WorkflowVersion> remainingVersions = workflow.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), gitReferenceName.get())).collect(Collectors.toSet());
+                        Optional<WorkflowVersion> newDefaultVersion = EntryVersionHelper.determineRepresentativeVersion(remainingVersions);
+                        workflow.setActualDefaultVersion(newDefaultVersion.orElse(null));
                     }
 
                     // Delete all matching versions

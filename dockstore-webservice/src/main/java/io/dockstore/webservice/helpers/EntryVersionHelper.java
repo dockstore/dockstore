@@ -466,19 +466,21 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     static Optional<Version> determineRepresentativeVersion(Entry entry) {
-        return Optional.ofNullable(entry.getActualDefaultVersion()).or(() -> {
-            Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
-            Set<Version> versions = entry.getWorkflowVersions();
-            Stream<Version> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
-            Stream<Version> validVersions = versions.stream().filter(Version::isValid);
-            Stream<Version> allVersions = versions.stream();
-            return youngestVersion(mainlineVersions)
-                .or(() -> youngestVersion(validVersions))
-                .or(() -> youngestVersion(allVersions));
-        });
+        return Optional.ofNullable(entry.getActualDefaultVersion())
+            .or(() -> determineRepresentativeVersion(entry.getWorkflowVersions()));
     }
 
-    private static Optional<Version> youngestVersion(Stream<Version> versions) {
+    static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions) {
+        Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
+        Stream<V> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
+        Stream<V> validVersions = versions.stream().filter(Version::isValid);
+        Stream<V> allVersions = versions.stream();
+        return youngestVersion(mainlineVersions)
+            .or(() -> youngestVersion(validVersions))
+            .or(() -> youngestVersion(allVersions));
+    }
+
+    private static <V extends Version> Optional<V> youngestVersion(Stream<V> versions) {
         return versions.max(Comparator.comparing(Version::getId));
     }
 
