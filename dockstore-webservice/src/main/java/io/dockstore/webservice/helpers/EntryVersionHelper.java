@@ -466,19 +466,16 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     static Optional<Version> determineRepresentativeVersion(Entry entry) {
-        Version defaultVersion = entry.getActualDefaultVersion();
-        if (defaultVersion != null) {
-            return Optional.of(defaultVersion);
-        }
-
-        Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
-        Set<Version> versions = entry.getWorkflowVersions();
-        Stream<Version> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
-        Stream<Version> validVersions = versions.stream().filter(Version::isValid);
-        Stream<Version> allVersions = versions.stream();
-        return youngestVersion(mainlineVersions)
-            .or(() -> youngestVersion(validVersions))
-            .or(() -> youngestVersion(allVersions));
+        return Optional.ofNullable(entry.getActualDefaultVersion()).or(() -> {
+            Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
+            Set<Version> versions = entry.getWorkflowVersions();
+            Stream<Version> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
+            Stream<Version> validVersions = versions.stream().filter(Version::isValid);
+            Stream<Version> allVersions = versions.stream();
+            return youngestVersion(mainlineVersions)
+                .or(() -> youngestVersion(validVersions))
+                .or(() -> youngestVersion(allVersions));
+        });
     }
 
     private static Optional<Version> youngestVersion(Stream<Version> versions) {
