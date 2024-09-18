@@ -465,24 +465,24 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
     }
 
-    default Optional<U> determineBestVersion(T entry) {
-        U defaultVersion = entry.getActualDefaultVersion();
+    static Optional<Version> determineRepresentativeVersion(Entry entry) {
+        Version defaultVersion = entry.getActualDefaultVersion();
         if (defaultVersion != null) {
             return Optional.of(defaultVersion);
         }
 
         Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
-        Set<U> versions = entry.getWorkflowVersions();
-        Stream<U> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
-        Stream<U> validVersions = versions.stream().filter(U::isValid);
-        Stream<U> allVersions = versions.stream();
+        Set<Version> versions = entry.getWorkflowVersions();
+        Stream<Version> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
+        Stream<Version> validVersions = versions.stream().filter(Version::isValid);
+        Stream<Version> allVersions = versions.stream();
         return youngestVersion(mainlineVersions)
             .or(() -> youngestVersion(validVersions))
             .or(() -> youngestVersion(allVersions));
     }
 
-    default Optional<U> youngestVersion(Stream<U> versions) {
-        return versions.max(Comparator.comparing(U::getId));
+    private static Optional<Version> youngestVersion(Stream<Version> versions) {
+        return versions.max(Comparator.comparing(Version::getId));
     }
 
     /**
