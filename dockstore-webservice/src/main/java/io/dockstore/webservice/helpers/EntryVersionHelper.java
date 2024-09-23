@@ -465,12 +465,22 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
     }
 
+    /**
+     * Determine which Version of the specified Entry is most representative of the Entry.
+     * The resulting Version is used to generate identifying information about the Entry
+     * (Search fields, AI topic, and perhaps other things)
+     */
     static Optional<Version> determineRepresentativeVersion(Entry entry) {
         return Optional.ofNullable(entry.getActualDefaultVersion())
             .or(() -> determineRepresentativeVersion(entry.getWorkflowVersions()));
     }
 
+    /**
+     * Determine which of the specified Versions, which should be of the same Entry,
+     * is most representative of the Entry.
+     */
     static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions) {
+        // Prefer "mainline" Versions over valid Versions over all Versions, with ties going to the most-recently-created Version.
         Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
         Stream<V> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
         Stream<V> validVersions = versions.stream().filter(Version::isValid);
@@ -481,6 +491,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     private static <V extends Version> Optional<V> youngestVersion(Stream<V> versions) {
+        // Because we assign IDs sequentially, in increasing order, the Version with the highest ID was created most recently.
         return versions.max(Comparator.comparing(Version::getId));
     }
 
