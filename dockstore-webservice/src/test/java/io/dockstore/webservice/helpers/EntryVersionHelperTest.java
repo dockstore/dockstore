@@ -5,12 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.WorkflowVersion;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.Test;
 
 class EntryVersionHelperTest {
@@ -82,5 +86,33 @@ class EntryVersionHelperTest {
         String path = "github.com/dockstore/hello_world";
         String versionName = "master";
         assertEquals("github.com-dockstore-hello_world-master.zip", EntryVersionHelper.generateZipFileName(path, versionName));
+    }
+
+    @Test
+    void testRepresentativeVersionSelection() throws IllegalAccessException {
+        // workflow with no versions
+        BioWorkflow workflow = new BioWorkflow();
+        assertEquals(Optional.empty(), EntryVersionHelper.determineRepresentativeVersion(workflow));
+        // workflow with one invalid version
+        workflow.addWorkflowVersion(createVersion("invalid", false, 13));
+        assertEquals("invalid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // workflow with one valid and one invalid version
+        workflow.addWorkflowVersion(createVersion("valid", true, 11));
+        assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // workflow with "master" version and some other versions
+        workflow.addWorkflowVersion(createVersion("master", false, 1));
+        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // workflow with "master", "main", and "develop" versions, should select one of those three with the highest id
+        workflow.addWorkflowVersion(createVersion("main", false, 2));
+        workflow.addWorkflowVersion(createVersion("develop", false, 3));
+        assertEquals("develop", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+    }
+
+    private WorkflowVersion createVersion(String name, boolean valid, long id) throws IllegalAccessException {
+        WorkflowVersion version = new WorkflowVersion();
+        version.setName(name);
+        version.setValid(valid);
+        FieldUtils.writeField(version, "id", id, true);
+        return version;
     }
 }
