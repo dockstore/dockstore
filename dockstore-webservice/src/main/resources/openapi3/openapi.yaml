@@ -8487,6 +8487,20 @@ paths:
         schema:
           type: integer
           format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 200
+          maximum: 200
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
       responses:
         "200":
           content:
