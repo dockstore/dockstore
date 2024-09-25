@@ -661,7 +661,7 @@ POM as their parent.
             <dependency>
                 <groupId>cloud.localstack</groupId>
                 <artifactId>localstack-utils</artifactId>
-                <version>0.2.22</version>
+                <version>0.2.23</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>

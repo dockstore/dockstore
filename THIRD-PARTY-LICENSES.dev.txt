@@ -85,7 +85,7 @@ Lists of 105 third-party dependencies.
      (Eclipse Public License v2.0) JUnit Platform Commons (org.junit.platform:junit-platform-commons:1.10.0 - https://junit.org/junit5/)
      (Eclipse Public License v2.0) JUnit Platform Engine API (org.junit.platform:junit-platform-engine:1.10.0 - https://junit.org/junit5/)
      (Apache License 2.0) JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.19 - https://metrics.dropwizard.io/metrics-jvm)
-     (Apache License 2.0) localstack-utils (cloud.localstack:localstack-utils:0.2.22 - http://localstack.cloud)
+     (Apache License 2.0) localstack-utils (cloud.localstack:localstack-utils:0.2.23 - http://localstack.cloud)
      (Apache License 2.0) Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.19 - https://metrics.dropwizard.io/metrics-jersey3)
      (Apache License 2.0) Metrics Integration for Jetty 11.x and higher (io.dropwizard.metrics:metrics-jetty11:4.2.19 - https://metrics.dropwizard.io/metrics-jetty11)
      (Apache License 2.0) Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.19 - https://metrics.dropwizard.io/metrics-logback)
