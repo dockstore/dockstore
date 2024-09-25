@@ -27,7 +27,6 @@ import static io.dockstore.webservice.core.tooltester.ObjectMetadataEnum.VERSION
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import cloud.localstack.ServiceName;
-import cloud.localstack.awssdkv2.TestUtils;
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.common.collect.Maps;
