@@ -567,4 +567,14 @@ class DockstoreYamlTest {
             assertTrue(ex.getMessage().contains(DockstoreYamlHelper.BETTER_NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE));
         }
     }
+
+    @Test
+    void testDisableDoiGenerationMustBeTrue() {
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("disableDoiGeneration: true", "disableDoiGeneration: false"), true);
+            fail("Should not succeed because only true is allowed for disableDoiGeneration");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains("must be true"));
+        }
+    }
 }

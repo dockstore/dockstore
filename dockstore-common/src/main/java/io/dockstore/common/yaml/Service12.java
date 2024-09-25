@@ -55,4 +55,5 @@ public class Service12 extends AbstractYamlService implements Workflowish {
     public String getTopic() {
         throw new UnsupportedOperationException();
     }
+
 }

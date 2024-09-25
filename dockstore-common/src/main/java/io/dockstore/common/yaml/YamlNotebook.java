@@ -21,6 +21,7 @@ import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -45,6 +46,7 @@ public class YamlNotebook implements Workflowish {
     private List<YamlAuthor> authors = new ArrayList<>();
     private List<String> testParameterFiles = new ArrayList<>();
     private List<String> otherFiles = new ArrayList<>();
+    private Boolean disableDoiGeneration;
 
     @EntryName
     public String getName() {
@@ -202,5 +204,15 @@ public class YamlNotebook implements Workflowish {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    @AssertTrue
+    @Override
+    public Boolean getDisableDoiGeneration() {
+        return disableDoiGeneration;
+    }
+
+    public void setDisableDoiGeneration(Boolean disableDoiGeneration) {
+        this.disableDoiGeneration = disableDoiGeneration;
     }
 }

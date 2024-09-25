@@ -715,8 +715,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     transactionHelper.continueSession().transaction(() -> {
                         Workflow workflow = result.getLeft();
                         WorkflowVersion version = result.getRight();
-                        // Automatically register a DOI
-                        automaticallyRegisterDockstoreDOI(workflow, version, user, this);
+                        if (wf.getDisableDoiGeneration() == Boolean.TRUE) {
+                            // Automatically register a DOI
+                            automaticallyRegisterDockstoreDOI(workflow, version, user, this);
+                        }
                     });
 
                 } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {
@@ -849,7 +851,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Convert the specified workflow information into an identifying string that can be shown to the end user (in the app logs, exception messages, etc).
      * @param workflowType type of the workflow
-     * @param workflowish description of the workflow
+     * @param workflow description of the workflow
      * @return string describing the workflow
      */
     private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {
