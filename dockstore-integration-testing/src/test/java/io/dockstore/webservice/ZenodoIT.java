@@ -358,7 +358,7 @@ class ZenodoIT {
         // unpublish workflow
         workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
 
-        // should be able to restub workflow with DOI
+        // should be able to restub unpublished workflow with DOI, so long as no versions are frozen
         workflowsApi.restub(workflowId);
         assertEquals(0, workflowsApi.getWorkflow(workflowId, null).getWorkflowVersions().size());
     }
