@@ -188,7 +188,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE;
     public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
-    public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
     public static final String YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION = "Your user does not have access to this organization.";
