@@ -117,6 +117,7 @@ class ZenodoIT {
      */
     private static final String VERSION_DOI = "10.5281/zenodo.11095507";
     private static final String FAKE_VERSION_DOI = "10.5281/zenodo.11095506";
+    private static final String REFS_TAGS_0_8 = "refs/tags/0.8";
 
     private static TestingPostgres testingPostgres;
 
@@ -144,6 +145,7 @@ class ZenodoIT {
      */
     @Test
     void testGitHubAppAutomaticDoiCreation(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear(); // Empty list means enabled for all (should be empty already, just in case).
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         testDoiCreation();
     }
@@ -154,7 +156,8 @@ class ZenodoIT {
      */
     @Test
     void testGitHubAppAutoDoiCreationWithAllowList(Hoverfly hoverfly) {
-        SUPPORT.getConfiguration().setGitHubOrgsWithDoiGeneration(List.of("dockstore-testing"));
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear();
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().add("dockstore-testing");
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         testDoiCreation();
     }
@@ -167,7 +170,7 @@ class ZenodoIT {
         testingPostgres.runUpdateStatement(String.format("insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
                 + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')", USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
         Workflow foobar2 = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
         final long foobar2Id = foobar2.getId();
         WorkflowVersion foobar2TagVersion08 = getWorkflowVersion(foobar2, "0.8").orElse(null);
@@ -180,7 +183,7 @@ class ZenodoIT {
         workflowsApi.publish1(foobar2.getId(), new PublishRequest().publish(true));
 
         // Release the tag again. Should automatically create a DOI
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
         foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
         assertFalse(foobar2TagVersion08.isFrozen(), "Version should not be snapshotted for automatic DOI creation");
         assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
@@ -220,12 +223,13 @@ class ZenodoIT {
     }
 
     /**
-     * Test that no DOI is created when the workflow is not in the allow list
+     * Test that no DOI is created when the workflow's org is not in the allow list
      * @param hoverfly
      */
     @Test
     void testNoGitHubAppAutoDoiCreationWhenNotAllowed(Hoverfly hoverfly) {
-        SUPPORT.getConfiguration().setGitHubOrgsWithDoiGeneration(List.of("dockstore-testing2"));
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear();
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().add("not-the-dockstore-testing-org");
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -234,9 +238,8 @@ class ZenodoIT {
         testingPostgres.runUpdateStatement(String.format("insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
                 + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')", USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
         Workflow foobar2 = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final long foobar2Id = foobar2.getId();
         WorkflowVersion foobar2TagVersion08 = getWorkflowVersion(foobar2, "0.8").orElse(null);
         assertNotNull(foobar2TagVersion08);
 
@@ -246,9 +249,44 @@ class ZenodoIT {
         workflowsApi.publish1(foobar2.getId(), new PublishRequest().publish(true));
 
         // Release the tag again. Will not create a DOI because the org is not in the allow list.
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
         foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
         assertEquals(Map.of(), foobar2TagVersion08.getDois(), "There should be no DOI because dockstore-testing is not in the allow list");
+    }
+
+    @Test
+    void testDisableDoiGenerationInDockstoreYml(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear(); // Enable for everybody
+        hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
+        Workflow foobar2 = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final long foobar2Id = foobar2.getId();
+        WorkflowVersion foobar2TagVersion08 = getWorkflowVersion(foobar2, "0.8").orElse(null);
+        assertNotNull(foobar2TagVersion08);
+        final long foobar2VersionId = foobar2TagVersion08.getId();
+
+        // No DOIs should've been automatically created because the workflow is unpublished
+        assertTrue(foobar2TagVersion08.getDois().isEmpty());
+        // Publish workflow
+        workflowsApi.publish1(foobar2.getId(), new PublishRequest().publish(true));
+
+        // Release the tag again. Should automatically create a DOI
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
+        foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
+        assertFalse(foobar2TagVersion08.isFrozen(), "Version should not be snapshotted for automatic DOI creation");
+        assertNotNull(foobar2TagVersion08.getDois().get(DoiInitiator.DOCKSTORE.name()).getName());
+        foobar2 = workflowsApi.getWorkflow(foobar2Id, "");
+        assertEquals(DoiSelectionEnum.DOCKSTORE, foobar2.getDoiSelection(), "DOI selection should update to DOCKSTORE since there were previously no DOIs");
+
+        // Release a tag with a .dockstore.yml with disableDoiGeneration: true
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/disableAutoDoiGeneration", USER_2_USERNAME);
+        WorkflowVersion disableDoiGenerationVersion = getWorkflowVersion(foobar2, "disableAutoDoiGeneration").orElse(null);
+        assertNotNull(disableDoiGenerationVersion);
+        // There should be no DOIs for this version
+        assertEquals(Map.of(), disableDoiGenerationVersion.getDois());
     }
 
     @Test
@@ -284,7 +322,7 @@ class ZenodoIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         // Create a GitHub App workflow
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
         WorkflowVersion tagVersion = getWorkflowVersion(workflow, "0.8").orElse(null);
         assertNotNull(tagVersion);
@@ -424,7 +462,7 @@ class ZenodoIT {
         WorkflowsApi anonWorkflowsApi = new WorkflowsApi(anonWebClient);
 
         // Create a GitHub App workflow
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
         WorkflowVersion tagVersion = getWorkflowVersion(workflow, "0.8").orElse(null);
         assertNotNull(tagVersion);
@@ -478,7 +516,7 @@ class ZenodoIT {
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
 
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
@@ -501,7 +539,7 @@ class ZenodoIT {
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
 
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
@@ -518,7 +556,7 @@ class ZenodoIT {
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, REFS_TAGS_0_8, USER_2_USERNAME);
 
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
