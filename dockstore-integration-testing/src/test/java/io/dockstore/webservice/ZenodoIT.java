@@ -283,6 +283,7 @@ class ZenodoIT {
 
         // Release a tag with a .dockstore.yml with disableDoiGeneration: true
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/disableAutoDoiGeneration", USER_2_USERNAME);
+        foobar2 = workflowsApi.getWorkflow(foobar2Id, "");
         WorkflowVersion disableDoiGenerationVersion = getWorkflowVersion(foobar2, "disableAutoDoiGeneration").orElse(null);
         assertNotNull(disableDoiGenerationVersion);
         // There should be no DOIs for this version
