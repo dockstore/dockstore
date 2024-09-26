@@ -357,9 +357,8 @@ class ZenodoIT {
         // unpublish workflow
         workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
 
-        // Should not be able to restub an unpublished workflow that has a frozen version
+        // Should not be able to restub an unpublished workflow that has a frozen version or a DOI, depending upon the environment
         exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
     }
 
     @Test
