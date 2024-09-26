@@ -586,4 +586,5 @@ class DockstoreYamlTest {
                 "There should be 1 workflow with disableDoiGeneration = true ");
         assertEquals(1, dockstoreYaml12.getNotebooks().stream().map(YamlNotebook::getDisableDoiGeneration).filter(Objects::nonNull).count(),
                 "There should be 1 notebook with disableDoiGeneration = true ");
-    }}
+    }
+}
