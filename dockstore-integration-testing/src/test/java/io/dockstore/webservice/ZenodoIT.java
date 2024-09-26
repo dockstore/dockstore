@@ -248,7 +248,7 @@ class ZenodoIT {
         // Release the tag again. Will not create a DOI because the org is not in the allow list.
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         foobar2TagVersion08 = workflowsApi.getWorkflowVersionById(foobar2.getId(), foobar2TagVersion08.getId(), "");
-        assertEquals(Map.of(), foobar2TagVersion08.getDois(), "There should be no DOI because dockstore-esting is not in the allow list");
+        assertEquals(Map.of(), foobar2TagVersion08.getDois(), "There should be no DOI because dockstore-testing is not in the allow list");
     }
 
     @Test

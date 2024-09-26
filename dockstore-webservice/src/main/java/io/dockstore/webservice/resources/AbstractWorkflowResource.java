@@ -715,7 +715,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     transactionHelper.continueSession().transaction(() -> {
                         Workflow workflow = result.getLeft();
                         WorkflowVersion version = result.getRight();
-                        if (wf.getDisableDoiGeneration() == Boolean.TRUE) {
+                        if (!Boolean.TRUE.equals(wf.getDisableDoiGeneration())) {
                             // Automatically register a DOI
                             automaticallyRegisterDockstoreDOI(workflow, version, user, this);
                         }
