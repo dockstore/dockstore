@@ -415,6 +415,31 @@ paths:
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags:
       - GA4GHV1
+  /api/ga4gh/v2/extended/aiTopicCandidates:
+    get:
+      description: Get the AI topic candidate version for all published tools that
+        require AI topics to be generated
+      operationId: getAITopicCandidates
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Retrieved candidate versions for tools that require AI topics
+            successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrsIdAndVersion'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       description: This endpoint returns entries of an organization.
@@ -11755,6 +11780,13 @@ components:
       required:
       - id
       - url
+    TrsIdAndVersion:
+      type: object
+      properties:
+        trsId:
+          type: string
+        version:
+          type: string
     UpdateAITopicRequest:
       type: object
       description: The AI topic update request

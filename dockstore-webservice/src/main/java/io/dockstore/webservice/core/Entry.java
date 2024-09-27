@@ -128,11 +128,11 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL"),
     @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
             + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
     @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
-            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)")
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
+    @NamedQuery(name = Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT e FROM Entry e WHERE ispublished = TRUE AND topicManual IS NULL AND topicAutomatic IS NULL AND topicAI IS NULL")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -153,6 +153,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
     public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
+    public static final String GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.getPublishedEntriesWithNoTopics";
     private static final int TOPIC_LENGTH = 250;
 
     /**

@@ -74,6 +74,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -726,6 +727,21 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.ok(versionOptional.get().getName()).build();
     }
 
+    @Override
+    public Response getAITopicCandidates() {
+        // Get published entries that don't have any topics
+        List<Entry> entriesWithNoTopics = workflowDAO.getPublishedEntriesWithNoTopics();
+        List<TrsIdAndVersion> trsIdAndVersions = entriesWithNoTopics.stream()
+                .map(entry -> {
+                    Optional<Version> versionCandidate = EntryVersionHelper.determineRepresentativeVersion(entry);
+                    return versionCandidate.map(version -> new TrsIdAndVersion(entry.getTrsId(), version.getName())).orElse(null);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return Response.ok(trsIdAndVersions).build();
+    }
+
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
         ToolsApiServiceImpl.ParsedRegistryID parsedID =  new ToolsApiServiceImpl.ParsedRegistryID(id);
         return TOOLS_API_SERVICE_IMPL.getEntry(parsedID, user);
@@ -776,5 +792,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         if (user.isPlatformPartner() && user.getPlatformPartner() != platform) {
             throw new CustomWebApplicationException(FORBIDDEN_PLATFORM, HttpStatus.SC_FORBIDDEN);
         }
+    }
+
+    public record TrsIdAndVersion(String trsId, String version) {
     }
 }

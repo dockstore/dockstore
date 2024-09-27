@@ -55,4 +55,5 @@ public abstract class ToolsExtendedApiService {
     public abstract Response updateAITopic(String id, UpdateAITopicRequest updateAITopicRequest, String version);
 
     public abstract Response getAITopicCandidate(String id);
+    public abstract Response getAITopicCandidates();
 }

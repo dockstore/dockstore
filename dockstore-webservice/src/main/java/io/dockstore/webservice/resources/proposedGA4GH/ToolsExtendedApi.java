@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
 import io.dockstore.webservice.resources.ResourceConstants;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TrsIdAndVersion;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.openapi.model.Error;
@@ -389,6 +390,28 @@ public class ToolsExtendedApi {
         @PathParam("id") String id,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.getAITopicCandidate(id);
+    }
+
+    @GET
+    @UnitOfWork
+    @Path("/aiTopicCandidates")
+    @RolesAllowed({"curator", "admin"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getAITopicCandidates", description = "Get the AI topic candidate version for all published tools that require AI topics to be generated", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                    + "", description = GetAITopicCandidates.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                    + "", description = GetAITopicCandidates.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = TrsIdAndVersion.class)))),
+        })
+    public Response getEntriesForAiTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.getAITopicCandidates();
+    }
+
+    private static final class GetAITopicCandidates {
+        public static final String OK_RESPONSE = "Retrieved candidate versions for tools that require AI topics successfully.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 
     private static final class AiTopicCandidateGet {
