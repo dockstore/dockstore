@@ -131,6 +131,7 @@ class ZenodoIT {
     @BeforeEach
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear();
     }
 
     @AfterAll
@@ -145,7 +146,6 @@ class ZenodoIT {
      */
     @Test
     void testGitHubAppAutomaticDoiCreation(Hoverfly hoverfly) {
-        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear(); // Empty list means enabled for all (should be empty already, just in case).
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         testDoiCreation();
     }
@@ -156,7 +156,6 @@ class ZenodoIT {
      */
     @Test
     void testGitHubAppAutoDoiCreationWithAllowList(Hoverfly hoverfly) {
-        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear();
         SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().add("dockstore-testing");
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         testDoiCreation();
@@ -228,7 +227,6 @@ class ZenodoIT {
      */
     @Test
     void testNoGitHubAppAutoDoiCreationWhenNotAllowed(Hoverfly hoverfly) {
-        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear();
         SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().add("not-the-dockstore-testing-org");
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
@@ -256,7 +254,6 @@ class ZenodoIT {
 
     @Test
     void testDisableDoiGenerationInDockstoreYml(Hoverfly hoverfly) {
-        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear(); // Enable for everybody
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
