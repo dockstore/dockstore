@@ -90,9 +90,10 @@ public final class ToolsImplCommon {
      *
      * @param url clean url with no conversion
      * @param sourceFile The Dockstore SourceFile
+     * @param selfURL A URL to this file using the relative files endpoint
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
+    public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, String selfURL, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
         convertToTRSChecksums(sourceFile);
         toolDescriptor.setChecksum(convertToTRSChecksums(sourceFile));
@@ -100,6 +101,8 @@ public final class ToolsImplCommon {
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
         toolDescriptor.setImageType(new EmptyImageType());
+        toolDescriptor.setDockstoreAbsolutePath(sourceFile.getAbsolutePath());
+        toolDescriptor.setDockstoreSelfUrl(selfURL);
         return toolDescriptor;
     }
 

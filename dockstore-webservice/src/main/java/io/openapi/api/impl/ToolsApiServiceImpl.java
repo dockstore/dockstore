@@ -82,6 +82,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -307,7 +308,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), null,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), value, user);
     }
 
     @Override
@@ -321,7 +322,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), relativePath,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), value, user);
     }
 
     private boolean contextContainsPlainText(ContainerRequestContext value) {
@@ -345,14 +346,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final DescriptorLanguage.FileType fileTypeActual = fileType.get();
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileTypeActual);
         final DescriptorLanguage.FileType testParamType = descriptorLanguage.getTestParamType();
-        return getFileByToolVersionID(id, versionId, testParamType, null, plainTextResponse, user);
+        return getFileByToolVersionID(id, versionId, testParamType, null, plainTextResponse, value, user);
     }
 
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
         // matching behaviour of the descriptor endpoint
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), user);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), value, user);
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
@@ -418,7 +419,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private String createUrlString(String scheme, String hostname, int port, String path, String encodedQuery) {
         String url;
         try {
-            url = new URI(scheme, null, hostname, port, path, null, null).normalize().toURL().toString();
+            URI uri = new URI(scheme, null, hostname, port, path, null, null);
+            url = uri.normalize().toURL().toString();
         } catch (URISyntaxException | MalformedURLException e) {
             throw new CustomWebApplicationException("Could not create url string", HttpStatus.SC_BAD_REQUEST);
         }
@@ -629,7 +631,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     @SuppressWarnings("checkstyle:methodlength")
     private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
-        boolean unwrap, Optional<User> user) {
+        boolean unwrap, ContainerRequestContext value, Optional<User> user) {
         Response.StatusType fileNotFoundStatus = getExtendedStatus(Status.NOT_FOUND,
             "version found, but file not found (bad filename, invalid file, etc.)");
 
@@ -782,7 +784,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     final Path relativize = workingPath.relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
                     String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
                         .prependIfMissing(relativize.toString(), "/");
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
+
+                    //TODO duplicated, needs clean-up if it works
+                    final String scheme = config.getExternalConfig().getScheme();
+                    final String hostname = config.getExternalConfig().getHostname();
+                    final int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
+                    final String relativePath = value.getUriInfo().getRequestUri().getPath();
+                    final String selfPath = "/api" + relativePath + "/" + ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + sourceFile.getAbsolutePath();
+
+                    String dockstoreSelfFileUrl = createUrlString(scheme, hostname, port, selfPath, null);
+
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, dockstoreSelfFileUrl, sourceFile);
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
@@ -966,6 +978,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(path.relativize(Paths.get(file.getAbsolutePath())).toString());
+            toolFile.setDockstoreAbsolutePath(file.getAbsolutePath());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
             // arbitrarily pick first checksum, seems like bug in specification, should probably be array
             final List<Checksum> checksums = convertToTRSChecksums(file);
