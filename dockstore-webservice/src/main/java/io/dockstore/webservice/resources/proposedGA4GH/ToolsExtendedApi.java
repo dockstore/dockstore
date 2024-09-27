@@ -400,11 +400,11 @@ public class ToolsExtendedApi {
     @Operation(operationId = "getAITopicCandidates", description = "Get the AI topic candidate version for all published tools that require AI topics to be generated", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
-                    + "", description = GetAITopicCandidates.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class))),
+                    + "", description = GetAITopicCandidates.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = TrsIdAndVersion.class)))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
-                    + "", description = GetAITopicCandidates.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = TrsIdAndVersion.class)))),
+                    + "", description = GetAITopicCandidates.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
         })
-    public Response getEntriesForAiTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+    public Response getAITopicCandidates(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.getAITopicCandidates();
     }

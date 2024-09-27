@@ -425,16 +425,16 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrsIdAndVersion'
           description: Retrieved candidate versions for tools that require AI topics
             successfully.
         "401":
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TrsIdAndVersion'
+                $ref: '#/components/schemas/Error'
           description: Credentials not provided or incorrect.
       security:
       - BEARER: []
