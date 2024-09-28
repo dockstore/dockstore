@@ -104,6 +104,7 @@ public final class ZenodoHelper {
      * List of GitHub organization names whose workflows should have DOIs generated.
      */
     private static List<String> gitHubOrgsWithDoiGeneration;
+    private static DockstoreWebserviceConfiguration.DoiAutoGenerationPolicy doiAutoGenerationPolicy;
 
     private ZenodoHelper() {
     }
@@ -135,6 +136,7 @@ public final class ZenodoHelper {
         // Converting this to a set would be better, but if we make a copy of the value here, then tweaking the value in the the integration
         // tests doesn't propagate -- see ZenodoIT
         gitHubOrgsWithDoiGeneration = configuration.getGitHubOrgsWithDoiGeneration();
+        doiAutoGenerationPolicy = configuration.getDoiAutoGenerationPolicy();
     }
 
     /**
@@ -981,7 +983,14 @@ public final class ZenodoHelper {
      * @return
      */
     public static boolean isAutoCreateDockstoreOwnedDoiAllowed(Workflow workflow) {
-        return gitHubOrgsWithDoiGeneration.isEmpty() || gitHubOrgsWithDoiGeneration.contains(workflow.getOrganization());
+        return switch (doiAutoGenerationPolicy) {
+        case NONE -> false;
+        case ALLOW_LIST -> gitHubOrgsWithDoiGeneration.contains(workflow.getOrganization());
+        // Opting out is currently only via .dockstore.yml, so opting out implementation
+        // needs to be done before code gets here. We should update this when we switch
+        // to an opt-out model
+        case OPT_OUT -> true;
+        };
     }
 
     public record ZenodoDoiResult(String doiAlias, String doiUrl, String conceptDoi) {

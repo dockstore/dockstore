@@ -25,6 +25,8 @@ import static io.dockstore.common.CommonTestUtilities.getWorkflowVersion;
 import static io.dockstore.common.Hoverfly.ZENODO_DOI_SEARCH;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ZENODO_SIMULATION_URL;
+import static io.dockstore.webservice.DockstoreWebserviceConfiguration.DoiAutoGenerationPolicy.NONE;
+import static io.dockstore.webservice.DockstoreWebserviceConfiguration.DoiAutoGenerationPolicy.OPT_OUT;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.helpers.ZenodoHelper.ACCESS_LINK_ALREADY_EXISTS;
 import static io.dockstore.webservice.helpers.ZenodoHelper.ACCESS_LINK_DOESNT_EXIST;
@@ -132,6 +134,7 @@ class ZenodoIT {
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().clear();
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(DockstoreWebserviceConfiguration.DoiAutoGenerationPolicy.ALLOW_LIST);
     }
 
     @AfterAll
@@ -147,6 +150,7 @@ class ZenodoIT {
     @Test
     void testGitHubAppAutomaticDoiCreation(Hoverfly hoverfly) {
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         testDoiCreation();
     }
 
@@ -229,6 +233,22 @@ class ZenodoIT {
     void testNoGitHubAppAutoDoiCreationWhenNotAllowed(Hoverfly hoverfly) {
         SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().add("not-the-dockstore-testing-org");
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+        testNoDoiCreated();
+    }
+
+    /**
+     * Tests that no DOI created even if org is in the allow list, but the generation policy is None
+     * @param hoverfly
+     */
+    @Test
+    void testNoGitHubAppAutodDoiCreationWhenNone(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(NONE);
+        SUPPORT.getConfiguration().getGitHubOrgsWithDoiGeneration().add("dockstore-testing");
+        hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+        testNoDoiCreated();
+    }
+
+    private static void testNoDoiCreated() {
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
@@ -255,6 +275,7 @@ class ZenodoIT {
     @Test
     void testDisableDoiGenerationInDockstoreYml(Hoverfly hoverfly) {
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
@@ -289,6 +310,7 @@ class ZenodoIT {
 
     @Test
     void testRefreshAutomaticDoiCreation(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -315,6 +337,7 @@ class ZenodoIT {
 
     @Test
     void testAutomaticDoiCreationOnPublishGitHubApp(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -339,6 +362,7 @@ class ZenodoIT {
 
     @Test
     void testAutomaticDoiCreationOnPublishManualRegister(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -372,6 +396,7 @@ class ZenodoIT {
 
     @Test
     void testGenerateDOIFrozenVersion(Hoverfly hoverfly) throws ApiException {
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -453,6 +478,7 @@ class ZenodoIT {
 
     @Test
     void testAccessLinkOperations(Hoverfly hoverfly) {
+        SUPPORT.getConfiguration().setDoiAutoGenerationPolicy(OPT_OUT);
         hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
         ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);

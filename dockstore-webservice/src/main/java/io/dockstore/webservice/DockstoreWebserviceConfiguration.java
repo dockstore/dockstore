@@ -155,6 +155,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private boolean localCloudWatchMetrics = false;
 
+    private DoiAutoGenerationPolicy doiAutoGenerationPolicy = DoiAutoGenerationPolicy.ALLOW_LIST;
+
     private List<String> gitHubOrgsWithDoiGeneration = new ArrayList<>();
 
     @Valid
@@ -629,6 +631,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setGitHubOrgsWithDoiGeneration(List<String> gitHubOrgsWithDoiGeneration) {
         this.gitHubOrgsWithDoiGeneration = gitHubOrgsWithDoiGeneration;
+    }
+
+    public DoiAutoGenerationPolicy getDoiAutoGenerationPolicy() {
+        return doiAutoGenerationPolicy;
+    }
+
+    public void setDoiAutoGenerationPolicy(DoiAutoGenerationPolicy doiAutoGenerationPolicy) {
+        this.doiAutoGenerationPolicy = doiAutoGenerationPolicy;
     }
 
     /**
@@ -1207,5 +1217,20 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         public void setCheckUrlLambdaVersion(String checkUrlLambdaVersion) {
             this.checkUrlLambdaVersion = checkUrlLambdaVersion;
         }
+    }
+
+    public enum DoiAutoGenerationPolicy {
+        /**
+         * Do not auto generate DOIs
+         */
+        NONE,
+        /**
+         * Only generate DOIs for GitHub organizations in {@code getGitHubOrgsWithDoiGeneration}
+         */
+        ALLOW_LIST,
+        /**
+         * Generate DOIs for all workflows, except those where the user has opted out
+         */
+        OPT_OUT
     }
 }
