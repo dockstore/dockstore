@@ -101,8 +101,8 @@ public final class ToolsImplCommon {
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
         toolDescriptor.setImageType(new EmptyImageType());
-        toolDescriptor.setDockstoreAbsolutePath(sourceFile.getAbsolutePath());
-        toolDescriptor.setDockstoreSelfUrl(selfURL);
+        toolDescriptor.setDockstoreAbsolutePath(MoreObjects.firstNonNull(sourceFile.getAbsolutePath(), ""));
+        toolDescriptor.setDockstoreSelfUrl(MoreObjects.firstNonNull(selfURL, ""));
         return toolDescriptor;
     }
 
@@ -566,6 +566,10 @@ public final class ToolsImplCommon {
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);
+        toolTests.setDockstoreAbsolutePath(MoreObjects.firstNonNull(sourceFile.getAbsolutePath(), ""));
+        // TODO https://ucsc-cgl.atlassian.net/browse/SEAB-6699
+        // toolTests.setDockstoreSelfUrl(MoreObjects.firstNonNull(something, ""));
+        toolTests.setDockstoreSelfUrl("");
         return toolTests;
     }
 

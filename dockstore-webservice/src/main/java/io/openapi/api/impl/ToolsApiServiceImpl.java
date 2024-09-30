@@ -29,6 +29,7 @@ import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -82,8 +83,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -745,6 +746,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         dockerfile.setOriginalFile(potentialDockerfile.get());
                         dockerfile.setImageType(new EmptyImageType());
                         toolVersion.setContainerfile(true);
+                        dockerfile.setDockstoreAbsolutePath(MoreObjects.firstNonNull(potentialDockerfile.get().getAbsolutePath(), ""));
+                        // TODO https://ucsc-cgl.atlassian.net/browse/SEAB-6699
+                        dockerfile.setDockstoreSelfUrl("");
                         List<FileWrapper> containerfilesList = new ArrayList<>();
                         containerfilesList.add(dockerfile);
                         return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
@@ -785,16 +789,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
                         .prependIfMissing(relativize.toString(), "/");
 
-                    //TODO duplicated, needs clean-up if it works
-                    final String scheme = config.getExternalConfig().getScheme();
-                    final String hostname = config.getExternalConfig().getHostname();
-                    final int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
-                    final String relativePath = value.getUriInfo().getRequestUri().getPath();
-                    final String selfPath = "/api" + relativePath + "/" + ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + sourceFile.getAbsolutePath();
+                    String encode = URLEncoder.encode(sourceFile.getAbsolutePath(), StandardCharsets.UTF_8);
+                    String selfPath = value.getUriInfo().getRequestUri().toASCIIString() + "/" + encode;
 
-                    String dockstoreSelfFileUrl = createUrlString(scheme, hostname, port, selfPath, null);
 
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, dockstoreSelfFileUrl, sourceFile);
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, parameterPath == null ? selfPath : value.getUriInfo().getRequestUri().toASCIIString(), sourceFile);
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
