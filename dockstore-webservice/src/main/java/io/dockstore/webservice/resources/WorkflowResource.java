@@ -202,6 +202,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     private final PermissionsInterface permissionsInterface;
     private final String dashboardPrefix;
+    private final boolean isProduction;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
         EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -215,6 +216,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         this.permissionsInterface = permissionsInterface;
         dashboardPrefix = configuration.getDashboard();
+        isProduction = configuration.getExternalConfig().computeIsProduction();
     }
 
     /**
@@ -242,7 +244,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflow.isIsChecker()) {
             throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
         }
-        if (!workflow.getConceptDois().isEmpty()) {
+        if (!workflow.getConceptDois().isEmpty() && isProduction) {
             throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
         }
         if (versionDAO.getVersionsFrozen(workflowId) > 0) {
