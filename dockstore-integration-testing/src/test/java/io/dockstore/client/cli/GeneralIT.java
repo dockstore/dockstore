@@ -532,7 +532,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
-        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId(), null, null).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion =
+                openApiWorkflowApi.getWorkflowVersions(workflow.getId(), null, null).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
         assertEquals(TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
