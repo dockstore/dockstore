@@ -465,7 +465,7 @@ public final class ToolsImplCommon {
     /**
      * Gets the new ID of the Tool
      *
-     * @param container The Dockstore Entry (Tool or Workflow)
+     * @param entry The Dockstore Entry (Tool or Workflow)
      * @return The new ID of the Tool
      */
     private static String getNewId(Entry<?, ?> entry) {
@@ -554,7 +554,7 @@ public final class ToolsImplCommon {
      * @param sourceFile The Dockstore SourceFile to convert
      * @return The resulting GA4GH ToolTests
      */
-    public static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
+    public static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile, String selfPath) {
         DescriptorLanguage.FileType type = sourceFile.getType();
         if (!type.equals(DescriptorLanguage.FileType.WDL_TEST_JSON) && !type.equals(DescriptorLanguage.FileType.CWL_TEST_JSON) && !type.equals(
             DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS)) {
@@ -567,9 +567,7 @@ public final class ToolsImplCommon {
         toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);
         toolTests.setDockstoreAbsolutePath(MoreObjects.firstNonNull(sourceFile.getAbsolutePath(), ""));
-        // TODO https://ucsc-cgl.atlassian.net/browse/SEAB-6699
-        // toolTests.setDockstoreSelfUrl(MoreObjects.firstNonNull(something, ""));
-        toolTests.setDockstoreSelfUrl("");
+        toolTests.setDockstoreSelfUrl(selfPath);
         return toolTests;
     }
 

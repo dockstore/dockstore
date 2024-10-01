@@ -420,8 +420,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private String createUrlString(String scheme, String hostname, int port, String path, String encodedQuery) {
         String url;
         try {
-            URI uri = new URI(scheme, null, hostname, port, path, null, null);
-            url = uri.normalize().toURL().toString();
+            url = new URI(scheme, null, hostname, port, path, null, null).normalize().toURL().toString();
         } catch (URISyntaxException | MalformedURLException e) {
             throw new CustomWebApplicationException("Could not create url string", HttpStatus.SC_BAD_REQUEST);
         }
@@ -727,7 +726,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     List<FileWrapper> toolTestsList = new ArrayList<>();
 
                     for (SourceFile file : testSourceFiles) {
-                        FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                        String selfPath = value.getUriInfo().getRequestUri().toASCIIString();
+                        FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file, selfPath);
                         toolTests.setImageType(new EmptyImageType());
                         toolTestsList.add(toolTests);
                     }
@@ -747,8 +747,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         dockerfile.setImageType(new EmptyImageType());
                         toolVersion.setContainerfile(true);
                         dockerfile.setDockstoreAbsolutePath(MoreObjects.firstNonNull(potentialDockerfile.get().getAbsolutePath(), ""));
-                        // TODO https://ucsc-cgl.atlassian.net/browse/SEAB-6699
-                        dockerfile.setDockstoreSelfUrl("");
+                        String selfPath = value.getUriInfo().getRequestUri().toASCIIString();
+                        dockerfile.setDockstoreSelfUrl(selfPath);
+
                         List<FileWrapper> containerfilesList = new ArrayList<>();
                         containerfilesList.add(dockerfile);
                         return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)

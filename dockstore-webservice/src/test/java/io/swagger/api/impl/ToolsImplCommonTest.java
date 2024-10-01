@@ -511,7 +511,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile));
+        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile, null));
         FileWrapperV20beta expectedToolTests = new FileWrapperV20beta();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
