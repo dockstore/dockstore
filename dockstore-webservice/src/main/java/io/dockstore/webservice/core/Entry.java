@@ -391,6 +391,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public abstract Entry<?, ?> createEmptyEntry();
 
+    public abstract EntryLite<? extends Entry<?, ?>> createEntryLite();
+
     @JsonIgnore
     public abstract String getEntryPath();
 

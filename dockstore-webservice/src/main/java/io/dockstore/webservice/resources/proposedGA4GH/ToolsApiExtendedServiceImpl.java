@@ -38,6 +38,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
@@ -731,15 +732,16 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public Response getAITopicCandidates() {
         // Get published entries that don't have any topics
         List<Entry> entriesWithNoTopics = workflowDAO.getPublishedEntriesWithNoTopics();
-        List<TrsIdAndVersion> trsIdAndVersions = entriesWithNoTopics.stream()
+        List<EntryLiteAndVersionName> aiTopicCandidates = entriesWithNoTopics.stream()
                 .map(entry -> {
+                    EntryLite entryLite = entry.createEntryLite();
                     Optional<Version> versionCandidate = EntryVersionHelper.determineRepresentativeVersion(entry);
-                    return versionCandidate.map(version -> new TrsIdAndVersion(entry.getTrsId(), version.getName())).orElse(null);
+                    return versionCandidate.map(version -> new EntryLiteAndVersionName(entryLite, version.getName())).orElse(null);
                 })
                 .filter(Objects::nonNull)
                 .toList();
 
-        return Response.ok(trsIdAndVersions).build();
+        return Response.ok(aiTopicCandidates).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
@@ -792,8 +794,5 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         if (user.isPlatformPartner() && user.getPlatformPartner() != platform) {
             throw new CustomWebApplicationException(FORBIDDEN_PLATFORM, HttpStatus.SC_FORBIDDEN);
         }
-    }
-
-    public record TrsIdAndVersion(String trsId, String version) {
     }
 }

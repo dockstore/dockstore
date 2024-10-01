@@ -427,7 +427,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TrsIdAndVersion'
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
           description: Retrieved candidate versions for tools that require AI topics
             successfully.
         "401":
@@ -11780,13 +11780,6 @@ components:
       required:
       - id
       - url
-    TrsIdAndVersion:
-      type: object
-      properties:
-        trsId:
-          type: string
-        version:
-          type: string
     UpdateAITopicRequest:
       type: object
       description: The AI topic update request
