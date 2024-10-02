@@ -446,17 +446,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "workflowID", required = true) @Parameter(
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-        @QueryParam("limit")  @DefaultValue("200") Integer limit,
+        @QueryParam("limit") @Min(1) @DefaultValue("200") Integer limit,
         @QueryParam("offset") @DefaultValue("0") Integer offset,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-
-        if (user.isEmpty() && !workflow.getIsPublished()) {
-            LOG.error("Unpublished workflow requires authentication");
-            throw new CustomWebApplicationException("Unpublished workflow requires authentication", HttpStatus.SC_BAD_REQUEST);
-        }
-        response.addHeader(X_TOTAL_COUNT, String.valueOf(workflowVersionDAO.countWorkflowVersionsByWorkflowId(workflowId)));
+        checkCanRead(user, workflow);
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset);
