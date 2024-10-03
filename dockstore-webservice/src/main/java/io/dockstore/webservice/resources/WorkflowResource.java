@@ -446,8 +446,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "workflowID", required = true) @Parameter(
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-        @QueryParam("limit") @Min(1) @DefaultValue("200") Integer limit,
-        @QueryParam("offset") @DefaultValue("0") Integer offset,
+        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("200") Integer limit,
+        @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
