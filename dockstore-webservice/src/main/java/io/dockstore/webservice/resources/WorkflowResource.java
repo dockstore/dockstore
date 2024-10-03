@@ -177,6 +177,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
     private static final long MAX_PAGINATION_LIMIT = 100;
+    private static final long MAX_LIMIT = 200;
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
@@ -446,7 +447,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "workflowID", required = true) @Parameter(
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("200") Integer limit,
+        @QueryParam("limit") @Min(1) @Max(MAX_LIMIT) @DefaultValue("200") Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
