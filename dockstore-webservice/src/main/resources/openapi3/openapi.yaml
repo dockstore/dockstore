@@ -8493,6 +8493,7 @@ paths:
           type: integer
           format: int32
           default: 200
+          maximum: 100
           minimum: 1
       - in: query
         name: offset
@@ -8500,6 +8501,7 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       responses:
         "200":
           content:
