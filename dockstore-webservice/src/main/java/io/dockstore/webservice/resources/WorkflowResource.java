@@ -457,6 +457,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset);
+        if (!canExamine(user.orElse(null), workflow)) {
+            versions.removeIf(Version::isHidden);
+        }
         return new TreeSet<>(versions);
     }
 
