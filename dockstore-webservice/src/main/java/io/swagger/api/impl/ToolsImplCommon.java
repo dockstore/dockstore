@@ -90,9 +90,10 @@ public final class ToolsImplCommon {
      *
      * @param url clean url with no conversion
      * @param sourceFile The Dockstore SourceFile
+     * @param selfURL A URL to this file using the relative files endpoint
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
+    public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, String selfURL, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
         convertToTRSChecksums(sourceFile);
         toolDescriptor.setChecksum(convertToTRSChecksums(sourceFile));
@@ -100,6 +101,8 @@ public final class ToolsImplCommon {
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
         toolDescriptor.setImageType(new EmptyImageType());
+        toolDescriptor.setDockstoreAbsolutePath(MoreObjects.firstNonNull(sourceFile.getAbsolutePath(), ""));
+        toolDescriptor.setDockstoreSelfUrl(MoreObjects.firstNonNull(selfURL, ""));
         return toolDescriptor;
     }
 
@@ -462,7 +465,7 @@ public final class ToolsImplCommon {
     /**
      * Gets the new ID of the Tool
      *
-     * @param container The Dockstore Entry (Tool or Workflow)
+     * @param entry The Dockstore Entry (Tool or Workflow)
      * @return The new ID of the Tool
      */
     private static String getNewId(Entry<?, ?> entry) {
@@ -551,7 +554,7 @@ public final class ToolsImplCommon {
      * @param sourceFile The Dockstore SourceFile to convert
      * @return The resulting GA4GH ToolTests
      */
-    public static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
+    public static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile, String selfPath) {
         DescriptorLanguage.FileType type = sourceFile.getType();
         if (!type.equals(DescriptorLanguage.FileType.WDL_TEST_JSON) && !type.equals(DescriptorLanguage.FileType.CWL_TEST_JSON) && !type.equals(
             DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS)) {
@@ -563,6 +566,8 @@ public final class ToolsImplCommon {
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);
+        toolTests.setDockstoreAbsolutePath(MoreObjects.firstNonNull(sourceFile.getAbsolutePath(), ""));
+        toolTests.setDockstoreSelfUrl(selfPath);
         return toolTests;
     }
 
