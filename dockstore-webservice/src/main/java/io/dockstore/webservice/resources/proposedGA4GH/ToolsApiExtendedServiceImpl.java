@@ -38,7 +38,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
@@ -75,7 +74,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -730,16 +728,21 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response getAITopicCandidates() {
+        List<io.openapi.model.Tool> aiTopicCandidates = new ArrayList<>();
         // Get published entries that don't have any topics
-        List<Entry> entriesWithNoTopics = workflowDAO.getPublishedEntriesWithNoTopics();
-        List<EntryLiteAndVersionName> aiTopicCandidates = entriesWithNoTopics.stream()
-                .map(entry -> {
-                    EntryLite entryLite = entry.createEntryLite();
-                    Optional<Version> versionCandidate = EntryVersionHelper.determineRepresentativeVersion(entry);
-                    return versionCandidate.map(version -> new EntryLiteAndVersionName(entryLite, version.getName())).orElse(null);
-                })
-                .filter(Objects::nonNull)
-                .toList();
+        List<Entry> entries = workflowDAO.getPublishedEntriesWithNoTopics();
+        for (Entry entry: entries) {
+            Optional<Version> versionCandidate = EntryVersionHelper.determineRepresentativeVersion(entry);
+            if (versionCandidate.isPresent()) {
+                io.openapi.model.Tool trsTool = ToolsImplCommon.convertEntryToTool(entry, config);
+                if (trsTool != null) {
+                    trsTool.getVersions().removeIf(v -> !v.getName().equals(versionCandidate.get().getName()));
+                    if (trsTool.getVersions().size() == 1) {
+                        aiTopicCandidates.add(trsTool);
+                    }
+                }
+            }
+        }
 
         return Response.ok(aiTopicCandidates).build();
     }

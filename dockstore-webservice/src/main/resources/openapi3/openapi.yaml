@@ -427,9 +427,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+                  $ref: '#/components/schemas/Tool'
           description: Retrieved candidate versions for tools that require AI topics
-            successfully.
+            successfully. The tool contains a single version.
         "401":
           content:
             application/json:

@@ -30,6 +30,7 @@ import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.openapi.model.Error;
+import io.openapi.model.Tool;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -399,7 +400,7 @@ public class ToolsExtendedApi {
     @Operation(operationId = "getAITopicCandidates", description = "Get the AI topic candidate version for all published tools that require AI topics to be generated", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
-                    + "", description = GetAITopicCandidates.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class)))),
+                    + "", description = GetAITopicCandidates.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Tool.class)))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
                     + "", description = GetAITopicCandidates.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
         })
@@ -409,7 +410,7 @@ public class ToolsExtendedApi {
     }
 
     private static final class GetAITopicCandidates {
-        public static final String OK_RESPONSE = "Retrieved candidate versions for tools that require AI topics successfully.";
+        public static final String OK_RESPONSE = "Retrieved candidate versions for tools that require AI topics successfully. The tool contains a single version.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 
