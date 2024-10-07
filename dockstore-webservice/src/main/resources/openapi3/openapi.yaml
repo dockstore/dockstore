@@ -420,6 +420,25 @@ paths:
       description: Get the AI topic candidate version for all published tools that
         require AI topics to be generated
       operationId: getAITopicCandidates
+      parameters:
+      - description: "Start index of paging. If this exceeds the current result set\
+          \ return an empty set. If not specified in the request, this will start\
+          \ at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Amount of records to return in a given page.
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+          minimum: 1
       responses:
         "200":
           content:
@@ -430,6 +449,10 @@ paths:
                   $ref: '#/components/schemas/Tool'
           description: Retrieved candidate versions for tools that require AI topics
             successfully. The tool contains a single version.
+          headers:
+            X-total-count:
+              description: Total count of AI topic candidates
+              style: simple
         "401":
           content:
             application/json:

@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -727,10 +728,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response getAITopicCandidates() {
+    public Response getAITopicCandidates(int offset, int limit) {
         List<io.openapi.model.Tool> aiTopicCandidates = new ArrayList<>();
         // Get published entries that don't have any topics
-        List<Entry> entries = workflowDAO.getPublishedEntriesWithNoTopics();
+        List<Entry> entries = workflowDAO.getPublishedEntriesWithNoTopics(offset, limit);
         for (Entry entry: entries) {
             Optional<Version> versionCandidate = EntryVersionHelper.determineRepresentativeVersion(entry);
             if (versionCandidate.isPresent()) {
@@ -744,7 +745,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
         }
 
-        return Response.ok(aiTopicCandidates).build();
+        long totalCount = workflowDAO.countPublishedEntriesWithNoTopics();
+        return Response.ok(aiTopicCandidates).header(X_TOTAL_COUNT, totalCount).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {

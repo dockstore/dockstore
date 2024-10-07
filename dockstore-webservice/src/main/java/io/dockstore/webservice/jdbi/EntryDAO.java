@@ -406,8 +406,15 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return map;
     }
 
-    public List<Entry> getPublishedEntriesWithNoTopics() {
-        return this.currentSession().createNamedQuery(Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Entry.class).list();
+    public List<Entry> getPublishedEntriesWithNoTopics(int offset, int limit) {
+        return this.currentSession().createNamedQuery(Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Entry.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .list();
+    }
+
+    public long countPublishedEntriesWithNoTopics() {
+        return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Long.class).getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

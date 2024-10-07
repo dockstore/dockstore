@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.ExtendedMetricsTRSOpenApiIT.DOCKSTORE_WORKFLOW_CNV_REPO;
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -170,19 +171,21 @@ class ExtendedTRSApiIT extends BaseIT {
 
         // Unpublished workflow should not be an AI topic candidate
         assertFalse(workflow.isIsPublished());
-        List<Tool> aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates();
+        List<Tool> aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertTrue(aiTopicCandidates.isEmpty());
+        checkXTotalCountHeader(extendedGa4GhApi, 0);
 
         // Publish the workflow
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Non-admin should not be able to get AI topic candidates
-        ApiException exception = assertThrows(ApiException.class, otherExtendedGa4GhApi::getAITopicCandidates);
+        ApiException exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.getAITopicCandidates(null, null));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
 
         // Admin should be able to get AI topic candidates
-        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates();
+        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertEquals(1, aiTopicCandidates.size());
+        checkXTotalCountHeader(extendedGa4GhApi, 1);
         assertEquals(trsId, aiTopicCandidates.get(0).getId());
         String versionName = aiTopicCandidates.get(0).getVersions().get(0).getName();
         assertTrue(StringUtils.isNoneEmpty(versionName));
@@ -191,8 +194,9 @@ class ExtendedTRSApiIT extends BaseIT {
         extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
 
         // Should no longer be an AI topic candidate because it has a topic
-        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates();
+        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertTrue(aiTopicCandidates.isEmpty());
+        checkXTotalCountHeader(extendedGa4GhApi, 0);
 
         // Remove the AI topic and give it a manual topic. It should not be an AI candidate because it has a topic
         testingPostgres.runUpdateStatement("update workflow set topicmanual = 'Manual topic' where id = " + workflow.getId());
@@ -201,8 +205,13 @@ class ExtendedTRSApiIT extends BaseIT {
         assertNotNull(workflow.getTopicManual());
         assertNull(workflow.getTopicAutomatic());
         assertNull(workflow.getTopicAI());
-        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates();
+        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertTrue(aiTopicCandidates.isEmpty());
+        checkXTotalCountHeader(extendedGa4GhApi, 0);
+    }
+
+    private void checkXTotalCountHeader(ExtendedGa4GhApi extendedGa4GhApi, int expectedCount) {
+        assertEquals(expectedCount, Integer.valueOf(extendedGa4GhApi.getApiClient().getResponseHeaders().get(X_TOTAL_COUNT).get(0)));
     }
 
     @Test
