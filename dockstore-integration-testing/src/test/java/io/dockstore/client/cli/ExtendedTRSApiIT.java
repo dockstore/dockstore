@@ -176,7 +176,7 @@ class ExtendedTRSApiIT extends BaseIT {
             WorkflowVersion::getLastModified).collect(
             Collectors.toSet()));
 
-        assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from workflowversion where name = '" + versionName + "' and parentid = " + workflow.getId(), Boolean.class));
+        assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from version_metadata join workflowversion on workflowversion.name = '" + versionName + "' and workflowversion.parentid = " + workflow.getId() + " and workflowversion.id = version_metadata.id", Boolean.class));
         // Non-admin user should not be able to submit AI topic
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
@@ -246,6 +246,6 @@ class ExtendedTRSApiIT extends BaseIT {
         containerByToolPath = containersApi.getContainerByToolPath(trsId, null);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, containerByToolPath.getTopicSelection());
         assertEquals(aiTopic, containerByToolPath.getTopicAI());
-        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from tag where name = '" + versionName + "' and parentid = " + containerByToolPath.getId(), Boolean.class));
+        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from version_metadata join tag on where tag.name = '" + versionName + "' and tag.parentid = " + containerByToolPath.getId() + " and tag.id = version_metadata.id", Boolean.class));
     }
 }
