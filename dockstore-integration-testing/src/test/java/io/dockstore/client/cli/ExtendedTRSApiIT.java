@@ -246,6 +246,6 @@ class ExtendedTRSApiIT extends BaseIT {
         containerByToolPath = containersApi.getContainerByToolPath(trsId, null);
         assertEquals(DockstoreTool.TopicSelectionEnum.AI, containerByToolPath.getTopicSelection());
         assertEquals(aiTopic, containerByToolPath.getTopicAI());
-        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from version_metadata join tag on where tag.name = '" + versionName + "' and tag.parentid = " + containerByToolPath.getId() + " and tag.id = version_metadata.id", Boolean.class));
+        assertTrue(testingPostgres.runSelectStatement("select aitopicprocessed from version_metadata join tag on tag.name = '" + versionName + "' and tag.parentid = " + containerByToolPath.getId() + " and tag.id = version_metadata.id", Boolean.class));
     }
 }
