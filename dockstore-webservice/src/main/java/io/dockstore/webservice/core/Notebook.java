@@ -15,8 +15,6 @@
 
 package io.dockstore.webservice.core;
 
-import io.dockstore.webservice.core.database.EntryLite;
-import io.dockstore.webservice.core.database.EntryLite.EntryLiteNotebook;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
@@ -64,11 +62,6 @@ public class Notebook extends Workflow {
     @Override
     public Notebook createEmptyEntry() {
         return new Notebook();
-    }
-
-    @Override
-    public EntryLite<Notebook> createEntryLite() {
-        return new EntryLiteNotebook(this);
     }
 
     @Override

@@ -24,8 +24,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ValidationConstants;
-import io.dockstore.webservice.core.database.EntryLite;
-import io.dockstore.webservice.core.database.EntryLite.EntryLiteTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -197,11 +195,6 @@ public class Tool extends Entry<Tool, Tag> {
     @Override
     public Tool createEmptyEntry() {
         return new Tool();
-    }
-
-    @Override
-    public EntryLite<Tool> createEntryLite() {
-        return new EntryLiteTool(this);
     }
 
     @Override
