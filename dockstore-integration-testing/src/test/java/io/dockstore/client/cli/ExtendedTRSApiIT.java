@@ -232,10 +232,8 @@ class ExtendedTRSApiIT extends BaseIT {
         containersApi.publish(containerByToolPath.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         String versionName = extendedGa4GhApi.getAITopicCandidate(trsId);
+        assertEquals("master", versionName);
         assertThrows(ApiException.class, () -> extendedGa4GhApi.getAITopicCandidate("messed up id that does not exist"));
-
-        Long latestDate = containerByToolPath.getWorkflowVersions().stream().filter(t -> t.getName().equals(versionName)).findFirst().get().getDbUpdateDate();
-        assertTrue(containerByToolPath.getWorkflowVersions().stream().allMatch(t -> t.getDbUpdateDate() <= latestDate));
 
         assertFalse(testingPostgres.runSelectStatement("select aitopicprocessed from tag where name = '" + versionName + "'", Boolean.class));
         // Non-admin user should not be able to submit AI topic

@@ -38,13 +38,13 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
@@ -719,7 +719,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         checkEntryNotNull(entry);
 
-        Optional<? extends Version<?>> versionOptional = getVersionCandidate(entry);
+        Optional<Version> versionOptional = EntryVersionHelper.determineRepresentativeVersion(entry);
         if (versionOptional.isEmpty()) {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
@@ -746,35 +746,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         }
         return versionOptional;
-    }
-
-    /**
-     * Get candidate version that can be considered for an ai Topic (or other?)
-     * @param entry
-     * @return
-     */
-    private Optional<? extends Version<?>> getVersionCandidate(Entry<?, ?> entry) {
-        if (entry instanceof Workflow workflow) {
-            List<WorkflowVersion> workflowVersions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 1, 0);
-            if (!workflowVersions.isEmpty()) {
-                return Optional.of(workflowVersions.get(0));
-            }
-        } else if (entry instanceof Tool tool) {
-            Tag newestVersion = null;
-            Set<Tag> versions = tool.getWorkflowVersions();
-            for (Tag t : versions) {
-                if (newestVersion == null) {
-                    newestVersion = t;
-                } else {
-                    if (newestVersion.getDbUpdateDate().before(t.getDbUpdateDate())) {
-                        newestVersion = t;
-                    }
-                }
-
-            }
-            return Optional.ofNullable(newestVersion);
-        }
-        return Optional.empty();
     }
 
     private void deleteIndex(String index, RestHighLevelClient restClient) {

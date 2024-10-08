@@ -42,6 +42,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -73,7 +74,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -206,7 +206,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                         final long workflowVersionId = workflowVersionDAO.create(version);
                         workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
-                        this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
+                        this.eventDAO.createAddTagToEntryEvent(Optional.of(user), workflow, workflowVersionFromDB);
                         workflow.getWorkflowVersions().add(workflowVersionFromDB);
                         existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
                     }
@@ -379,10 +379,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // If the default version is going to be deleted, select a new default version
                     Version defaultVersion = workflow.getActualDefaultVersion();
                     if (defaultVersion != null && shouldDeleteVersion.test(defaultVersion)) {
-                        Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
-                            .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
-                            .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
-                        workflow.setActualDefaultVersion(max.orElse(null));
+                        Set<WorkflowVersion> remainingVersions = workflow.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), gitReferenceName.get())).collect(Collectors.toSet());
+                        Optional<WorkflowVersion> newDefaultVersion = EntryVersionHelper.determineRepresentativeVersion(remainingVersions);
+                        workflow.setActualDefaultVersion(newDefaultVersion.orElse(null));
                     }
 
                     // Delete all matching versions
@@ -393,7 +392,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                         if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
                             // Unpublish the workflow if it was published and no longer has any versions
-                            User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, false);
+                            Optional<User> user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username);
                             publishWorkflow(workflow, false, user);
                         } else {
                             // Otherwise, update the public state
@@ -683,7 +682,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
 
                     // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, usernames.sender(), false);
+                    Optional<User> user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, usernames.sender());
 
                     // Update the workflow version in its own database transaction.
                     Pair<Workflow, WorkflowVersion> result = transactionHelper.transaction(() -> {
@@ -758,8 +757,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     private List<User> usersWithRepoPermissions(String repository, Set<String> usernames) {
         return usernames.stream()
-                .map(username -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false))
-                .filter(Objects::nonNull) //
+                .map(username -> GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .filter(user -> {
                     // We know user has a GitHub profile because of the preceding lines
                     final User.Profile profile = user.getUserProfiles().get(TokenType.GITHUB_COM.toString());
@@ -775,9 +775,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }).toList();
     }
 
-    private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference, String deliveryId) {
+    private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, Optional<User> user, String repository, String gitReference, String deliveryId) {
         if (publish != null && workflow.getIsPublished() != publish) {
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH, true, deliveryId, computeWorkflowName(workflow));
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.map(u -> u.getUsername()).orElse(null), LambdaEvent.LambdaEventType.PUBLISH, true, deliveryId, computeWorkflowName(workflow));
             try {
                 publishWorkflow(workflow, publish, user);
             } catch (CustomWebApplicationException ex) {
@@ -895,7 +895,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow, and whether it existed prior to this method's invocation
      */
-    private WorkflowAndExisted createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, Workflowish wf, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    private WorkflowAndExisted createOrGetWorkflow(Class workflowType, String repository, Optional<User> user, String workflowName, Workflowish wf, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<T> existingWorkflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
@@ -943,9 +943,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Check that the workflow is writable
         checkWritability(workflowToUpdate);
 
-        if (user != null) {
-            workflowToUpdate.getUsers().add(user);
-        }
+        user.ifPresent(workflowToUpdate.getUsers()::add);
 
         // Update the manual topic if it's not blank in the .dockstore.yml.
         // Purposefully not clearing the manual topic when it's null in the .dockstore.yml because another version may have set it
@@ -1293,7 +1291,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user
      * @return
      */
-    protected Workflow publishWorkflow(Workflow workflow, final boolean publish, User user) {
+    protected Workflow publishWorkflow(Workflow workflow, final boolean publish, Optional<User> user) {
         if (workflow.getIsPublished() == publish) {
             return workflow;
         }
@@ -1368,7 +1366,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private void publishChecker(Workflow checker, boolean publish, User user) {
+    private void publishChecker(Workflow checker, boolean publish, Optional<User> user) {
         if (checker != null && checker.getIsPublished() != publish) {
             checker.setIsPublished(publish);
             eventDAO.publishEvent(publish, user, checker);

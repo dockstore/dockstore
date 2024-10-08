@@ -52,7 +52,7 @@ public final class AliasHelper {
      * @return the workflow version
      */
     public static WorkflowVersion getAndCheckWorkflowVersionResource(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
-            WorkflowVersionDAO workflowVersionDAO, User user, Long workflowVersionId) {
+            WorkflowVersionDAO workflowVersionDAO, Optional<User> user, Long workflowVersionId) {
         final WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
             LOG.error("Could not find workflow version using the workflow version id: " + workflowVersionId);
@@ -60,7 +60,7 @@ public final class AliasHelper {
         }
 
         Workflow workflow = getWorkflow(workflowDAO, workflowVersionId);
-        authenticatedResourceInterface.checkCanWrite(user, workflow);
+        authenticatedResourceInterface.checkCanWrite(user.orElse(null), workflow);
         return workflowVersion;
     }
 
@@ -79,7 +79,7 @@ public final class AliasHelper {
      * @return the Workflow Version
      */
     public static WorkflowVersion addWorkflowVersionAliasesAndCheck(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
-            WorkflowVersionDAO workflowVersionDAO, User user, Long id, String aliases, boolean blockFormat) {
+            WorkflowVersionDAO workflowVersionDAO, Optional<User> user, Long id, String aliases, boolean blockFormat) {
         WorkflowVersion workflowVersion = getAndCheckWorkflowVersionResource(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, user, id);
         Set<String> oldAliases = workflowVersion.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
