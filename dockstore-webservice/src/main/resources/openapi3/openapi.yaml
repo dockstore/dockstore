@@ -452,6 +452,9 @@ paths:
           headers:
             X-total-count:
               description: Total count of AI topic candidates
+              schema:
+                type: integer
+                format: int64
               style: simple
         "401":
           content:
