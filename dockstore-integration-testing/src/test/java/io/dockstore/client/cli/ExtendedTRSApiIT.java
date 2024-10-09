@@ -38,7 +38,7 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
-import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.UpdateAITopicRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
@@ -171,7 +171,7 @@ class ExtendedTRSApiIT extends BaseIT {
 
         // Unpublished workflow should not be an AI topic candidate
         assertFalse(workflow.isIsPublished());
-        List<Tool> aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
+        List<EntryLiteAndVersionName> aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertTrue(aiTopicCandidates.isEmpty());
         checkXTotalCountHeader(extendedGa4GhApi, 0);
 
@@ -186,8 +186,8 @@ class ExtendedTRSApiIT extends BaseIT {
         aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertEquals(1, aiTopicCandidates.size());
         checkXTotalCountHeader(extendedGa4GhApi, 1);
-        assertEquals(trsId, aiTopicCandidates.get(0).getId());
-        String versionName = aiTopicCandidates.get(0).getVersions().get(0).getName();
+        assertEquals(trsId, aiTopicCandidates.get(0).getEntryLite().getTrsId());
+        String versionName = aiTopicCandidates.get(0).getVersionName();
         assertTrue(StringUtils.isNoneEmpty(versionName));
 
         // Update AI topic

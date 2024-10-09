@@ -417,8 +417,9 @@ paths:
       - GA4GHV1
   /api/ga4gh/v2/extended/aiTopicCandidates:
     get:
-      description: Get the AI topic candidate version for all published tools that
-        require AI topics to be generated
+      description: "Get all published tools that are AI topic candidates and their\
+        \ representative version if it exists, otherwise an empty string is returned\
+        \ as the version name."
       operationId: getAITopicCandidates
       parameters:
       - description: "Start index of paging. If this exceeds the current result set\
@@ -446,9 +447,10 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
-          description: Retrieved candidate versions for tools that require AI topics
-            successfully. The tool contains a single version.
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: "Retrieved published tools that are AI topic candidates and\
+            \ a single representative version name if it exists, otherwise an empty\
+            \ string is returned as the version name."
           headers:
             X-total-count:
               description: Total count of AI topic candidates

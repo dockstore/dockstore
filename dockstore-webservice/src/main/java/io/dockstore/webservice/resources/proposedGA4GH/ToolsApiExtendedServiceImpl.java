@@ -39,6 +39,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
@@ -729,21 +730,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response getAITopicCandidates(int offset, int limit) {
-        List<io.openapi.model.Tool> aiTopicCandidates = new ArrayList<>();
         // Get published entries that don't have any topics
-        List<Entry> entries = workflowDAO.getPublishedEntriesWithNoTopics(offset, limit);
-        for (Entry entry: entries) {
-            Optional<Version> versionCandidate = EntryVersionHelper.determineRepresentativeVersion(entry);
-            if (versionCandidate.isPresent()) {
-                io.openapi.model.Tool trsTool = ToolsImplCommon.convertEntryToTool(entry, config);
-                if (trsTool != null) {
-                    trsTool.getVersions().removeIf(v -> !v.getName().equals(versionCandidate.get().getName()));
-                    if (trsTool.getVersions().size() == 1) {
-                        aiTopicCandidates.add(trsTool);
-                    }
-                }
-            }
-        }
+        List<Entry> entriesWithNoTopics = workflowDAO.getPublishedEntriesWithNoTopics(offset, limit);
+        List<EntryLiteAndVersionName> aiTopicCandidates = entriesWithNoTopics.stream()
+                .map(entry -> {
+                    EntryLite entryLite = entry.createEntryLite();
+                    String versionCandidateName = EntryVersionHelper.determineRepresentativeVersion(entry)
+                            .map(Version::getName)
+                            .orElse(""); // Return empty string if there's no representative version
+                    return new EntryLiteAndVersionName(entryLite, versionCandidateName);
+                })
+                .toList();
 
         long totalCount = workflowDAO.countPublishedEntriesWithNoTopics();
         return Response.ok(aiTopicCandidates).header(X_TOTAL_COUNT, totalCount).build();
