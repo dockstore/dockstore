@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.core;
 
+import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.EntryLite.EntryLiteService;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
@@ -60,6 +62,11 @@ public class Service extends Workflow {
     @Override
     public Service createEmptyEntry() {
         return new Service();
+    }
+
+    @Override
+    public EntryLite<Service> createEntryLite() {
+        return new EntryLiteService(this);
     }
 
     @Override

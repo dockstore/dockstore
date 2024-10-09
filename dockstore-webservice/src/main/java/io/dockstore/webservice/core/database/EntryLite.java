@@ -37,6 +37,10 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
         this.trsId = entry.getTrsId();
     }
 
+    EntryLite(S entry) {
+        this(entry, null, null);
+    }
+
     public Date getLastUpdated() {
         return lastUpdated;
     }
@@ -71,6 +75,9 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
     }
 
     public static class EntryLiteTool extends EntryLite<Tool> {
+        public EntryLiteTool(final Tool tool) {
+            super(tool);
+        }
 
         public EntryLiteTool(final String registry, final String namespace, final String name, final String toolname) {
             this(registry, namespace, name, toolname, null, null);
@@ -91,6 +98,9 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
     }
 
     public static class EntryLiteWorkflow extends EntryLite<BioWorkflow> {
+        public EntryLiteWorkflow(final BioWorkflow bioWorkflow) {
+            super(bioWorkflow);
+        }
 
         public EntryLiteWorkflow(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
             this(sourceControl, organization, repository, workflowName, null, null);
@@ -102,6 +112,9 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
     }
 
     public static class EntryLiteService extends EntryLite<Service> {
+        public EntryLiteService(final Service service) {
+            super(service);
+        }
 
         public EntryLiteService(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
             this(sourceControl, organization, repository, workflowName, null, null);
@@ -113,6 +126,9 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
     }
 
     public static class EntryLiteAppTool extends EntryLite<AppTool> {
+        public EntryLiteAppTool(final AppTool appTool) {
+            super(appTool);
+        }
 
         public EntryLiteAppTool(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
             this(sourceControl, organization, repository, workflowName, null, null);
@@ -124,6 +140,9 @@ public abstract class EntryLite<S extends Entry<?, ?>> {
     }
 
     public static class EntryLiteNotebook extends EntryLite<Notebook> {
+        public EntryLiteNotebook(final Notebook notebook) {
+            super(notebook);
+        }
 
         public EntryLiteNotebook(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
             this(sourceControl, organization, repository, workflowName, null, null);

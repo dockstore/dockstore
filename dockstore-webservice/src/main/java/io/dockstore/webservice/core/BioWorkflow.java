@@ -17,6 +17,8 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.EntryLite.EntryLiteWorkflow;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -71,6 +73,11 @@ public class BioWorkflow extends Workflow {
     @Override
     public BioWorkflow createEmptyEntry() {
         return new BioWorkflow();
+    }
+
+    @Override
+    public EntryLite<BioWorkflow> createEntryLite() {
+        return new EntryLiteWorkflow(this);
     }
 
     @Override
