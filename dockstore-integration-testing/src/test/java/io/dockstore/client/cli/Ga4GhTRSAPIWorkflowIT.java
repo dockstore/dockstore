@@ -162,8 +162,8 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         byte[] arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
-                + "/files?format=zip", new GenericType<>() {
-                }, ownerWebClient, "application/zip");
+                + "/files?format=zip", new GenericType<byte[]>() {
+                }, ownerWebClient, "application/zip").getData();
         checkOnZipFile(arbitraryURL, DescriptorLanguage.WDL);
     }
 
@@ -514,24 +514,24 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         byte[] arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
-                + "/files?format=zip", new GenericType<>() {
-                }, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+                + "/files?format=zip", new GenericType<byte[]>() {
+                }, webClient, MediaType.MEDIA_TYPE_WILDCARD).getData();
         checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
 
         // even more wildcard, should get zip
         arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
-                + "/files?format=zip", new GenericType<>() {
-                }, webClient, MediaType.WILDCARD);
+                + "/files?format=zip", new GenericType<byte[]>() {
+                }, webClient, MediaType.WILDCARD).getData();
         checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
 
         // json header with zip format, should get error
         arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
-                + "/files?format=zip", new GenericType<>() {
-                }, webClient, MediaType.WILDCARD);
+                + "/files?format=zip", new GenericType<byte[]>() {
+                }, webClient, MediaType.WILDCARD).getData();
         checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
 
 
@@ -539,16 +539,16 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
-                + "/files", new GenericType<>() {
-                }, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+                + "/files", new GenericType<byte[]>() {
+                }, webClient, MediaType.MEDIA_TYPE_WILDCARD).getData();
         checkOnJsonFile(arbitraryURL);
 
         // no parameter with even more wildcard, should get json
         arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
-                + "/files", new GenericType<>() {
-                }, webClient, MediaType.WILDCARD);
+                + "/files", new GenericType<byte[]>() {
+                }, webClient, MediaType.WILDCARD).getData();
         checkOnJsonFile(arbitraryURL);
 
         // test combination of zip only with json return (should fail)
@@ -556,8 +556,8 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
             CommonTestUtilities.invokeAPI(
                 "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                     + "/" + DescriptorTypeWithPlain.CWL
-                    + "/files?format=zip", new GenericType<>() {
-                    }, webClient, MediaType.APPLICATION_JSON);
+                    + "/files?format=zip", new GenericType<byte[]>() {
+                    }, webClient, MediaType.APPLICATION_JSON).getData();
             fail("should have died with bad request");
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());

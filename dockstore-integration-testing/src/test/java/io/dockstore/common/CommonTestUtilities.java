@@ -45,6 +45,7 @@ import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.model.PublishRequest;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
@@ -670,10 +671,10 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T invokeAPI(String url, GenericType<T> type, ApiClient client, String acceptType) {
+    public static <T> ApiResponse<T> invokeAPI(String url, GenericType<T> type, ApiClient client, String acceptType) {
         return client
             .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "text/plain",
-                new String[] { "BEARER" }, type).getData();
+                new String[] { "BEARER" }, type);
     }
 
     /**

@@ -430,7 +430,7 @@ public class WorkflowIT extends BaseIT {
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
         byte[] arbitraryURL = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-        }, webClient, "application/zip");
+        }, webClient, "application/zip").getData();
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), arbitraryURL);
         ZipFile zipFile = new ZipFile(write.toFile());
@@ -450,7 +450,7 @@ public class WorkflowIT extends BaseIT {
         // Download published workflow version
         workflowApi.publish(workflowId, CommonTestUtilities.createPublishRequest(true));
         arbitraryURL = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-        }, CommonTestUtilities.getWebClient(false, null, testingPostgres), "application/zip");
+        }, CommonTestUtilities.getWebClient(false, null, testingPostgres), "application/zip").getData();
         File tempZip2 = File.createTempFile("temp", "zip");
         write = Files.write(tempZip2.toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
