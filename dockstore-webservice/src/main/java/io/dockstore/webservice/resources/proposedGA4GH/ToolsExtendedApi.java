@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 
 import io.dockstore.common.Partner;
 import io.dockstore.common.metrics.ExecutionsRequestBody;
@@ -51,6 +52,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.Consumes;
@@ -81,6 +83,7 @@ import org.apache.http.HttpStatus;
 @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)
 public class ToolsExtendedApi {
 
+    private static final int MAX_AI_CANDIDATES_PAGINATION_LIMIT = 1000;
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     @GET
@@ -409,7 +412,7 @@ public class ToolsExtendedApi {
         })
     public Response getAITopicCandidates(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(in = ParameterIn.QUERY, description = "Start index of paging. If this exceeds the current result set return an empty set. If not specified in the request, this will start at the beginning of the results.") @Min(0) @DefaultValue("0") @QueryParam("offset") Integer offset,
-            @Parameter(in = ParameterIn.QUERY, description = "Amount of records to return in a given page.") @Min(1) @DefaultValue("1000") @QueryParam("limit") Integer limit,
+            @Parameter(in = ParameterIn.QUERY, description = "Amount of records to return in a given page.") @Min(1) @Max(MAX_AI_CANDIDATES_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
             @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.getAITopicCandidates(offset, limit);
     }
