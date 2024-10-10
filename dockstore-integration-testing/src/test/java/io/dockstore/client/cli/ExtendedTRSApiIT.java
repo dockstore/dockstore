@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.ExtendedMetricsTRSOpenApiIT.DOCKSTORE_WORKFLOW_CNV_REPO;
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,6 +38,7 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.UpdateAITopicRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
@@ -45,7 +47,9 @@ import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -139,6 +143,75 @@ class ExtendedTRSApiIT extends BaseIT {
             .invokeAPI("/api/ga4gh/v2/extended/tools/index", "POST", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), MediaType.TEXT_PLAIN, MediaType.TEXT_PLAIN,
                 new String[]{"BEARER"}, new GenericType<>(String.class));
         assertTrue(Integer.parseInt(textResults) >= 3);
+    }
+
+    @Test
+    void testGetAITopicCandidates() {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        // Non-admin user
+        final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
+        final String trsId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
+        final String aiTopic = "This is an AI topic";
+        final UpdateAITopicRequest updateAITopicRequest = new UpdateAITopicRequest().aiTopic(aiTopic);
+
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "",
+                DescriptorLanguage.CWL.toString(), "/test.json");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        // Make sure that there's no topics
+        testingPostgres.runUpdateStatement("update workflow set topicautomatic = null where id = " + workflow.getId());
+        testingPostgres.runUpdateStatement("update workflow set topicmanual = null where id = " + workflow.getId());
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertNull(workflow.getTopicAutomatic());
+        assertNull(workflow.getTopicManual());
+        assertNull(workflow.getTopicAI());
+
+        // Unpublished workflow should not be an AI topic candidate
+        assertFalse(workflow.isIsPublished());
+        List<EntryLiteAndVersionName> aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
+        assertTrue(aiTopicCandidates.isEmpty());
+        checkXTotalCountHeader(extendedGa4GhApi, 0);
+
+        // Publish the workflow
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Non-admin should not be able to get AI topic candidates
+        ApiException exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.getAITopicCandidates(null, null));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
+
+        // Admin should be able to get AI topic candidates
+        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
+        assertEquals(1, aiTopicCandidates.size());
+        checkXTotalCountHeader(extendedGa4GhApi, 1);
+        assertEquals(trsId, aiTopicCandidates.get(0).getEntryLite().getTrsId());
+        String versionName = aiTopicCandidates.get(0).getVersionName();
+        assertTrue(StringUtils.isNoneEmpty(versionName));
+
+        // Update AI topic
+        extendedGa4GhApi.updateAITopic(updateAITopicRequest, versionName, trsId);
+
+        // Should no longer be an AI topic candidate because it has a topic
+        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
+        assertTrue(aiTopicCandidates.isEmpty());
+        checkXTotalCountHeader(extendedGa4GhApi, 0);
+
+        // Remove the AI topic and give it a manual topic. It should not be an AI candidate because it has a topic
+        testingPostgres.runUpdateStatement("update workflow set topicmanual = 'Manual topic' where id = " + workflow.getId());
+        testingPostgres.runUpdateStatement("update workflow set topicAI = null where id = " + workflow.getId());
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        assertNotNull(workflow.getTopicManual());
+        assertNull(workflow.getTopicAutomatic());
+        assertNull(workflow.getTopicAI());
+        aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
+        assertTrue(aiTopicCandidates.isEmpty());
+        checkXTotalCountHeader(extendedGa4GhApi, 0);
+    }
+
+    private void checkXTotalCountHeader(ExtendedGa4GhApi extendedGa4GhApi, int expectedCount) {
+        assertEquals(expectedCount, Integer.valueOf(extendedGa4GhApi.getApiClient().getResponseHeaders().get(X_TOTAL_COUNT).get(0)));
     }
 
     @Test
