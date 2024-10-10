@@ -677,6 +677,14 @@ public final class CommonTestUtilities {
                 new String[] { "BEARER" }, type);
     }
 
+    public static String getContentType(ApiResponse<?> response) {
+        return response.getHeaders().entrySet().stream()
+            .filter(entry -> "Content-Type".equalsIgnoreCase(entry.getKey()))
+            .map(entry -> entry.getValue().get(0))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("response contained no Content-Type header"));
+    }
+
     /**
      * This retrieves a resource file using getResourceAsStream, which works for retrieving resource files packaged in a jar.
      * This allows other repos, like dockstore-support, to use utility methods that require resource files from this package.
