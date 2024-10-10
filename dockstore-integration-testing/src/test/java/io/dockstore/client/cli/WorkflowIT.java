@@ -429,7 +429,7 @@ public class WorkflowIT extends BaseIT {
 
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
-        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        byte[] arbitraryURL = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, webClient, "application/zip");
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), arbitraryURL);
@@ -439,7 +439,7 @@ public class WorkflowIT extends BaseIT {
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
         try {
-            CommonTestUtilities.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+            CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
             }, CommonTestUtilities.getWebClient(false, null, testingPostgres), "application/zip");
         } catch (Exception e) {
             thrownException = true;
@@ -449,7 +449,7 @@ public class WorkflowIT extends BaseIT {
 
         // Download published workflow version
         workflowApi.publish(workflowId, CommonTestUtilities.createPublishRequest(true));
-        arbitraryURL = CommonTestUtilities.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        arbitraryURL = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, CommonTestUtilities.getWebClient(false, null, testingPostgres), "application/zip");
         File tempZip2 = File.createTempFile("temp", "zip");
         write = Files.write(tempZip2.toPath(), arbitraryURL);

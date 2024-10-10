@@ -159,7 +159,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
             DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
-        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        byte[] arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
                 + "/files?format=zip", new GenericType<>() {
@@ -511,7 +511,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         // test parameter with wildcard header, should get zip
-        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        byte[] arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
                 + "/files?format=zip", new GenericType<>() {
@@ -519,7 +519,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
 
         // even more wildcard, should get zip
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
                 + "/files?format=zip", new GenericType<>() {
@@ -527,7 +527,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
 
         // json header with zip format, should get error
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
                 + "/files?format=zip", new GenericType<>() {
@@ -536,7 +536,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
 
         // test no parameter with wildcard header, should get json
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
                 + "/files", new GenericType<>() {
@@ -544,7 +544,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         checkOnJsonFile(arbitraryURL);
 
         // no parameter with even more wildcard, should get json
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        arbitraryURL = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.CWL
                 + "/files", new GenericType<>() {
@@ -553,7 +553,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         // test combination of zip only with json return (should fail)
         try {
-            CommonTestUtilities.getArbitraryURL(
+            CommonTestUtilities.invokeAPI(
                 "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
                     + "/" + DescriptorTypeWithPlain.CWL
                     + "/files?format=zip", new GenericType<>() {

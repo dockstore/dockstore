@@ -670,7 +670,7 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client, String acceptType) {
+    public static <T> T invokeAPI(String url, GenericType<T> type, ApiClient client, String acceptType) {
         return client
             .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "text/plain",
                 new String[] { "BEARER" }, type).getData();
