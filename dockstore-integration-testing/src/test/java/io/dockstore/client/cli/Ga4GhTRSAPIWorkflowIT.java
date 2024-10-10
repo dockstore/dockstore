@@ -160,16 +160,16 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
             DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
-        byte[] arbitraryURL = CommonTestUtilities.invokeAPI(
+        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
                 + "/files?format=zip", new GenericType<byte[]>() {
-                }, ownerWebClient, "application/zip").getData();
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.WDL);
+                }, ownerWebClient, "application/zip");
+        checkOnZipFile(response, DescriptorLanguage.WDL);
     }
 
-    private static void checkOnJsonFile(byte[] arbitraryURL) {
-        String json = new String(arbitraryURL);
+    private static void checkOnJsonFile(ApiResponse<byte[]> response) {
+        String json = new String(response.getData());
         try {
             new JSONObject(json);
         } catch (JSONException e) {
@@ -181,9 +181,9 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         }
     }
 
-    private static void checkOnZipFile(byte[] arbitraryURL, DescriptorLanguage language) throws IOException {
+    private static void checkOnZipFile(ApiResponse<byte[]> response, DescriptorLanguage language) throws IOException {
         File tempZip = File.createTempFile("temp", "zip");
-        Path write = Files.write(tempZip.toPath(), arbitraryURL);
+        Path write = Files.write(tempZip.toPath(), response.getData());
         try (ZipFile zipFile = new ZipFile(write.toFile())) {
             assertTrue(zipFile.size() > 0, "zip file seems to have files");
             assertTrue(zipFile.stream().anyMatch(file -> file.getName().toUpperCase().endsWith("." + language.name())), "zip file seems to be missing " + language.name() + " files");
@@ -516,19 +516,19 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         // zip parameter with wildcard media type, should get zip
         ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
-        checkOnZipFile(response.getData(), DescriptorLanguage.CWL);
+        checkOnZipFile(response, DescriptorLanguage.CWL);
 
         // zip parameter with even more wildcard media type, should get zip
         response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.WILDCARD);
-        checkOnZipFile(response.getData(), DescriptorLanguage.CWL);
+        checkOnZipFile(response, DescriptorLanguage.CWL);
 
         // no parameter with wildcard media type, should get json
         response = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
-        checkOnJsonFile(response.getData());
+        checkOnJsonFile(response);
 
         // no parameter with even more wildcard media type, should get json
         response = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.WILDCARD);
-        checkOnJsonFile(response.getData());
+        checkOnJsonFile(response);
 
         // zip parameter with json media type (should fail)
         try {
