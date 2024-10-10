@@ -671,9 +671,9 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> ApiResponse<T> invokeAPI(String url, GenericType<T> type, ApiClient client, String acceptType) {
+    public static <T> ApiResponse<T> invokeAPI(String path, GenericType<T> type, ApiClient client, String acceptType) {
         return client
-            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "text/plain",
+            .invokeAPI(path, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "text/plain",
                 new String[] { "BEARER" }, type);
     }
 
