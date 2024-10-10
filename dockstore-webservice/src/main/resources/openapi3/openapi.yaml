@@ -438,7 +438,7 @@ paths:
         schema:
           type: integer
           format: int32
-          default: 100
+          default: 1000
           maximum: 1000
           minimum: 1
       responses:
