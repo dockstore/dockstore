@@ -429,10 +429,10 @@ public class WorkflowIT extends BaseIT {
 
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
-        byte[] arbitraryURL = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        byte[] responseBody = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, webClient, "application/zip").getData();
         File tempZip = File.createTempFile("temp", "zip");
-        Path write = Files.write(tempZip.toPath(), arbitraryURL);
+        Path write = Files.write(tempZip.toPath(), responseBody);
         ZipFile zipFile = new ZipFile(write.toFile());
         assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
 
@@ -449,10 +449,10 @@ public class WorkflowIT extends BaseIT {
 
         // Download published workflow version
         workflowApi.publish(workflowId, CommonTestUtilities.createPublishRequest(true));
-        arbitraryURL = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        responseBody = CommonTestUtilities.invokeAPI("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, CommonTestUtilities.getWebClient(false, null, testingPostgres), "application/zip").getData();
         File tempZip2 = File.createTempFile("temp", "zip");
-        write = Files.write(tempZip2.toPath(), arbitraryURL);
+        write = Files.write(tempZip2.toPath(), responseBody);
         zipFile = new ZipFile(write.toFile());
         assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
         tempZip2.deleteOnExit();
