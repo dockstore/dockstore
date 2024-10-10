@@ -11183,7 +11183,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -12110,7 +12109,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -12239,6 +12237,9 @@ components:
     VersionMetadata:
       type: object
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         descriptorTypeVersions:
           type: array
           items:
@@ -12566,7 +12567,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         aliases:
           type: object
           additionalProperties:

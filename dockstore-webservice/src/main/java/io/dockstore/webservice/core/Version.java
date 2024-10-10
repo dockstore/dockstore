@@ -168,10 +168,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
-    @Column(columnDefinition = "boolean default false")
-    @Schema(description = "True if Dockstore has processed this version for an AI topic")
-    private boolean aiTopicProcessed = false;
-
     // Warning: this is eagerly loaded because of two reasons:
     // the 4 @ApiModelProperty that uses version metadata
     // This OneToOne
@@ -690,11 +686,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public boolean isAiTopicProcessed() {
-        return aiTopicProcessed;
+        return getVersionMetadata().isAiTopicProcessed();
     }
 
     public void setAiTopicProcessed(boolean aiTopicProcessed) {
-        this.aiTopicProcessed = aiTopicProcessed;
+        getVersionMetadata().setAiTopicProcessed(aiTopicProcessed);
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED
