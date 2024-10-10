@@ -163,7 +163,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
                 + "/files?format=zip", new GenericType<>() {
-                }, ownerWebClient);
+                }, ownerWebClient, "application/zip");
         checkOnZipFile(arbitraryURL, DescriptorLanguage.WDL);
     }
 
