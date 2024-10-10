@@ -41,6 +41,7 @@ import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.DescriptorTypeWithPlain;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.Ga4GhApi;
@@ -514,24 +515,24 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         GenericType<byte[]> byteArrayType = new GenericType<>() {};
 
         // zip parameter with wildcard media type, should get zip
-        byte[] arbitraryURL = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD).getData();
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
+        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+        checkOnZipFile(response.getData(), DescriptorLanguage.CWL);
 
         // zip parameter with even more wildcard media type, should get zip
-        arbitraryURL = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.WILDCARD).getData();
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
+        response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.WILDCARD);
+        checkOnZipFile(response.getData(), DescriptorLanguage.CWL);
 
         // no parameter with wildcard media type, should get json
-        arbitraryURL = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD).getData();
-        checkOnJsonFile(arbitraryURL);
+        response = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+        checkOnJsonFile(response.getData());
 
         // no parameter with even more wildcard media type, should get json
-        arbitraryURL = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.WILDCARD).getData();
-        checkOnJsonFile(arbitraryURL);
+        response = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.WILDCARD);
+        checkOnJsonFile(response.getData());
 
         // zip parameter with json media type (should fail)
         try {
-            CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.APPLICATION_JSON).getData();
+            CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.APPLICATION_JSON);
             fail("should have died with bad request");
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
