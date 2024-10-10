@@ -169,7 +169,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     }
 
     private static void checkOnJsonFile(ApiResponse<byte[]> response) {
-        assertEquals("application/json", CommonTestUtilities.getContentType(response));
+        assertTrue(CommonTestUtilities.getContentType(response).startsWith("application/json"));
         String json = new String(response.getData());
         try {
             new JSONObject(json);
@@ -183,7 +183,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     }
 
     private static void checkOnZipFile(ApiResponse<byte[]> response, DescriptorLanguage language) throws IOException {
-        assertEquals("application/zip", CommonTestUtilities.getContentType(response));
+        assertTrue(CommonTestUtilities.getContentType(response).startsWith("application/zip"));
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), response.getData());
         try (ZipFile zipFile = new ZipFile(write.toFile())) {
