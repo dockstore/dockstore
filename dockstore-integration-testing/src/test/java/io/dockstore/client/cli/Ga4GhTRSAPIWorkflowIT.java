@@ -41,6 +41,7 @@ import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.DescriptorTypeWithPlain;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.Ga4GhApi;
@@ -159,16 +160,17 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
             DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
-        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL(
+        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
-                + "/files?format=zip", new GenericType<>() {
-                }, ownerWebClient);
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.WDL);
+                + "/files?format=zip", new GenericType<byte[]>() {
+                }, ownerWebClient, "application/zip");
+        checkOnZipFile(response, DescriptorLanguage.WDL);
     }
 
-    private static void checkOnJsonFile(byte[] arbitraryURL) {
-        String json = new String(arbitraryURL);
+    private static void checkOnJsonFile(ApiResponse<byte[]> response) {
+        assertTrue(CommonTestUtilities.getContentType(response).startsWith("application/json"));
+        String json = new String(response.getData());
         try {
             new JSONObject(json);
         } catch (JSONException e) {
@@ -180,9 +182,10 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         }
     }
 
-    private static void checkOnZipFile(byte[] arbitraryURL, DescriptorLanguage language) throws IOException {
+    private static void checkOnZipFile(ApiResponse<byte[]> response, DescriptorLanguage language) throws IOException {
+        assertTrue(CommonTestUtilities.getContentType(response).startsWith("application/zip"));
         File tempZip = File.createTempFile("temp", "zip");
-        Path write = Files.write(tempZip.toPath(), arbitraryURL);
+        Path write = Files.write(tempZip.toPath(), response.getData());
         try (ZipFile zipFile = new ZipFile(write.toFile())) {
             assertTrue(zipFile.size() > 0, "zip file seems to have files");
             assertTrue(zipFile.stream().anyMatch(file -> file.getName().toUpperCase().endsWith("." + language.name())), "zip file seems to be missing " + language.name() + " files");
@@ -510,54 +513,28 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
 
-        // test parameter with wildcard header, should get zip
-        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.CWL
-                + "/files?format=zip", new GenericType<>() {
-                }, webClient, MediaType.MEDIA_TYPE_WILDCARD);
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
+        String trsPath = "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master" + "/" + DescriptorTypeWithPlain.CWL + "/files";
+        GenericType<byte[]> byteArrayType = new GenericType<>() {};
 
-        // even more wildcard, should get zip
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.CWL
-                + "/files?format=zip", new GenericType<>() {
-                }, webClient, MediaType.WILDCARD);
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
+        // zip parameter with wildcard media type, should get zip
+        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+        checkOnZipFile(response, DescriptorLanguage.CWL);
 
-        // json header with zip format, should get error
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.CWL
-                + "/files?format=zip", new GenericType<>() {
-                }, webClient, MediaType.WILDCARD);
-        checkOnZipFile(arbitraryURL, DescriptorLanguage.CWL);
+        // zip parameter with even more wildcard media type, should get zip
+        response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.WILDCARD);
+        checkOnZipFile(response, DescriptorLanguage.CWL);
 
+        // no parameter with wildcard media type, should get json
+        response = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+        checkOnJsonFile(response);
 
-        // test no parameter with wildcard header, should get json
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.CWL
-                + "/files", new GenericType<>() {
-                }, webClient, MediaType.MEDIA_TYPE_WILDCARD);
-        checkOnJsonFile(arbitraryURL);
+        // no parameter with even more wildcard media type, should get json
+        response = CommonTestUtilities.invokeAPI(trsPath, byteArrayType, webClient, MediaType.WILDCARD);
+        checkOnJsonFile(response);
 
-        // no parameter with even more wildcard, should get json
-        arbitraryURL = CommonTestUtilities.getArbitraryURL(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.CWL
-                + "/files", new GenericType<>() {
-                }, webClient, MediaType.WILDCARD);
-        checkOnJsonFile(arbitraryURL);
-
-        // test combination of zip only with json return (should fail)
+        // zip parameter with json media type (should fail)
         try {
-            CommonTestUtilities.getArbitraryURL(
-                "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, StandardCharsets.UTF_8) + "/versions/master"
-                    + "/" + DescriptorTypeWithPlain.CWL
-                    + "/files?format=zip", new GenericType<>() {
-                    }, webClient, MediaType.APPLICATION_JSON);
+            CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.APPLICATION_JSON);
             fail("should have died with bad request");
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
