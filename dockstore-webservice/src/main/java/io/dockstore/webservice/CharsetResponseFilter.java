@@ -39,7 +39,7 @@ public class CharsetResponseFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         MediaType contentType = responseContext.getMediaType();
         if (contentType != null) {
-            boolean isText = "text".equals(contentType.getType());
+            boolean isText = "text".equalsIgnoreCase(contentType.getType());
             boolean isJson = MediaType.APPLICATION_JSON_TYPE.equals(contentType);
             if (isText || isJson) {
                 if (!contentType.toString().toLowerCase().contains("charset=utf-8")) {
