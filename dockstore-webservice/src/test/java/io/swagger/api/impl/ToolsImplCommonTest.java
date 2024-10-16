@@ -77,7 +77,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", sourceFile));
+        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", "", sourceFile));
         FileWrapperV20beta expectedToolDescriptor = new FileWrapperV20beta();
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
@@ -92,7 +92,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", sourceFile));
+        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", "", sourceFile));
         FileWrapperV20beta expectedToolDescriptor = new FileWrapperV20beta();
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
@@ -511,7 +511,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile));
+        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile, null));
         FileWrapperV20beta expectedToolTests = new FileWrapperV20beta();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");

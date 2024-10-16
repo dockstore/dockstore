@@ -10106,6 +10106,15 @@ components:
         content:
           type: string
           description: The content of the file itself. One of url or content is required.
+        dockstore_absolute_path:
+          type: string
+          description: Absolute path of the file.  A descriptor's path can be used
+            with zip from toolsIdVersionsVersionIdTypeFilesGet when format=zip is
+            specified
+        dockstore_self_url:
+          type: string
+          description: Self URL to this file in the toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+            endpoint
         image_type:
           $ref: '#/components/schemas/OneOfFileWrapperImageType'
         url:
@@ -11519,6 +11528,11 @@ components:
       properties:
         checksum:
           $ref: '#/components/schemas/Checksum'
+        dockstore_absolute_path:
+          type: string
+          description: Absolute path of the file.  A descriptor's path can be used
+            with zip from toolsIdVersionsVersionIdTypeFilesGet when format=zip is
+            specified
         file_type:
           type: string
           enum:
