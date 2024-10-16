@@ -38,6 +38,10 @@ class S3ClientHelperTest {
         assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow", S3ClientHelper.convertToolIdToPartialKey(toolId));
         toolId = "quay.io/pancancer/pcawg-bwa-mem-workflow/thing";
         assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing", S3ClientHelper.convertToolIdToPartialKey(toolId));
+        toolId = "#notebook/github.com/dockstore/trs-notebook";
+        assertEquals("notebook/github.com/dockstore/trs-notebook", S3ClientHelper.convertToolIdToPartialKey(toolId));
+        toolId = "#service/github.com/dockstore/simple-service";
+        assertEquals("service/github.com/dockstore/simple-service", S3ClientHelper.convertToolIdToPartialKey(toolId));
     }
 
     @Test

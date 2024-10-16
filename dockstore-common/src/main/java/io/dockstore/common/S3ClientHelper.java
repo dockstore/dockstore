@@ -101,7 +101,7 @@ public final class S3ClientHelper {
 
     /**
      * Converts the toolId into a key for s3 storage.  Used by both webservice and tooltester
-     * Workflows will be in a "workflow" directory whereas tools will be in a "tool" directory
+     * Tools will be in a "tool" directory and other entry types will be in a directory named after the entry type (ex: workflows are in a "workflow" directory)
      * repository and optional toolname or workflowname must be encoded or else looking for logs of a specific tool without toolname (quay.io/dockstore/hello_world)
      * will return logs for the other ones with toolnames (quay.io/dockstore/hello_world/thing)
      * TODO: Somehow reuse this between repos
@@ -111,8 +111,8 @@ public final class S3ClientHelper {
      */
     public static String convertToolIdToPartialKey(String toolId) {
         String partialKey = toolId;
-        if (partialKey.startsWith("#workflow")) {
-            partialKey = partialKey.replaceFirst("#workflow", "workflow");
+        if (partialKey.startsWith("#")) {
+            partialKey = partialKey.replaceFirst("^#", "");
         } else {
             partialKey = "tool/" + partialKey;
         }
