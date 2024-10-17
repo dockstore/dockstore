@@ -8560,7 +8560,7 @@ paths:
       - workflows
   /workflows/{workflowId}/workflowVersions:
     get:
-      description: Return first 200 versions in an entry
+      description: Return paginated versions in an entry
       operationId: getWorkflowVersions
       parameters:
       - description: id of the worflow
@@ -8570,6 +8570,21 @@ paths:
         schema:
           type: integer
           format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 200
+          maximum: 200
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
       responses:
         "200":
           content:
