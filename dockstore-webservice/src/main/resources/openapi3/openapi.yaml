@@ -8058,6 +8058,48 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/publicWorkflowVersions:
+    get:
+      description: Return paginated versions in an public entry
+      operationId: getPublicWorkflowVersions
+      parameters:
+      - description: id of the worflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+          description: Get list workflow versions in an entry. Default is 100 versions
+        "400":
+          description: Bad Request
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/publish:
     post:
       description: Publish or unpublish a workflow.
@@ -8521,8 +8563,8 @@ paths:
         schema:
           type: integer
           format: int32
-          default: 200
-          maximum: 200
+          default: 100
+          maximum: 100
           minimum: 1
       - in: query
         name: offset
@@ -8539,7 +8581,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in a workflow
+          description: Get list workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
       security:
