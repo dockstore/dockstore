@@ -8076,7 +8076,6 @@ paths:
           type: integer
           format: int32
           default: 100
-          maximum: 100
           minimum: 1
       - in: query
         name: offset
@@ -8564,7 +8563,6 @@ paths:
           type: integer
           format: int32
           default: 100
-          maximum: 100
           minimum: 1
       - in: query
         name: offset
