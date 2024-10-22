@@ -449,7 +449,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "workflowID", required = true) @Parameter(
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-        @QueryParam("limit") @Min(1)  @DefaultValue("100") Integer limit,
+        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("100") Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -474,12 +474,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getPublicWorkflowVersions(@ApiParam(value = "workflowID", required = true) @Parameter(
                                                             name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-                                                    @QueryParam("limit") @Min(1) @DefaultValue("100") Integer limit,
+                                                    @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("100") Integer limit,
                                                     @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
                                                     @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkNotNullEntry(workflow);
-        response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getPublicVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset);

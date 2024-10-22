@@ -60,7 +60,7 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     public long getPublicVersionsCount(long entryId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Version.getCountByEntryId");
+        Query query = namedQuery("io.dockstore.webservice.core.Version.getPublicCountByEntryId");
         query.setParameter("id", entryId);
         return (long)query.getSingleResult();
     }
