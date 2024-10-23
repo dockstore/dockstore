@@ -7522,6 +7522,46 @@ paths:
           description: default response
       tags:
       - workflows
+  /workflows/published/{workflowId}/workflowVersions:
+    get:
+      description: Return paginated versions in an public entry
+      operationId: getPublicWorkflowVersions
+      parameters:
+      - description: id of the worflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+          description: Get list workflow versions in an entry. Default is 100 versions
+        "400":
+          description: Bad Request
+      tags:
+      - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     delete:
       description: Delete a stubbed workflow for a registry and repository path.
@@ -8054,48 +8094,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/SourceFile'
           description: default response
-      security:
-      - BEARER: []
-      tags:
-      - workflows
-  /workflows/{workflowId}/publicWorkflowVersions:
-    get:
-      description: Return paginated versions in an public entry
-      operationId: getPublicWorkflowVersions
-      parameters:
-      - description: id of the worflow
-        in: path
-        name: workflowId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - in: query
-        name: limit
-        schema:
-          type: integer
-          format: int32
-          default: 100
-          maximum: 100
-          minimum: 1
-      - in: query
-        name: offset
-        schema:
-          type: integer
-          format: int32
-          default: 0
-          minimum: 0
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in an entry. Default is 100 versions
-        "400":
-          description: Bad Request
       security:
       - BEARER: []
       tags:

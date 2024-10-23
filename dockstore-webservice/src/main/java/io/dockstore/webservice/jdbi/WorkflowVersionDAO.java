@@ -42,6 +42,13 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return query.getResultList();
     }
 
+    public List<WorkflowVersion> getPublicWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset) {
+        Query<WorkflowVersion> query = namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getPublicVersionsByWorkflowId");
+        query.setParameter("id", workflowId);
+        query.setFirstResult(offset);
+        query.setMaxResults(limit);
+        return query.getResultList();
+    }
 
     public WorkflowVersion getWorkflowVersionByWorkflowIdAndVersionName(long workflowId, String name) {
         Query<WorkflowVersion> query = namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName");

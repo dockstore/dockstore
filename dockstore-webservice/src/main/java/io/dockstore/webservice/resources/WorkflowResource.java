@@ -446,15 +446,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
-    public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+    public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "workflowID", required = true) @Parameter(
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("100") Integer limit,
+        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanExamine(user, workflow);
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
@@ -463,27 +463,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @GET
-    @Path("/{workflowId}/publicWorkflowVersions")
+    @Path("/published/{workflowId}/workflowVersions")
     @UnitOfWork
-    @ApiOperation(nickname = "getPublicWorkflowVersions", value = "Return paginated versions in an public entry", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List")
-    @Operation(operationId = "getPublicWorkflowVersions", description = "Return paginated versions in an public entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(nickname = "getPublicWorkflowVersions", value = "Return paginated versions in an public entry", response = WorkflowVersion.class, responseContainer = "List")
+    @Operation(operationId = "getPublicWorkflowVersions", description = "Return paginated versions in an public entry")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list workflow versions in an entry. Default is 100 versions", content = @Content(
             mediaType = "application/json",
             array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getPublicWorkflowVersions(@ApiParam(value = "workflowID", required = true) @Parameter(
-                                                            name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-                                                    @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("100") Integer limit,
-                                                    @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
-                                                    @Context HttpServletResponse response) {
+                name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
+        @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
+        @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkNotNullEntry(workflow);
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getPublicVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset);
-        versions.removeIf(Version::isHidden);
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getPublicWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset);
 
         return new TreeSet<>(versions);
     }
