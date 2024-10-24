@@ -7557,7 +7557,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in an entry. Default is 100 versions
+          description: Get workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
       tags:
@@ -8579,7 +8579,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in an entry. Default is 100 versions
+          description: Get workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
       security:
