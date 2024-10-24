@@ -27,6 +27,7 @@ import io.dockstore.webservice.resources.SourceControlResourceInterface;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.ApiException;
+import io.swagger.zenodo.client.ApiResponse;
 import io.swagger.zenodo.client.api.AccessLinksApi;
 import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
@@ -52,12 +53,15 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -394,8 +398,12 @@ public final class ZenodoHelper {
         final String query = "metadata.related_identifiers.identifier:/https:\\/\\/github.com\\/%s\\/tree\\/.+/".formatted(gitHubRepo.replace("/", "\\/"));
         final int pageSize = 1; // We can only handle 1 DOI for a GitHub initiator, so no point asking for more
         try {
-            final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
+            final ApiResponse<SearchResult> response = previewApi.listRecordsWithHttpInfo(query, "bestmatch", 1, pageSize);
+            checkRateLimit(response);
+            final SearchResult records = response.getData();
             final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
+            // x-ratelimit-reset -> {ArrayList@15984}  size = 1
+            // x-ratelimit-remaining -> {ArrayList@15986}  size = 1
             return dois.stream()
                     .map(conceptAndDoi -> {
                         final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
@@ -406,6 +414,49 @@ public final class ZenodoHelper {
         } catch (ApiException e) {
             LOG.error("Error discovering DOIs for GitHub repo %s".formatted(gitHubRepo), e);
             return List.of();
+        }
+    }
+
+    /**
+     * Checks the x-ratelimit-remaining and x-ratelimit-reset headers. If getting close the rate limit, sleep until the reset time.
+     *
+     * The x-ratelimit-remaining header value has the number of requests remaining before the rate limit is hit.
+     * The x-ratelimit-reset has the time, in seconds, when the rate limit will reset.
+     *
+     * Since other parts of the code use the Zenodo API, back off at 10 requests remaining rather than getting as close to the limit
+     * as possible.
+     *
+     * See https://developers.zenodo.org/#rate-limiting
+     * @param response
+     */
+    private static void checkRateLimit(ApiResponse<SearchResult> response) {
+        final Map<String, List<String>> headers = response.getHeaders();
+        final List<String> remaining = headers.get("x-ratelimit-remaining");
+        if (remaining != null && !remaining.isEmpty()) {
+            final int remainingRequests = Integer.parseInt(remaining.get(0));
+            final int waitForResetLimit = 10; // Leave a buffer, in case other usages of Zenodo DOI are happening
+            if (remainingRequests < waitForResetLimit) {
+                final List<String> reset = headers.get("x-ratelimit-reset");
+                if (reset != null && !reset.isEmpty()) {
+                    final int resetTime = Integer.parseInt(reset.get(0));
+                    final Instant resetInstant = Instant.ofEpochSecond(resetTime + 1);
+                    final Duration duration = Duration.between(Instant.now(), resetInstant);
+                    if (!duration.isNegative()) {
+                        final Duration waitTime = duration.minusMinutes(2);
+                        if (!waitTime.isNegative()) {
+                            // This is a safeguard in case the wait it too long.
+                            LOG.error("Would have to wait at least {} minutes for Zenodo rate limit to reset", waitTime.toMinutes());
+                            throw new CustomWebApplicationException("Cancelling Zenodo GitHub integration due to rate limiting", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                        }
+                        LOG.info("Waiting {} seconds for Zenodo rate limit to reset", duration.getSeconds());
+                        try {
+                            Thread.sleep(duration.toMillis());
+                        } catch (InterruptedException e) {
+                            LOG.error("Error sleeping", e);
+                        }
+                    }
+                }
+            }
         }
     }
 
