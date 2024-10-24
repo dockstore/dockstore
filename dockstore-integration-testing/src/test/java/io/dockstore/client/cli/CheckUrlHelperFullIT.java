@@ -111,7 +111,7 @@ public class CheckUrlHelperFullIT {
         final HostedApi hostedApi = new HostedApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final Workflow hostedWorkflow = CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
-        final WorkflowVersion workflowVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
+        final WorkflowVersion workflowVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null).get(0);
         assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be public because the descriptor has no parameters at all");
     }
 

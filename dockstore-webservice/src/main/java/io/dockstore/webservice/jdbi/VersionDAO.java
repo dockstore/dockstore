@@ -52,9 +52,18 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms").setParameter("entryId", entryId));
     }
 
-    // Currently not used for anything, will be used for paginated versions
+
     public long getVersionsCount(long entryId) {
         Query query = namedQuery("io.dockstore.webservice.core.Version.getCountByEntryId");
+        query.setParameter("id", entryId);
+        return (long)query.getSingleResult();
+    }
+
+    /**
+     * Hidden versions are excluded from this count.
+     */
+    public long getPublicVersionsCount(long entryId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Version.getPublicCountByEntryId");
         query.setParameter("id", entryId);
         return (long)query.getSingleResult();
     }
