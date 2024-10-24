@@ -402,8 +402,6 @@ public final class ZenodoHelper {
             checkRateLimit(response);
             final SearchResult records = response.getData();
             final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
-            // x-ratelimit-reset -> {ArrayList@15984}  size = 1
-            // x-ratelimit-remaining -> {ArrayList@15986}  size = 1
             return dois.stream()
                     .map(conceptAndDoi -> {
                         final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
