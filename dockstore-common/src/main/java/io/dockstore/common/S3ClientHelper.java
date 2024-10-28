@@ -134,10 +134,8 @@ public final class S3ClientHelper {
         final String decodedToolId = URLDecoder.decode(encodedToolId, StandardCharsets.UTF_8);
         if ("tool".equals(entryType)) {
             return decodedToolId;
-        } else if ("workflow".equals(entryType)) {
-            return "#workflow/" + decodedToolId;
         } else {
-            return "";
+            return "#" + entryType + "/" + decodedToolId;
         }
     }
 
