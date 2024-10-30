@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,6 +39,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
@@ -724,6 +726,24 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
         return Response.ok(versionOptional.get().getName()).build();
+    }
+
+    @Override
+    public Response getAITopicCandidates(int offset, int limit) {
+        // Get published entries that don't have any topics
+        List<Entry> entriesWithNoTopics = workflowDAO.getPublishedEntriesWithNoTopics(offset, limit);
+        List<EntryLiteAndVersionName> aiTopicCandidates = entriesWithNoTopics.stream()
+                .map(entry -> {
+                    EntryLite entryLite = entry.createEntryLite();
+                    String versionCandidateName = EntryVersionHelper.determineRepresentativeVersion(entry)
+                            .map(Version::getName)
+                            .orElse(""); // Return empty string if there's no representative version
+                    return new EntryLiteAndVersionName(entryLite, versionCandidateName);
+                })
+                .toList();
+
+        long totalCount = workflowDAO.countPublishedEntriesWithNoTopics();
+        return Response.ok(aiTopicCandidates).header(X_TOTAL_COUNT, totalCount).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {

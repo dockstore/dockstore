@@ -165,6 +165,10 @@ public class VersionMetadata {
     @Schema(description = "The timestamp of the last metrics aggregation", type = "integer", format = "int64")
     private Timestamp latestMetricsAggregationDate;
 
+    @Column(columnDefinition = "boolean default false")
+    @Schema(description = "True if Dockstore has processed this version for an AI topic")
+    private boolean aiTopicProcessed = false;
+
     public long getId() {
         return id;
     }
@@ -245,5 +249,13 @@ public class VersionMetadata {
 
     public void setLatestMetricsAggregationDate(Timestamp latestMetricsAggregationDate) {
         this.latestMetricsAggregationDate = latestMetricsAggregationDate;
+    }
+
+    public boolean isAiTopicProcessed() {
+        return aiTopicProcessed;
+    }
+
+    public void setAiTopicProcessed(boolean aiTopicProcessed) {
+        this.aiTopicProcessed = aiTopicProcessed;
     }
 }

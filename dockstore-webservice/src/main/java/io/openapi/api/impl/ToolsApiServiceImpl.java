@@ -937,6 +937,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String fileName = EntryVersionHelper.generateZipFileName(dockstoreID, name);
 
         return Response.ok().entity((StreamingOutput) output -> EntryVersionHelper.writeStreamAsZipStatic(sourceFiles, output, path))
+            .header("Content-Type", "application/zip")
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
