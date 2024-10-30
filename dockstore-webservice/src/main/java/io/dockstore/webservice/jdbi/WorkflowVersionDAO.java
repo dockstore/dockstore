@@ -77,7 +77,6 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         query.where(predicates.toArray(new Predicate[]{}));
 
         TypedQuery<WorkflowVersion> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
-        System.out.println(typedQuery.getResultList());
         return typedQuery.getResultList();
     }
 
