@@ -415,6 +415,60 @@ paths:
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags:
       - GA4GHV1
+  /api/ga4gh/v2/extended/aiTopicCandidates:
+    get:
+      description: "Get all published tools that are AI topic candidates and their\
+        \ representative version if it exists, otherwise an empty string is returned\
+        \ as the version name."
+      operationId: getAITopicCandidates
+      parameters:
+      - description: "Start index of paging. If this exceeds the current result set\
+          \ return an empty set. If not specified in the request, this will start\
+          \ at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Amount of records to return in a given page.
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+          maximum: 1000
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: "Retrieved published tools that are AI topic candidates and\
+            \ a single representative version name if it exists, otherwise an empty\
+            \ string is returned as the version name."
+          headers:
+            X-total-count:
+              description: Total count of AI topic candidates
+              schema:
+                type: integer
+                format: int64
+              style: simple
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       description: This endpoint returns entries of an organization.
@@ -11204,7 +11258,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -12131,7 +12184,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -12260,6 +12312,9 @@ components:
     VersionMetadata:
       type: object
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         descriptorTypeVersions:
           type: array
           items:
@@ -12587,7 +12642,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         aliases:
           type: object
           additionalProperties:

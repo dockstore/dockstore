@@ -482,9 +482,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions) {
         // Prefer "mainline" Versions over valid Versions over all Versions, with ties going to the most-recently-created Version.
         Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
-        Stream<V> mainlineVersions = versions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
-        Stream<V> validVersions = versions.stream().filter(Version::isValid);
-        Stream<V> allVersions = versions.stream();
+        Set<V> nonHiddenVersions = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
+        Stream<V> mainlineVersions = nonHiddenVersions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
+        Stream<V> validVersions = nonHiddenVersions.stream().filter(Version::isValid);
+        Stream<V> allVersions = nonHiddenVersions.stream();
         return youngestVersion(mainlineVersions)
             .or(() -> youngestVersion(validVersions))
             .or(() -> youngestVersion(allVersions));

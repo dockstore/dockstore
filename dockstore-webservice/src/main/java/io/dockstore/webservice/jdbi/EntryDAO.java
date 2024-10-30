@@ -388,10 +388,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return Arrays.asList(this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getSingleResult().toString());
     }
 
-    public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
-        return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
-    }
-
     public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
 
         final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
@@ -408,6 +404,17 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final Map<Long, List<Partner>> map = new HashMap<>();
         entryIdAndPartnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
         return map;
+    }
+
+    public List<Entry> getPublishedEntriesWithNoTopics(int offset, int limit) {
+        return this.currentSession().createNamedQuery(Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Entry.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .list();
+    }
+
+    public long countPublishedEntriesWithNoTopics() {
+        return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Long.class).getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

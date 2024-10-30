@@ -423,4 +423,13 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="move_aitopicprocessed_to_versionmetadata">
+        <addColumn tableName="version_metadata">
+            <column defaultValueBoolean="false" name="aitopicprocessed" type="bool"/>
+        </addColumn>
+        <dropColumn tableName="tag" columnName="aitopicprocessed">
+        </dropColumn>
+        <dropColumn tableName="workflowversion" columnName="aitopicprocessed">
+        </dropColumn>
+    </changeSet>
 </databaseChangeLog>
