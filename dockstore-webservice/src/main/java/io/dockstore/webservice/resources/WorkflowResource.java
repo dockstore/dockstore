@@ -140,6 +140,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -462,7 +463,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol);
-        return new TreeSet<>(versions);
+        return new LinkedHashSet<>(versions);
     }
 
     @GET
@@ -487,8 +488,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getPublicWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol);
-        System.out.println(versions);
-        return new TreeSet<>(versions);
+        return new LinkedHashSet<>(versions);
     }
 
     @GET
