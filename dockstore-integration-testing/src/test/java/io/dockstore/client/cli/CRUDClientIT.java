@@ -244,7 +244,7 @@ class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null).stream()
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null, null, null).stream()
                 .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals(1, sourceFiles.size(), "correct number of source files");
@@ -257,7 +257,7 @@ class CRUDClientIT extends BaseIT {
         file2.setAbsolutePath("/arguments.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file2));
-        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null).stream()
+        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null, null, null).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals(2, sourceFiles.size(), "correct number of source files");
@@ -269,7 +269,7 @@ class CRUDClientIT extends BaseIT {
         file3.setAbsolutePath("/tar-param.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
-        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null).stream()
+        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null, null, null).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals(3, sourceFiles.size(), "correct number of source files");
@@ -277,7 +277,7 @@ class CRUDClientIT extends BaseIT {
         // Delete the workflow version and recreate it
         api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "3");
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
-        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null).stream()
+        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null, null, null).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertEquals("4", first.get().getName(), "Version name should've skipped 3 because it was previously deleted");
 
@@ -285,7 +285,7 @@ class CRUDClientIT extends BaseIT {
         file2.setContent(null);
 
         dockstoreWorkflow = api.editHostedWorkflow(dockstoreWorkflow.getId(), Lists.newArrayList(file, file2));
-        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null).stream()
+        first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId(), null, null, null, null).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals(2, sourceFiles.size(), "correct number of source files");
@@ -550,7 +550,7 @@ class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> first = openApiWorkflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null).stream()
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> first = openApiWorkflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null, null, null).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
         long numSourcefiles = testingPostgres.runSelectStatement("SELECT COUNT(*) FROM sourcefile, workflow, workflowversion, version_sourcefile WHERE workflow.id = " + hostedWorkflow.getId() + " AND workflowversion.parentid = workflow.id AND version_sourcefile.versionid = workflowversion.id AND sourcefile.id = version_sourcefile.sourcefileid", long.class);

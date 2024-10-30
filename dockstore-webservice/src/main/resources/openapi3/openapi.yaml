@@ -7549,6 +7549,16 @@ paths:
           format: int32
           default: 0
           minimum: 0
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:
@@ -8571,6 +8581,16 @@ paths:
           format: int32
           default: 0
           minimum: 0
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: lastModified
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:

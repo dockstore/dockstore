@@ -486,7 +486,7 @@ class ZenodoIT {
         workflows.forEach(workflow -> {
             assertEquals(CONCEPT_DOI, workflow.getConceptDois().get(DoiInitiator.GITHUB.toString()).getName());
             assertEquals(DoiSelectionEnum.GITHUB, workflow.getDoiSelection());
-            final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null);
+            final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
             workflowVersions.stream().filter(w -> "0.8".equals(w.getName())).forEach(wv -> {
                 final Doi doi = wv.getDois().get(DoiInitiator.GITHUB.toString());
                 assertEquals(VERSION_DOI, doi.getName());
@@ -530,7 +530,7 @@ class ZenodoIT {
         testingPostgres.runUpdateStatement("update doi set name ='" + FAKE_VERSION_DOI + "', initiator = 'DOCKSTORE' where type = 'VERSION'");
         workflows = workflowsApi.updateDois(null);
         assertEquals(2, workflows.size(), "Concept DOI exists, but version DOIs are new");
-        workflowsApi.getWorkflowVersions(workflows.get(0).getId(), null, null).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
+        workflowsApi.getWorkflowVersions(workflows.get(0).getId(), null, null, null, null).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
                 "Version DOI for GitHub initiator should be set"));
 
         testingPostgres.runUpdateStatement("update doi set name = '" + conceptDoiName.replace('7', '8') + "' where type = 'CONCEPT'");
