@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '17.0.4+8' ]
+        java: [ '21.0.2+13.0.LTS' ]
 
     steps:
       - name: install git secrets
@@ -26,12 +26,12 @@ jobs:
 
       - if: "!contains(github.ref, 'dependabot')"
         name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: java
 
       # Step that does that actual cache save and restore
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -45,4 +45,4 @@ jobs:
 
       - name: Perform CodeQL Analysis
         if: "!contains(github.ref, 'dependabot')"      
-        uses: github/codeql-action/analyze@v2          
+        uses: github/codeql-action/analyze@v3          

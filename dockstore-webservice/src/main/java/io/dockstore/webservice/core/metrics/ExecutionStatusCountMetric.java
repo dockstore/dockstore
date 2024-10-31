@@ -17,13 +17,14 @@
 
 package io.dockstore.webservice.core.metrics;
 
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.ABORTED;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
+import static io.dockstore.common.metrics.ExecutionStatus.ABORTED;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_RUNTIME_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_SEMANTIC_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.SUCCESSFUL;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.dockstore.common.metrics.ExecutionStatus;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,9 +48,9 @@ import java.util.Map;
 @Entity
 @Table(name = "execution_status")
 @ApiModel(value = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
-@Schema(name = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
+@Schema(name = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses", allOf = Metric.class)
 @SuppressWarnings("checkstyle:magicnumber")
-public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus, MetricsByStatus> {
+public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatus, MetricsByStatus> {
 
     @NotEmpty
     @MapKeyEnumerated(EnumType.STRING)
@@ -87,6 +88,7 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     }
 
     @Override
+    @Schema(description = "A map containing the metrics for each execution status", requiredMode = RequiredMode.REQUIRED)
     public Map<ExecutionStatus, MetricsByStatus> getCount() {
         return count;
     }
@@ -144,12 +146,4 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
         return numberOfSuccessfulExecutions + numberOfFailedExecutions + numberOfAbortedExecutions;
     }
 
-    public enum ExecutionStatus {
-        ALL, // Internal use only
-        SUCCESSFUL,
-        FAILED,
-        FAILED_SEMANTIC_INVALID,
-        FAILED_RUNTIME_INVALID,
-        ABORTED
-    }
 }

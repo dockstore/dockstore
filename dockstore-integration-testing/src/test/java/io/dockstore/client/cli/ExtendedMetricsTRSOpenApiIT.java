@@ -21,19 +21,19 @@ import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
+import static io.dockstore.common.metrics.ExecutionStatus.ABORTED;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_RUNTIME_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.FAILED_SEMANTIC_INVALID;
+import static io.dockstore.common.metrics.ExecutionStatus.SUCCESSFUL;
 import static io.dockstore.common.metrics.MetricsDataS3Client.generateKey;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.ABORTED;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
-import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
-import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
-import static io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics.MUST_CONTAIN_EXECUTIONS_OR_METRICS;
+import static io.dockstore.common.metrics.ValidationExecution.ValidatorTool.MINIWDL;
+import static io.dockstore.common.metrics.constraints.HasExecutionsOrMetrics.MUST_CONTAIN_EXECUTIONS_OR_METRICS;
+import static io.dockstore.common.metrics.constraints.HasUniqueExecutionIds.MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
+import static io.dockstore.common.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
+import static io.dockstore.common.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
+import static io.dockstore.common.metrics.constraints.ValidClientExecutionStatus.INVALID_EXECUTION_STATUS_MESSAGE;
+import static io.dockstore.common.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
 import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
-import static io.dockstore.webservice.core.metrics.constraints.HasUniqueExecutionIds.MUST_CONTAIN_UNIQUE_EXECUTION_IDS;
-import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
-import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
-import static io.dockstore.webservice.core.metrics.constraints.ValidClientExecutionStatus.INVALID_EXECUTION_STATUS_MESSAGE;
-import static io.dockstore.webservice.core.metrics.constraints.ValidExecutionId.INVALID_EXECUTION_ID_MESSAGE;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.FORBIDDEN_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
@@ -69,9 +69,10 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
-import io.dockstore.openapi.client.model.AggregatedExecution;
 import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.CpuMetric;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
@@ -98,6 +99,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -135,7 +137,6 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     public static final String MINUTES_EXECUTION = "5";
 
     private static String bucketName;
-    private static String s3EndpointOverride;
     private static MetricsDataS3Client metricsDataClient;
     private static S3Client s3Client;
 
@@ -149,8 +150,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     @BeforeAll
     public static void setup() throws Exception {
         bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
-        s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
-        metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
+        metricsDataClient = new MetricsDataS3Client(bucketName, LocalStackTestUtilities.ENDPOINT_OVERRIDE);
         // Create a bucket to be used for tests
         s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
         createBucket(s3Client, bucketName);
@@ -221,6 +221,10 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
+        // There should be no entry versions to aggregate yet
+        List<EntryLiteAndVersionName> entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(0, entryVersionsToAggregate.size());
+
         // Add workflow execution metrics and task execution metrics for a workflow version for one platform
         // List of 1 workflow run execution
         List<RunExecution> runExecutions = createRunExecutions(1);
@@ -228,6 +232,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         List<TaskExecutions> taskExecutions = List.of(createTaskExecutions(2));
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions).taskExecutions(taskExecutions), platform1, workflowId, workflowVersionId, description);
 
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size());
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1);
         // Verify the workflow run execution submitted
         verifyRunExecutionMetricsDataContent(runExecutions, extendedGa4GhApi, workflowId, workflowVersionId, platform1);
@@ -244,11 +250,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setDateExecuted(Instant.now().toString());
         List<ValidationExecution> validationExecutions = List.of(validationExecution);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size()); // 1 because we added more data for the same version
         verifyMetricsDataList(workflowId, workflowVersionId, platform2, ownerUserId, description, 1);
         verifyValidationExecutionMetricsDataContent(validationExecutions, extendedGa4GhApi, workflowId, workflowVersionId, platform2);
 
         // Register and publish a tool
-        io.dockstore.openapi.client.model.DockstoreTool tool = new io.dockstore.openapi.client.model.DockstoreTool();
+        DockstoreTool tool = new DockstoreTool();
         tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
         tool.setNamespace("dockstoretestuser2");
@@ -256,7 +264,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setDefaultVersion("symbolic.v1");
         tool.setDefaultCWLTestParameterFile("/examples/cgpmap/bamOut/bam_input.json");
-        io.dockstore.openapi.client.model.DockstoreTool registeredTool = containersApi.registerManual(tool);
+        DockstoreTool registeredTool = containersApi.registerManual(tool);
         registeredTool = containersApi.refresh(registeredTool.getId());
         containersApi.publish(registeredTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
@@ -266,6 +274,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(toolId, toolVersionId, platform1, ownerUserId, "", 1);
         verifyRunExecutionMetricsDataContent(runExecutions, extendedGa4GhApi, toolId, toolVersionId, platform1);
         assertEquals(3, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 4 objects, 3 for workflows and 1 for tools");
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(2, entryVersionsToAggregate.size());
     }
 
     @Test
@@ -285,7 +295,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // Add 1 workflow execution, 1 task execution set, 1 validation execution, 1 aggregated execution for a workflow version for one platform
+        // Add 1 workflow execution, 1 task execution set, 1 validation execution for a workflow version for one platform
         List<RunExecution> runExecutions = createRunExecutions(1);
 
         TaskExecutions taskExecutions = createTaskExecutions(2);
@@ -297,14 +307,10 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setValidatorToolVersion("v1.9.1");
         validationExecution.setDateExecuted(Instant.now().toString());
 
-        AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
-        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1))));
-
         ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody()
                 .runExecutions(runExecutions)
                 .taskExecutions(List.of(taskExecutions))
-                .validationExecutions(List.of(validationExecution))
-                .aggregatedExecutions(List.of(aggregatedExecution));
+                .validationExecutions(List.of(validationExecution));
         extendedGa4GhApi.executionMetricsPost(executionsRequestBody, platform1, workflowId, workflowVersionId, description);
         verifyMetricsDataList(workflowId, workflowVersionId, 1);
     }
@@ -378,6 +384,32 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains("1 second")
                 && exception.getMessage().contains("PT 1S"), "Should not be able to submit metrics if ExecutionTime is malformed");
 
+        // Test that negative values can't be submitted
+        List<RunExecution> runExecutionsWithNegativeValues = createRunExecutions(1);
+        // Negative and null cost value
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCost(new Cost().value(-1.00)));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative cost");
+        assertTrue(exception.getMessage().contains("cost.value must be greater than or equal to 0"));
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCost(new Cost().value(null)));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative cost");
+        assertTrue(exception.getMessage().contains("cost.value is missing but required"));
+        // Negative CPU requirement
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setCpuRequirements(-1));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative CPU");
+        assertTrue(exception.getMessage().contains("cpuRequirements must be greater than or equal to 0"));
+        // Negative and NaN memory requirement
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setMemoryRequirementsGB(-1.0));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with negative memory");
+        assertTrue(exception.getMessage().contains("memoryRequirementsGB must be greater than or equal to 0"));
+        runExecutionsWithNegativeValues.forEach(execution -> execution.setMemoryRequirementsGB(Double.NaN));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithNegativeValues), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics with NaN memory");
+        assertTrue(exception.getMessage().contains("memoryRequirementsGB must be greater than or equal to 0"));
+
         // Test that the response body must contain the required fields for ValidationExecution
         List<ValidationExecution> validationExecutions = List.of(new ValidationExecution());
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform, id, versionId, description));
@@ -446,12 +478,17 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
+        List<EntryLiteAndVersionName> entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(0, entryVersionsToAggregate.size());
+
         // Add 10 workflow executions for a workflow version for one platform, one per endpoint call to generate 10 different files.
         // This is to ensure that the update endpoint can traverse multiple files to get the correct one to update
         for (int i = 0; i < 10; ++i) {
             extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(createRunExecutions(5)), platform1, workflowId, workflowVersionId, description);
         }
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 10);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size());
 
         // Add 1 workflow execution that we will update
         final String executionId = generateExecutionId();
@@ -471,6 +508,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(1, responseBody.getExecutionResponses().size());
         assertEquals(HttpStatus.SC_OK, responseBody.getExecutionResponses().get(0).getStatus());
         verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 11); // There should still be 11 files
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size()); // Should still be 1 entry version to update beecause we updated executions for the same version
         ExecutionsRequestBody execution = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, executionId);
         RunExecution updatedWorkflowExecutionFromS3 = execution.getRunExecutions().get(0);
         assertEquals("PT" + MINUTES_EXECUTION + "M", updatedWorkflowExecutionFromS3.getExecutionTime(), "Execution time should've been updated");
@@ -491,6 +530,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final String platform1 = Partner.TERRA.name();
         final String platform2 = Partner.DNA_STACK.name();
+        Map<String, Metrics> platformToMetrics = new HashMap<>();
 
         // Register and publish a workflow
         final String workflowId = String.format("#workflow/%s/my-workflow", DOCKSTORE_WORKFLOW_CNV_PATH);
@@ -530,7 +570,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 .executionStatusCount(executionStatusMetric);
 
         // Put run metrics for platform 1
-        extendedGa4GhApi.aggregatedMetricsPut(metrics, platform1, workflowId, workflowVersionId);
+        platformToMetrics.put(platform1, metrics);
+        extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
         assertNotNull(workflowVersion);
@@ -564,7 +605,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(MemoryStatisticMetric.UNIT, platform1SuccessfulMetrics.getMemory().getUnit());
 
         // Put metrics for platform1 again to verify that the old metrics are deleted from the DB and there are no orphans
-        extendedGa4GhApi.aggregatedMetricsPut(metrics, platform1, workflowId, workflowVersionId);
+        extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, workflowVersionId);
         long metricsDbCount = testingPostgres.runSelectStatement("select count(*) from metrics", long.class);
         assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry version with aggregated metrics");
 
@@ -583,7 +624,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                         .passingRate(100d)
                         .numberOfRuns(1)));
         metrics = new Metrics().validationStatus(validationStatusMetric);
-        extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);
+        platformToMetrics.put(platform2, metrics);
+        extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
 
@@ -609,7 +651,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         // Verify that the endpoint can submit metrics that were aggregated across all platforms using Partner.ALL
         final String allPlatforms = Partner.ALL.name();
-        extendedGa4GhApi.aggregatedMetricsPut(metrics, allPlatforms, workflowId, workflowVersionId);
+        platformToMetrics.put(allPlatforms, metrics);
+        extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
         assertNotNull(workflowVersion);
@@ -619,10 +662,6 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertNotNull(metricsGet.get(platform1));
         assertNotNull(metricsGet.get(platform2));
         assertNotNull(metricsGet.get(allPlatforms));
-
-        assertEquals(platform1Metrics, metricsGet.get(platform1));
-        assertEquals(platform2Metrics, metricsGet.get(platform2));
-        assertEquals(allPlatformsMetrics, metricsGet.get(allPlatforms));
     }
 
     @Test
@@ -652,12 +691,12 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
-        ApiException exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
+        ApiException exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(Map.of(platform, metrics), id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
 
         // convert the user role and test that a platform partner can't put aggregated metrics (which adds metrics to the database)
         usersApi.setUserPrivileges(new PrivilegeRequest().platformPartner(PlatformPartnerEnum.TERRA), otherUsersApi.getUser().getId());
-        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(Map.of(platform, metrics), id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to put aggregated metrics");
 
         // Test that a platform partner can post run executions for their platform
@@ -665,12 +704,6 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final String executionId = executions.get(0).getExecutionId();
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 1);
-        // Test that a platform partner can post aggregated metrics
-        AggregatedExecution aggregatedExecution = new AggregatedExecution().executionId(generateExecutionId());
-        aggregatedExecution.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(5))));
-        List<AggregatedExecution> aggregatedMetrics = List.of(aggregatedExecution);
-        otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(aggregatedMetrics), platform, id, versionId, "foo");
-        verifyMetricsDataList(id, versionId, 2);
         // Test that a platform partner cannot post executions for a different platform
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), differentPlatform, id, versionId, "foo"));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to post executions for a different platform");
@@ -713,12 +746,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
+        Map<String, Metrics> platformToMetrics = Map.of(platform, metrics);
         // Test malformed ID
-        ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, "malformedId", "malformedVersionId"));
+        ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, "malformedId", "malformedVersionId"));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
 
         // Test ID that doesn't exist
-        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, "github.com/nonexistent/id", "master"));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, "github.com/nonexistent/id", "master"));
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
         assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
 
@@ -731,7 +765,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 DescriptorLanguage.CWL.toString(), "/test.json");
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, "nonexistentVersionId"));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, id, "nonexistentVersionId"));
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to put aggregated metrics for non-existent version");
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
 
@@ -740,62 +774,18 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
-        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
 
         Metrics emptyMetrics = new Metrics();
         // Test that the response body must contain ExecutionStatusCount or ValidationStatus
-        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(emptyMetrics, platform, id, versionId));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(Map.of(platform, emptyMetrics), id, versionId));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to put aggregated metrics if ExecutionStatusCount and ValidationStatus is missing");
         assertTrue(exception.getMessage().contains(MUST_CONTAIN_METRICS));
 
         // Verify that not providing metrics throws an exception
-        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(null, platform, id, versionId));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should throw if execution metrics not provided");
-    }
-
-    @Test
-    void testSubmitAggregatedMetricsData() {
-        // Admin user
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        final UsersApi usersApi = new UsersApi(webClient);
-        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
-        final String platform1 = Partner.TERRA.name();
-        final String description = "Aggregated metrics";
-        final Long ownerUserId = usersApi.getUser().getId();
-
-        // Register and publish a workflow
-        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
-        final String workflowVersionId = "master";
-        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
-                "/test.json");
-        workflow = workflowApi.refresh1(workflow.getId(), false);
-        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-
-        // Add execution metrics for a workflow version for one platform
-        final AggregatedExecution expectedAggregatedMetrics = new AggregatedExecution()
-                .executionId(generateExecutionId())
-                .additionalAggregatedMetrics(Map.of("cpu_utilization", 50.0));
-        expectedAggregatedMetrics.setExecutionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(5))));
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(expectedAggregatedMetrics)), platform1, workflowId, workflowVersionId, description);
-        verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1);
-        ExecutionsRequestBody executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedMetrics.getExecutionId());
-        assertEquals(1, executionsRequestBody.getAggregatedExecutions().size());
-        AggregatedExecution aggregatedMetrics = executionsRequestBody.getAggregatedExecutions().get(0);
-        assertEquals(5, aggregatedMetrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
-        assertEquals(0, aggregatedMetrics.getExecutionStatusCount().getNumberOfFailedExecutions());
-        assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("cpu_utilization"), "Should be able to submit additional aggregated metrics");
-
-        // Add a metric that only has additionalAggregatedMetrics because platforms may not always submit the Dockstore-defined aggregated metrics
-        LocalStackTestUtilities.deleteBucketContents(s3Client, bucketName); // Clear bucket contents so it's easier to verify the contents
-        final AggregatedExecution expectedAggregatedAdditionalMetrics = new AggregatedExecution().executionId(generateExecutionId()).additionalAggregatedMetrics(Map.of("memory_utilization", 50.0));
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(expectedAggregatedAdditionalMetrics)), platform1, workflowId, workflowVersionId, description);
-        verifyMetricsDataList(workflowId, workflowVersionId, 1);
-        executionsRequestBody = extendedGa4GhApi.executionGet(workflowId, workflowVersionId, platform1, expectedAggregatedAdditionalMetrics.getExecutionId());
-        assertEquals(1, executionsRequestBody.getAggregatedExecutions().size());
-        aggregatedMetrics = executionsRequestBody.getAggregatedExecutions().get(0);
-        assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("memory_utilization"), "Should be able to submit additional aggregated metrics");
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(Map.of(), id, versionId));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if execution metrics not provided");
     }
 
     /**
@@ -883,6 +873,77 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
     }
 
+    @Test
+    void testGetEntryVersionsToAggregate() {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String platform2 = Partner.DNA_STACK.name();
+        final String description = "A single execution";
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String masterWorkflowVersion = "master";
+        final String developWorkflowVersion = "develop";
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // There should be no entry versions to aggregate yet
+        List<EntryLiteAndVersionName> entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(0, entryVersionsToAggregate.size());
+
+        // Add workflow execution metrics for two workflow version for one platform
+        List<RunExecution> runExecutions = createRunExecutions(1);
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, masterWorkflowVersion, description);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size());
+        assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, masterWorkflowVersion);
+
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, developWorkflowVersion, description);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(2, entryVersionsToAggregate.size());
+        assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, developWorkflowVersion);
+
+        // Add execution metrics for the same workflow version, but different platform
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform2, workflowId, masterWorkflowVersion, description);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(2, entryVersionsToAggregate.size(), "Should still be 2 because the platform doesn't affect the number of entry versions to aggregate");
+        assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, masterWorkflowVersion);
+
+        // Post aggregated metrics for one of the workflow versions. Note: these aggregated metrics are dummy metrics
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
+        Map<String, Metrics> platformToMetrics = Map.of(platform1, metrics);
+        extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, masterWorkflowVersion);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size(), "Should be 1 because the other version was aggregated");
+        assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, developWorkflowVersion); // Version 'develop' still needs to be aggregated
+
+        // Aggregate the last version with metrics
+        extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, developWorkflowVersion);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(0, entryVersionsToAggregate.size(), "Should be 0 because all versions are aggregated");
+
+        // Submit more executions for version master, which is already aggregated
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, masterWorkflowVersion, description);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(1, entryVersionsToAggregate.size());
+        assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, masterWorkflowVersion);
+
+        // Update executions for version develop, which is already aggregated
+        extendedGa4GhApi.executionMetricsUpdate(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, developWorkflowVersion, description);
+        entryVersionsToAggregate = extendedGa4GhApi.getEntryVersionsToAggregate();
+        assertEquals(2, entryVersionsToAggregate.size());
+        assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, developWorkflowVersion);
+    }
+
+    private void assertEntryVersionToAggregate(List<EntryLiteAndVersionName> entryVersionsToAggregate, String expectedTrsId, String expectedVersionName) {
+        assertTrue(entryVersionsToAggregate.stream().anyMatch(entryVersion -> expectedTrsId.equals(entryVersion.getEntryLite().getTrsId()) && expectedVersionName.equals(entryVersion.getVersionName())));
+    }
 
     /**
      * Checks the number of MetricsData that a version has then return the list
@@ -975,8 +1036,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     }
 
     private int getNumberOfExecutions(ExecutionsRequestBody executionsRequestBody) {
-        return executionsRequestBody.getRunExecutions().size() + executionsRequestBody.getTaskExecutions().size() + executionsRequestBody.getValidationExecutions().size()
-            + executionsRequestBody.getAggregatedExecutions().size();
+        return executionsRequestBody.getRunExecutions().size() + executionsRequestBody.getTaskExecutions().size() + executionsRequestBody.getValidationExecutions().size();
     }
 
     private void verifyTaskExecutionMetricsDataContent(List<TaskExecutions> expectedTaskExecutions, ExtendedGa4GhApi extendedGa4GhApi, String trsId, String versionId, String platform) {

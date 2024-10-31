@@ -299,6 +299,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String id, DescriptorTypeWithPlain type, String versionId, SecurityContext securityContext, ContainerRequestContext value,
         Optional<User> user) {
+        if (type == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
         final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
@@ -362,7 +365,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         int offsetInteger = 0;
         if (offset != null) {
-            offsetInteger = Integer.parseInt(offset);
+            try {
+                offsetInteger = Integer.parseInt(offset);
+            } catch (NumberFormatException e) {
+                return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
+            }
             offsetInteger = Math.max(offsetInteger, 0);
         }
         // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set
@@ -918,6 +925,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String fileName = EntryVersionHelper.generateZipFileName(dockstoreID, name);
 
         return Response.ok().entity((StreamingOutput) output -> EntryVersionHelper.writeStreamAsZipStatic(sourceFiles, output, path))
+            .header("Content-Type", "application/zip")
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
@@ -1016,26 +1024,26 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         public ParsedRegistryID(String paramId) throws UnsupportedEncodingException {
             String id;
             id = URLDecoder.decode(paramId, StandardCharsets.UTF_8.displayName());
-            List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
-            List<String> list = new ArrayList<>(textSegments);
-            String firstTextSegment = list.get(0);
+            List<String> segments = new ArrayList<>(Splitter.on('/').omitEmptyStrings().splitToList(id));
+            checkToolId(segments);
+            String firstTextSegment = segments.get(0);
             if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment)) {
-                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
+                segments.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
                 type = ToolType.WORKFLOW;
             }
             if (SERVICE_PREFIX.equalsIgnoreCase(firstTextSegment)) {
-                list.remove(0); // Remove #service from ArrayList to make parsing similar to tool
+                segments.remove(0); // Remove #service from ArrayList to make parsing similar to tool
                 type = ToolType.SERVICE;
             }
             if (NOTEBOOK_PREFIX.equalsIgnoreCase(firstTextSegment)) {
-                list.remove(0); // Remove #notebook from ArrayList to make parsing similar to tool
+                segments.remove(0); // Remove #notebook from ArrayList to make parsing similar to tool
                 type = ToolType.NOTEBOOK;
             }
-            checkToolId(list);
-            registry = list.get(0);
-            organization = list.get(1);
-            name = list.get(2);
-            toolName = list.size() > SEGMENTS_IN_ID ? list.get(SEGMENTS_IN_ID) : "";
+            checkToolId(segments);
+            registry = segments.get(0);
+            organization = segments.get(1);
+            name = segments.get(2);
+            toolName = segments.size() > SEGMENTS_IN_ID ? segments.get(SEGMENTS_IN_ID) : "";
         }
 
         /**

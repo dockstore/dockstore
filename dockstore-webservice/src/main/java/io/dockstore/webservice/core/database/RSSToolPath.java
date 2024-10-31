@@ -19,23 +19,19 @@ import io.dockstore.webservice.core.Tool;
 import java.util.Date;
 
 /**
- * This class is only used to get data from the database in a more type-safe way
+ * This record is only used to get data from the database in a more type-safe way
  * @author gluu
  * @since 1.8.0
  */
-public class RSSToolPath {
-    private final Tool tool = new Tool();
-
-    public RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated, String description) {
-        this.tool.setRegistry(registry);
-        this.tool.setNamespace(namespace);
-        this.tool.setName(name);
-        this.tool.setToolname(entryName);
-        this.tool.setLastUpdated(lastUpdated);
-        this.tool.setDescription(description);
-    }
-
+public record RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated, String description)  {
     public Tool getTool() {
+        Tool tool = new Tool();
+        tool.setRegistry(registry);
+        tool.setNamespace(namespace);
+        tool.setName(name);
+        tool.setToolname(entryName);
+        tool.setLastUpdated(lastUpdated);
+        tool.setDescription(description);
         return tool;
     }
 }

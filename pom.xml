@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.15</revision>
+        <revision>1.16</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <!--
@@ -47,6 +47,7 @@
         <postgresql.version>42.4.4</postgresql.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.22.2</maven-failsafe.version>
+        <maven-java.version>17</maven-java.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -172,7 +173,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.7</version>
+                    <version>0.8.11</version>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -187,9 +188,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.10.1</version>
+                    <version>3.12.1</version>
                     <configuration>
-                        <release>17</release>
+                        <release>${maven-java.version}</release>
                         <showDeprecation>true</showDeprecation>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
@@ -232,7 +233,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.3.0</version>
+                    <version>3.6.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -341,7 +342,7 @@
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>4.5.3.0</version>
+                    <version>4.8.3.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -377,7 +378,10 @@
                 <plugin>
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
-                    <version>4.4.1</version>
+                    <version>4.8.1</version>
+                    <configuration>
+                        <release>${maven-java.version}</release>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -519,7 +523,7 @@
 				    -->
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[17.0.3,18.0)</version>
+                                    <version>[21.0.0,22.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -598,7 +602,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
-                    <release>17</release>
+                    <release>${maven-java.version}</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -680,7 +684,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.8.0</version>
+                <version>1.11.0</version>
                 <executions>
                     <execution>
                         <id>sort-imports</id>
@@ -690,7 +694,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <compliance>17</compliance>
+                    <compliance>${maven-java.version}</compliance>
                 </configuration>
             </plugin>
             <plugin>
@@ -768,8 +772,7 @@
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
                     io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
-                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest
-                </excludeGroups>
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
 
@@ -830,7 +833,7 @@
                 <skipITs>false</skipITs>
                 <excludeGroups>io.dockstore.common.ToolTest, io.dockstore.common.WorkflowTest, io.dockstore.common.SlowTest,
                     io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
-                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
@@ -862,6 +865,15 @@
             </properties>
         </profile>
         <profile>
+            <id>hoverfly-tests</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.HoverflyTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
+            </properties>
+        </profile>
+        <profile>
             <id>bitbucket-tests</id>
             <!-- run all tests involving bitbucket -->
             <properties>
@@ -878,7 +890,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
             <build>

@@ -4,9 +4,12 @@ import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -16,142 +19,137 @@ import java.util.List;
  * @author ldcabansay
  * @since 1.9.0
  */
-public abstract class EntryLite {
+public abstract class EntryLite<S extends Entry<?, ?>> {
     private final Date lastUpdated;
+    private final EntryTypeMetadata entryTypeMetadata;
+    private final String entryPath;
+    private final String trsId;
 
-    EntryLite(Date entryUpdated, Date versionUpdated) {
-        //choose the greater update time between overall entry and most recently updated version
-        this.lastUpdated = versionUpdated == null ? entryUpdated : (entryUpdated.getTime() > versionUpdated.getTime() ? entryUpdated : versionUpdated);
+    EntryLite(S entry, Date entryUpdated, Date versionUpdated) {
+        if (entryUpdated != null) {
+            //choose the greater update time between overall entry and most recently updated version
+            this.lastUpdated = versionUpdated == null ? entryUpdated : (entryUpdated.getTime() > versionUpdated.getTime() ? entryUpdated : versionUpdated);
+        } else {
+            this.lastUpdated = null;
+        }
+        this.entryTypeMetadata = entry.getEntryTypeMetadata();
+        this.entryPath = entry.getEntryPath();
+        this.trsId = entry.getTrsId();
+    }
+
+    EntryLite(S entry) {
+        this(entry, null, null);
     }
 
     public Date getLastUpdated() {
         return lastUpdated;
     }
 
-    public abstract String getEntryPath();
+    public String getEntryPath() {
+        return this.entryPath;
+    }
 
-    public abstract EntryType getEntryType();
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return this.entryTypeMetadata;
+    }
+
+    public EntryType getEntryType() {
+        return this.entryTypeMetadata.getType();
+    }
 
     public String getPrettyPath() {
-        List<String> pathElements = Arrays.asList(getEntryPath().split("/"));
+        List<String> pathElements = Arrays.asList(this.entryPath.split("/"));
         return String.join("/", pathElements.subList(2, pathElements.size()));
     }
 
+    public String getTrsId() {
+        return this.trsId;
+    }
 
-    public static class EntryLiteTool extends EntryLite {
-        private final Tool tool = new Tool();
+    public static <W extends Workflow> W createWorkflowish(W workflowish, final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
+        workflowish.setSourceControl(sourceControl);
+        workflowish.setOrganization(organization);
+        workflowish.setRepository(repository);
+        workflowish.setWorkflowName(workflowName);
+        return workflowish;
+    }
+
+    public static class EntryLiteTool extends EntryLite<Tool> {
+        public EntryLiteTool(final Tool tool) {
+            super(tool);
+        }
+
+        public EntryLiteTool(final String registry, final String namespace, final String name, final String toolname) {
+            this(registry, namespace, name, toolname, null, null);
+        }
 
         public EntryLiteTool(final String registry, final String namespace, final String name, final String toolname, final Date entryUpdated, final Date versionUpdated) {
-            super(entryUpdated, versionUpdated);
-            this.tool.setRegistry(registry);
-            this.tool.setNamespace(namespace);
-            this.tool.setName(name);
-            this.tool.setToolname(toolname);
-            this.tool.getEntryType();
+            super(createTool(registry, namespace, name, toolname), entryUpdated, versionUpdated);
         }
 
-        @Override
-        public String getEntryPath() {
-            return tool.getEntryPath();
-        }
-
-        @Override
-        public EntryType getEntryType() {
-            return EntryType.TOOL;
+        private static Tool createTool(final String registry, final String namespace, final String name, final String toolname) {
+            Tool tool = new Tool();
+            tool.setRegistry(registry);
+            tool.setNamespace(namespace);
+            tool.setName(name);
+            tool.setToolname(toolname);
+            return tool;
         }
     }
 
+    public static class EntryLiteWorkflow extends EntryLite<BioWorkflow> {
+        public EntryLiteWorkflow(final BioWorkflow bioWorkflow) {
+            super(bioWorkflow);
+        }
 
-    public static class EntryLiteWorkflow extends EntryLite {
-        private final BioWorkflow workflow = new BioWorkflow();
+        public EntryLiteWorkflow(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
+            this(sourceControl, organization, repository, workflowName, null, null);
+        }
 
         public EntryLiteWorkflow(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
-            super(entryUpdated, versionUpdated);
-            this.workflow.setSourceControl(sourceControl);
-            this.workflow.setOrganization(organization);
-            this.workflow.setRepository(repository);
-            this.workflow.setWorkflowName(workflowName);
-        }
-
-        @Override
-        public String getEntryPath() {
-            return workflow.getEntryPath();
-        }
-
-        @Override
-        public EntryType getEntryType() {
-            return EntryType.WORKFLOW;
+            super(createWorkflowish(new BioWorkflow(), sourceControl, organization, repository, workflowName), entryUpdated, versionUpdated);
         }
     }
 
+    public static class EntryLiteService extends EntryLite<Service> {
+        public EntryLiteService(final Service service) {
+            super(service);
+        }
 
-    public static class EntryLiteService extends EntryLite {
-        private final Service service = new Service();
+        public EntryLiteService(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
+            this(sourceControl, organization, repository, workflowName, null, null);
+        }
 
         public EntryLiteService(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
-            super(entryUpdated, versionUpdated);
-            this.service.setSourceControl(sourceControl);
-            this.service.setOrganization(organization);
-            this.service.setRepository(repository);
-            this.service.setWorkflowName(workflowName);
-        }
-
-        @Override
-        public String getEntryPath() {
-            return service.getEntryPath();
-        }
-
-        @Override
-        public EntryType getEntryType() {
-            return EntryType.SERVICE;
+            super(createWorkflowish(new Service(), sourceControl, organization, repository, workflowName), entryUpdated, versionUpdated);
         }
     }
 
-    public static class EntryLiteAppTool extends EntryLite {
-        private final AppTool appTool = new AppTool();
+    public static class EntryLiteAppTool extends EntryLite<AppTool> {
+        public EntryLiteAppTool(final AppTool appTool) {
+            super(appTool);
+        }
+
+        public EntryLiteAppTool(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
+            this(sourceControl, organization, repository, workflowName, null, null);
+        }
 
         public EntryLiteAppTool(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
-            super(entryUpdated, versionUpdated);
-            this.appTool.setSourceControl(sourceControl);
-            this.appTool.setOrganization(organization);
-            this.appTool.setRepository(repository);
-            this.appTool.setWorkflowName(workflowName);
-
-        }
-
-        @Override
-        public String getEntryPath() {
-            return appTool.getEntryPath();
-        }
-
-        @Override
-        public EntryType getEntryType() {
-            return EntryType.APPTOOL;
+            super(createWorkflowish(new AppTool(), sourceControl, organization, repository, workflowName), entryUpdated, versionUpdated);
         }
     }
 
-    public static class EntryLiteNotebook extends EntryLite {
-        private final Notebook notebook = new Notebook();
+    public static class EntryLiteNotebook extends EntryLite<Notebook> {
+        public EntryLiteNotebook(final Notebook notebook) {
+            super(notebook);
+        }
+
+        public EntryLiteNotebook(final SourceControl sourceControl, final String organization, final String repository, final String workflowName) {
+            this(sourceControl, organization, repository, workflowName, null, null);
+        }
 
         public EntryLiteNotebook(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
-            super(entryUpdated, versionUpdated);
-            this.notebook.setSourceControl(sourceControl);
-            this.notebook.setOrganization(organization);
-            this.notebook.setRepository(repository);
-            this.notebook.setWorkflowName(workflowName);
-
-        }
-
-        @Override
-        public String getEntryPath() {
-            return notebook.getEntryPath();
-        }
-
-        @Override
-        public EntryType getEntryType() {
-            return EntryType.NOTEBOOK;
+            super(createWorkflowish(new Notebook(), sourceControl, organization, repository, workflowName), entryUpdated, versionUpdated);
         }
     }
-
-
 }

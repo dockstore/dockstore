@@ -36,6 +36,7 @@ import com.google.gson.JsonSyntaxException;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
@@ -44,6 +45,7 @@ import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.model.PublishRequest;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
@@ -91,7 +93,7 @@ public final class CommonTestUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
     public static final String OLD_DOCKSTORE_VERSION = "1.13.0";
     public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
-            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0");
+            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstore.yml").orElse(null);
@@ -669,17 +671,18 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client, String acceptType) {
+    public static <T> ApiResponse<T> invokeAPI(String path, GenericType<T> type, ApiClient client, String acceptType) {
         return client
-            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "application/zip",
-                new String[] { "BEARER" }, type).getData();
+            .invokeAPI(path, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "text/plain",
+                new String[] { "BEARER" }, type);
     }
 
-    /**
-     * Get an arbitrary URL with the accept type defaulting to "application/zip".
-     */
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
-        return getArbitraryURL(url, type, client, "application/zip");
+    public static String getContentType(ApiResponse<?> response) {
+        return response.getHeaders().entrySet().stream()
+            .filter(entry -> "Content-Type".equalsIgnoreCase(entry.getKey()))
+            .map(entry -> entry.getValue().get(0))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("response contained no Content-Type header"));
     }
 
     /**
@@ -758,6 +761,10 @@ public final class CommonTestUtilities {
         file.setContent("cwlVersion: v1.1\n" + "class: Workflow");
         hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
         return hostedWorkflow;
+    }
+
+    public static Optional<WorkflowVersion> getWorkflowVersion(Workflow workflow, String versionName) {
+        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst();
     }
 
     /**

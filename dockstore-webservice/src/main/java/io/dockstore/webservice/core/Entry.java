@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.core.Doi.MAX_NUMBER_OF_DOI_INITIATORS;
+import static io.dockstore.webservice.core.Doi.getDoiBasedOnOrderOfPrecedence;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
 import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
@@ -28,6 +30,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Doi.DoiInitiator;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,6 +51,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.MapKey;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.NamedNativeQueries;
@@ -58,6 +63,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +74,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -123,11 +128,12 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL"),
     @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
             + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
     @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
-            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)")
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
+    @NamedQuery(name = Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
+    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -148,7 +154,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
     public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
-    private static final int TOPIC_LENGTH = 150;
+    public static final String GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.getPublishedEntriesWithNoTopics";
+    public static final String COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.countPublishedEntriesWithNoTopics";
+    private static final int TOPIC_LENGTH = 250;
 
     /**
      * re-use existing generator for backwards compatibility
@@ -253,7 +261,22 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Column
     @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
+    @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", deprecated = true)
+    @Deprecated(since = "1.16")
     private String conceptDoi;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKey(name = "initiator")
+    @MapKeyEnumerated(EnumType.STRING)
+    @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
+    @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
+    private Map<DoiInitiator, Doi> conceptDois = new HashMap<>();
+
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "The Digital Object Identifier (DOI) to display publicly")
+    @Column(nullable = false, columnDefinition = "varchar(32) default 'USER'")
+    private DoiInitiator doiSelection = DoiInitiator.USER;
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
@@ -304,6 +327,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Schema(description = "Short description of the entry generated by AI", maxLength = TOPIC_LENGTH)
     private String topicAI;
 
+    @Column(columnDefinition = "boolean default false")
+    @Schema(description = "Indicates if the topicAI has been approved by the user")
+    private boolean approvedAITopic = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "varchar(32) default 'AUTOMATIC'")
     @Schema(description = "Which topic to display to the public users")
@@ -329,7 +356,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = true, columnDefinition = "varchar(32)")
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
-
 
     public enum GitVisibility {
         /**
@@ -367,17 +393,21 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public abstract Entry<?, ?> createEmptyEntry();
 
+    public abstract EntryLite<? extends Entry<?, ?>> createEntryLite();
+
     @JsonIgnore
     public abstract String getEntryPath();
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public abstract EntryType getEntryType();
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract EntryTypeMetadata getEntryTypeMetadata();
 
     @JsonIgnore
     public abstract boolean isHosted();
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public EntryType getEntryType() {
+        return getEntryTypeMetadata().getType();
+    }
 
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
@@ -389,13 +419,37 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
+    @Deprecated(since = "1.16")
     public void setConceptDoi(String conceptDoi) {
         this.conceptDoi = conceptDoi;
     }
 
     @JsonProperty
+    @Deprecated(since = "1.16")
     public String getConceptDoi() {
         return conceptDoi;
+    }
+
+    public Map<DoiInitiator, Doi> getConceptDois() {
+        return this.conceptDois;
+    }
+
+    public void setConceptDois(Map<DoiInitiator, Doi> conceptDois) {
+        this.conceptDois.clear();
+        this.conceptDois.putAll(conceptDois);
+    }
+
+    public DoiInitiator getDoiSelection() {
+        return this.doiSelection;
+    }
+
+    public void setDoiSelection(DoiInitiator doiSelection) {
+        this.doiSelection = doiSelection;
+    }
+
+    @JsonIgnore // Don't surface this, just a helper method
+    public Doi getDefaultConceptDoi() {
+        return getDoiBasedOnOrderOfPrecedence(conceptDois);
     }
 
     public Map<String, Alias> getAliases() {
@@ -412,16 +466,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setCheckerWorkflow(BioWorkflow checkerWorkflow) {
         this.checkerWorkflow = checkerWorkflow;
-    }
-
-    /**
-     * @deprecated since 1.14.0. Use getAuthors instead.
-     */
-    @JsonProperty
-    @Deprecated(since = "1.14.0")
-    public String getAuthor() {
-        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
-        return firstAuthor.map(Author::getName).orElse(null);
     }
 
     @JsonProperty
@@ -494,16 +538,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public boolean removeUser(User user) {
         return users.remove(user);
-    }
-
-    /**
-     * @deprecated since 1.14.0. Use getAuthors instead. Each Author may contain an email.
-     */
-    @JsonProperty
-    @Deprecated(since = "1.14.0")
-    public String getEmail() {
-        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
-        return firstAuthor.map(Author::getEmail).orElse(null);
     }
 
     /**
@@ -822,7 +856,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicAutomatic(String topicAutomatic) {
-        this.topicAutomatic = StringUtils.abbreviate(topicAutomatic, TOPIC_LENGTH);
+        this.topicAutomatic = abbreviateTopic(topicAutomatic);
     }
 
     public String getTopicManual() {
@@ -830,7 +864,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicManual(String topicManual) {
-        this.topicManual = topicManual;
+        this.topicManual = abbreviateTopic(topicManual);
     }
 
     public String getTopicAI() {
@@ -838,7 +872,24 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicAI(String topicAI) {
-        this.topicAI = topicAI;
+        this.topicAI = abbreviateTopic(topicAI);
+    }
+
+    public boolean isApprovedAITopic() {
+        return approvedAITopic;
+    }
+
+    public void setApprovedAITopic(boolean approvedAITopic) {
+        this.approvedAITopic = approvedAITopic;
+    }
+
+    /**
+     * Abbreviates the topic string using ellipses if it exceeds the maximum topic length allowed.
+     * @param topic
+     * @return
+     */
+    public String abbreviateTopic(String topic) {
+        return StringUtils.abbreviate(topic, TOPIC_LENGTH);
     }
 
     public String getTopic() {
@@ -914,6 +965,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.gitVisibility = gitVisibility;
     }
 
+    @JsonProperty
+    public String getTrsId() {
+        return getEntryTypeMetadata().getTrsPrefix() + getEntryPath();
+    }
+
     public record EntryIdAndPartner(long entryId, Partner partner) {
+    }
+
+    public record EntryLiteAndVersionName(EntryLite entryLite, String versionName) {
     }
 }

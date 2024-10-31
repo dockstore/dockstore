@@ -17,7 +17,8 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.EntryType;
+import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.EntryLite.EntryLiteWorkflow;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,12 +40,15 @@ import jakarta.persistence.Table;
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from BioWorkflow c where c.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSWorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) from BioWorkflow c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
-    @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", query = "SELECT new io.dockstore.webservice.core.database.MyWorkflows(c.organization, c.id, c.sourceControl, c.isPublished, c.workflowName, c.repository, c.mode, c.gitUrl, c.description, c.archived) from BioWorkflow c where c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", query = "SELECT new io.dockstore.webservice.core.database.WorkflowSummary(c.organization, c.id, c.sourceControl, c.isPublished, c.workflowName, c.repository, c.mode, c.gitUrl, c.description, c.archived) from BioWorkflow c where c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntryLiteByUserId", query =
         "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteWorkflow(w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
             + "FROM BioWorkflow w LEFT JOIN w.workflowVersions v "
             + "WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
             + "GROUP BY w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntryLiteVersionsToAggregate", query =
+        "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteWorkflow(e.sourceControl, e.organization, e.repository, e.workflowName), v.name) "
+            + "FROM BioWorkflow e, Version v where e.id = v.parent.id and (v.versionMetadata.latestMetricsSubmissionDate > v.versionMetadata.latestMetricsAggregationDate or (v.versionMetadata.latestMetricsSubmissionDate is not null and v.versionMetadata.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntriesByUserId", query = "SELECT w FROM BioWorkflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getPublishedEntriesByUserId", query = "SELECT w FROM BioWorkflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 
@@ -72,8 +76,8 @@ public class BioWorkflow extends Workflow {
     }
 
     @Override
-    public EntryType getEntryType() {
-        return EntryType.WORKFLOW;
+    public EntryLite<BioWorkflow> createEntryLite() {
+        return new EntryLiteWorkflow(this);
     }
 
     @Override

@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.15.0-SNAPSHOT
+  version: 1.16.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -415,6 +415,60 @@ paths:
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags:
       - GA4GHV1
+  /api/ga4gh/v2/extended/aiTopicCandidates:
+    get:
+      description: "Get all published tools that are AI topic candidates and their\
+        \ representative version if it exists, otherwise an empty string is returned\
+        \ as the version name."
+      operationId: getAITopicCandidates
+      parameters:
+      - description: "Start index of paging. If this exceeds the current result set\
+          \ return an empty set. If not specified in the request, this will start\
+          \ at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Amount of records to return in a given page.
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+          maximum: 1000
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: "Retrieved published tools that are AI topic candidates and\
+            \ a single representative version name if it exists, otherwise an empty\
+            \ string is returned as the version name."
+          headers:
+            X-total-count:
+              description: Total count of AI topic candidates
+              schema:
+                type: integer
+                format: int64
+              style: simple
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       description: This endpoint returns entries of an organization.
@@ -435,6 +489,31 @@ paths:
                   $ref: '#/components/schemas/ToolV1'
           description: An array of Tools of the input organization.
       summary: List entries of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/entryVersionsToAggregate:
+    get:
+      description: This endpoint gets entry versions that have new execution metrics
+        to aggregate.
+      operationId: getEntryVersionsToAggregate
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Entry versions to aggregate retrieved successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      summary: Get entry versions that have new execution metrics to aggregate.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/organizations:
@@ -538,6 +617,73 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/aiTopicCandidate:
+    get:
+      description: Get a tool's AI topic candidate version for consideration
+      operationId: getAITopicCandidate
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Got workflow candidate version for topic generation.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to get a candidate version for topic
+            generation.
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/updateAITopic:
+    put:
+      description: Update a tool's AI topic.
+      operationId: updateAITopic
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "The name of the version that was used to generate a topic, for\
+          \ example `v1.0`"
+        in: query
+        name: version
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAITopicRequest'
+        description: The update AI topic request
+        required: true
+      responses:
+        "204":
+          description: Successfully updated the tool's AI topic
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
     get:
       description: This endpoint retrieves aggregated metrics for a tool from all
@@ -591,32 +737,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: Platform that the tool was executed on
-        in: query
-        name: platform
-        required: true
-        schema:
-          type: string
-          enum:
-          - GALAXY
-          - TERRA
-          - DNA_STACK
-          - DNA_NEXUS
-          - CGC
-          - NHLBI_BIODATA_CATALYST
-          - ANVIL
-          - CAVATICA
-          - NEXTFLOW_TOWER
-          - ELWAZI
-          - AGC
-          - OTHER
-          - ALL
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Metrics'
-        description: Aggregated metrics to add to the version
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Metrics'
+        description: A map of aggregated metrics for platforms to set as the version's
+          metrics
         required: true
       responses:
         "200":
@@ -715,7 +844,7 @@ paths:
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
       description: This endpoint submits individual execution metrics for a tool that
-        was executed on a platform. Submitting aggregated execution metrics is deprecated.
+        was executed on a platform.
       operationId: executionMetricsPost
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -762,8 +891,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExecutionsRequestBody'
-        description: Individual execution metrics to submit. Submitting aggregated
-          execution metrics is deprecated.
+        description: Individual execution metrics to submit.
         required: true
       responses:
         "204":
@@ -783,12 +911,12 @@ paths:
       security:
       - BEARER: []
       summary: Submit individual execution metrics for a tool that was executed on
-        a platform. Submitting aggregated execution metrics is deprecated.
+        a platform.
       tags:
       - extendedGA4GH
     put:
-      description: "This endpoint updates workflow executions that were executed on\
-        \ a platform. Does not update aggregated metrics, which is deprecated."
+      description: This endpoint updates workflow executions that were executed on
+        a platform.
       operationId: ExecutionMetricsUpdate
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -860,8 +988,7 @@ paths:
           description: The tool cannot be found to update the executions.
       security:
       - BEARER: []
-      summary: "Update workflow executions that were executed on a platform. Does\
-        \ not update aggregated metrics, which is deprecated."
+      summary: Update workflow executions that were executed on a platform.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -2001,12 +2128,15 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+          minimum: 1
       - in: query
         name: filter
         schema:
@@ -2075,28 +2205,6 @@ paths:
           description: default response
       security:
       - BEARER: []
-      tags:
-      - containers
-  /containers/schema/{containerId}/published:
-    get:
-      description: Get a published tool's schema by ID.
-      operationId: getPublishedContainerSchema
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-          description: default response
       tags:
       - containers
   /containers/tags:
@@ -2403,7 +2511,8 @@ paths:
       description: Get a list of secondary descriptor files.
       operationId: secondaryDescriptors
       parameters:
-      - in: path
+      - description: Tool id
+        in: path
         name: containerId
         required: true
         schema:
@@ -2413,8 +2522,10 @@ paths:
         name: tag
         schema:
           type: string
-      - in: query
+      - description: Descriptor language
+        in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -2716,7 +2827,8 @@ paths:
       description: Get the corresponding test parameter files.
       operationId: getTestParameterFiles
       parameters:
-      - in: path
+      - description: Tool id
+        in: path
         name: containerId
         required: true
         schema:
@@ -2726,8 +2838,10 @@ paths:
         name: tag
         schema:
           type: string
-      - in: query
+      - description: Descriptor Type
+        in: query
         name: descriptorType
+        required: true
         schema:
           type: string
           enum:
@@ -3000,25 +3114,6 @@ paths:
       - BEARER: []
       tags:
       - curation
-  /entries/updateEntryToGetTopics:
-    get:
-      deprecated: true
-      description: Attempt to get the topic of all entries that use GitHub as the
-        source control.
-      operationId: updateEntryToGetTopics
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: integer
-                format: int32
-          description: Get the number of entries that failed to have their topics
-            retrieved from GitHub.
-      security:
-      - BEARER: []
-      tags:
-      - entries
   /entries/updateLanguageVersions:
     post:
       description: Update language versions
@@ -3120,6 +3215,29 @@ paths:
           description: Not Found
         "500":
           description: Internal Server Error
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{entryId}/syncStatus:
+    get:
+      description: Get information about automatic updates to the entry
+      operationId: syncStatus
+      parameters:
+      - description: id of the entry
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncStatus'
+          description: Information about automatic updates to the entry
       security:
       - BEARER: []
       tags:
@@ -4284,6 +4402,8 @@ paths:
             - hibernate
             - deadlocks
             - connectionPool
+            - liquibaseLock
+            - elasticsearchConsistency
       responses:
         "200":
           content:
@@ -4338,6 +4458,7 @@ paths:
       - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
+        required: true
         schema:
           type: string
           pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
@@ -5682,17 +5803,24 @@ paths:
       description: Get all of the GitHub Events for the logged in user.
       operationId: getUserGitHubEvents
       parameters:
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
           type: integer
           format: int32
-      - in: query
+          minimum: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
       - in: query
         name: filter
         schema:
@@ -6069,6 +6197,7 @@ paths:
       parameters:
       - in: query
         name: source
+        required: true
         schema:
           type: string
           enum:
@@ -6216,6 +6345,7 @@ paths:
         schema:
           type: integer
           format: int32
+          minimum: 1
       - description: Filter paths with matching text
         in: query
         name: filter
@@ -6256,6 +6386,7 @@ paths:
         schema:
           type: integer
           format: int32
+          minimum: 1
       - description: Filter paths with matching text
         in: query
         name: filter
@@ -6813,8 +6944,8 @@ paths:
       - workflows
   /workflows/github/release:
     post:
-      description: Handle a release of a repository on GitHub. Will create a workflow/service
-        and version when necessary.
+      description: Handle a push event on GitHub. Will create a workflow/service and
+        version when necessary.
       operationId: handleGitHubRelease
       parameters:
       - description: A GUID to identify the GitHub webhook delivery
@@ -6829,6 +6960,33 @@ paths:
             schema:
               $ref: '#/components/schemas/PushPayload'
         description: GitHub push event payload
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/github/taggedrelease:
+    post:
+      description: Handles a release event on GitHub.
+      operationId: handleGitHubTaggedRelease
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleasePayload'
+        description: GitHub App repository release event payload
         required: true
       responses:
         default:
@@ -7292,7 +7450,8 @@ paths:
       description: Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
-      - in: path
+      - description: repository path
+        in: path
         name: repository
         required: true
         schema:
@@ -7347,12 +7506,15 @@ paths:
           type: integer
           format: int32
           default: 0
+          minimum: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+          minimum: 1
       - in: query
         name: filter
         schema:
@@ -7506,6 +7668,31 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/updateDois:
+    post:
+      description: "Searches Zenodo for DOIs referencing GitHub repos, and updates\
+        \ Dockstore entries with them"
+      operationId: updateDois
+      parameters:
+      - description: "Optional GitHub full repository name, e.g., myorg/myrepo, to\
+          \ only update entries for that repository"
+        in: query
+        name: filter
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/versions:
     get:
       description: List the versions for a published workflow.
@@ -7602,7 +7789,9 @@ paths:
       tags:
       - workflows
     put:
-      description: Update the workflow with the given workflow.
+      description: "Updates descriptor type, default workflow path, default test parameter\
+        \ file path, default version, forum URL, manual topic, topic selection, and\
+        \ DOI selection"
       operationId: updateWorkflow
       parameters:
       - in: path
@@ -7622,6 +7811,66 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - BEARER: []
+      summary: Update some of the workflow with the given workflow.
+      tags:
+      - workflows
+  /workflows/{workflowId}/DOIEditLink:
+    get:
+      description: Get an existing access link with edit permissions for the workflow's
+        Dockstore DOIs.
+      operationId: getDOIEditLink
+      parameters:
+      - description: Workflow with Dockstore DOI to get an access link for.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLink'
+          description: Access link successfully retrieved
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/autogeneratedois:
+    put:
+      description: Whether Dockstore should auto-generate DOIs for GitHub tags
+      operationId: autoGenerateDois
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoDoiRequest'
+        description: The request to update DOI generation
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: boolean
           description: default response
       security:
       - BEARER: []
@@ -7682,12 +7931,39 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/deleteDOIEditLink:
+    delete:
+      description: Delete the access link with edit permissions for the workflow's
+        Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
+      operationId: deleteDOIEditLink
+      parameters:
+      - description: Workflow to modify.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/descriptor/{relative-path}:
     get:
       description: Get the corresponding descriptor file from source control.
       operationId: secondaryDescriptorPath_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7704,6 +7980,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -7799,7 +8076,8 @@ paths:
       description: Get the primary descriptor file.
       operationId: primaryDescriptor_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -7811,8 +8089,18 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
+          enum:
+          - SMK
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+          - jupyter
       responses:
         default:
           content:
@@ -7946,6 +8234,36 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/requestDOIEditLink:
+    post:
+      description: Request an access link with edit permissions for the workflow's
+        Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.
+      operationId: requestDOIEditLink
+      parameters:
+      - description: Workflow with Dockstore DOI to request an access link for.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLink'
+          description: Access link successfully created
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/resetVersionPaths:
     put:
       description: Reset the workflow paths.
@@ -8001,7 +8319,8 @@ paths:
       description: Get the corresponding descriptor documents from source control.
       operationId: secondaryDescriptors_1
       parameters:
-      - in: path
+      - description: Workflow id
+        in: path
         name: workflowId
         required: true
         schema:
@@ -8013,6 +8332,7 @@ paths:
           type: string
       - in: query
         name: language
+        required: true
         schema:
           type: string
           enum:
@@ -8528,28 +8848,23 @@ paths:
       - workflows
 components:
   schemas:
-    AggregatedExecution:
+    AccessLink:
       type: object
-      allOf:
-      - $ref: '#/components/schemas/Metrics'
-      - type: object
-        properties:
-          additionalAggregatedMetrics:
-            type: object
-            additionalProperties:
-              type: object
-              description: Additional aggregated metrics
-            description: Additional aggregated metrics
-          executionId:
-            type: string
-            description: User-provided ID of the execution. Must be unique and not
-              used for previous executions. This ID is used to identify the execution
-              when updating the execution
-      deprecated: true
-      description: Aggregated metrics of multiple executions on a platform
-      required:
-      - executionId
-      - executionStatusCount
+      properties:
+        created_at:
+          type: string
+        expires_at:
+          type: string
+        id:
+          type: string
+        permission:
+          type: string
+          enum:
+          - view
+          - preview
+          - edit
+        token:
+          type: string
     Alias:
       type: object
       properties:
@@ -8572,6 +8887,15 @@ components:
           type: string
         role:
           type: string
+    AutoDoiRequest:
+      type: object
+      description: Request to control auto DOI generation
+      properties:
+        autoGenerateDois:
+          type: boolean
+          description: Whether to automatically generate DOIs
+      required:
+      - autoGenerateDois
     BioWorkflow:
       type: object
       allOf:
@@ -8815,10 +9139,20 @@ components:
         id:
           type: integer
           format: int64
+        isApprovedAITopic:
+          type: boolean
         labels:
           type: array
           items:
             type: string
+        topic:
+          type: string
+        topicSelection:
+          type: string
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - AI
         verified:
           type: boolean
         versionName:
@@ -8955,37 +9289,37 @@ components:
           format: double
           description: The numerical value of the cost
           example: 5.99
+      required:
+      - value
     CostMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            default: USD
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated cost metrics for workflow executions
         in USD.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: USD
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -8993,33 +9327,31 @@ components:
       - numberOfDataPointsForAverage
     CpuMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated CPU metrics for workflow executions.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -9054,10 +9386,11 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        approvedAITopic:
+          type: boolean
+          description: Indicates if the topicAI has been approved by the user
         archived:
           type: boolean
-        author:
-          type: string
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -9071,6 +9404,15 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         custom_docker_registry_path:
           type: string
         customerDockerRegistryPath:
@@ -9102,8 +9444,13 @@ components:
           type: array
           items:
             type: string
-        email:
+        doiSelection:
           type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9210,18 +9557,18 @@ components:
         topicAI:
           type: string
           description: Short description of the entry generated by AI
-          maxLength: 150
+          maxLength: 250
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
-          maxLength: 150
+          maxLength: 250
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
-          maxLength: 150
+          maxLength: 250
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -9229,6 +9576,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9245,6 +9594,37 @@ components:
           items:
             $ref: '#/components/schemas/Tag'
           uniqueItems: true
+    Doi:
+      type: object
+      description: A Digital Object Identifier (DOI)
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the DOI in this web service
+        initiator:
+          type: string
+          description: The initiator that initiated the creation of the DOI
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
+          example: USER
+        name:
+          type: string
+          description: The DOI name
+          example: 10.5281/zenodo.705645
+        type:
+          type: string
+          description: The type of DOI
+          enum:
+          - CONCEPT
+          - VERSION
+          example: CONCEPT
+      required:
+      - initiator
+      - name
+      - type
     Entry:
       type: object
       description: This describes one high-level entity in the dockstore
@@ -9253,10 +9633,11 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        approvedAITopic:
+          type: boolean
+          description: Indicates if the topicAI has been approved by the user
         archived:
           type: boolean
-        author:
-          type: string
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -9270,6 +9651,15 @@ components:
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         dbCreateDate:
           type: integer
           format: int64
@@ -9282,8 +9672,13 @@ components:
           type: boolean
         description:
           type: string
-        email:
+        doiSelection:
           type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9344,18 +9739,18 @@ components:
         topicAI:
           type: string
           description: Short description of the entry generated by AI
-          maxLength: 150
+          maxLength: 250
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
-          maxLength: 150
+          maxLength: 250
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
-          maxLength: 150
+          maxLength: 250
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -9363,6 +9758,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9379,6 +9776,29 @@ components:
           items:
             $ref: '#/components/schemas/Version'
           uniqueItems: true
+    EntryLite:
+      type: object
+      properties:
+        entryPath:
+          type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
+        lastUpdated:
+          type: string
+          format: date-time
+        prettyPath:
+          type: string
+        trsId:
+          type: string
+    EntryLiteAndVersionName:
+      type: object
+      properties:
+        entryLite:
+          $ref: '#/components/schemas/EntryLite'
+        versionName:
+          type: string
     EntryType:
       type: string
       description: Entry type
@@ -9556,70 +9976,67 @@ components:
       - status
     ExecutionStatusMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          count:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/MetricsByStatus'
+            description: A map containing the metrics for each execution status
+          numberOfAbortedExecutions:
+            type: integer
+            format: int32
+            description: Number of aborted executions. An execution is aborted if
+              its execution is stopped after it has started
+            example: 0
+            readOnly: true
+          numberOfFailedExecutions:
+            type: integer
+            format: int32
+            description: Number of failed executions. An execution may have failed
+              because it was semantically or runtime invalid
+            example: 2
+            readOnly: true
+          numberOfSuccessfulExecutions:
+            type: integer
+            format: int32
+            description: Number of successful executions
+            example: 5
+            readOnly: true
       description: Aggregated metrics about workflow execution statuses
-      properties:
-        count:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/MetricsByStatus'
-          description: A map containing the metrics for each execution status
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the count metrics in this webservice
-        numberOfAbortedExecutions:
-          type: integer
-          format: int32
-          description: Number of aborted executions. An execution is aborted if its
-            execution is stopped after it has started
-          example: 0
-          readOnly: true
-        numberOfFailedExecutions:
-          type: integer
-          format: int32
-          description: Number of failed executions. An execution may have failed because
-            it was semantically or runtime invalid
-          example: 2
-          readOnly: true
-        numberOfSuccessfulExecutions:
-          type: integer
-          format: int32
-          description: Number of successful executions
-          example: 5
-          readOnly: true
       required:
       - count
     ExecutionTimeMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            default: s
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated execution time metrics in seconds for
         workflow executions.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: s
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -9629,12 +10046,6 @@ components:
       type: object
       description: Request body model for executionMetricsPost
       properties:
-        aggregatedExecutions:
-          type: array
-          deprecated: true
-          description: List of aggregated executions to submit
-          items:
-            $ref: '#/components/schemas/AggregatedExecution'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
@@ -9652,7 +10063,6 @@ components:
           items:
             $ref: '#/components/schemas/ValidationExecution'
       required:
-      - aggregatedExecutions
       - runExecutions
       - taskExecutions
       - validationExecutions
@@ -9713,6 +10123,24 @@ components:
         content:
           type: string
         url:
+          type: string
+    GitCommit:
+      type: object
+      description: "Information about a commit on a GitHub push event. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push,\
+        \ under commits and head_commit"
+      properties:
+        author:
+          $ref: '#/components/schemas/GitHubUser'
+        committer:
+          $ref: '#/components/schemas/GitHubUser'
+    GitHubUser:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        username:
           type: string
     HealthCheckResult:
       type: object
@@ -9818,23 +10246,44 @@ components:
       - $ref: '#/components/schemas/Payload'
       - type: object
         properties:
+          action:
+            type: string
+            description: The action which the event describes
           repositories_added:
             type: array
             description: "An array of repository objects, which were added to the\
               \ installation"
             items:
               $ref: '#/components/schemas/WebhookRepository'
+          repositories_removed:
+            type: array
+            description: "An array of repository objects, which were removed from\
+              \ the installation"
+            items:
+              $ref: '#/components/schemas/WebhookRepository'
       description: A model for a GitHub webhook installation event
-      example:
-        sender:
-          login: string
-        installation:
-          id: 0
-        repositories_added:
-        - full_name: dockstore/dockstore-ui2
+      example: |
+        {
+          "sender": {
+            "login": "string"
+          },
+          "action": "added",
+          "installation": {
+            "id": 0
+          },
+          "repositories_added": [
+            {
+              "full_name": "dockstore/dockstore-ui2"
+            }
+          ]
+          "repositories_removed": [
+          ]
+        }
       required:
+      - action
       - installation
       - repositories_added
+      - repositories_removed
       - sender
     Label:
       type: object
@@ -9882,7 +10331,9 @@ components:
           - PUSH
           - DELETE
           - INSTALL
+          - UNINSTALL
           - PUBLISH
+          - RELEASE
     Language:
       type: object
       properties:
@@ -9998,35 +10449,33 @@ components:
           format: int32
     MemoryMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          average:
+            type: number
+            format: double
+            description: The average value from the data points
+          maximum:
+            type: number
+            format: double
+            description: The maximum value from the data points
+          minimum:
+            type: number
+            format: double
+            description: The minimum value from the data points
+          numberOfDataPointsForAverage:
+            type: integer
+            format: int32
+            description: The number of data points used to calculate the average
+          unit:
+            type: string
+            default: GB
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated memory metrics for workflow executions
         in GB.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: GB
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -10046,6 +10495,20 @@ components:
       required:
       - api_version
       - version
+    Metric:
+      type: object
+      description: Describes an aggregated metric
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for metrics in this webservice
+        numberOfSkippedExecutions:
+          type: integer
+          format: int32
+          default: 0
+          description: The number of executions that were skipped during aggregation
+            because they were invalid
     Metrics:
       type: object
       description: Aggregated metrics associated with entry versions
@@ -10356,6 +10819,13 @@ components:
             type: string
             description: The SHA of the most recent commit on ref after the push
             example: 6d96270004515a0486bb7f76196a72b40c55a47f
+          commits:
+            type: array
+            description: An array of commit objects describing the pushed commits
+            items:
+              $ref: '#/components/schemas/GitCommit'
+          head_commit:
+            $ref: '#/components/schemas/GitCommit'
           ref:
             type: string
             description: The full git ref that was pushed
@@ -10381,6 +10851,29 @@ components:
           type: string
         url:
           type: string
+    ReleasePayload:
+      type: object
+      properties:
+        action:
+          type: string
+          description: The action which the event describes
+        draft:
+          type: boolean
+          description: Whether this is a draft release
+        installation:
+          $ref: '#/components/schemas/Installation'
+        release:
+          $ref: '#/components/schemas/WebhookRelease'
+        repository:
+          $ref: '#/components/schemas/WebhookRepository'
+        sender:
+          $ref: '#/components/schemas/Sender'
+      required:
+      - action
+      - draft
+      - installation
+      - release
+      - sender
     Repository:
       type: object
       properties:
@@ -10535,6 +11028,13 @@ components:
         path:
           type: string
           description: Path to sourcefile relative to its parent
+        state:
+          type: string
+          description: Enumerates the file state
+          enum:
+          - COMPLETE
+          - NOT_STORED
+          - STUB
         type:
           type: string
           description: Enumerates the type of file
@@ -10569,6 +11069,7 @@ components:
       required:
       - absolutePath
       - path
+      - state
       - type
     SourceFileMetadata:
       type: object
@@ -10586,6 +11087,14 @@ components:
       properties:
         star:
           type: boolean
+    SyncStatus:
+      type: object
+      description: Information about automatic updates to the entry
+      properties:
+        gitHubAppInstalled:
+          type: boolean
+          description: "False if the GitHub App is conclusively not installed, true\
+            \ otherwise."
     TRSService:
       type: object
       description: GA4GH service
@@ -10672,6 +11181,8 @@ components:
       type: object
       description: This describes one tag associated with a container.
       properties:
+        aiTopicProcessed:
+          type: boolean
         author:
           type: string
         authors:
@@ -10712,6 +11223,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:
@@ -11330,6 +11846,15 @@ components:
       required:
       - id
       - url
+    UpdateAITopicRequest:
+      type: object
+      description: The AI topic update request
+      properties:
+        aiTopic:
+          type: string
+          description: The AI topic
+      required:
+      - aiTopic
     User:
       type: object
       properties:
@@ -11483,18 +12008,17 @@ components:
       - validatorToolVersion
     ValidationStatusMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          validatorTools:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/ValidatorInfo'
+            description: A map containing key-value pairs indicating whether the validator
+              tool successfully validated the workflow
       description: Aggregated metrics about workflow validation statuses
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the count metrics in this webservice
-        validatorTools:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ValidatorInfo'
-          description: A map containing key-value pairs indicating whether the validator
-            tool successfully validated the workflow
       required:
       - validatorTools
     ValidatorInfo:
@@ -11583,6 +12107,8 @@ components:
       type: object
       description: This describes a version of an entry in Dockstore
       properties:
+        aiTopicProcessed:
+          type: boolean
         author:
           type: string
         authors:
@@ -11617,6 +12143,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:
@@ -11706,10 +12237,18 @@ components:
     VersionMetadata:
       type: object
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         descriptorTypeVersions:
           type: array
           items:
             type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         engineVersions:
           type: array
           items:
@@ -11717,6 +12256,14 @@ components:
         id:
           type: integer
           format: int64
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         parsedInformationSet:
           type: array
           items:
@@ -11756,6 +12303,19 @@ components:
         versionId:
           type: integer
           format: int64
+    WebhookRelease:
+      type: object
+      description: Details about the release
+      properties:
+        published_at:
+          type: string
+          format: date-time
+        tag_name:
+          type: string
+          description: Name of the tag associated with the release
+          example: mytag
+      required:
+      - tag_name
     WebhookRepository:
       type: object
       description: The repository where the GitHub webhook event occurred
@@ -11776,10 +12336,11 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        approvedAITopic:
+          type: boolean
+          description: Indicates if the topicAI has been approved by the user
         archived:
           type: boolean
-        author:
-          type: string
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -11788,11 +12349,23 @@ components:
             $ref: '#/components/schemas/Author'
           readOnly: true
           uniqueItems: true
+        autoGenerateDois:
+          type: boolean
+          description: Whether to automatically generate DOIs for GitHub tags
         checker_id:
           type: integer
           format: int64
         conceptDoi:
           type: string
+          deprecated: true
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
+        conceptDois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The Digital Object Identifier (DOI) representing all of the
+            versions of your workflow
         dbCreateDate:
           type: integer
           format: int64
@@ -11832,8 +12405,13 @@ components:
           - Julia
           - other
           - n/a
-        email:
+        doiSelection:
           type: string
+          description: The Digital Object Identifier (DOI) to display publicly
+          enum:
+          - USER
+          - DOCKSTORE
+          - GITHUB
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -11874,6 +12452,11 @@ components:
         last_modified_date:
           type: integer
           format: int64
+        latestReleaseDate:
+          type: integer
+          format: int64
+          description: "The timestamp of the most recent version control release,\
+            \ such as a GitHub release"
         licenseInformation:
           $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:
@@ -11924,18 +12507,18 @@ components:
         topicAI:
           type: string
           description: Short description of the entry generated by AI
-          maxLength: 150
+          maxLength: 250
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
-          maxLength: 150
+          maxLength: 250
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
-          maxLength: 150
+          maxLength: 250
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -11943,6 +12526,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         type:
           type: string
         userIdToOrcidPutCode:
@@ -11980,6 +12565,8 @@ components:
       type: object
       description: This describes one workflow version associated with a workflow.
       properties:
+        aiTopicProcessed:
+          type: boolean
         aliases:
           type: object
           additionalProperties:
@@ -12018,6 +12605,11 @@ components:
           - CREATED
         doiURL:
           type: string
+        dois:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Doi'
+          description: The DOIs for the version of the entry
         email:
           type: string
         frozen:

@@ -18,6 +18,8 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -96,11 +98,14 @@ class OpenAPIGeneralWorkflowIT extends BaseIT {
         assertEquals(newTopic, updatedWorkflow.getTopicManual());
         assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
 
-        // Set workflow's topicAI and topicSelection to AI
-        workflow.setTopicAI("AI topic");
+        // Set workflow's topicSelection to AI
+        testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + workflow.getId());
+        assertFalse(workflow.isApprovedAITopic());
         workflow.setTopicSelection(TopicSelectionEnum.AI);
+        workflow.setApprovedAITopic(true);
         updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         assertEquals("AI topic", updatedWorkflow.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, updatedWorkflow.getTopicSelection());
+        assertTrue(updatedWorkflow.isApprovedAITopic());
     }
 }

@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
+import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -250,6 +251,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Check the version to see if it exceeds any limits.
+        LimitHelper.checkVersion(validatedVersion);
+
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
         validatedVersion.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, validatedVersion);
@@ -278,7 +282,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         PublicStateManager.getInstance().handleIndexUpdate(newTool, StateManagerMode.UPDATE);
-        this.eventDAO.createAddTagToEntryEvent(user, newTool, version);
+        this.eventDAO.createAddTagToEntryEvent(Optional.of(user), newTool, version);
         return newTool;
     }
 
@@ -433,12 +437,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             U versionWithTheLargestName = versionWithLargestName(versions);
             // carry over old files
             versionWithTheLargestName.getSourceFiles().forEach(v -> {
-                SourceFile newfile = new SourceFile();
-                newfile.setPath(v.getPath());
-                newfile.setAbsolutePath(v.getAbsolutePath());
-                newfile.setContent(v.getContent());
-                newfile.setType(v.getType());
-                map.put(newfile.getPath(), newfile);
+                SourceFile newFile = v.duplicate();
+                map.put(newFile.getPath(), newFile);
             });
 
             boolean changed = false;
@@ -455,7 +455,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                         // case 1)
                         final SourceFile sourceFile = map.get(file.getPath());
                         if (!sourceFile.getContent().equals(file.getContent())) {
-                            sourceFile.setContent(file.getContent());
+                            sourceFile.updateFrom(file);
                             changed = true;
                         }
                     } else {

@@ -80,6 +80,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -330,7 +331,7 @@ public class MetadataResource {
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
     public Response getRunnerDependencies(
             @Parameter(name = "client_version", description = "The Dockstore client version (e.g. 1.13.0)", schema = @Schema(pattern = PipHelper.OPENAPI_SEM_VER_STRING))
-            @ApiParam(value = "The Dockstore client version (e.g. 1.13.0)") @QueryParam("client_version") String clientVersion,
+            @ApiParam(value = "The Dockstore client version (e.g. 1.13.0)") @NotNull @QueryParam("client_version") String clientVersion,
             @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("3") @QueryParam("python_version") String pythonVersion,
             @Parameter(name = "runner", description = "The tool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "cwltool", allowableValues = {"cwltool"}))
@@ -477,9 +478,8 @@ public class MetadataResource {
     @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Health checks failed")
     public Set<HealthCheckResult> checkHealth(
             @Parameter(name = "include", description = "List of health checks to run. If unspecified, run all health checks", in = ParameterIn.QUERY,
-                    array = @ArraySchema(schema = @Schema(implementation = String.class, allowableValues = {"hibernate", "deadlocks", "connectionPool"})))
-            @ApiParam(name = "include", value = "List of health checks to run. If unspecified, run all health checks", allowableValues = "hibernate,deadlocks,connectionPool",
-                    type = "array") @QueryParam(value = "include") List<String> include) {
+                    array = @ArraySchema(schema = @Schema(implementation = String.class, allowableValues = {"hibernate", "deadlocks", "connectionPool", "liquibaseLock", "elasticsearchConsistency"})))
+            @QueryParam(value = "include") List<String> include) {
         Map<String, HealthCheck.Result> results;
         boolean allHealthy;
         if (include.isEmpty()) { // Run all health checks
@@ -496,7 +496,9 @@ public class MetadataResource {
                 LOG.error(errorMessage);
                 throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
             }
-            results = include.stream().collect(Collectors.toMap(name -> name, name -> healthCheckRegistry.runHealthCheck(name)));
+            // Run each of the health checks, making sure that if a duplicate name is specified, the corresponding
+            // health check is only run once, to avoid the toMap Collector from throwing due to a duplicate key.
+            results = include.stream().distinct().collect(Collectors.toMap(name -> name, name -> healthCheckRegistry.runHealthCheck(name)));
         }
 
         allHealthy = results.values().stream().allMatch(HealthCheck.Result::isHealthy);
@@ -505,12 +507,13 @@ public class MetadataResource {
                     .map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy()))
                     .collect(Collectors.toSet());
         } else {
+            // Alarms may depend on the syntax of this logging statement, so make sure to check if you change it.
             results.entrySet().stream()
                     .filter(result -> !result.getValue().isHealthy())
                     .forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));
             String failedHealthCheckNames = results.entrySet().stream()
                     .filter(result -> !result.getValue().isHealthy())
-                    .map(result -> String.format("'%s'", result))
+                    .map(result -> String.format("'%s'", result.getKey()))
                     .collect(Collectors.joining(", "));
             throw new CustomWebApplicationException(String.format("Health checks failed: %s", failedHealthCheckNames), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }

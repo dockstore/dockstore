@@ -16,56 +16,5 @@
 
 package io.dockstore.webservice.core.database;
 
-public class UserInfo {
-
-    private String dockstoreUsername;
-    private String thirdPartyUsername;
-    private String thirdPartyEmail;
-    private String tokenType;
-
-    public UserInfo() {
-
-    }
-
-    public UserInfo(String dockstoreUsername, String thirdPartyUsername, String thirdPartyEmail, String tokenType) {
-        this.dockstoreUsername = dockstoreUsername;
-        this.thirdPartyUsername = thirdPartyUsername;
-        this.thirdPartyEmail = thirdPartyEmail;
-        this.tokenType = tokenType;
-    }
-
-    public String getDockstoreUsername() {
-        return dockstoreUsername;
-    }
-
-    public void setDockstoreUsername(String dockstoreUsername) {
-        this.dockstoreUsername = dockstoreUsername;
-    }
-
-
-    public String getThirdPartyUsername() {
-        return thirdPartyUsername;
-    }
-
-    public void setThirdPartyUsername(String thirdPartyUsername) {
-        this.thirdPartyUsername = thirdPartyUsername;
-    }
-
-    public String getThirdPartyEmail() {
-        return thirdPartyEmail;
-    }
-
-    public void setThirdPartyEmail(String thirdPartyEmail) {
-        this.thirdPartyEmail = thirdPartyEmail;
-    }
-
-
-    public String getTokenType() {
-        return tokenType;
-    }
-
-    public void setTokenType(String tokenType) {
-        this.tokenType = tokenType;
-    }
-
+public record UserInfo(String dockstoreUsername, String thirdPartyUsername, String thirdPartyEmail, String tokenType) {
 }

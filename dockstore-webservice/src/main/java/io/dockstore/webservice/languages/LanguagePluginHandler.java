@@ -199,33 +199,29 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             .indexWorkflowFiles(filepath, content, reader);
         Map<String, SourceFile> results = new HashMap<>();
         for (Map.Entry<String, FileMetadata> entry : stringPairMap.entrySet()) {
-            final SourceFile sourceFile = new SourceFile();
-            sourceFile.setPath(entry.getKey());
-            sourceFile.setContent(entry.getValue().content());
-            sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
-            if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
-                // TODO: this needs to be more sophisticated
-                sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
-            }
 
             // The language plugins don't necessarily set the file type
             // so query the plugin to find out what the imported file
             // type should be, because this is needed in downstream code.
             // We assume if imported files are not descriptors or not test files they are Dockerfiles,
             // however this may not be true for some languages, and we may have to change this
-            if (sourceFile.getType() == null) {
-                DescriptorLanguage.FileType importedFileType = null;
-                if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
-                    importedFileType = minimalLanguageInterface.getDescriptorLanguage().getFileType();
-                } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
-                    importedFileType = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
-                } else {
-                    // For some languages this may be incorrect
-                    importedFileType = FileType.DOCKERFILE;
-                }
-                sourceFile.setType(importedFileType);
+            DescriptorLanguage.FileType type;
+            if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                type = minimalLanguageInterface.getDescriptorLanguage().getFileType();
+            } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
+                type = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
+            } else {
+                // For some languages this may be incorrect
+                type = FileType.DOCKERFILE;
             }
-            sourceFile.setAbsolutePath(entry.getKey());
+            if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
+                // TODO: this needs to be more sophisticated
+                type = DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML;
+            }
+            String path = entry.getKey();
+            String fileContent = entry.getValue().content();
+            SourceFile sourceFile = SourceFile.limitedBuilder().type(type).content(fileContent).paths(path).build();
+            sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
             results.put(entry.getKey(), sourceFile);
         }
         return results;

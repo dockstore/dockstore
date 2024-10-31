@@ -17,8 +17,8 @@
 package io.dockstore.webservice.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
@@ -26,9 +26,11 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.Event;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -62,6 +64,11 @@ class TransactionHelperIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
+    @AfterEach
+    public void close() {
+        session.close();
+    }
+
     private void insert() {
         session.createQuery("insert into Label (id, value) values (1234L, 'foo')").executeUpdate();
     }
@@ -80,49 +87,56 @@ class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testTransactionAutoCommit() {
+    void testAutoCommit() {
         TransactionHelper helper = new TransactionHelper(session);
         helper.transaction(this::insert);
-        helper.transaction(() -> assertEquals(1, count()));
+        assertEquals(1, helper.transaction(() -> count()));
     }
 
     @Test
-    void testTransactionAutoRollback() {
+    void testAutoRollback() {
         TransactionHelper helper = new TransactionHelper(session);
         shouldThrow(() -> helper.transaction(() -> {
             insert();
             throw new RuntimeException("foo");
         }));
-        helper.transaction(() -> assertEquals(0, count()));
-        assertNull(helper.thrown());
+        assertEquals(0, helper.transaction(() -> count()));
     }
 
     @Test
-    void testRepeatedCommitsAndRollbacks() {
+    void testReturn() {
         TransactionHelper helper = new TransactionHelper(session);
-        helper.commit();
-        helper.rollback();
-        helper.transaction(this::insert);
-        helper.rollback();
-        helper.rollback();
-        helper.commit();
-        helper.commit();
-        shouldThrow(() -> helper.transaction(this::insert));
-        assertNull(helper.thrown());
-        helper.commit();
-        helper.commit();
-        helper.rollback();
-        helper.rollback();
-        helper.transaction(() -> assertEquals(1, count()));
+        assertEquals(1, helper.transaction(() -> 1));
     }
 
     @Test
-    void testThrowsOnClosedSession() {
+    void testContinueSession() {
         TransactionHelper helper = new TransactionHelper(session);
-        session.close();
-        shouldThrow(helper::begin);
-        assertNotNull(helper.thrown());
-        shouldThrow(() -> helper.transaction(this::insert));
-        assertNotNull(helper.thrown());
+        Object a = helper.transaction(this::createEntity);
+        assertEquals(1, sessionEntityCount());
+        assertTrue(sessionContains(a));
+        Object b = helper.continueSession().transaction(this::createEntity);
+        assertEquals(2, sessionEntityCount());
+        assertTrue(sessionContains(a));
+        assertTrue(sessionContains(b));
+        Object c = helper.transaction(this::createEntity);
+        assertEquals(1, sessionEntityCount());
+        assertFalse(sessionContains(a));
+        assertFalse(sessionContains(b));
+        assertTrue(sessionContains(c));
+    }
+
+    private Object createEntity() {
+        Event event = new Event();
+        session.save(event);
+        return event;
+    }
+
+    private int sessionEntityCount() {
+        return session.getStatistics().getEntityCount();
+    }
+
+    private boolean sessionContains(Object obj) {
+        return session.contains(obj);
     }
 }

@@ -24,27 +24,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public abstract class StatisticMetric {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "statisticmetric_id_seq")
-    @SequenceGenerator(name = "statisticmetric_id_seq", sequenceName = "statisticmetric_id_seq", allocationSize = 1)
-    @ApiModelProperty(value = "Implementation specific ID for statistical metrics in this webservice")
-    @Schema(description = "Implementation specific ID for statistical metrics in this webservice")
-    private long id;
+@Schema(name = "StatisticMetric", description = "Describes a metric with statistics")
+public abstract class StatisticMetric extends Metric {
 
     @Column(nullable = false)
     @NotNull
@@ -100,14 +87,6 @@ public abstract class StatisticMetric {
         this.average = average;
         this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
         this.unit = unit;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public double getMinimum() {

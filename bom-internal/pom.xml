@@ -48,7 +48,7 @@ POM as their parent.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.15</revision>
+        <revision>1.16</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <dropwizard.version>4.0.2</dropwizard.version>
@@ -61,9 +61,9 @@ POM as their parent.
         <junit5-version>5.9.1</junit5-version>
         <hoverfly-version>0.14.0</hoverfly-version>
         <logback.version>1.4.12</logback.version>
-        <aws.version>2.17.186</aws.version>
+        <aws.version>2.28.7</aws.version>
         <powermock.version>2.0.9</powermock.version>
-        <postgresql.version>42.4.4</postgresql.version>
+        <postgresql.version>42.7.2</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.9</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
@@ -73,15 +73,16 @@ POM as their parent.
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
         <jetty-servlet.version>11.0.16</jetty-servlet.version>
         <jersey.version>3.0.11</jersey.version>
-        <netty.version>4.1.72.Final</netty.version>
+        <netty.version>4.1.112.Final</netty.version>
         <scala.version>2.13.9</scala.version>
         <bytebuddy.version>1.14.8</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
         <cromwell.version>85</cromwell.version>
         <jackson.version>2.15.2</jackson.version>
-        <docker-client.version>3.3.0</docker-client.version>
+        <docker-client.version>3.3.6</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
         <moneta.version>1.4.2</moneta.version>
 
         <skipTests>false</skipTests>
@@ -131,12 +132,6 @@ POM as their parent.
                 <artifactId>reflections</artifactId>
                 <version>0.9.12</version>
             </dependency>
-            <dependency>
-                <groupId>io.dockstore</groupId>
-                <artifactId>zenodo-client-generated</artifactId>
-                <version>0.3</version>
-            </dependency>
-
             <dependency>
               <groupId>org.apache.httpcomponents</groupId>
               <artifactId>httpcore-osgi</artifactId>
@@ -346,7 +341,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-encryption-sdk-java</artifactId>
-                <version>2.4.0</version>
+                <version>2.4.1</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/org.junit/junit-bom -->
@@ -361,7 +356,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams</artifactId>
-                <version>1.0.3</version>
+                <version>1.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -386,7 +381,7 @@ POM as their parent.
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.15</version>
+                <version>1.17.1</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
@@ -397,17 +392,6 @@ POM as their parent.
             </dependency>
 
             <dependency>
-                <groupId>com.github.jsonld-java</groupId>
-                <artifactId>jsonld-java</artifactId>
-                <version>0.8.3</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpcore-osgi</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>2.12.5</version>
@@ -416,12 +400,12 @@ POM as their parent.
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
-                <version>1.2</version>
+                <version>1.3.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.10.0</version>
+                <version>1.11.0</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -545,7 +529,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.38.0</version>
+                <version>3.42.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
@@ -640,7 +624,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.12.0</version>
+                <version>3.14.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -650,7 +634,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.9.0</version>
+                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -671,13 +655,13 @@ POM as their parent.
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.11.0</version>
+                <version>2.15.1</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/cloud.localstack/localstack-utils -->
             <dependency>
                 <groupId>cloud.localstack</groupId>
                 <artifactId>localstack-utils</artifactId>
-                <version>0.2.22</version>
+                <version>0.2.23</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -714,7 +698,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.8.0</version>
+                <version>2.10.1</version>
             </dependency>
 
             <dependency>
@@ -1046,7 +1030,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.22</version>
+                <version>1.26.0</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
@@ -1084,14 +1068,9 @@ POM as their parent.
                 <version>2.2.8</version>
             </dependency>
             <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.69</version>
-            </dependency>
-            <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>5.12.1</version>
+                <version>5.13.0</version>
             </dependency>
 
             <dependency>
@@ -1336,7 +1315,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
-                <version>1.313</version>
+                <version>1.322</version>
             </dependency>
             <!-- used for github-api build-in handing of JWTtokens -->
             <dependency>
@@ -1366,6 +1345,26 @@ POM as their parent.
                 <groupId>javax.persistence</groupId>
                 <artifactId>javax.persistence-api</artifactId>
                 <version>2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-ext-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

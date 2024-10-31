@@ -555,4 +555,16 @@ class DockstoreYamlTest {
             assertTrue(ex.getMessage().toLowerCase().contains("subclass"));
         }
     }
+
+    @Test
+    void testScalarWhereListExpected() throws DockstoreYamlHelper.DockstoreYamlException {
+        final String prelude = "version: 1.2\nworkflows:\n - primaryDescriptorPath: /abc.wdl\n   subclass: wdl\n   testParameterFiles: ";
+        DockstoreYamlHelper.readDockstoreYaml(prelude + "[ /some/file.txt ]", true);
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(prelude + "/some/file.txt", true);
+            fail("Should not succeed because the `testParameterFiles` property should be a list");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.BETTER_NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE));
+        }
+    }
 }

@@ -18,21 +18,18 @@ package io.dockstore.webservice.core.database;
 import io.dockstore.webservice.core.Tool;
 
 /**
- * This class is only used to get data from the database in a more type-safe way
+ * This record is only used to get data from the database in a more type-safe way
  * @author gluu
  * @since 1.8.0
  */
-public class ToolPath {
-    private final Tool tool = new Tool();
-
-    public ToolPath(String registry, String namespace, String name, String toolname) {
-        this.tool.setRegistry(registry);
-        this.tool.setNamespace(namespace);
-        this.tool.setName(name);
-        this.tool.setToolname(toolname);
-    }
+public record ToolPath(String registry, String namespace, String name, String toolname)  {
 
     public Tool getTool() {
+        Tool tool = new Tool();
+        tool.setRegistry(registry);
+        tool.setNamespace(namespace);
+        tool.setName(name);
+        tool.setToolname(toolname);
         return tool;
     }
 

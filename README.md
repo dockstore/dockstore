@@ -16,7 +16,7 @@ workflows so that they are  machine readable as well as runnable in a variety of
 Dockstore is focused on serving researchers in the biosciences, the combination of Docker + workflow languages can be used by 
 anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  
 Dockstore is also a leading implementor of the GA4GH API standard for container registries, [TRS](https://www.ga4gh.org/news/tool-registry-service-api-enabling-an-interoperable-library-of-genomics-analysis-tools/). The usage of this is to enumerate the docker containers 
-(from quay.io and hopefully docker hub) and the workflows (from github/bitbucket) that are available 
+(from quay.io and docker hub) and the workflows (from github/bitbucket/local) that are available 
 to users of Dockstore.org.
 
 For the live site see [dockstore.org](https://dockstore.org)
@@ -82,6 +82,14 @@ Categories include:
 1. `ToilCompatibleTest` are tests that can be run with our default cwltool and with Toil
 2. `ConfidentialTest` are tests that require access to our confidential testing bundle (ask a member of the development team if you're on the team)
 
+
+#### Running Hoverfly Integration Tests
+
+Hoverfly is a service/library we use for simulating https responses. To run Hoverfly tests locally, you need to run import their
+certificate. See [here](https://docs.hoverfly.io/projects/hoverfly-java/en/latest/pages/misc/misc.html#trusting-hoverfly-certificate), but, IMPORTANT,
+you need to import an [older version of the certificate](https://github.com/SpectoLabs/hoverfly/blob/v0.10.3/core/cert.pem). [Release
+notes](https://github.com/SpectoLabs/hoverfly/releases/tag/v0.10.3) have more info.
+
 ### Running Locally
 
 You can also run it on your local computer but will need to setup postgres separately.
@@ -102,6 +110,14 @@ The Swagger UI is reachable while the Dockstore webservice is running. This allo
 
 1. Browse to [http://localhost:8080/static/swagger-ui/index.html](http://localhost:8080/static/swagger-ui/index.html)
 
+### Commits using `[skipTests]`
+If you would like to save build minutes on CircleCI (particularly for changes that do not affect code), consider adding 
+the `[skipTests]` tag to your commit message. When included in the most recent commit, a partial CI pipeline will be run,
+consisting of only the build and unit tests.
+
+`[skipTests]` acts as an alternative to `[skip ci]`, which is provided by CircleCI. This is because our automatic 
+deployment process requires a build to be run on every tag.
+
 
 ## Development
 
@@ -118,21 +134,6 @@ Dockstore uses git-secrets to help make sure that keys and private data stay out
 of the source tree. For information on installing it on your platform check <https://github.com/awslabs/git-secrets#id6> .
 
 If you're on mac with homebrew use `brew install git-secrets`.
-
-### Dockstore Command Line
-
-The dockstore command line should be installed in a location in your path.
-
-  /dockstore-client/bin/dockstore
-
-You then need to setup a `~/.dockstore/config` file with the following contents:
-
-```
-token: <dockstore_token_from_web_app>
-server-url: http://www.dockstore.org:8080
-```
-
-If you are working with a custom-built or updated dockstore client you will need to update the jar in: `~/.dockstore/config/self-installs`.
 
 ### Swagger Client Generation 
 

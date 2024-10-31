@@ -24,18 +24,20 @@ public final class RepositoryConstants {
     }
 
     public static class DockstoreTestUser2 {
-        public static final String DOCKSTORE_WORKFLOW_CNV = "DockstoreTestUser2/dockstore_workflow_cnv";
-        public static final String DOCKSTOREYML_GITHUB_FILTERS_TEST = "DockstoreTestUser2/dockstoreyml-github-filters-test";
-        public static final String TEST_AUTHORS = "DockstoreTestUser2/test-authors";
-        public static final String TEST_SERVICE = "DockstoreTestUser2/test-service";
-        public static final String TEST_WORKFLOW_AND_TOOLS = "DockstoreTestUser2/test-workflows-and-tools";
+        public static final String DOCKSTORE_TEST_USER_2 = "DockstoreTestUser2";
+        public static final String DOCKSTORE_WORKFLOW_CNV = DOCKSTORE_TEST_USER_2 + "/dockstore_workflow_cnv";
+        public static final String DOCKSTOREYML_GITHUB_FILTERS_TEST = DOCKSTORE_TEST_USER_2 + "/dockstoreyml-github-filters-test";
+        public static final String TEST_AUTHORS = DOCKSTORE_TEST_USER_2 + "/test-authors";
+        public static final String TEST_SERVICE = DOCKSTORE_TEST_USER_2 + "/test-service";
+        public static final String TEST_WORKFLOW_AND_TOOLS = DOCKSTORE_TEST_USER_2 + "/test-workflows-and-tools";
         public static final String TEST_WORKFLOW_AND_TOOLS_TOOL_PATH = TEST_WORKFLOW_AND_TOOLS + "/md5sum";
-        public static final String WORKFLOW_DOCKSTORE_YML = "DockstoreTestUser2/workflow-dockstore-yml";
+        public static final String WORKFLOW_DOCKSTORE_YML = DOCKSTORE_TEST_USER_2 + "/workflow-dockstore-yml";
         // Contains a Galaxy workflow
-        public static final String WORKFLOW_TESTING_REPO = "DockstoreTestUser2/workflow-testing-repo";
+        public static final String WORKFLOW_TESTING_REPO = DOCKSTORE_TEST_USER_2 + "/workflow-testing-repo";
     }
 
     public static class DockstoreTesting {
+        public static final String HELLO_WDL_WORKFLOW = "dockstore-testing/hello-wdl-workflow";
         public static final String HELLO_WORLD = "dockstore-testing/hello_world";
         public static final String MULTI_ENTRY = "dockstore-testing/multi-entry";
         // Repository with a large .dockstore.yml and alot of branches
@@ -47,5 +49,6 @@ public final class RepositoryConstants {
         public static final String WORKFLOW_DOCKSTORE_YML = "dockstore-testing/workflow-dockstore-yml";
         public static final String WORKFLOW_NEXTFLOW_DOCKSTORE_YML = "dockstore-testing/ampa-nf";
         public static final String TEST_SERVICE = "dockstore-testing/test-service";
+        public static final String SOURCEFILE_TESTING = "dockstore-testing/sourcefile-testing";
     }
 }

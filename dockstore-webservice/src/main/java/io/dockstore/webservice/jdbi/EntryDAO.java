@@ -29,6 +29,7 @@ import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
@@ -228,6 +229,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
 
+    public List<EntryLiteAndVersionName> findEntryVersionsToAggregate() {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteVersionsToAggregate", EntryLiteAndVersionName.class).list();
+    }
+
     /**
      * Retrieve a list of all workflow entries contained in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
      * This includes AppTools, BioWorkflows, Notebooks, and Services.
@@ -323,8 +328,13 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
         query.select(entry);
 
-        int primitiveOffset = (offset != null) ? offset : 0;
-        TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        TypedQuery<T> typedQuery = currentSession().createQuery(query);
+        if (offset != null) {
+            typedQuery.setFirstResult(Math.max(offset, 0));
+        }
+        if (limit != null) {
+            typedQuery.setMaxResults(Math.max(limit, 1));
+        }
         return typedQuery.getResultList();
     }
 
@@ -378,10 +388,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return Arrays.asList(this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getSingleResult().toString());
     }
 
-    public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
-        return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
-    }
-
     public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
 
         final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
@@ -398,6 +404,17 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final Map<Long, List<Partner>> map = new HashMap<>();
         entryIdAndPartnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
         return map;
+    }
+
+    public List<Entry> getPublishedEntriesWithNoTopics(int offset, int limit) {
+        return this.currentSession().createNamedQuery(Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Entry.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .list();
+    }
+
+    public long countPublishedEntriesWithNoTopics() {
+        return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Long.class).getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

@@ -23,6 +23,11 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +49,7 @@ import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DeletedUsername;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
@@ -69,7 +75,6 @@ import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.CostStatisticMetric;
-import io.dockstore.webservice.core.metrics.CountMetric;
 import io.dockstore.webservice.core.metrics.CpuStatisticMetric;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
@@ -85,6 +90,7 @@ import io.dockstore.webservice.filters.AuthenticatedUserFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
+import io.dockstore.webservice.helpers.DiagnosticsHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -94,6 +100,7 @@ import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.PublicUserFilter;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
+import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
@@ -108,6 +115,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -118,11 +126,13 @@ import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.ElasticsearchConsistencyHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.LambdaEventResource;
+import io.dockstore.webservice.resources.LiquibaseLockHealthCheck;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -160,6 +170,7 @@ import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
@@ -170,8 +181,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -181,7 +195,14 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.server.model.ResourceMethod;
+import org.glassfish.jersey.server.monitoring.ApplicationEvent;
+import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -217,6 +238,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
 
     public static final String PUBLIC_USER_FILTER = "publicUserFilter";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_ACTIVE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.active";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_SIZE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.size";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_IDLE = "io.dropwizard.db.ManagedPooledDataSource.hibernate.idle";
+    public static final String IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD = "io.dropwizard.db.ManagedPooledDataSource.hibernate.calculatedLoad";
+    public static final int PERCENT = 100;
 
 
     private static OkHttpClient okHttpClient = null;
@@ -236,12 +262,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class, CostStatisticMetric.class,
-            CountMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class) {
+            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
         }
     };
+    private MetricRegistry metricRegistry;
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
@@ -402,13 +429,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
         final BioWorkflowDAO bioWorkflowDAO = new BioWorkflowDAO(hibernate.getSessionFactory());
+        final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO((hibernate.getSessionFactory()));
 
         publicStateManager.insertListener(new PopulateEntryListener(toolDAO), publicStateManager.getElasticListener());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
-        SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate())
+        UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory = new UnitOfWorkAwareProxyFactory(getHibernate());
+        SimpleAuthenticator authenticator = unitOfWorkAwareProxyFactory
                 .create(SimpleAuthenticator.class, new Class[] { TokenDAO.class, UserDAO.class }, new Object[] { tokenDAO, userDAO });
         CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
                 configuration.getAuthenticationCachePolicy());
@@ -442,6 +471,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
+        ZenodoHelper.init(configuration, httpClient, getHibernate().getSessionFactory());
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
         environment.jersey().register(metadataResource);
@@ -483,11 +513,19 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiExtendedServiceImpl.setNotebookDAO(notebookDAO);
+        ToolsApiExtendedServiceImpl.setBioWorkflowDAO(bioWorkflowDAO);
+        ToolsApiExtendedServiceImpl.setServiceDAO(serviceDAO);
+        ToolsApiExtendedServiceImpl.setWorkflowVersionDAO(workflowVersionDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
 
         GoogleHelper.setConfig(configuration);
+
+        if (configuration.getDiagnosticsConfig().getEnabled()) {
+            LOG.info("enabling diagnostic logging output");
+            new DiagnosticsHelper().start(environment, hibernate.getSessionFactory(), configuration.getDiagnosticsConfig());
+        }
 
         registerAPIsAndMisc(environment);
 
@@ -506,6 +544,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         });
 
 
+        // Log information about privileged endpoints.
+        environment.jersey().register(new LogPrivilegedEndpointsListener());
+
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
@@ -513,8 +554,20 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.lifecycle().addServerLifecycleListener(server -> {
             final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
             environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            final LiquibaseLockHealthCheck liquibaseLockHealthCheck = unitOfWorkAwareProxyFactory.create(
+                LiquibaseLockHealthCheck.class,
+                new Class[] { SessionFactory.class },
+                new Object[] { hibernate.getSessionFactory() });
+            environment.healthChecks().register("liquibaseLock", liquibaseLockHealthCheck);
+            final ElasticsearchConsistencyHealthCheck elasticsearchConsistencyHealthCheck = unitOfWorkAwareProxyFactory.create(
+                ElasticsearchConsistencyHealthCheck.class,
+                new Class[] { ToolDAO.class, BioWorkflowDAO.class, AppToolDAO.class, NotebookDAO.class },
+                new Object[] { toolDAO, bioWorkflowDAO, appToolDAO, notebookDAO });
+            environment.healthChecks().register("elasticsearchConsistency", elasticsearchConsistencyHealthCheck);
             metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
+
+        configureDropwizardMetrics(configuration, environment);
 
         // Indexes Elasticsearch if mappings don't exist when the application is started
         environment.lifecycle().addServerLifecycleListener(event -> {
@@ -542,6 +595,41 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 LOG.info("Elasticsearch indices already exist");
             }
         });
+    }
+
+    /**
+     * Instrument the webservice to output metrics
+     * @param configuration
+     * @param environment
+     */
+    private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
+        this.metricRegistry = new MetricRegistry();
+
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new Gauge() {
+            @Override
+            public Object getValue() {
+                final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
+                return ((double) activeConnections / configuration.getDataSourceFactory().getMaxSize()) * PERCENT;
+            }
+        });
+
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_ACTIVE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_SIZE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_SIZE).getValue());
+        metricRegistry.registerGauge(
+            IO_DROPWIZARD_DB_HIBERNATE_IDLE, () -> (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_IDLE).getValue());
+
+        ScheduledReporter reporter;
+        if (configuration.isLocalCloudWatchMetrics()) {
+            reporter = ConsoleReporter.forRegistry(metricRegistry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build();
+        } else {
+            reporter = new CloudWatchMetricsReporter(metricRegistry, "CloudWatchMetricsReporter", MetricFilter.ALL, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, configuration.getExternalConfig());
+        }
+        reporter.start(1, TimeUnit.MINUTES);
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -630,6 +718,43 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             SourceFile.restrictPaths(regex, violationMessage);
         } else {
             SourceFile.unrestrictPaths();
+        }
+    }
+
+    private static class LogPrivilegedEndpointsListener implements ApplicationEventListener {
+
+        @Override
+        public void onEvent(ApplicationEvent event) {
+            if (event.getType() == ApplicationEvent.Type.INITIALIZATION_APP_FINISHED) {
+                StringBuilder builder = new StringBuilder();
+                List<String> roles = SimpleAuthorizer.ROLES;
+                for (Resource resource: event.getResourceModel().getResources()) {
+                    formatResource(builder, "/", resource, roles);
+                }
+                LOG.info(String.format("Endpoints that allow a role in %s:\n%s", roles, builder.toString()));
+            }
+        }
+
+        private void formatResource(StringBuilder builder, String parentPath, Resource resource, List<String> selectRoles) {
+            String path = joinPaths(parentPath, resource.getPath());
+            for (ResourceMethod resourceMethod: resource.getAllMethods()) {
+                RolesAllowed rolesAllowed = resourceMethod.getInvocable().getHandlingMethod().getAnnotation(RolesAllowed.class);
+                if (rolesAllowed != null && !Collections.disjoint(Set.of(rolesAllowed.value()), selectRoles)) {
+                    builder.append(String.format("    %s %s %s\n", resourceMethod.getHttpMethod(), path, rolesAllowed));
+                }
+            }
+            for (Resource child: resource.getChildResources()) {
+                formatResource(builder, path, child, selectRoles);
+            }
+        }
+
+        private String joinPaths(String parentPath, String childPath) {
+            return "/" + Stream.concat(Arrays.stream(parentPath.split("/")), Arrays.stream(childPath.split("/"))).filter(s -> s.length() > 0).collect(Collectors.joining("/"));
+        }
+
+        @Override
+        public RequestEventListener onRequest(RequestEvent requestEvent) {
+            return null;
         }
     }
 }
