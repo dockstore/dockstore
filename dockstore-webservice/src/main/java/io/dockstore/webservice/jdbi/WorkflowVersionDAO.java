@@ -98,38 +98,36 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         List<Predicate> predicates = new ArrayList<>();
 
         if (!Strings.isNullOrEmpty(sortCol)) {
+            Path<Object> sortPath;
             if ("open".equalsIgnoreCase(sortCol)) {
-                if ("desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(version.get("versionMetadata").get("publicAccessibleTestParameterFile")), cb.desc(version.get("id")));
-                } else {
-                    query.orderBy(cb.asc(version.get("versionMetadata").get("publicAccessibleTestParameterFile")), cb.asc(version.get("id")));
-                }
-            } else if ("descriptorTypeVersions".equals(sortCol)) {
-                if ("desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(version.get("versionMetadata").get("descriptorTypeVersions")), cb.desc(version.get("id")));
-                } else {
-                    query.orderBy(cb.asc(version.get("versionMetadata").get("descriptorTypeVersions")), cb.asc(version.get("id")));
-                }
+                sortPath = version.get("versionMetadata").get("publicAccessibleTestParameterFile");
+            } else if ("descriptorTypeVersions".equalsIgnoreCase(sortCol)) {
+                sortPath = version.get("versionMetadata").get("descriptorTypeVersions");
             } else {
                 boolean hasSortCol = version.getModel()
                         .getAttributes()
                         .stream()
                         .map(Attribute::getName)
-                        .anyMatch(sortCol::equals);
+                        .anyMatch(sortCol::equalsIgnoreCase);
 
                 if (!hasSortCol) {
                     LOG.error(INVALID_SORTCOL_MESSAGE);
                     throw new CustomWebApplicationException(INVALID_SORTCOL_MESSAGE,
                             HttpStatus.SC_BAD_REQUEST);
 
-                } else {
-                    Path<Object> sortPath = version.get(sortCol);
-                    if ("asc".equalsIgnoreCase(sortOrder)) {
-                        query.orderBy(cb.asc(sortPath), cb.asc(version.get("id")));
-                    } else {
-                        query.orderBy(cb.desc(sortPath), cb.desc(version.get("id")));
-                    }
                 }
+                sortPath = version.get(sortCol);
+            }
+            if ("desc".equalsIgnoreCase(sortOrder)) {
+                query.orderBy(cb.desc(sortPath), cb.desc(version.get("id")));
+            } else {
+                query.orderBy(cb.asc(sortPath), cb.asc(version.get("id")));
+            }
+        } else {
+            if ("desc".equalsIgnoreCase(sortOrder)) {
+                query.orderBy(cb.desc(version.get("id")));
+            } else {
+                query.orderBy(cb.asc(version.get("id")));
             }
         }
         return predicates;
