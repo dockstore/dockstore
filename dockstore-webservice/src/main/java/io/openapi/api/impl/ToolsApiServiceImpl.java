@@ -726,7 +726,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     List<FileWrapper> toolTestsList = new ArrayList<>();
 
                     for (SourceFile file : testSourceFiles) {
-                        String selfPath = computerURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
+                        String selfPath = computeURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
                         FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file, selfPath);
                         toolTests.setImageType(new EmptyImageType());
                         toolTestsList.add(toolTests);
@@ -748,7 +748,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         toolVersion.setContainerfile(true);
                         dockerfile.setDockstoreAbsolutePath(MoreObjects.firstNonNull(potentialDockerfile.get().getAbsolutePath(), ""));
 
-                        String url = computerURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
+                        String url = computeURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
                         dockerfile.setDockstoreSelfUrl(url);
 
                         List<FileWrapper> containerfilesList = new ArrayList<>();
@@ -796,7 +796,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     if (parameterPath == null) {
                         selfPath = selfPath + "/" + encode;
                     }
-                    String url = computerURLFromEntryAndRequestURI(entry.getTrsId(), selfPath);
+                    String url = computeURLFromEntryAndRequestURI(entry.getTrsId(), selfPath);
                     ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, url, sourceFile);
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
@@ -815,7 +815,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param selfPath
      * @return
      */
-    private static String computerURLFromEntryAndRequestURI(String entry, String selfPath) {
+    private static String computeURLFromEntryAndRequestURI(String entry, String selfPath) {
         String url = ToolsImplCommon.getUrlFromId(config, entry);
         return url + selfPath.split(URLEncoder.encode(entry, StandardCharsets.UTF_8))[1];
     }
