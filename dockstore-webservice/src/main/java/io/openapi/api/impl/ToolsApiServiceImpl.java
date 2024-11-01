@@ -726,7 +726,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     List<FileWrapper> toolTestsList = new ArrayList<>();
 
                     for (SourceFile file : testSourceFiles) {
-                        String selfPath = value.getUriInfo().getRequestUri().toASCIIString();
+                        String selfPath = computerURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
                         FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file, selfPath);
                         toolTests.setImageType(new EmptyImageType());
                         toolTestsList.add(toolTests);
@@ -747,8 +747,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         dockerfile.setImageType(new EmptyImageType());
                         toolVersion.setContainerfile(true);
                         dockerfile.setDockstoreAbsolutePath(MoreObjects.firstNonNull(potentialDockerfile.get().getAbsolutePath(), ""));
-                        String selfPath = value.getUriInfo().getRequestUri().toASCIIString();
-                        dockerfile.setDockstoreSelfUrl(selfPath);
+
+                        String url = computerURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
+                        dockerfile.setDockstoreSelfUrl(url);
 
                         List<FileWrapper> containerfilesList = new ArrayList<>();
                         containerfilesList.add(dockerfile);
@@ -791,10 +792,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         .prependIfMissing(relativize.toString(), "/");
 
                     String encode = URLEncoder.encode(sourceFile.getAbsolutePath(), StandardCharsets.UTF_8);
-                    String selfPath = value.getUriInfo().getRequestUri().toASCIIString() + "/" + encode;
-
-
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, parameterPath == null ? selfPath : value.getUriInfo().getRequestUri().toASCIIString(), sourceFile);
+                    String selfPath = value.getUriInfo().getRequestUri().toASCIIString();
+                    if (parameterPath == null) {
+                        selfPath = selfPath + "/" + encode;
+                    }
+                    String url = computerURLFromEntryAndRequestURI(entry.getTrsId(), selfPath);
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, url, sourceFile);
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
@@ -803,6 +806,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } finally {
             versionDAO.disableNameFilter();
         }
+    }
+
+    /**
+     * compute a base URL like how we do with TRS tools and then append the rest of the endpoint and parameters using the request uri
+     * this will retain the scheme and basepath which can be messed with by a load balancer or nginx
+     * @param entry
+     * @param selfPath
+     * @return
+     */
+    private static String computerURLFromEntryAndRequestURI(String entry, String selfPath) {
+        String url = ToolsImplCommon.getUrlFromId(config, entry);
+        return url + selfPath.split(URLEncoder.encode(entry, StandardCharsets.UTF_8))[1];
     }
 
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {

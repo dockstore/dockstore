@@ -7,7 +7,7 @@
   ],
   "content": "potato",
   "dockstore_absolute_path": "/Dockstore.cwl",
-  "dockstore_self_url": "http://localhost:8080/ga4gh/trs/v2/tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl",
+  "dockstore_self_url": "http://localhost:8080/api/ga4gh/trs/v2/tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl",
   "image_type": {},
   "url": "https://raw.githubusercontent.com/test/test6/fakeReference//Dockstore.cwl"
 }
