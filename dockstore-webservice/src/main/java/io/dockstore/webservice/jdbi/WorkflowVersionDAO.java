@@ -52,29 +52,18 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
     }
 
-    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol) {
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol, boolean excludeHidden) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<WorkflowVersion> query = criteriaQuery();
         Root<WorkflowVersion> version = query.from(WorkflowVersion.class);
 
         List<Predicate> predicates = processQuery(sortCol, sortOrder, cb, query, version);
         predicates.add(cb.equal(version.get("parent").get("id"), workflowId));
+        if (excludeHidden) {
+            predicates.add(cb.isFalse(version.get("versionMetadata").get("hidden")));
+        }
         query.where(predicates.toArray(new Predicate[]{}));
         query.select(version);
-
-        TypedQuery<WorkflowVersion> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
-        return typedQuery.getResultList();
-    }
-
-    public List<WorkflowVersion> getPublicWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol) {
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<WorkflowVersion> query = criteriaQuery();
-        Root<WorkflowVersion> version = query.from(WorkflowVersion.class);
-
-        List<Predicate> predicates = processQuery(sortCol, sortOrder, cb, query, version);
-        predicates.add(cb.equal(version.get("parent").get("id"), workflowId));
-        predicates.add(cb.isFalse(version.get("versionMetadata").get("hidden")));
-        query.where(predicates.toArray(new Predicate[]{}));
 
         TypedQuery<WorkflowVersion> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
         return typedQuery.getResultList();
@@ -97,12 +86,14 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version) {
         List<Predicate> predicates = new ArrayList<>();
 
+        Path<Object> versionId = version.get("id");
         if (!Strings.isNullOrEmpty(sortCol)) {
             Path<Object> sortPath;
+            Path<Object> versionMetadata = version.get("versionMetadata");
             if ("open".equalsIgnoreCase(sortCol)) {
-                sortPath = version.get("versionMetadata").get("publicAccessibleTestParameterFile");
+                sortPath = versionMetadata.get("publicAccessibleTestParameterFile");
             } else if ("descriptorTypeVersions".equalsIgnoreCase(sortCol)) {
-                sortPath = version.get("versionMetadata").get("descriptorTypeVersions");
+                sortPath = versionMetadata.get("descriptorTypeVersions");
             } else {
                 boolean hasSortCol = version.getModel()
                         .getAttributes()
@@ -119,15 +110,15 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 sortPath = version.get(sortCol);
             }
             if ("desc".equalsIgnoreCase(sortOrder)) {
-                query.orderBy(cb.desc(sortPath), cb.desc(version.get("id")));
+                query.orderBy(cb.desc(sortPath), cb.desc(versionId));
             } else {
-                query.orderBy(cb.asc(sortPath), cb.asc(version.get("id")));
+                query.orderBy(cb.asc(sortPath), cb.asc(versionId));
             }
         } else {
             if ("desc".equalsIgnoreCase(sortOrder)) {
-                query.orderBy(cb.desc(version.get("id")));
+                query.orderBy(cb.desc(versionId));
             } else {
-                query.orderBy(cb.asc(version.get("id")));
+                query.orderBy(cb.asc(versionId));
             }
         }
         return predicates;

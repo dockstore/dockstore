@@ -7607,7 +7607,7 @@ paths:
         name: sortCol
         schema:
           type: string
-          default: dbCreateDate
+          default: lastModified
       - in: query
         name: sortOrder
         schema:

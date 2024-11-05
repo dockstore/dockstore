@@ -48,6 +48,7 @@ import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -532,8 +533,18 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
-        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion =
+        WorkflowVersion workflowVersion =
                 openApiWorkflowApi.getWorkflowVersions(workflow.getId(), null, null, null, null).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+
+        // test hidden workflows get excluded in the public versions endpoint
+        workflowVersion.setHidden(true);
+        List<WorkflowVersion> publicVersions = openApiWorkflowApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
+        assertEquals(0, publicVersions.size());
+
+        workflowVersion.setHidden(false);
+        publicVersions = openApiWorkflowApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
+        assertEquals(1, publicVersions.size());
+
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
         assertEquals(TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
