@@ -538,10 +538,12 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // test hidden workflows get excluded in the public versions endpoint
         workflowVersion.setHidden(true);
+        workflow = workflowApi.getWorkflow(workflow.getId(), "");
         List<WorkflowVersion> publicVersions = openApiWorkflowApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
         assertEquals(0, publicVersions.size());
 
         workflowVersion.setHidden(false);
+        workflow = workflowApi.getWorkflow(workflow.getId(), "");
         publicVersions = openApiWorkflowApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
         assertEquals(1, publicVersions.size());
 
