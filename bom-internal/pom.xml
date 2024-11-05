@@ -80,7 +80,7 @@ POM as their parent.
         <cromwell.version>85</cromwell.version>
         <jackson.version>2.18.0</jackson.version>
         <docker-client.version>3.3.6</docker-client.version>
-        <system-stubs.version>2.0.1</system-stubs.version>
+        <system-stubs.version>2.1.7</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
         <moneta.version>1.4.2</moneta.version>
