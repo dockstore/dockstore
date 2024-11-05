@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 
 import com.codahale.metrics.annotation.Timed;
@@ -76,6 +77,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -421,13 +425,15 @@ public class DockerRepoResource
         }
 
         originalTool.setForumUrl(newTool.getForumUrl());
+        // Only manual topics can be updated by users. Automatic and AI topics are not submitted by users
         originalTool.setTopicManual(newTool.getTopicManual());
-        originalTool.setTopicAI(newTool.getTopicAI());
         // Update topic selection if it's a non-hosted tool, or if it's a hosted tool and the new topic selection is not automatic.
         // Hosted tools don't have a source control thus cannot have an automatic topic.
         if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED) || (Objects.equals(originalTool.getMode(), ToolMode.HOSTED) && newTool.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             originalTool.setTopicSelection(newTool.getTopicSelection());
         }
+
+        originalTool.setApprovedAITopic(newTool.isApprovedAITopic());
 
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());
@@ -513,16 +519,6 @@ public class DockerRepoResource
         return tools;
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/schema/{containerId}/published")
-    @Operation(operationId = "getPublishedContainerSchema", description = "Get a published tool's schema by ID.")
-    @ApiOperation(value = "Get a published tool's schema by ID.", notes = "NO authentication", responseContainer = "List")
-    public List getPublishedContainerSchema(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
-        return toolDAO.findPublishedSchemaById(containerId);
-    }
-
     @POST
     @Timed
     @UnitOfWork
@@ -599,7 +595,7 @@ public class DockerRepoResource
             final long l = tagDAO.create(tag);
             Tag byId = tagDAO.findById(l);
             createdTags.add(byId);
-            this.eventDAO.createAddTagToEntryEvent(user, tool, byId);
+            this.eventDAO.createAddTagToEntryEvent(Optional.of(user), tool, byId);
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
@@ -729,7 +725,7 @@ public class DockerRepoResource
 
         Workflow checker = tool.getCheckerWorkflow();
 
-        final User foundUser = userDAO.findById(user.getId());
+        final Optional<User> foundUser = Optional.of(userDAO.findById(user.getId()));
         if (request.getPublish()) {
             if (tool.isPrivateAccess()) {
                 // Check that either tool maintainer email or author email is not null
@@ -790,15 +786,14 @@ public class DockerRepoResource
         "containers"}, notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> allPublishedContainers(
         @ApiParam(value = "Start index of paging. If not specified in the request, this will start at the beginning of the results.",
-                defaultValue = "0") @DefaultValue("0") @QueryParam("offset") Integer offset,
+                defaultValue = "0") @Min(0) @DefaultValue("0") @QueryParam("offset") Integer offset,
         @ApiParam(value = "Amount of records to return in a given page, limited to "
-            + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
-        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
-        List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
+        List<Tool> tools = toolDAO.findAllPublished(offset, limit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
@@ -816,6 +811,7 @@ public class DockerRepoResource
     public List<Tool> getPublishedContainerByPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, true);
+        checkNotNull(tools, "Invalid repository path");
         filterContainersForHiddenTags(tools);
         checkCanRead(null, tools);
         return tools;
@@ -832,6 +828,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
+        checkNotNull(tools, "Invalid repository path");
         tools.forEach(tool -> checkCanExamine(user, tool));
         return tools;
     }
@@ -948,8 +945,9 @@ public class DockerRepoResource
     @Operation(operationId = "secondaryDescriptors", description = "Get a list of secondary descriptor files.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+    public List<SourceFile> secondaryDescriptors(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Tool id") @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @Parameter(description = "Descriptor language") @NotNull @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
@@ -961,9 +959,9 @@ public class DockerRepoResource
     @Operation(operationId = "getTestParameterFiles", description = "Get the corresponding test parameter files.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+    public List<SourceFile> getTestParameterFiles(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Tool id") @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
+        @Parameter(description = "Descriptor Type") @NotNull @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
         final FileType testParameterType = descriptorLanguage.getTestParamType();
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
     }

@@ -213,7 +213,9 @@ public class LambdaEvent {
         PUSH,
         DELETE,
         INSTALL,
-        PUBLISH
+        UNINSTALL,
+        PUBLISH,
+        RELEASE
     }
 
     public static String createDeliveryId() {

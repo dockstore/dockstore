@@ -164,6 +164,11 @@ public class SourceFile implements Comparable<SourceFile> {
     @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
 
+    @Column(columnDefinition = "VARCHAR(255) default 'COMPLETE'", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "Enumerates the file state", requiredMode = RequiredMode.REQUIRED)
+    private State state = State.COMPLETE;
+
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
@@ -295,7 +300,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).add("state", state).toString();
     }
 
     public boolean isFrozen() {
@@ -306,12 +311,43 @@ public class SourceFile implements Comparable<SourceFile> {
         this.frozen = frozen;
     }
 
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
     public SourceFileMetadata getMetadata() {
         return metadata;
     }
 
     public void setMetadata(final SourceFileMetadata metadata) {
         this.metadata = metadata;
+    }
+
+    /**
+     * Copy content/attributes from the specified SourceFile to this SourceFile,
+     * except for "Hibernate-managed" fields such as the ID and creation/update dates.
+     */
+    public void updateFrom(SourceFile src) {
+        setType(src.getType());
+        setContent(src.getContent());
+        setPath(src.getPath());
+        setAbsolutePath(src.getAbsolutePath());
+        setState(src.getState());
+        getMetadata().setTypeVersion(src.getMetadata().getTypeVersion());
+    }
+
+    public SourceFile duplicate() {
+        SourceFile file = new SourceFile();
+        file.updateFrom(this);
+        return file;
+    }
+
+    public static LimitedSourceFileBuilder.FirstStep limitedBuilder() {
+        return new LimitedSourceFileBuilder().start();
     }
 
     private static synchronized void checkPath(String path) {
@@ -348,5 +384,21 @@ public class SourceFile implements Comparable<SourceFile> {
         private Timestamp dbCreateDate;
 
         // There is no dbupdatedate because it doesn't work with @Embeddable nor @ElementCollection
+    }
+
+    public enum State {
+        /**
+         * The full file body is stored in the SourceFile's content field.
+         */
+        COMPLETE,
+        /**
+         * The file body is not stored.
+         * The content field contains a message describing why the file's body is not stored.
+         */
+        NOT_STORED,
+        /**
+         * The file represents a stub.  The content field is null.
+         */
+        STUB
     }
 }

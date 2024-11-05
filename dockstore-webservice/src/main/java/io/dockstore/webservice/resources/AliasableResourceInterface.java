@@ -67,9 +67,9 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      * @param user user authenticated to issue a DOI for the workflow
      * @param blockAliasesWithZenodoFormat block creation of an alias with a particular format
      */
-    static void checkAliases(Set<String>  aliases, User user, boolean blockAliasesWithZenodoFormat) {
+    static void checkAliases(Set<String>  aliases, Optional<User> user, boolean blockAliasesWithZenodoFormat) {
         // Admins and curators do not have restrictions on alias format
-        if (user.isCurator() || user.getIsAdmin()) {
+        if (user.isPresent() && (user.get().isCurator() || user.get().getIsAdmin())) {
             return;
         }
         checkAliasFormat(aliases, blockAliasesWithZenodoFormat);
@@ -137,7 +137,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
-        checkAliases(newAliases, user, blockFormat);
+        checkAliases(newAliases, Optional.of(user), blockFormat);
 
         Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
         if (!duplicateAliasesToAdd.isEmpty()) {

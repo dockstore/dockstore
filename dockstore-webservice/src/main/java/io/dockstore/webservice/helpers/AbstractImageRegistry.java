@@ -548,7 +548,7 @@ public abstract class AbstractImageRegistry {
                     tag.setParent(tool);
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
-                    eventDAO.createAddTagToEntryEvent(user, tool, tag);
+                    eventDAO.createAddTagToEntryEvent(Optional.ofNullable(user), tool, tag);
                     tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
@@ -756,8 +756,7 @@ public abstract class AbstractImageRegistry {
             List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
-                    oldFile.setContent(newFile.getContent());
-                    oldFile.getMetadata().setTypeVersion(newFile.getMetadata().getTypeVersion());
+                    oldFile.updateFrom(newFile);
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -900,28 +899,24 @@ public abstract class AbstractImageRegistry {
             if (f != DescriptorLanguage.FileType.CWL_TEST_JSON && f != DescriptorLanguage.FileType.WDL_TEST_JSON && f != DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
                 String fileResponse = sourceCodeRepo.readGitRepositoryFile(repositoryId, f, tag, null);
                 if (fileResponse != null) {
-                    SourceFile dockstoreFile = new SourceFile();
-                    dockstoreFile.setType(f);
-                    dockstoreFile.setContent(fileResponse);
+                    String path;
                     if (f == DescriptorLanguage.FileType.DOCKERFILE) {
-                        dockstoreFile.setPath(tag.getDockerfilePath());
-                        dockstoreFile.setAbsolutePath(tag.getDockerfilePath());
+                        path = tag.getDockerfilePath();
                     } else if (f == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
-                        dockstoreFile.setPath(tag.getCwlPath());
-                        dockstoreFile.setAbsolutePath(tag.getCwlPath());
+                        path = tag.getCwlPath();
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getCwlPath());
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, path);
                         files.addAll(importedFiles.values());
                     } else if (f == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                        dockstoreFile.setPath(tag.getWdlPath());
-                        dockstoreFile.setAbsolutePath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getWdlPath());
+                        path = tag.getWdlPath();
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, path);
                         files.addAll(importedFiles.values());
                     } else {
                         //TODO add nextflow work here
                         LOG.error("file type not implemented yet");
                         continue;
                     }
+                    SourceFile dockstoreFile = SourceFile.limitedBuilder().type(f).content(fileResponse).paths(path).build();
                     files.add(dockstoreFile);
                 }
             } else {
@@ -935,11 +930,7 @@ public abstract class AbstractImageRegistry {
     }
 
     private SourceFile createSourceFile(String path, DescriptorLanguage.FileType type) {
-        SourceFile sourcefile = new SourceFile();
-        sourcefile.setPath(path);
-        sourcefile.setAbsolutePath(path);
-        sourcefile.setType(type);
-        return sourcefile;
+        return SourceFile.limitedBuilder().type(type).content(null).paths(path).build();
     }
 
     /**

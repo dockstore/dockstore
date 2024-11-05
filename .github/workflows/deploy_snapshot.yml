@@ -85,7 +85,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -105,7 +105,7 @@ jobs:
 
       # deploy database documentation and also verify that non-confidential migrations seem sane
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
       - name: Generate database documentation  
         run: | 
           rm dockstore-webservice/target/dockstore-webservice-*sources.jar || true

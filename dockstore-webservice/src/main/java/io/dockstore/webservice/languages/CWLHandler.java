@@ -552,7 +552,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     private <T> T parseWithClass(Object obj, Class<T> klass, String description) {
         if (obj instanceof Map) {
-            Gson gson = CWL.getTypeSafeCWLToolDocument();
+            Gson gson = CWL.getTypeSafeCWLToolDocument().newBuilder().serializeSpecialFloatingPointValues().create();
             Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj, "in the requirements/hints of " + description);
             return gson.fromJson(gson.toJson(map), klass);
         } else {

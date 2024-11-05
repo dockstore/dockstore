@@ -32,8 +32,8 @@ executors:
           - discovery.type: single-node
     resource_class: medium+
   machine_integration_test_exec:
-    machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
-      image: ubuntu-2204:2023.10.1
+    machine: # run the steps with Ubuntu VM
+      image: ubuntu-2204:2024.04.4
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -53,6 +53,10 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
+      - full_build_check:
+          <<: *common_filters
+          requires:
+            - build
       - unit_test:
           <<: *common_filters
           requires:
@@ -60,28 +64,32 @@ workflows:
       - workflow-integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - full_build_check
           context: sonarcloud
       - bitbucket-tests:
           <<: *common_filters
           requires:
-            - build
+            - full_build_check
       - language-parsing-tests:
           <<: *common_filters
           requires:
-            - build
+            - full_build_check
       - localstack-tests:
           <<: *common_filters
           requires:
-            - build
+            - full_build_check
+      - hoverfly-tests:
+          <<: *common_filters
+          requires:
+            - full_build_check
       - tool-integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - full_build_check
       - integration-tests:
           <<: *common_filters
           requires:
-            - build
+            - full_build_check
       - regression-integration-tests:
           filters:
             branches:
@@ -89,7 +97,7 @@ workflows:
                 - master
                 - /^release.*$/
           requires:
-            - build
+            - full_build_check
       - sonar-cloud:
           <<: *common_filters
           requires:
@@ -98,11 +106,33 @@ workflows:
             - bitbucket-tests
             - language-parsing-tests
             - localstack-tests
+            - hoverfly-tests
             - tool-integration-tests
             - integration-tests
             - regression-integration-tests
           context: sonarcloud
+
 jobs:
+  full_build_check:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+    steps:
+      - checkout
+      - run:
+          name: evaluate [skipTests] condition
+          command: |
+            export COMMIT_MESSAGE="$(git log --format=oneline -n 1 $CIRCLE_SHA1)"
+            echo "Commit message: $COMMIT_MESSAGE"
+            if [[ $CIRCLE_BRANCH == "develop" ]]; then
+              echo "On develop branch: ignoring [skipTests] check to ensure the full build is run."
+              exit 0
+            fi
+            if [[ $COMMIT_MESSAGE =~ ^.*\[skipTests\].*$ ]]; then
+              echo "Found [skipTests]: failing this check to skip subsequent CircleCI tests."
+              exit 1
+            else
+              echo "Did not find [skipTests]: continue running subsequent CircleCI tests."
+            fi
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
@@ -177,11 +207,7 @@ jobs:
       - run:
           name: build sam-cli
           command: |
-            # workaround https://github.com/aws/aws-sam-cli/issues/3791#issuecomment-1096604840
-            pip3 install Jinja2==2.11.3
-            pip3 install wheel \
-            && pip3 install --no-build-isolation "Cython<3" "pyyaml==5.4.1"
-            pip3 install aws-sam-cli==1.52.0 
+            pip3 install aws-sam-cli==1.121.0
             sudo apt install unzip
             wget -O wdl-parsing.zip https://github.com/dockstore/lambda/releases/download/0.2.2-SNAPSHOT/wdl-parsing.zip
             unzip wdl-parsing.zip
@@ -212,6 +238,18 @@ jobs:
       - setup_test
       - setup_postgres_docker
       - setup_integration_test
+      - save_test_results
+  hoverfly-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: hoverfly-tests
+      DOCKSTORE_DOCKER_DB: true
+    steps:
+      - setup_test
+      - install-postgres
+      - setup_postgres
+      - setup_integration_test:
+          use_hoverfly_cert: true
       - save_test_results
   build:
     docker: # run the steps with Docker
@@ -249,6 +287,25 @@ jobs:
             # skip swagger validation because of difficult-to-fix operationId duplications
             # java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
             java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+      - run:
+          name: Check Java imports sorted and OpenAPI
+          # A dirty Java file after a build probably means it was committed without building, and its imports are out of order
+          command: |
+            if [[ $(git diff --name-only | grep "\.java$") != '' ]]; then
+              echo "At least one Java file didn't have its imports sorted"
+              git diff --stat | grep "\.java$"
+              exit 1
+            fi
+            # SEAB-6379, openapi check will fail on build of a tag
+            if [[ -z "${CIRCLE_TAG}" ]]; then
+              echo "Checking openapi.yaml"
+              if [[ $(git diff --name-only | grep "openapi.yaml") != '' ]]; then
+                echo "openapi.yaml is out of sync"
+                git diff --stat | grep "openapi.yaml"
+                exit 1
+              fi
+            fi
+
       - persist_to_workspace:
           root: .
           paths:
@@ -344,14 +401,11 @@ jobs:
               touch /tmp/non-confidential-tests-to-run.txt
               cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             
-              # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-              /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
-            
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
-              -Dtest=`cat /tmp/non-confidential-tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false -Djavax.net.ssl.trustStorePassword=changeit  -ntp | grep  -v "^Running Changeset:"         
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage \
+              -Dtest=`cat /tmp/non-confidential-tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false -ntp | grep  -v "^Running Changeset:"         
             else 
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
-              -Djavax.net.ssl.trustStorePassword=changeit  -ntp | grep  -v "^Running Changeset:"      
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage \
+              -ntp | grep  -v "^Running Changeset:"      
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - setup_codecov_uploader
@@ -394,24 +448,11 @@ jobs:
           path: keysmap.list
       - persist_coverage
       - run:
-          name: Make jar directory
-          command: mkdir /tmp/artifacts
-      - run:
-          name: Move jars
-          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
-      - run:
-          name: Move swagger.yaml
-          command: |
-            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
-            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
-      - run:
           name: Move cache miss log
           command: |
             mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
             cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
-      - store_artifacts:
-          path: /tmp/artifacts
       - persist_to_workspace:
           root: .
           paths:
@@ -544,6 +585,10 @@ commands:
             - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-
             - dockstore-web-cache-
   setup_integration_test:
+    parameters:
+      use_hoverfly_cert:
+        type: boolean
+        default: false
     steps:
       - run:
           name: decrypt and expand confidential test data
@@ -569,18 +614,41 @@ commands:
             java -version
             ./mvnw -v
             python3 -V
-      - run:
-          name: run integration test
-          command: |  # Runs normally if it is not being run in parallel
-            export DOCKSTORE_CACHE_MIGRATIONS=true
-            if [ $CIRCLE_NODE_TOTAL != 1 ] 
-            then
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-              clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
-            else 
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
-            fi
-          # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+      - when:
+          condition: <<parameters.use_hoverfly_cert>>
+          steps:
+            - run:
+                name: run integration test with hoverfly cert
+                command: |                  
+                  # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
+                  /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+                  
+                  if [ $CIRCLE_NODE_TOTAL != 1 ] 
+                  then
+                    ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+                    clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false -Djavax.net.ssl.trustStore=../LocalTrustStore \
+                    -Djavax.net.ssl.trustStorePassword=changeit | grep  -v "^Running Changeset:"
+                  else
+                    ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp -Djavax.net.ssl.trustStore=../LocalTrustStore \
+                    -Djavax.net.ssl.trustStorePassword=changeit | grep  -v "^Running Changeset:"
+                  fi
+      - when:
+          condition:
+            not: <<parameters.use_hoverfly_cert>>
+          steps:
+            - run:
+                name: run integration test
+                command: |  # Runs normally if it is not being run in parallel
+                  export DOCKSTORE_CACHE_MIGRATIONS=true
+                  
+                  if [ $CIRCLE_NODE_TOTAL != 1 ] 
+                  then
+                    ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+                    clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+                  else 
+                    ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
+                  fi
+                # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - setup_codecov_uploader
       - run:
           name: send coverage

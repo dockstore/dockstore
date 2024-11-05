@@ -184,7 +184,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             tag.setParent(tool);
             final long tagId = tagDAO.create(tag);
             Tag byId = tagDAO.findById(tagId);
-            this.eventDAO.createAddTagToEntryEvent(user, tool, byId);
+            this.eventDAO.createAddTagToEntryEvent(Optional.of(user), tool, byId);
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 

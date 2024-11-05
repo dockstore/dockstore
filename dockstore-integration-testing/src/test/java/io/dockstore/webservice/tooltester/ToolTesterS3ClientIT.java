@@ -27,7 +27,6 @@ import static io.dockstore.webservice.core.tooltester.ObjectMetadataEnum.VERSION
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import cloud.localstack.ServiceName;
-import cloud.localstack.awssdkv2.TestUtils;
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.common.collect.Maps;
@@ -57,7 +56,7 @@ class ToolTesterS3ClientIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client for testing
+        s3Client = S3ClientHelper.createS3Client(LocalStackTestUtilities.ENDPOINT_OVERRIDE);
         toolTesterS3Client = new ToolTesterS3Client(BUCKET_NAME, s3Client);
 
         // Create a bucket to be used for tests

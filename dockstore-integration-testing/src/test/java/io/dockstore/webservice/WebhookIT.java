@@ -2,12 +2,13 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.LAMBDA_ERROR;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubBranchDeletion;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstallation;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubTaggedRelease;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubUninstallation;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -34,6 +35,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.ValidationConstants;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.MetadataApi;
@@ -43,7 +45,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.Entry;
 import io.dockstore.openapi.client.model.LambdaEvent;
-import io.dockstore.openapi.client.model.OrcidAuthorInformation;
+import io.dockstore.openapi.client.model.LambdaEvent.TypeEnum;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
@@ -65,10 +67,9 @@ import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.client.JerseyClientBuilder;
-import io.specto.hoverfly.junit.core.Hoverfly;
-import io.specto.hoverfly.junit.core.HoverflyMode;
 import jakarta.ws.rs.client.Client;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -84,6 +85,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -358,22 +360,22 @@ class WebhookIT extends BaseIT {
         handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.INSTALL, true); // There should be no entry name
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.INSTALL, true); // There should be no entry name
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.1 on GitHub - one new wdl workflow
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, tag01, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag01, foobarWorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, tag01, foobarWorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, tag02, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobarWorkflowName, true);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobar2WorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, tag02, foobarWorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, tag02, foobar2WorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Delete tag 0.2
@@ -381,8 +383,8 @@ class WebhookIT extends BaseIT {
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         // Delete events should have the names of workflows that had a version deleted
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobarWorkflowName, true);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobar2WorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.DELETE, tag02, foobarWorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.DELETE, tag02, foobar2WorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
@@ -390,8 +392,8 @@ class WebhookIT extends BaseIT {
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         // There should be two push events, one failed event for workflow 'foobar' and one successful event for workflow 'foobar2'
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobarWorkflowName, false);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobar2WorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, branchInvalidDockstoreYml, foobarWorkflowName, false);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, branchInvalidDockstoreYml, foobar2WorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
@@ -399,7 +401,7 @@ class WebhookIT extends BaseIT {
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         // Should only have no entry name because the error is for the whole .dockstore.yml
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchDifferentLanguagesWithSameWorkflowName, null, false);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, branchDifferentLanguagesWithSameWorkflowName, null, false);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release using the repository "dockstore-testing/test-workflows-and-tools" which registers 1 unpublished tool and 1 published workflow
@@ -407,9 +409,9 @@ class WebhookIT extends BaseIT {
         handleGitHubRelease(workflowsApi, DockstoreTesting.TEST_WORKFLOWS_AND_TOOLS, tag10, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, null, true);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "md5sum", true);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, null, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, tag10, null, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, tag10, "md5sum", true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUBLISH, tag10, null, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/invalidToolName. There is one successful workflow and one failed tool with an invalid name
@@ -420,9 +422,17 @@ class WebhookIT extends BaseIT {
         // There should be two push events, one successful event for the workflow and one failed event for the tool
         final String workflowName = null;
         final String toolName = "md5sum/with/slashes";
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, workflowName, true);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, toolName, false);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, invalidToolNameBranch, workflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.PUSH, invalidToolNameBranch, toolName, false);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Track uninstall event
+        handleGitHubUninstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
+        assertEntryNameInNewestLambdaEvent(orgEvents, TypeEnum.UNINSTALL, true); // There should be no entry name
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
     }
 
     /**
@@ -431,7 +441,7 @@ class WebhookIT extends BaseIT {
      * @param lambdaEventType
      * @param expectedIsSuccess
      */
-    private void assertEntryNameInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, LambdaEvent.TypeEnum lambdaEventType, boolean expectedIsSuccess) {
+    private void assertEntryNameInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, TypeEnum lambdaEventType, boolean expectedIsSuccess) {
         // Filter lambda events to the ones that are applicable
         List<LambdaEvent> filteredLambdaEvents = lambdaEvents.stream().filter(event -> lambdaEventType == event.getType()).toList();
         assertFalse(filteredLambdaEvents.isEmpty(), String.format("Should have at least 1 %s lambda event", lambdaEventType));
@@ -449,7 +459,7 @@ class WebhookIT extends BaseIT {
      * @param entryName
      * @param expectedIsSuccess
      */
-    private void assertEntryNameInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, LambdaEvent.TypeEnum lambdaEventType, String gitReference, String entryName, boolean expectedIsSuccess) {
+    private void assertEntryNameInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, TypeEnum lambdaEventType, String gitReference, String entryName, boolean expectedIsSuccess) {
         // Filter lambda events to the ones that are applicable
         List<LambdaEvent> filteredLambdaEvents = lambdaEvents.stream()
                 .filter(event -> lambdaEventType == event.getType() && gitReference.equals(event.getReference()) && Objects.equals(entryName, event.getEntryName()))
@@ -514,6 +524,9 @@ class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set licensename=null");
         // Unset topicAutomatic to simulate a topicAutomatic change
         testingPostgres.runUpdateStatement("update workflow set topicAutomatic=null");
+        // Unset file contents to simulate changed file descriptors
+        testingPostgres.runUpdateStatement("update sourcefile set content=''");
+
         // Branch master on GitHub - updates two existing workflows
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/heads/master", USER_2_USERNAME);
         List<Workflow> workflows = new ArrayList<>();
@@ -718,45 +731,6 @@ class WebhookIT extends BaseIT {
         workflow = getFoobarWorkflowDockstoreTesting(client);
         assertEquals("manualTopic", workflow.getDefaultVersion());
         assertEquals(2, workflow.getWorkflowVersions().size());
-    }
-
-    /**
-     * This test relies on Hoverfly to simulate responses from the ORCID API.
-     * In the simulation, the responses are crafted for an ORCID author with ID 0000-0002-6130-1021.
-     * ORCID authors with other IDs are considered "not found" by the simulation.
-     */
-    @Test
-    void testGetWorkflowVersionOrcidAuthors() {
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        ApiClient anonymousWebClient = getAnonymousOpenAPIWebClient();
-        WorkflowsApi anonymousWorkflowsApi = new WorkflowsApi(anonymousWebClient);
-        String wdlWorkflowRepoPath = String.format("github.com/%s/%s", DockstoreTestUser2.TEST_AUTHORS, "foobar");
-
-        // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
-        // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
-        handleGitHubRelease(workflowsApi, DockstoreTestUser2.TEST_AUTHORS, "refs/heads/main", USER_2_USERNAME);
-        // WDL workflow
-        Workflow workflow = workflowsApi.getWorkflowByPath(wdlWorkflowRepoPath, WorkflowSubClass.BIOWORKFLOW, "versions,authors");
-        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
-        assertEquals(2, version.getOrcidAuthors().size());
-
-        // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
-        try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
-            hoverfly.start();
-            hoverfly.simulate(ORCID_SIMULATION_SOURCE);
-            List<OrcidAuthorInformation> orcidAuthorInfo = workflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
-            assertEquals(1, orcidAuthorInfo.size()); // There's 1 OrcidAuthorInfo instead of 2 because only 1 ORCID ID from the version exists on ORCID
-
-            // Publish workflow
-            PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
-            workflowsApi.publish1(workflow.getId(), publishRequest);
-
-            // Check that an unauthenticated user can get the workflow version ORCID authors of a published workflow
-            anonymousWorkflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
-            assertEquals(1, orcidAuthorInfo.size());
-        }
     }
 
     /**
@@ -1086,19 +1060,38 @@ class WebhookIT extends BaseIT {
     }
 
     /**
-     * This tests the GitHub release process does not work for users that do not exist on Dockstore
+     * This tests the GitHub release process works for users that do not exist on Dockstore
      */
     @Test
     void testGitHubReleaseNoWorkflowOnDockstoreNoUser() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
-        try {
-            handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
-            fail("Should not reach this statement.");
-        } catch (ApiException ex) {
-            assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow when user does not exist on Dockstore.");
-        }
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
+        // Test starts from scratch
+        final Long userlessWorkflows = testingPostgres.runSelectStatement(
+                "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
+        assertEquals(1, userlessWorkflows);
+
+        // Test fix for https://ucsc-cgl.atlassian.net/browse/SEAB-5994?focusedCommentId=48145 -- verify that publishing an ownerless workflow no longer throws an exception
+        handleGitHubRelease(client, "dockstore-testing/simple-notebook", "refs/tags/simple-published-v1", "thisisafakeuser");
+    }
+
+    /**
+     * Test that if a webhook committer, but not the sender, is a Dockstore user, the workflow gets added to the commiter
+     */
+    @Test
+    void testGitHubReleaseNoWorkflowSenderNotADockstoreUser() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+        // Only the 1 workflow is in the DB, verify that it has USER_2_USERNAME as a user, even though they were not the sender of the event
+        final String workflowUser = testingPostgres.runSelectStatement(
+                "select username from enduser e where e.id in (select ue.userid from user_entry ue where ue.entryid = (select w.id from workflow w where w.repository = 'workflow-dockstore-yml'))",
+                String.class);
+        assertEquals(USER_2_USERNAME, workflowUser);
+
     }
 
     /**
@@ -1507,7 +1500,7 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflow.getWorkflowVersions().size());
 
         Long userId = usersApi.getUser().getId();
-        List<io.dockstore.openapi.client.model.Workflow> usersAppTools = usersApi.userAppTools(userId);
+        List<Workflow> usersAppTools = usersApi.userAppTools(userId);
         assertEquals(1, usersAppTools.size());
 
         handleGitHubRelease(client, DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS, "refs/heads/invalid-workflow", USER_2_USERNAME);
@@ -1766,6 +1759,16 @@ class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         handleGitHubRelease(client, DockstoreTesting.MULTI_ENTRY, "refs/heads/master", USER_2_USERNAME);
+        assertEquals(2, countWorkflows());
+        assertEquals(2, countTools());
+    }
+
+    @Test
+    void testVersionComment() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTesting.MULTI_ENTRY, "refs/heads/version_comment", USER_2_USERNAME);
         assertEquals(2, countWorkflows());
         assertEquals(2, countTools());
     }
@@ -2034,8 +2037,10 @@ class WebhookIT extends BaseIT {
         assertEquals(TopicSelectionEnum.MANUAL, foobar2.getTopicSelection(), "Topic selection should still be manual");
 
         // Update topic selection to AI for workflow 'foobar'.
+        testingPostgres.runUpdateStatement("update workflow set topicai = 'AI topic' where id = " + foobar.getId());
+        assertFalse(foobar.isApprovedAITopic());
         foobar.setTopicSelection(TopicSelectionEnum.AI);
-        foobar.setTopicAI("AI topic");
+        foobar.setApprovedAITopic(true);
         workflowClient.updateWorkflow(foobar.getId(), foobar);
 
         // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
@@ -2047,11 +2052,13 @@ class WebhookIT extends BaseIT {
         assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
         assertEquals("AI topic", foobar.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, foobar.getTopicSelection(), "Topic selection should remain the same if it was not MANUAL when there's an empty string 'topic'");
+        assertTrue(foobar.isApprovedAITopic());
         foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
         assertNull(foobar2.getTopicManual());
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
         assertEquals(TopicSelectionEnum.AUTOMATIC, foobar2.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
     }
+
     @Test
     void testLambdaEvents() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -2089,4 +2096,126 @@ class WebhookIT extends BaseIT {
             assertEquals("Could not process query due to the invalid sortCol value.", e.getMessage());
         }
     }
+
+    private void assertThrowsApiException(Executable executable, int expectedCode) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(expectedCode, exception.getCode());
+    }
+
+    @Test
+    void testIsSyncingEndpoint() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final EntriesApi entriesApi = new EntriesApi(webClient);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        // Install GitHub App
+        handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+
+        // Register entry and retrieve its ID
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final long id = workflow.getId();
+
+        // Should indicate that the entry is syncing
+        assertTrue(entriesApi.syncStatus(id).isGitHubAppInstalled());
+
+        // Uninstall GitHub App
+        handleGitHubUninstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+
+        // Should indicate that the entry is not syncing
+        assertFalse(entriesApi.syncStatus(id).isGitHubAppInstalled());
+
+        // Install GitHub app
+        handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+
+        // Should indicate that the entry is syncing
+        assertTrue(entriesApi.syncStatus(id).isGitHubAppInstalled());
+
+        // Should indicate that a non-.dockstore.yml entry is not syncing
+        assertFalse(entriesApi.syncStatus(1L).isGitHubAppInstalled());
+
+        // Should error appropriately when querying nonexistent Entry
+        assertThrowsApiException(() -> entriesApi.syncStatus(0x123456789abcdefL).isGitHubAppInstalled(), HttpStatus.SC_NOT_FOUND);
+
+        // Should not be accessible to general public
+        assertThrowsApiException(() -> new EntriesApi(getAnonymousOpenAPIWebClient()).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
+
+        // Should not be accessible to non-owner user
+        assertThrowsApiException(() -> new EntriesApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres)).syncStatus(id).isGitHubAppInstalled(), HttpStatus.SC_UNAUTHORIZED);
+    }
+
+    @Test
+    void testShouldNotBeAbleToRestubDockstoreYmlWorkflow() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        // Register entry and retrieve one of its versions
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+
+        // Should not be able to restub a .dockstore.yml-based workflow
+        assertThrowsApiException(() -> workflowsApi.restub(workflow.getId()), HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testSourceFilesOfVariousSizes() {
+        final String ref = "refs/heads/master";
+        final String versionName = "master";
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        handleGitHubRelease(workflowsApi, DockstoreTesting.SOURCEFILE_TESTING, ref, USER_2_USERNAME);
+
+        assertEquals("", getSourceFile(workflowsApi, ref, "empty", versionName, "/empty.txt").getContent());
+        assertTrue(getSourceFile(workflowsApi, ref, "big_notebook", versionName, "/big_notebook.ipynb").getContent().contains("Hello world!"));
+        assertTrue(getSourceFile(workflowsApi, ref, "huge_utf8", versionName, "/huge_utf8.txt").getContent().contains("Dockstore does not process extremely large files"));
+    }
+
+    private SourceFile getSourceFile(WorkflowsApi workflowsApi, String ref, String entryName, String versionName, String absolutePath) {
+        final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.SOURCEFILE_TESTING + "/" + entryName, WorkflowSubClass.NOTEBOOK, "versions");
+        final WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionName)).findFirst().get();
+        final List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
+        return sourceFiles.stream().filter(file -> Objects.equals(file.getAbsolutePath(), absolutePath)).findFirst().get();
+    }
+
+    @Test
+    void testVersionSourceFileSizeLimit() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        // Register a test workflow that contains some big test files.
+        try {
+            handleGitHubRelease(workflowsApi, "dockstore-testing/large-sourcefiles", "refs/tags/v1_11MB", USER_2_USERNAME);
+            fail("registration should have failed");
+        } catch (ApiException e) {
+            // Expected execution path.
+        }
+        // The last lambda event should correspond to the file-size-induced registration failure.
+        // Its error message could vary according to our current file size limits and editorial tastes, but will likely contain the substring "file".
+        LambdaEvent event = new UsersApi(webClient).getUserGitHubEvents(0, 1, null, null, null).get(0);
+        assertTrue(event.getMessage().contains("file"));
+        assertFalse(event.isSuccess());
+    }
+
+    @Test
+    void testHandleGitHubTaggedRelease() {
+        final ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(openAPIWebClient);
+        handleGitHubRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", USER_2_USERNAME);
+        final Date publishedDate = new Date();
+        handleGitHubTaggedRelease(workflowsApi, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "0.1", publishedDate, USER_2_USERNAME);
+        final List<Workflow> workflows = workflowsApi.getAllWorkflowByPath("github.com/" + DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML);
+        workflows.stream().forEach(w -> assertEquals(publishedDate.getTime(), w.getLatestReleaseDate()));
+        final UsersApi usersApi = new UsersApi(openAPIWebClient);
+        List<LambdaEvent> events = usersApi.getUserGitHubEvents(0, 5, null, null, null);
+        assertEquals(2, events.size()); // One event is the push
+        final LambdaEvent event = events.stream().filter(e -> e.getType() == TypeEnum.RELEASE).findFirst().get();
+        assertEquals(DockstoreTestUser2.DOCKSTORE_TEST_USER_2, event.getOrganization());
+        assertEquals("workflow-dockstore-yml", event.getRepository());
+        assertEquals("refs/tags/0.1", event.getReference());
+        assertTrue(event.isSuccess());
+
+        // Workflow doesn't exist, should still return 2xx
+        handleGitHubTaggedRelease(workflowsApi, "DockstoreTestUser2/UnregisteredWorkflow", "0.1", new Date(), USER_2_USERNAME);
+        assertEquals(3, usersApi.getUserGitHubEvents(0, 5, null, null, null).size());
+    }
+
 }

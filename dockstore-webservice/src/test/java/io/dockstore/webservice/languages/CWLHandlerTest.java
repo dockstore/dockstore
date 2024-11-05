@@ -528,4 +528,21 @@ class CWLHandlerTest {
         final List<String> possibleUrls = cwlHandler.possibleUrlsFromTestParameterFile(jsonObject.get());
         assertEquals(8, possibleUrls.size());
     }
+
+    @Test
+    void testCanHandleNanAndInf() throws IOException {
+        final String cwl = """
+        cwlVersion: v1.0
+        class: Workflow
+        inputs:
+          nan_input: {default: .nan, id: nan_input, type: float}
+          inf_input: {default: .inf, id: inf_input, type: float}
+        outputs:
+        steps:
+            """;
+        final CWLHandler cwlHandler = new CWLHandler();
+        final Set<SourceFile> emptySet = Collections.emptySet();
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        cwlHandler.getContent("/main.cwl", cwl, emptySet, LanguageHandlerInterface.Type.TOOLS, toolDAO);
+    }
 }

@@ -176,11 +176,29 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if the specified value is not null.
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param value value to be checked
+     * @param nullMessage message to be used in thrown Exception
+     */
+    default void checkNotNull(Object value, String nullMessage) {
+        throwIf(value == null, nullMessage, HttpStatus.SC_BAD_REQUEST);
+    }
+
+    /**
      * Check if the specified user owns an entry.
      * If not, throw a {@link CustomWebApplicationException}.
      */
     default void checkIsOwner(User user, Entry<?, ?> entry) {
         throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
+    /**
+     * Check if the specified user owns an entry or is an admin.
+     * If not, throw a {@link CustomWebApplicationException}.
+     */
+    default void checkIsOwnerOrAdmin(User user, Entry<?, ?> entry) {
+        throwIf(!(isOwner(user, entry) || isAdmin(user)), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkNotArchived(Entry<?, ?> entry) {

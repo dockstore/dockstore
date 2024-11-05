@@ -34,6 +34,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
@@ -41,7 +42,6 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -390,28 +390,6 @@ public class ElasticListener implements StateListenerInterface {
         }
     }
 
-    /**
-     * Similar to logic in https://github.com/dockstore/dockstore-ui2/blob/2.10.0/src/app/shared/entry.ts#L171
-     * except it will return a default version even if there is no valid version.
-     * @param entry
-     * @return
-     */
-    private static Version defaultVersionWithFallback(Entry entry) {
-        if (entry.getActualDefaultVersion() != null) {
-            return entry.getActualDefaultVersion();
-        }
-        final Stream<Version> stream = versionStream(entry.getWorkflowVersions());
-        return stream.max(Comparator.comparing(Version::getId)).orElse(null);
-    }
-
-    private static Stream<Version> versionStream(Set<Version> versions) {
-        if (versions.stream().anyMatch(Version::isValid)) {
-            return versions.stream().filter(Version::isValid);
-        } else {
-            return versions.stream();
-        }
-    }
-
     private static Set<Version> detachVersions(final Set<Version> originalWorkflowVersions, final Version defaultVersion) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
@@ -446,11 +424,12 @@ public class ElasticListener implements StateListenerInterface {
         // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
         detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setTopicSelection(entry.getTopicSelection());
+        detachedEntry.setApprovedAITopic(entry.isApprovedAITopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
 
         // Add the detached versions
-        Version defaultVersion = defaultVersionWithFallback(entry);
+        Version defaultVersion = EntryVersionHelper.determineRepresentativeVersion(entry).orElse(null);
         Set<Version> detachedVersions = detachVersions(entry.getWorkflowVersions(), defaultVersion);
         detachedEntry.setWorkflowVersions(detachedVersions);
     }
