@@ -1902,6 +1902,7 @@ public class OrganizationIT extends BaseIT {
         List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
         int versionSize = workflowVersions.size();
         workflowVersions.get(0).setHidden(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
         List<WorkflowVersion> publicWorkflowVersions = workflowsApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
         assertEquals(versionSize - 1, publicWorkflowVersions.size());
 
