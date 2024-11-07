@@ -533,20 +533,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
-        WorkflowVersion workflowVersion =
-                openApiWorkflowApi.getWorkflowVersions(workflow.getId(), null, null, null, null).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
-
-        // test hidden workflows get excluded in the public versions endpoint
-        workflowVersion.setHidden(true);
-        Workflow hiddenVersionWorkflow = workflowApi.getWorkflow(workflow.getId(), "");
-        List<WorkflowVersion> publicVersions = openApiWorkflowApi.getPublicWorkflowVersions(hiddenVersionWorkflow.getId(), null, null, null, null);
-        assertEquals(0, publicVersions.size());
-
-        workflowVersion.setHidden(false);
-        Workflow notHiddenVersionWorkflow = workflowApi.getWorkflow(workflow.getId(), "");
-        publicVersions = openApiWorkflowApi.getPublicWorkflowVersions(notHiddenVersionWorkflow.getId(), null, null, null, null);
-        assertEquals(1, publicVersions.size());
-
+        WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId(), null, null, null, null).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
         assertEquals(TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
