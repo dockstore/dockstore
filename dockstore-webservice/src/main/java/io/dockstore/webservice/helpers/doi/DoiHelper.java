@@ -2,6 +2,7 @@ package io.dockstore.webservice.helpers.doi;
 
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.MetadataResourceHelper;
 
 public final class DoiHelper {
 
@@ -14,12 +15,13 @@ public final class DoiHelper {
 
     public String createDoi(Entry<?, ?> entry) {
         /*
+        // TODO
         String id = computeId(entry);
         String metadata = computeMetadata(id, entry, defaultVersion);
         String url = computeUrl(entry);
         return new EzidDoiRegistrar().createDoi(id, metadata, url);
         */
-        return null;
+        return "10.TODO/TODO";
     }
 
     public static String computeId(Entry<?, ?> entry, Version<?> version) {
@@ -31,6 +33,6 @@ public final class DoiHelper {
     }
 
     public static String computeUrl(Entry<?, ?> entry, Version<?> version) {
-        return "https://www.test.com/";
+        return MetadataResourceHelper.createVersionURL(entry, version);
     }
 }

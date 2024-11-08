@@ -19,8 +19,10 @@ package io.dockstore.webservice.helpers.doi;
 
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import java.io.StringWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -93,8 +95,18 @@ public final class DataCiteHelper {
             writer.writeAttribute("resourceTypeGeneral", "Workflow");
             writer.writeCharacters("Workflow");
             writer.writeEndElement();
-    
-            writer.writeEndElement(); // resource
+
+            if (!entry.getLabels().isEmpty()) {
+                writer.writeStartElement("subjects");
+                for (Label label: entry.getLabels()) {
+                    writer.writeStartElement("subject");
+                    writer.writeCharacters(label.getValue());
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+
+            writer.writeEndElement(); // end resource element
             writer.writeEndDocument();
     
             return s.toString();
@@ -104,23 +116,10 @@ public final class DataCiteHelper {
     }
 
     private static String computePath(Entry<?, ?> entry, Version<?> version) {
-        return "github.com/some-title:%s".formatted(version.getName());  // TODO improve
+        return MetadataResourceHelper.createVersionName(entry, version);
     }
 
     private static String computeDescription(Entry<?, ?> entry, Version<?> version) {
         return StringUtils.firstNonEmpty(version.getDescription(), "None");
     }
-
-    /*
-    public static String createDataCiteXmlMetadataForVersion(Entry<?> entry, Version<?, ?> version) {
-
-        StringBuilder builder = new StringBuilder();
-        builder.append("_target: " + encode("http://www.test.com/") + "\n");
-        builder.append("datacite: " + encode(s.toString()) + "\n");
-        create(args[0], builder.toString());
-    }
-    }
-    */
-    // public static String createDataCiteMetadataForEntry(Entry<?> entry);
-
 }

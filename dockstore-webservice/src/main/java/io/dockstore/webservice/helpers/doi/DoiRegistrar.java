@@ -20,5 +20,4 @@ public interface DoiRegistrar {
 
     String createDoi(String id, String metadata, String target);
     // updateDoi(String id, String metadata, String target);
-    
 }
