@@ -25,12 +25,12 @@ import java.util.Base64;
 import javax.net.ssl.HttpsURLConnection;
 import org.apache.http.HttpStatus;
 
-public class EzidDoiRegistrar implements DoiRegistrar {
+public class EzidDoiService implements DoiService {
 
     private final String user;
     private final String password;
 
-    public EzidDoiRegistrar(String user, String password) {
+    public EzidDoiService(String user, String password) {
         this.user = user;
         this.password = password;
     }

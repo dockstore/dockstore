@@ -10,7 +10,7 @@ public final class DoiHelper {
         String name = computeName(entry, version);
         String url = computeUrl(entry, version);
         String metadata = computeMetadata(name, entry, version);
-        return new DummyDoiRegistrar().createDoi(name, url, metadata);
+        return new DummyDoiService().createDoi(name, url, metadata);
     }
 
     public String createDoi(Entry<?, ?> entry) {
@@ -19,7 +19,7 @@ public final class DoiHelper {
         String id = computeId(entry);
         String metadata = computeMetadata(id, entry, defaultVersion);
         String url = computeUrl(entry);
-        return new EzidDoiRegistrar().createDoi(id, metadata, url);
+        return new EzidDoiService().createDoi(id, metadata, url);
         */
         return "10.TODO/TODO";
     }

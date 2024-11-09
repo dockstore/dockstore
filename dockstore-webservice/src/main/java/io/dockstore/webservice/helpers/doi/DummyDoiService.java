@@ -19,9 +19,9 @@ package io.dockstore.webservice.helpers.doi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DummyDoiRegistrar implements DoiRegistrar {
+public class DummyDoiService implements DoiService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DummyDoiRegistrar.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DummyDoiService.class);
 
     public String createDoi(String name, String url, String metadata) {
         LOG.info("would have created DOI %s linked to %s with metadata %s".formatted(name, url, metadata));

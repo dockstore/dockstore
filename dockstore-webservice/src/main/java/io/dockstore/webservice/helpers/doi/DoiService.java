@@ -16,7 +16,7 @@
  */
 package io.dockstore.webservice.helpers.doi;
 
-public interface DoiRegistrar {
+public interface DoiService {
 
     String createDoi(String name, String url, String metadata);
     // updateDoi(String id, String metadata, String target);
