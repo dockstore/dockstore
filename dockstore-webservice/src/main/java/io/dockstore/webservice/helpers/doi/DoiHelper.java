@@ -7,10 +7,10 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 public final class DoiHelper {
 
     public String createDoi(Entry<?, ?> entry, Version<?> version) {
-        String id = computeId(entry, version);
-        String metadata = computeMetadata(id, entry, version);
+        String name = computeName(entry, version);
         String url = computeUrl(entry, version);
-        return new DummyDoiRegistrar().createDoi(id, metadata, url);
+        String metadata = computeMetadata(name, entry, version);
+        return new DummyDoiRegistrar().createDoi(name, url, metadata);
     }
 
     public String createDoi(Entry<?, ?> entry) {
@@ -24,12 +24,12 @@ public final class DoiHelper {
         return "10.TODO/TODO";
     }
 
-    public static String computeId(Entry<?, ?> entry, Version<?> version) {
+    public static String computeName(Entry<?, ?> entry, Version<?> version) {
         return "10.5072/FK2.%d.%d".formatted(entry.getId(), version.getId());
     }
 
-    public static String computeMetadata(String id, Entry<?, ?> entry, Version<?> version) {
-        return DataCiteHelper.createDataCiteXmlMetadataForVersion(id, entry, version);
+    public static String computeMetadata(String name, Entry<?, ?> entry, Version<?> version) {
+        return DataCiteHelper.createDataCiteXmlMetadataForVersion(name, entry, version);
     }
 
     public static String computeUrl(Entry<?, ?> entry, Version<?> version) {

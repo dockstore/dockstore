@@ -18,6 +18,6 @@ package io.dockstore.webservice.helpers.doi;
 
 public interface DoiRegistrar {
 
-    String createDoi(String id, String metadata, String target);
+    String createDoi(String name, String url, String metadata);
     // updateDoi(String id, String metadata, String target);
 }

@@ -23,8 +23,8 @@ public class DummyDoiRegistrar implements DoiRegistrar {
 
     private static final Logger LOG = LoggerFactory.getLogger(DummyDoiRegistrar.class);
 
-    public String createDoi(String id, String metadata, String target) {
-        LOG.info("would have created DOI %s linked to %s with metadata %s".formatted(id, target, metadata));
-        return id;
+    public String createDoi(String name, String url, String metadata) {
+        LOG.info("would have created DOI %s linked to %s with metadata %s".formatted(name, url, metadata));
+        return name;
     }
 }

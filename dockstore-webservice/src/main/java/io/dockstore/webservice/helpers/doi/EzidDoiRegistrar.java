@@ -35,11 +35,11 @@ public class EzidDoiRegistrar implements DoiRegistrar {
         this.password = password;
     }
 
-    public String createDoi(String id, String metadata, String targetUrl) {
+    public String createDoi(String name, String url, String metadata) {
         try {
-            String request = anvl("_target", targetUrl) + anvl("datacite", metadata);
-            URL url = new URL("https://ezid.cdlib.org/id/doi:" + id);
-            if (url.openConnection() instanceof HttpsURLConnection c) {
+            String request = anvl("_target", url) + anvl("datacite", metadata);
+            URL ezid = new URL("https://ezid.cdlib.org/id/doi:" + name);
+            if (ezid.openConnection() instanceof HttpsURLConnection c) {
                 c.setRequestMethod("PUT");
                 c.setRequestProperty("Content-Type", "text/plain");
                 c.setRequestProperty("Accept", "text/plain");
@@ -56,7 +56,7 @@ public class EzidDoiRegistrar implements DoiRegistrar {
                 }
                 c.disconnect();
                 if (c.getResponseCode() == HttpStatus.SC_CREATED) {
-                    return id;
+                    return name;
                 } else {
                     throw new RuntimeException("Could not create DOI: " + response);
                 }

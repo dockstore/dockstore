@@ -34,7 +34,7 @@ public final class DataCiteHelper {
     private DataCiteHelper() {
     }
 
-    public static String createDataCiteXmlMetadataForVersion(String id, Entry<?, ?> entry, Version<?> version) {
+    public static String createDataCiteXmlMetadataForVersion(String name, Entry<?, ?> entry, Version<?> version) {
         try {
             StringWriter s = new StringWriter();
             XMLOutputFactory f = XMLOutputFactory.newInstance();
@@ -48,7 +48,7 @@ public final class DataCiteHelper {
 
             writer.writeStartElement("identifier");
             writer.writeAttribute("identifierType", "DOI");
-            writer.writeCharacters("(:tbi)"); // TODO id
+            writer.writeCharacters("(:tbi)"); // TODO change to DOI name
             writer.writeEndElement();
 
             writer.writeStartElement("creators");
