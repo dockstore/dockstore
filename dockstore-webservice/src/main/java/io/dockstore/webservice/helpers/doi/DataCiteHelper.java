@@ -39,13 +39,13 @@ public final class DataCiteHelper {
             StringWriter s = new StringWriter();
             XMLOutputFactory f = XMLOutputFactory.newInstance();
             XMLStreamWriter writer = f.createXMLStreamWriter(s);
-    
+
             writer.writeStartDocument();
             writer.writeStartElement("resource");
             writer.writeAttribute("xmlns", "http://datacite.org/schema/kernel-4");
             writer.writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
             writer.writeAttribute("xsi:schemaLocation", "http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd");
-    
+
             writer.writeStartElement("identifier");
             writer.writeAttribute("identifierType", "DOI");
             writer.writeCharacters("(:tbi)"); // TODO id
@@ -69,28 +69,28 @@ public final class DataCiteHelper {
                 writer.writeEndElement();
             }
             writer.writeEndElement();
-    
+
             writer.writeStartElement("titles");
             writer.writeStartElement("title");
             writer.writeCharacters(computePath(entry, version));
             writer.writeEndElement();
             writer.writeEndElement();
-    
+
             writer.writeStartElement("descriptions");
             writer.writeStartElement("description");
             writer.writeAttribute("descriptionType", "Abstract");
             writer.writeCharacters(computeDescription(entry, version));
             writer.writeEndElement();
             writer.writeEndElement();
-    
+
             writer.writeStartElement("publisher");
             writer.writeCharacters("Dockstore");
             writer.writeEndElement();
-    
+
             writer.writeStartElement("publicationYear");
             writer.writeCharacters("2024"); // TODO
             writer.writeEndElement();
-    
+
             writer.writeStartElement("resourceType");
             writer.writeAttribute("resourceTypeGeneral", "Workflow");
             writer.writeCharacters("Workflow");
@@ -108,7 +108,7 @@ public final class DataCiteHelper {
 
             writer.writeEndElement(); // end resource element
             writer.writeEndDocument();
-    
+
             return s.toString();
         } catch (XMLStreamException e) {
             throw new IllegalStateException("unexpected xml error", e);
