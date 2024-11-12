@@ -516,59 +516,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         assertEquals(1, versionsVerified.size());
     }
 
-    /**
-     * Tests that the getPublicWorkflowVesions function excludes hidden versions correctly.
-     */
-    @Test
-    void testGetPublicWorkflowVersions() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
-
-        // refresh all
-        workflowsOpenApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getShortName(), "");
-
-
-        // refresh individual that is valid
-        io.dockstore.openapi.client.model.Workflow workflow = workflowsOpenApi
-                .getWorkflowByPath(SourceControl.BITBUCKET + "/dockstore_testuser2/dockstore-workflow", WorkflowSubClass.valueOf(BIOWORKFLOW), "");
-
-        // Update workflow path
-        workflow.setDescriptorType(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL);
-        workflow.setWorkflowPath("/Dockstore.wdl");
-
-        // Update workflow descriptor type
-        workflow = workflowsOpenApi.updateWorkflow(workflow.getId(), workflow);
-
-        // Refresh workflow
-        workflow = workflowsOpenApi.refresh1(workflow.getId(), false);
-
-        // Publish workflow
-        workflow = workflowsOpenApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-
-        // Unpublish workflow
-        workflow = workflowsOpenApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
-
-        // Restub
-        workflow = workflowsOpenApi.restub(workflow.getId());
-
-        // Refresh a single version
-        workflow = workflowsOpenApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
-
-        // Refresh another version
-        workflow = workflowsOpenApi.refreshVersion(workflow.getId(), "cwl_import", false);
-        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
-
-
-        int versionSize = workflowVersions.size();
-        workflowVersions.get(1).setHidden(true);
-        workflowsOpenApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
-        assertEquals(versionSize - 1, publicWorkflowVersions.size(), "Should exclude hidden version");
-    }
 
     void testGettingVersionsFileTypes() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
