@@ -51,7 +51,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
-
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
