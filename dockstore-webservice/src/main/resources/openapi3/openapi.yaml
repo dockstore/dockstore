@@ -7576,6 +7576,56 @@ paths:
           description: default response
       tags:
       - workflows
+  /workflows/published/{workflowId}/workflowVersions:
+    get:
+      description: Return paginated versions in an public entry
+      operationId: getPublicWorkflowVersions
+      parameters:
+      - description: id of the worflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: lastModified
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+          description: Get workflow versions in an entry. Default is 100 versions
+        "400":
+          description: Bad Request
+      tags:
+      - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     delete:
       description: Delete a stubbed workflow for a registry and repository path.
@@ -8560,7 +8610,7 @@ paths:
       - workflows
   /workflows/{workflowId}/workflowVersions:
     get:
-      description: Return first 200 versions in an entry
+      description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
       - description: id of the worflow
@@ -8570,6 +8620,31 @@ paths:
         schema:
           type: integer
           format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: lastModified
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:
@@ -8578,7 +8653,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in a workflow
+          description: Get workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
       security:
