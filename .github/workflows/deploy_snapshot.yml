@@ -78,8 +78,7 @@ jobs:
 
   # Need to save the JAR artifact so deploy_image can use it
   deploy_image:
-    needs: build
     uses: dockstore/workflow-actions/.github/workflows/deploy_image.yaml@seab-6771/reusable-image-deploy
     with:
-      quayRepository: dockstore
+      quayRepository: dockstore-webservice
     secrets: inherit
