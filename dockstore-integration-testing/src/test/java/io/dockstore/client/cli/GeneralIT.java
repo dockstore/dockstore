@@ -515,7 +515,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         assertEquals(1, versionsVerified.size());
     }
 
-
+    @Test
     void testGettingVersionsFileTypes() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
