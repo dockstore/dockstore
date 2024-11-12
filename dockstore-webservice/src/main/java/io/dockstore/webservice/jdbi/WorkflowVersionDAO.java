@@ -52,6 +52,18 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
     }
 
+
+    /**
+     * Returns workflow versions by its workflow id. This is used for pagination.
+     *
+     * @param workflowId id of workflow
+     * @param limit max limit of versions to return
+     * @param offset the index of the first version in the list of versions to return
+     * @param sortOrder either "asc" or "desc" to implement sorting
+     * @param sortCol name of column to sort by
+     * @param excludeHidden boolean value to exclude hidden versions (used for public page)
+     *
+     */
     public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol, boolean excludeHidden) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<WorkflowVersion> query = criteriaQuery();

@@ -8610,7 +8610,7 @@ paths:
       - workflows
   /workflows/{workflowId}/workflowVersions:
     get:
-      description: Return paginated versions in an entry
+      description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
       - description: id of the worflow

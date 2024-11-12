@@ -259,7 +259,7 @@ class OpenAPIGeneralIT extends BaseIT {
     @Test
     void testGetPublicWorkflowVersions() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
 
         Workflow workflow = registerWorkflowWithTwoVersions();
 
@@ -278,7 +278,7 @@ class OpenAPIGeneralIT extends BaseIT {
     @Test
     void testWorkflowVersionsSorting() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
 
         Workflow workflow = registerWorkflowWithTwoVersions();
         // Test sorting by name in ascending order
@@ -292,7 +292,7 @@ class OpenAPIGeneralIT extends BaseIT {
 
     private Workflow registerWorkflowWithTwoVersions() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
 
         // refresh all
         workflowsOpenApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",

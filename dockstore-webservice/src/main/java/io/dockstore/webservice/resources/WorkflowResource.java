@@ -443,7 +443,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @ApiOperation(nickname = "getWorkflowVersions", value = "Return paginated versions in an entry", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List")
-    @Operation(operationId = "getWorkflowVersions", description = "Return paginated versions in an entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowVersions", description = "Return paginated versions in an entry. Max pagination is 100 versions.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get workflow versions in an entry. Default is 100 versions", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
