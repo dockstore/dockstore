@@ -71,6 +71,9 @@ import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.specto.hoverfly.junit5.HoverflyExtension;
 import io.specto.hoverfly.junit5.api.HoverflyConfig;
 import io.specto.hoverfly.junit5.api.HoverflyCore;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
@@ -509,6 +512,26 @@ class ZenodoIT {
         final ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.updateDois("NotAnOrgSlashRepoFormat", null));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
         assertEquals(2, workflowsApi.updateDois(DockstoreTesting.WORKFLOW_DOCKSTORE_YML, null).size(), "Should update 2 workflows");
+    }
+
+    @Test
+    void testUpdateDoisLastReleaseDate(Hoverfly hoverfly) {
+        hoverfly.simulate(ZENODO_DOI_SEARCH);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        final Duration duration = Duration.ofDays(2);
+        final LocalDateTime twoDaysAgo = LocalDateTime.now().minus(duration);
+        final String sqlDate = twoDaysAgo.format(DateTimeFormatter.ofPattern("YYYY-MM-dd hh:mm:ss"));
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true, latestreleasedate = '%s';".formatted(sqlDate));
+        List<Workflow> workflows = workflowsApi.updateDois(null, 1);
+        assertEquals(0, workflows.size(), "Should update 0 workflows because lastreleasedate is more than a day ago");
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true, latestreleasedate = '%s';".formatted(LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd hh:mm:ss"))));
+        workflows = workflowsApi.updateDois(null, 1);
+        assertEquals(2, workflows.size(), "Should update 2 workflows because lastreleasedate is within a day ago");
     }
 
     @Test
