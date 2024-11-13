@@ -2305,8 +2305,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * Scans Zenodo for DOIs issued against GitHub repos with registered workflows in Dockstore, updating the Dockstore workflows
      * with those DOIs.
      *
+     * <p>Dockstore stores the most recent release date on a GitHub repo when notified, see @code{handleGitHubTaggedRelease}. The Zenodo-
+     * GitHub integration, if any, may create a DOI at some point after the release. The <code>daysSinceLastRelease</code> query parameter
+     * specifies how long ot keep looking for a Zenodo DOI that may have been created. For example, if a GitHub release for a repo  was
+     * done 3 days ago, and the <code>daysSinceLastRelease</code> is set to <code>2</code>, the endpoint will not check for a DOI for that
+     * repo.
+     *
+     * <p>This is to reduce the queries, e.g., if the last release was created a year ago, and there isn't a DOI for it yet, then it's
+     * unlikely there ever will be.
+     *
      * @param user
      * @param filter - optional filter to scope to a single GitHub repository in the format myorg/myrepo
+     * @param daysSinceLastRelease - how far back to check for DOIs
      * @return
      */
     @POST
@@ -2316,12 +2326,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @Operation(operationId = "updateDois", description = "Searches Zenodo for DOIs referencing GitHub repos, and updates Dockstore entries with them", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<Workflow> updateDois(@Parameter(hidden = true) @Auth User user,
-            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository") @QueryParam("filter") String filter) {
-        final List<Workflow> publishedWorkflows = getPublishedGitHubWorkflows(filter);
+            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository") @QueryParam("filter") String filter,
+            @Parameter(description = "Only check GitHub repos with releases over this number of days. Don't set to check all repos") @QueryParam("daysSinceLastRelease") Integer daysSinceLastRelease) {
+        final List<Workflow> publishedWorkflows = getPublishedGitHubWorkflows(filter, daysSinceLastRelease);
+
 
         // Get a map of GitHub repos to Dockstore workflows
         final Map<String, List<Workflow>> repoToWorkflowsMap = publishedWorkflows.stream()
-                .filter(w -> w.getSourceControl() == SourceControl.GITHUB)
                 .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
 
         // Query Zenodo for DOIs issued against the GitHub repositories
@@ -2432,10 +2443,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * Returns a list of published GitHub workflows. If <code>optionalFilter</code> is set, then only returns workflows for that GitHub
      * organization and repository. Throws a CustomWebApplicationException if <code>optionalFilter</code> is set, and its format is not
      * <code>[organization]/[repository]</code>.
-     * @param optionalFilter a filter in the format "organization/repository", or null/empty
+     *
+     * @param optionalFilter       a filter in the format "organization/repository", or null/empty
+     * @param daysSinceLastRelease
      * @return
      */
-    private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter) {
+    private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter, Integer daysSinceLastRelease) {
         if (StringUtils.isNotBlank(optionalFilter)) {
             final String[] split = optionalFilter.split("/");
             if (split.length != 2) {
@@ -2443,8 +2456,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
             final String org = split[0];
             final String repository = split[1];
-            return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
+            return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository, daysSinceLastRelease);
         }
-        return workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB);
+        return workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB, daysSinceLastRelease);
     }
 }

@@ -28,6 +28,8 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -266,15 +268,29 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     }
 
-    public List<Workflow> findPublishedByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository) {
+    public List<Workflow> findPublishedByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository,
+            Integer daysSinceLastRelease) {
+        final Timestamp timestamp = getTimestamp(daysSinceLastRelease);
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganizationAndRepository")
+                .setParameter("releaseDate", timestamp)
+                // I tried the JPA query "...(:releaseDate is null or workflow.lastestReleaseDate > :releaseDate)", but it doesn't work against Postgres
+                .setParameter("allPublished", timestamp == null)
                 .setParameter("sourcecontrol", sourceControl)
                 .setParameter("organization", organization)
                 .setParameter("repository", repository));
     }
 
-    public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl) {
+    private static Timestamp getTimestamp(Integer daysSinceLastRelease) {
+        Timestamp timestamp = daysSinceLastRelease == null ? null : Timestamp.valueOf(LocalDateTime.now().minusDays(daysSinceLastRelease));
+        return timestamp;
+    }
+
+    public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl, Integer daysSinceLastRelease) {
+        final Timestamp timestamp = getTimestamp(daysSinceLastRelease);
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControl")
+                .setParameter("releaseDate", timestamp)
+                // I tried the JPA query "...(:releaseDate is null or workflow.lastestReleaseDate > :releaseDate)", but it doesn't work against Postgres
+                .setParameter("allPublished", timestamp == null)
                 .setParameter("sourcecontrol", sourceControl));
     }
 
