@@ -44,5 +44,4 @@ class ClientRateLimitHelperTest {
                 ClientRateLimitHelper.RESET_HEADER, List.of(Long.toString(currentTimeSeconds + 2)));
         rateLimitHelper.checkRateLimit(headers);
     }
-  
 }

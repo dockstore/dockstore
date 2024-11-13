@@ -482,7 +482,7 @@ class ZenodoIT {
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
-        final List<Workflow> workflows = workflowsApi.updateDois(null);
+        final List<Workflow> workflows = workflowsApi.updateDois(null, null);
         workflows.forEach(workflow -> {
             assertEquals(CONCEPT_DOI, workflow.getConceptDois().get(DoiInitiator.GITHUB.toString()).getName());
             assertEquals(DoiSelectionEnum.GITHUB, workflow.getDoiSelection());
@@ -505,10 +505,10 @@ class ZenodoIT {
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
-        assertEquals(List.of(), workflowsApi.updateDois("foo/bar"), "No workflows are in foo/bar");
-        final ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.updateDois("NotAnOrgSlashRepoFormat"));
+        assertEquals(List.of(), workflowsApi.updateDois("foo/bar", null), "No workflows are in foo/bar");
+        final ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.updateDois("NotAnOrgSlashRepoFormat", null));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
-        assertEquals(2, workflowsApi.updateDois(DockstoreTesting.WORKFLOW_DOCKSTORE_YML).size(), "Should update 2 workflows");
+        assertEquals(2, workflowsApi.updateDois(DockstoreTesting.WORKFLOW_DOCKSTORE_YML, null).size(), "Should update 2 workflows");
     }
 
     @Test
@@ -522,19 +522,19 @@ class ZenodoIT {
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
-        List<Workflow> workflows = workflowsApi.updateDois(null);
+        List<Workflow> workflows = workflowsApi.updateDois(null, null);
         final String conceptDoiName = workflows.get(0).getConceptDois().get(DoiSelectionEnum.GITHUB.name()).getName();
-        assertEquals(0, workflowsApi.updateDois(null).size(), "No workflows should be updated there are no new DOIs");
+        assertEquals(0, workflowsApi.updateDois(null, null).size(), "No workflows should be updated there are no new DOIs");
 
         // Hack to remove GITHUB initiator version DOIs; need to change name because of DB constraint that names must be unique
         testingPostgres.runUpdateStatement("update doi set name ='" + FAKE_VERSION_DOI + "', initiator = 'DOCKSTORE' where type = 'VERSION'");
-        workflows = workflowsApi.updateDois(null);
+        workflows = workflowsApi.updateDois(null, null);
         assertEquals(2, workflows.size(), "Concept DOI exists, but version DOIs are new");
         workflowsApi.getWorkflowVersions(workflows.get(0).getId()).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
                 "Version DOI for GitHub initiator should be set"));
 
         testingPostgres.runUpdateStatement("update doi set name = '" + conceptDoiName.replace('7', '8') + "' where type = 'CONCEPT'");
-        assertEquals(0, workflowsApi.updateDois(null).size(), "There is a new concept DOI, but the existing concept DOI takes precedence");
+        assertEquals(0, workflowsApi.updateDois(null, null).size(), "There is a new concept DOI, but the existing concept DOI takes precedence");
 
     }
 

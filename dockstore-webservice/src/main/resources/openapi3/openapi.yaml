@@ -7680,6 +7680,13 @@ paths:
         name: filter
         schema:
           type: string
+      - description: Only check GitHub repos with releases over this number of days.
+          Don't set to check all repos
+        in: query
+        name: daysSinceLastRelease
+        schema:
+          type: integer
+          format: int32
       responses:
         default:
           content:
