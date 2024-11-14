@@ -2445,7 +2445,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * <code>[organization]/[repository]</code>.
      *
      * @param optionalFilter       a filter in the format "organization/repository", or null/empty
-     * @param daysSinceLastRelease
+     * @param daysSinceLastRelease if not null, filters by workflows with GitHub releases with this value's last number of days
      * @return
      */
     private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter, Integer daysSinceLastRelease) {
@@ -2456,8 +2456,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
             final String org = split[0];
             final String repository = split[1];
-            return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository, daysSinceLastRelease);
+            return  daysSinceLastRelease == null
+                ? workflowDAO.findPublishedBySourceOrgRepo(SourceControl.GITHUB, org, repository)
+                : workflowDAO.findPublishedBySourceOrgRepoLatestReleaseDate(SourceControl.GITHUB, org, repository, daysSinceLastRelease);
         }
-        return workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB, daysSinceLastRelease);
+        return daysSinceLastRelease == null
+            ? workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB)
+            : workflowDAO.findPublishedBySourceControlLatestReleaseDate(SourceControl.GITHUB, daysSinceLastRelease);
     }
 }

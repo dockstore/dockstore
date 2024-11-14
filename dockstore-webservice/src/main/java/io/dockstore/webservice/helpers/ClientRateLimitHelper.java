@@ -44,7 +44,11 @@ public class ClientRateLimitHelper {
     // public static final String LIMIT_HEADER = "X-RateLimit-Limit";
     public static final String REMAINING_HEADER = "X-RateLimit-Remaining";
     public static final String RESET_HEADER = "X-RateLimit-Reset";
-    private static final int BACK_OFF = 10;
+    /**
+     * The padding to keep from 0 remaining requests. If the &quot;X-RateLimit-Remaining&quut; header has a value
+     * smaller than this, wait for a rate limit reset before proceeding. This
+     */
+    private static final int REQUESTS_REMAINING_PADDING = 10;
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientRateLimitHelper.class);
     private final Duration maxWait;
@@ -68,7 +72,7 @@ public class ClientRateLimitHelper {
      */
     public void checkRateLimit(Map<String, List<String>> headers) {
         getRemainingAndReset(headers).ifPresent(remainingAndReset -> {
-            if (remainingAndReset.remaining < BACK_OFF) {
+            if (remainingAndReset.remaining < REQUESTS_REMAINING_PADDING) {
                 LOG.info(headers.toString());
                 final Instant now = Instant.now();
                 LOG.info("Now is {}", now);

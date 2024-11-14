@@ -268,23 +268,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     }
 
-    /**
-     * Find published workflows by source control, org and repo.
-     *
-     * @param sourceControl
-     * @param organization
-     * @param repository
-     * @param daysSinceLastRelease - if set, returns all workflows matching the other parameters, otherwise only workflows with a GitHub
-     *                             release within the window of this parameter.
-     * @return
-     */
-    public List<Workflow> findPublishedByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository,
-            Integer daysSinceLastRelease) {
-        final Timestamp timestamp = getTimestamp(daysSinceLastRelease);
-        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganizationAndRepository")
-                .setParameter("releaseDate", timestamp)
-                // I tried the JPA query "...(:releaseDate is null or workflow.lastestReleaseDate > :releaseDate)", but it doesn't work against Postgres
-                .setParameter("allPublished", timestamp == null)
+    public List<Workflow> findPublishedBySourceOrgRepo(SourceControl sourceControl, String organization, String repository) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceOrgRepo")
+                .setParameter("sourcecontrol", sourceControl)
+                .setParameter("organization", organization)
+                .setParameter("repository", repository));
+    }
+
+    public List<Workflow> findPublishedBySourceOrgRepoLatestReleaseDate(SourceControl sourceControl, String organization, String repository, Integer daysSinceLastRelease) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceOrgRepoReleaseDate")
+                .setParameter("latestReleaseDate", getTimestamp(daysSinceLastRelease))
                 .setParameter("sourcecontrol", sourceControl)
                 .setParameter("organization", organization)
                 .setParameter("repository", repository));
@@ -295,12 +288,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return timestamp;
     }
 
-    public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl, Integer daysSinceLastRelease) {
-        final Timestamp timestamp = getTimestamp(daysSinceLastRelease);
+    public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControl")
-                .setParameter("releaseDate", timestamp)
-                // I tried the JPA query "...(:releaseDate is null or workflow.lastestReleaseDate > :releaseDate)", but it doesn't work against Postgres
-                .setParameter("allPublished", timestamp == null)
+                .setParameter("sourcecontrol", sourceControl));
+    }
+
+    public List<Workflow> findPublishedBySourceControlLatestReleaseDate(SourceControl sourceControl, Integer daysSinceLastRelease) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControlLatestReleaseDate")
+                .setParameter("latestReleaseDate", getTimestamp(daysSinceLastRelease))
                 .setParameter("sourcecontrol", sourceControl));
     }
 
