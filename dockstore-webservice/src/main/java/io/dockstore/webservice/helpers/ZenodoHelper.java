@@ -56,7 +56,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -104,7 +103,11 @@ public final class ZenodoHelper {
     private static String zenodoClientID;
     private static String zenodoClientSecret;
 
-    private static final ClientRateLimitHelper RATE_LIMIT_HELPER = new ClientRateLimitHelper(Duration.of(61, ChronoUnit.SECONDS));
+    /**
+     * A rate limit helper that waits for up to 61 seconds for the limit to be reset. Some reset should happen every 60 seconds, add
+     * a 1 second padding.
+     */
+    private static final ClientRateLimitHelper RATE_LIMIT_HELPER = new ClientRateLimitHelper(Duration.ofSeconds(61));
 
 
     private ZenodoHelper() {
