@@ -277,15 +277,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public List<Workflow> findPublishedBySourceOrgRepoLatestReleaseDate(SourceControl sourceControl, String organization, String repository, Integer daysSinceLastRelease) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceOrgRepoReleaseDate")
-                .setParameter("latestReleaseDate", getTimestamp(daysSinceLastRelease))
+                .setParameter("releaseDate", getTimestamp(daysSinceLastRelease))
                 .setParameter("sourcecontrol", sourceControl)
                 .setParameter("organization", organization)
                 .setParameter("repository", repository));
     }
 
     private static Timestamp getTimestamp(Integer daysSinceLastRelease) {
-        Timestamp timestamp = daysSinceLastRelease == null ? null : Timestamp.valueOf(LocalDateTime.now().minusDays(daysSinceLastRelease));
-        return timestamp;
+        return Timestamp.valueOf(LocalDateTime.now().minusDays(daysSinceLastRelease));
     }
 
     public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl) {
@@ -295,7 +294,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public List<Workflow> findPublishedBySourceControlLatestReleaseDate(SourceControl sourceControl, Integer daysSinceLastRelease) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControlLatestReleaseDate")
-                .setParameter("latestReleaseDate", getTimestamp(daysSinceLastRelease))
+                .setParameter("releaseDate", getTimestamp(daysSinceLastRelease))
                 .setParameter("sourcecontrol", sourceControl));
     }
 
