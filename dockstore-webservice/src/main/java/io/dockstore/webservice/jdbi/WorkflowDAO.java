@@ -268,6 +268,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     }
 
+    /**
+     * Find published workflows by source control, org and repo.
+     *
+     * @param sourceControl
+     * @param organization
+     * @param repository
+     * @param daysSinceLastRelease - if set, returns all workflows matching the other parameters, otherwise only workflows with a GitHub
+     *                             release within the window of this parameter.
+     * @return
+     */
     public List<Workflow> findPublishedByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository,
             Integer daysSinceLastRelease) {
         final Timestamp timestamp = getTimestamp(daysSinceLastRelease);

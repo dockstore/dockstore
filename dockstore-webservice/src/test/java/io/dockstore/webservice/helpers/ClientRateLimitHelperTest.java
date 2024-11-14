@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -42,6 +43,7 @@ class ClientRateLimitHelperTest {
         final ClientRateLimitHelper rateLimitHelper = new ClientRateLimitHelper(Duration.ofSeconds(5));
         final Map<String, List<String>> headers = Map.of(ClientRateLimitHelper.REMAINING_HEADER, List.of(Integer.toString(5)),
                 ClientRateLimitHelper.RESET_HEADER, List.of(Long.toString(currentTimeSeconds + 2)));
-        rateLimitHelper.checkRateLimit(headers);
+        assertDoesNotThrow(() -> rateLimitHelper.checkRateLimit(headers));
+
     }
 }
