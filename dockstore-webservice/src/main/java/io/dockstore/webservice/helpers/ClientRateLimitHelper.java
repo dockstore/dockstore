@@ -49,10 +49,23 @@ public class ClientRateLimitHelper {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRateLimitHelper.class);
     private final Duration maxWait;
 
+    /**
+     * Creates a helper, specifying how long to wait for a ratelimit reset.
+     * @param maxWait how long to wait for a reset
+     */
     public ClientRateLimitHelper(Duration maxWait) {
         this.maxWait = maxWait;
     }
 
+    /**
+     * Checks if rate limit headers are present. If they are present, and the remaining limit is less than {@code BACK_OFF}, the method
+     * sleeps until the reset time is hit. Otherwise, does nothing.
+     *
+     * <p>If the wait for the reset time would be more than the <code>maxWait</code> parameter passed to the constructor, then it throws
+     * a <code>CustomWebApplicationException</code>.</p>
+     *
+     * @param headers the headers of an HTTP response
+     */
     public void checkRateLimit(Map<String, List<String>> headers) {
         getRemainingAndReset(headers).ifPresent(remainingAndReset -> {
             if (remainingAndReset.remaining < BACK_OFF) {
