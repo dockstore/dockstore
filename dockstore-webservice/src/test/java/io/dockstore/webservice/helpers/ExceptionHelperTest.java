@@ -3,7 +3,7 @@ package io.dockstore.webservice.helpers;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.PersistenceException;
-import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.TransactionException;
 import org.junit.jupiter.api.Test;
 
 class ExceptionHelperTest {

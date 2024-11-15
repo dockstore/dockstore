@@ -32,11 +32,11 @@ public class ExceptionHelper {
     }
 
     public String message() {
-        return info().message;
+        return info().message();
     }
 
     public int status() {
-        return info().status;
+        return info().status();
     }
 
     private <T extends Throwable> Optional<T> cause(Class<T> klass) {
@@ -66,20 +66,20 @@ public class ExceptionHelper {
     @SuppressWarnings("checkstyle:indentation")
     private String mapConstraintName(String name) {
         return name == null
-            ? "violated a database constraint"
+            ? "a database constraint was violated"
             : switch (name.toLowerCase()) {
                 case "tool_toolname_check" -> "a tool with the same name already exists";
                 case "workflow_check" -> "an entry with the same name already exists";
                 case "unique_tag_names" -> "a tag with the same name already exists";
                 case "unique_workflowversion_names" -> "a version with the same name already exists";
                 case "unique_doi_name" -> "a DOI with the same name already exists";
-                default -> "violated database constraint '%s'".formatted(name);
+                default -> " database constraint '%s' was violated".formatted(name);
             };
     }
 
     private Optional<Info> handlePersistenceException() {
         return hasCause(PersistenceException.class)
-            ? result("could not update database", HttpStatus.SC_CONFLICT)
+            ? result("the database could not be updated", HttpStatus.SC_INTERNAL_SERVER_ERROR)
             : NONE;
     }
 
