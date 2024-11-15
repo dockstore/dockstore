@@ -2,6 +2,7 @@
 package io.dockstore.webservice.helpers;
 
 import jakarta.persistence.PersistenceException;
+import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
@@ -10,44 +11,55 @@ import org.hibernate.exception.ConstraintViolationException;
 public class ExceptionHelper {
 
     private static final Optional<Info> NONE = Optional.empty();
+    private final Throwable throwable;
+    private final List<Throwable> throwables;
 
-    public Info info(Throwable t) {
-        return handleJavaThrowable(t)
-            .or(() -> handleConstraintViolationException(t))
-            .or(() -> handlePersistenceException(t))
-            .or(() -> result(t, HttpStatus.SC_BAD_REQUEST))
+    public ExceptionHelper(Throwable throwable) {
+        this.throwable = throwable;
+        this.throwables = listThrowables(throwable);
+    }
+
+    private static List<Throwable> listThrowables(Throwable throwable) {
+        return ExceptionUtils.getThrowableList(throwable);
+    }
+
+    public Info info() {
+        return handleJavaThrowable()
+            .or(() -> handleConstraintViolationException())
+            .or(() -> handlePersistenceException())
+            .or(() -> result(HttpStatus.SC_BAD_REQUEST))
             .get();
     }
 
-    public String message(Throwable t) {
-        return info(t).message;
+    public String message() {
+        return info().message;
     }
 
-    public int status(Throwable t) {
-        return info(t).status;
+    public int status() {
+        return info().status;
     }
 
-    private <T extends Throwable> Optional<T> cause(Throwable t, Class<T> klass) {
-        return Optional.ofNullable(ExceptionUtils.throwableOfType(t, klass));
+    private <T extends Throwable> Optional<T> cause(Class<T> klass) {
+        return throwables.stream().filter(klass::isInstance).map(klass::cast).findFirst();
     }
 
-    private <T extends Throwable> boolean hasCause(Throwable t, Class<T> klass) {
-        return cause(t, klass).isPresent();
+    private <T extends Throwable> boolean hasCause(Class<T> klass) {
+        return cause(klass).isPresent();
     }
 
-    private Optional<Info> handleJavaThrowable(Throwable t) {
-        String className = t.getClass().getName();
+    private Optional<Info> handleJavaThrowable() {
+        String className = throwable.getClass().getName();
         return (className.startsWith("java.") || className.startsWith("javax."))
-            ? result(t, HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            ? result(HttpStatus.SC_INTERNAL_SERVER_ERROR)
             : NONE;
     }
 
-    private Optional<Info> handleConstraintViolationException(Throwable t) {
-        return cause(t, ConstraintViolationException.class).flatMap(this::mapConstraintViolationException);
+    private Optional<Info> handleConstraintViolationException() {
+        return cause(ConstraintViolationException.class).flatMap(this::mapConstraintViolationException);
     }
 
-    private Optional<Info> handlePersistenceException(Throwable t) {
-        return hasCause(t, PersistenceException.class)
+    private Optional<Info> handlePersistenceException() {
+        return hasCause(PersistenceException.class)
             ? result("could not update database", HttpStatus.SC_CONFLICT)
             : NONE;
     }
@@ -70,16 +82,12 @@ public class ExceptionHelper {
         return result(message, HttpStatus.SC_CONFLICT);
     }
 
-    private Optional<Info> result(Throwable t, int status) {
-        return result(defaultMessage(t), status);
+    private Optional<Info> result(int status) {
+        return result(throwable.getMessage(), status);
     }
 
     private Optional<Info> result(String message, int status) {
         return Optional.of(new Info(message, status));
-    }
-
-    private String defaultMessage(Throwable t) {
-        return t.getMessage();
     }
 
     public record Info(String message, int status) {

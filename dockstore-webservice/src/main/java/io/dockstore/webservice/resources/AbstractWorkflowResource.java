@@ -883,7 +883,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
             return DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + ex.getMessage();
         }
-        return new ExceptionHelper().message(ex);
+        return new ExceptionHelper(ex).message();
     }
 
     /**
