@@ -15,7 +15,7 @@ public class ExceptionHelper {
         return handleJavaThrowable(t)
             .or(() -> handleConstraintViolationException(t))
             .or(() -> handlePersistenceException(t))
-            .or(() -> make(defaultMessage(t), HttpStatus.SC_BAD_REQUEST))
+            .or(() -> result(t, HttpStatus.SC_BAD_REQUEST))
             .get();
     }
 
@@ -37,11 +37,9 @@ public class ExceptionHelper {
 
     private Optional<MessageAndCode> handleJavaThrowable(Throwable t) {
         String className = t.getClass().getName();
-        if (className.startsWith("java.") || className.startsWith("javax.")) {
-            return make(defaultMessage(t), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        } else {
-            return NONE;
-        }
+        return (className.startsWith("java.") || className.startsWith("javax."))
+            ? result(t, HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            : NONE;
     }
 
     private Optional<MessageAndCode> handleConstraintViolationException(Throwable t) {
@@ -49,11 +47,9 @@ public class ExceptionHelper {
     }
 
     private Optional<MessageAndCode> handlePersistenceException(Throwable t) {
-        if (hasCause(t, PersistenceException.class)) {
-            return make("could not update database", HttpStatus.SC_CONFLICT);
-        } else {
-            return NONE;
-        }
+        return hasCause(t, PersistenceException.class)
+            ? result("could not update database", HttpStatus.SC_CONFLICT)
+            : NONE;
     }
 
     private Optional<MessageAndCode> mapConstraintViolationException(ConstraintViolationException c) {
@@ -71,14 +67,18 @@ public class ExceptionHelper {
             default -> "violated database constraint '%s'".formatted(name);
             };
         }
-        return make(message, HttpStatus.SC_CONFLICT);
+        return result(message, HttpStatus.SC_CONFLICT);
     }
 
     private String defaultMessage(Throwable t) {
         return t.getMessage();
     }
 
-    private Optional<MessageAndCode> make(String message, int code) {
+    private Optional<MessageAndCode> result(Throwable t, int code) {
+        return result(defaultMessage(t), code);
+    }
+
+    private Optional<MessageAndCode> result(String message, int code) {
         return Optional.of(new MessageAndCode(message, code));
     }
 
