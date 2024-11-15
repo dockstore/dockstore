@@ -99,7 +99,6 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.PublicUserFilter;
-import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -645,7 +644,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));
         environment.jersey().register(new PersistenceExceptionMapper());
-        environment.jersey().register(new TransactionExceptionMapper());
         environment.jersey().register(new ToolsApiV1());
         environment.jersey().register(new MetadataApiV1());
         environment.jersey().register(new ToolClassesApiV1());
