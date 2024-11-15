@@ -58,28 +58,29 @@ public class ExceptionHelper {
         return cause(ConstraintViolationException.class).flatMap(this::mapConstraintViolationException);
     }
 
+    private Optional<Info> mapConstraintViolationException(ConstraintViolationException c) {
+        String message = mapConstraintName(c.getConstraintName());
+        return result(message, HttpStatus.SC_CONFLICT);
+    }
+
+    @SuppressWarnings("checkstyle:indentation")
+    private String mapConstraintName(String name) {
+        return name == null
+            ? "violated a database constraint"
+            : switch (name.toLowerCase()) {
+                case "tool_toolname_check" -> "a tool with the same name already exists";
+                case "workflow_check" -> "an entry with the same name already exists";
+                case "unique_tag_names" -> "a tag with the same name already exists";
+                case "unique_workflowversion_names" -> "a version with the same name already exists";
+                case "unique_doi_name" -> "a DOI with the same name already exists";
+                default -> "violated database constraint '%s'".formatted(name);
+            };
+    }
+
     private Optional<Info> handlePersistenceException() {
         return hasCause(PersistenceException.class)
             ? result("could not update database", HttpStatus.SC_CONFLICT)
             : NONE;
-    }
-
-    private Optional<Info> mapConstraintViolationException(ConstraintViolationException c) {
-        String name = c.getConstraintName();
-        String message;
-        if (name == null) {
-            message = "violated a database constraint";
-        } else {
-            message = switch (name.toLowerCase()) {
-            case "tool_toolname_check" -> "a tool with the same name already exists";
-            case "workflow_check" -> "an entry with the same name already exists";
-            case "unique_tag_names" -> "a tag with the same name already exists";
-            case "unique_workflowversion_names" -> "a version with the same name already exists";
-            case "unique_doi_name" -> "a DOI with the same name already exists";
-            default -> "violated database constraint '%s'".formatted(name);
-            };
-        }
-        return result(message, HttpStatus.SC_CONFLICT);
     }
 
     private Optional<Info> result(int status) {
