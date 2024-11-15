@@ -32,6 +32,7 @@ public class PersistenceExceptionMapper implements ExceptionMapper<PersistenceEx
     public Response toResponse(PersistenceException e) {
         LOGGER.warn("failure caught by PersistenceExceptionMapper", e);
         ExceptionHelper.Info info = new ExceptionHelper(e).info();
-        return Response.status(info.status()).entity(new ErrorMessage(info.status(), info.message())).build();
+        String message = "Your request failed for the following reason: %s.  Please change your request if necessary and try again".formatted(info.message());
+        return Response.status(info.status()).entity(new ErrorMessage(info.status(), message)).build();
     }
 }

@@ -89,7 +89,6 @@ import io.dockstore.webservice.filters.AdminPrivilegesFilter;
 import io.dockstore.webservice.filters.AuthenticatedUserFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
-import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.DiagnosticsHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
@@ -445,7 +444,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
-        environment.jersey().register(new ConstraintExceptionMapper());
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
