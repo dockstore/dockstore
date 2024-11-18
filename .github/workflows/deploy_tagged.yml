@@ -5,7 +5,6 @@ on:
     inputs:
       changelist:
         description: 'patch and pre-release metadata'
-        required: true
         default: '.0-alpha.1'
 
 jobs:
