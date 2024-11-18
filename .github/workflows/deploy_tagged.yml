@@ -2,16 +2,10 @@ name: Tagged release deploy
 
 on:
   workflow_dispatch:
-    inputs:
-      changelist:
-        description: 'patch and pre-release metadata'
-        default: '.0-alpha.1'
 
 jobs:
   build:
     uses: dockstore/workflow-actions/.github/workflows/deploy_tagged.yaml@seab-6771/reusable-image-deploy
-    with:
-      changelist: ${{ inputs.changelist }}
     secrets: inherit
 
   deploy_image:
