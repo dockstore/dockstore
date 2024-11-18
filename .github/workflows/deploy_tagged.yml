@@ -8,47 +8,16 @@ on:
         required: true
         default: '.0-alpha.1'
 
-
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
-    # Should only release tags
-    # TODO: should only release tags where the required status checks are passing
     if: github.ref_type == 'tag'
-
-    steps:
-      - uses: actions/checkout@v4
-      # Step that does that actual cache save and restore
-      - uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-           ${{ runner.os }}-maven-
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21.0.2+13.0.LTS'
-          distribution: 'adopt'
-
-      - name: Store Maven project version 
-        run: echo "maven_project_version=$(mvn help:evaluate -Dexpression=project.version -Dchangelist=${{ github.event.inputs.changelist }} -q -DforceStdout)" >> $GITHUB_ENV
-
-      - name: Read exported variable
-        run: |
-          echo "${{ env.maven_project_version }}"
-
-      - name: Deploy with mvnw
-        run: |
-         git config --global user.email "${{ github.actor }}"
-         git config --global user.name "${{ github.actor }}"
-         ./mvnw --batch-mode deploy -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist }}
-        env: 
-          COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
+    uses: dockstore/workflow-actions/.github/workflows/deploy_tagged.yaml@seab-6771/reusable-image-deploy
+    with:
+      changelist: ${{ inputs.changelist }}
+    secrets: inherit
 
   deploy_image:
+    if: github.ref_type == 'tag'
     uses: dockstore/workflow-actions/.github/workflows/deploy_image.yaml@seab-6771/reusable-image-deploy
     with:
       quayRepository: dockstore-webservice
