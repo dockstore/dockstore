@@ -10,14 +10,12 @@ on:
 
 jobs:
   build:
-    if: github.ref_type == 'tag'
     uses: dockstore/workflow-actions/.github/workflows/deploy_tagged.yaml@seab-6771/reusable-image-deploy
     with:
       changelist: ${{ inputs.changelist }}
     secrets: inherit
 
   deploy_image:
-    if: github.ref_type == 'tag'
     uses: dockstore/workflow-actions/.github/workflows/deploy_image.yaml@seab-6771/reusable-image-deploy
     with:
       quayRepository: dockstore-webservice
