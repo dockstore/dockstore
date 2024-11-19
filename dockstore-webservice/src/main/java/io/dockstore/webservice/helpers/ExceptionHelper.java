@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 
 import jakarta.persistence.PersistenceException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import org.apache.http.HttpStatus;
@@ -38,16 +39,14 @@ public class ExceptionHelper {
     // This is an improved implementation of ExceptionUtils.getThrowableList():
     // https://github.com/apache/commons-lang/blob/0fde05172e853c3dff55d1841ad21c8cce363259/src/main/java/org/apache/commons/lang3/exception/ExceptionUtils.java#L517-L524
     // The original has O(N^2) runtime on average, where N is the number of throwables, which could be used as an attack.
-    // In this implementation, we limit the number of throwables.
     @SuppressWarnings("checkstyle:IllegalType")
     private static List<Throwable> listThrowables(Throwable throwable) {
-        final int maxDepth = 1000;
-        final List<Throwable> list = new ArrayList<>();
-        while (throwable != null && list.size() < maxDepth && !list.contains(throwable)) {
+        final LinkedHashSet<Throwable> list = new LinkedHashSet<>();
+        while (throwable != null && !list.contains(throwable)) {
             list.add(throwable);
             throwable = throwable.getCause();
         }
-        return list;
+        return new ArrayList<>(list);
     }
 
     public Info info() {
