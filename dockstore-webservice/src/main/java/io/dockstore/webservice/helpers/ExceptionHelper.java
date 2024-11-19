@@ -25,6 +25,11 @@ import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.hibernate.exception.ConstraintViolationException;
 
+/**
+ * Helper class that generates information about an exception/throwable.
+ * The implementation is single-serve - that is, each instance operates
+ * on a particular exception/throwable that is passed to the constructor.
+ */
 public class ExceptionHelper {
 
     private static final Optional<Info> NONE = Optional.empty();
@@ -49,6 +54,9 @@ public class ExceptionHelper {
         return new ArrayList<>(list);
     }
 
+    /**
+     * Calculates information about the exception/throwable.
+     */
     public Info info() {
         return handleJavaThrowable()
             .or(() -> handleConstraintViolationException())
@@ -57,10 +65,16 @@ public class ExceptionHelper {
             .get();
     }
 
+    /**
+     * Calculate a message that describes the exception/throwable.
+     */
     public String message() {
         return info().message();
     }
 
+    /**
+     * Calculate a suggested HTTP status code for the exception/throwable.
+     */
     public int status() {
         return info().status();
     }
