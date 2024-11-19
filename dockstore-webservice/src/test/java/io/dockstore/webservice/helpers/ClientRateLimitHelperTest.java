@@ -31,7 +31,7 @@ class ClientRateLimitHelperTest {
     @Test
     void maxWaitExceeded() {
         final long currentTimeSeconds = System.currentTimeMillis() / 1000;
-        final ClientRateLimitHelper rateLimitHelper = new ClientRateLimitHelper(Duration.ofSeconds(5));
+        final ClientRateLimitHelper rateLimitHelper = new ClientRateLimitHelper(Duration.ofSeconds(5), 10);
         final Map<String, List<String>> headers = Map.of(ClientRateLimitHelper.REMAINING_HEADER, List.of(Integer.toString(5)),
                 ClientRateLimitHelper.RESET_HEADER, List.of(Long.toString(currentTimeSeconds + 10)));
         assertThrows(CustomWebApplicationException.class, () -> rateLimitHelper.checkRateLimit(headers));
@@ -40,7 +40,7 @@ class ClientRateLimitHelperTest {
     @Test
     void maxWaitNotExceeded() {
         final long currentTimeSeconds = System.currentTimeMillis() / 1000;
-        final ClientRateLimitHelper rateLimitHelper = new ClientRateLimitHelper(Duration.ofSeconds(5));
+        final ClientRateLimitHelper rateLimitHelper = new ClientRateLimitHelper(Duration.ofSeconds(5), 10);
         final Map<String, List<String>> headers = Map.of(ClientRateLimitHelper.REMAINING_HEADER, List.of(Integer.toString(5)),
                 ClientRateLimitHelper.RESET_HEADER, List.of(Long.toString(currentTimeSeconds + 2)));
         assertDoesNotThrow(() -> rateLimitHelper.checkRateLimit(headers));

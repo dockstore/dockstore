@@ -88,6 +88,15 @@ public final class ZenodoHelper {
     public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
     public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
+    /**
+     * How long to wait for Zenodo rate limit to get reset. Normally it should get reset after 1 minute; add one more second to safe.
+     */
+    private static final Duration MAX_WAIT_FOR_ZENODO_RATE_RESET = Duration.ofSeconds(61);
+    /**
+     * How low the number for remaining rate-limited Zenodo requests should get before waiting for a rate limit reset. Normal rate limit
+     * is 133 requests per minute; 10 seems like a safe buffer.
+     */
+    private static final int ZENODO_REQUESTS_REMAINING_PADDING = 10;
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
     private static String dockstoreZenodoAccessToken;
@@ -102,13 +111,6 @@ public final class ZenodoHelper {
     private static String zenodoUrl;
     private static String zenodoClientID;
     private static String zenodoClientSecret;
-
-    /**
-     * A rate limit helper that waits for up to 61 seconds for the limit to be reset. Some reset should happen every 60 seconds, add
-     * a 1 second padding.
-     */
-    private static final ClientRateLimitHelper RATE_LIMIT_HELPER = new ClientRateLimitHelper(Duration.ofSeconds(61));
-
 
     private ZenodoHelper() {
     }
@@ -405,13 +407,13 @@ public final class ZenodoHelper {
         final int pageSize = 1; // We can only handle 1 DOI for a GitHub initiator, so no point asking for more
         try {
             final ApiResponse<SearchResult> response = previewApi.listRecordsWithHttpInfo(query, "bestmatch", 1, pageSize);
-            RATE_LIMIT_HELPER.checkRateLimit(response.getHeaders());
+            zenodoClientRateLimitHelper().checkRateLimit(response.getHeaders());
             final SearchResult records = response.getData();
             final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
             return dois.stream()
                     .map(conceptAndDoi -> {
                         final ApiResponse<SearchResult> versionsResponse = getRecordVersions(zenodoClient, conceptAndDoi.doi());
-                        RATE_LIMIT_HELPER.checkRateLimit(versionsResponse.getHeaders());
+                        zenodoClientRateLimitHelper().checkRateLimit(versionsResponse.getHeaders());
                         final List<TagAndDoi> taggedVersions = findTaggedVersions(versionsResponse.getData().getHits().getHits(), gitHubRepo);
                         return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
                     })
@@ -420,6 +422,10 @@ public final class ZenodoHelper {
             LOG.error("Error discovering DOIs for GitHub repo %s".formatted(gitHubRepo), e);
             return List.of();
         }
+    }
+
+    private static ClientRateLimitHelper zenodoClientRateLimitHelper() {
+        return new ClientRateLimitHelper(MAX_WAIT_FOR_ZENODO_RATE_RESET, ZENODO_REQUESTS_REMAINING_PADDING);
     }
 
     /**

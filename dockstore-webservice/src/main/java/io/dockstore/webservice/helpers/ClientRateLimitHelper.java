@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -31,7 +32,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Helps a Java Client making http requests stay within the server's rate limits.
  *
- * Defaults to honoring the header fields from https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/. Note that GitHub
+ * <p>This has been only tested with Zenodo and if being used with other external services, needs additional testing. In particular,
+ * the <code>X-RateLimit-Reset</code></p> is defined in the spec as being "seconds from now", but in both the Zenodo and GitHub APIs,
+ * the value is epoch seconds.
+ *
+ * Defaults to honoring the header fields from https://www.ietf.org/archive/id/draft-polli-ratelimit-headers-02.html. Note that Zenodo
  * precedes the header names with "x-", a common practice for non-standard headers (the link is a draft, not formally accepted).
  *
  * <ul>
@@ -44,25 +49,23 @@ public class ClientRateLimitHelper {
     // public static final String LIMIT_HEADER = "X-RateLimit-Limit";
     public static final String REMAINING_HEADER = "X-RateLimit-Remaining";
     public static final String RESET_HEADER = "X-RateLimit-Reset";
-    /**
-     * The padding to keep from 0 remaining requests. If the &quot;X-RateLimit-Remaining&quut; header has a value
-     * smaller than this, wait for a rate limit reset before proceeding. This
-     */
-    private static final int REQUESTS_REMAINING_PADDING = 10;
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientRateLimitHelper.class);
     private final Duration maxWait;
+    private final int requestsRemainingPadding;
 
     /**
      * Creates a helper, specifying how long to wait for a ratelimit reset.
      * @param maxWait how long to wait for a reset
+     * @param requestsRemainingPadding how close to get to 0 remaining requests before starting to wait for the remaining to go back up
      */
-    public ClientRateLimitHelper(Duration maxWait) {
+    public ClientRateLimitHelper(Duration maxWait, int requestsRemainingPadding) {
         this.maxWait = maxWait;
+        this.requestsRemainingPadding = requestsRemainingPadding;
     }
 
     /**
-     * Checks if rate limit headers are present. If they are present, and the remaining limit is less than {@code BACK_OFF}, the method
+     * Checks if rate limit headers are present. If they are present, and the remaining limit is less than {@code REQUESTS_REMAINING_PADDING}, the method
      * sleeps until the reset time is hit. Otherwise, does nothing.
      *
      * <p>If the wait for the reset time would be more than the <code>maxWait</code> parameter passed to the constructor, then it throws
@@ -72,7 +75,7 @@ public class ClientRateLimitHelper {
      */
     public void checkRateLimit(Map<String, List<String>> headers) {
         getRemainingAndReset(headers).ifPresent(remainingAndReset -> {
-            if (remainingAndReset.remaining < REQUESTS_REMAINING_PADDING) {
+            if (remainingAndReset.remaining < requestsRemainingPadding) {
                 LOG.info(headers.toString());
                 final Instant now = Instant.now();
                 LOG.info("Now is {}", now);
@@ -86,7 +89,10 @@ public class ClientRateLimitHelper {
                         LOG.info("Sleeping for {} seconds", durationToReset.toSeconds());
                         Thread.sleep(durationToReset.toMillis());
                     } catch (InterruptedException e) {
-                        LOG.error("Interrupted exception while waiting for reset limit", e);
+                        final String msg = "Interrupted exception while waiting for reset limit";
+                        LOG.error(msg, e);
+                        Thread.currentThread().interrupt();
+                        throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
                 }
             }
@@ -96,14 +102,17 @@ public class ClientRateLimitHelper {
     private Optional<RemainingAndReset> getRemainingAndReset(Map<String, List<String>> headers) {
         final Map<String, List<String>> map = new CaseInsensitiveMap(headers);
         final List<String> remaining = map.get(REMAINING_HEADER);
-        LOG.info("Remaining is {}", remaining);
-        if (remaining != null && !remaining.isEmpty()) {
-            final List<String> reset = map.get(RESET_HEADER);
-            if (reset != null && !reset.isEmpty()) {
-                final int remainingRequests = Integer.parseInt(remaining.get(0));
-                final int resetTime = Integer.parseInt(reset.get(0));
-                return Optional.of(new RemainingAndReset(remainingRequests, Instant.ofEpochSecond(resetTime + 1)));
-            }
+        final Optional<Integer> optRemaining = getFirstIntHeaderValue(map.get(REMAINING_HEADER));
+        final Optional<Integer> optReset = getFirstIntHeaderValue(map.get(RESET_HEADER));
+        if (optRemaining.isPresent() && optReset.isPresent()) {
+            return Optional.of(new RemainingAndReset(optRemaining.get(), Instant.ofEpochSecond(optReset.get())));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Integer> getFirstIntHeaderValue(List<String> values) {
+        if (CollectionUtils.isNotEmpty(values)) {
+            return Optional.of(Integer.parseInt(values.get(0)));
         }
         return Optional.empty();
     }

@@ -2307,7 +2307,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      *
      * <p>Dockstore stores the most recent release date on a GitHub repo when notified, see @code{handleGitHubTaggedRelease}. The Zenodo-
      * GitHub integration, if any, may create a DOI at some point after the release. The <code>daysSinceLastRelease</code> query parameter
-     * specifies how long ot keep looking for a Zenodo DOI that may have been created. For example, if a GitHub release for a repo  was
+     * specifies how long to keep looking for a Zenodo DOI that may have been created. For example, if a GitHub release for a repo  was
      * done 3 days ago, and the <code>daysSinceLastRelease</code> is set to <code>2</code>, the endpoint will not check for a DOI for that
      * repo.
      *
