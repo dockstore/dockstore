@@ -55,7 +55,7 @@ public class ExceptionHelper {
     }
 
     /**
-     * Calculates information about the exception/throwable.
+     * Calculates useful information about the exception/throwable.
      */
     public Info info() {
         return handleJavaThrowable()
@@ -66,14 +66,14 @@ public class ExceptionHelper {
     }
 
     /**
-     * Calculate a message that describes the exception/throwable.
+     * Calculates a message that describes the exception/throwable.
      */
     public String message() {
         return info().message();
     }
 
     /**
-     * Calculate a suggested HTTP status code for the exception/throwable.
+     * Calculates a suggested HTTP status code for the exception/throwable.
      */
     public int status() {
         return info().status();
