@@ -109,9 +109,9 @@ public class ExceptionHelper {
             ? "a database constraint was violated"
             : switch (name.toLowerCase()) {
                 case "aliases_are_unique" -> same("an entry", "alias");
-                case "case_insensitive_toolname" -> same("a tool", "name");
                 case "case_insensitive_apptool_toolname" -> same("a tool", "name");
                 case "case_insensitive_notebook_workflowname" -> same("a notebook", "name");
+                case "case_insensitive_toolname" -> same("a tool", "name");
                 case "case_insensitive_workflow_workflowname" -> same("a workflow", "name");
                 case "check_valid_doi" -> "the DOI is not valid";
                 case "check_valid_orcid" -> "the ORCID is not valid";
