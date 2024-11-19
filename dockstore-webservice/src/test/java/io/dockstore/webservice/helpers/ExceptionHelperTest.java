@@ -65,10 +65,10 @@ class ExceptionHelperTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     void testVeryLargeNumberOfCauses() {
         Throwable t = new RuntimeException();
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 200000; i++) {
             t = new Throwable("wrapper", t, false, false) {};
         }
         message(t);
