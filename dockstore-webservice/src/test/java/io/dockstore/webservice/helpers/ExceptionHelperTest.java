@@ -3,6 +3,7 @@ package io.dockstore.webservice.helpers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.core.Response.Status;
 import org.hibernate.TransactionException;
@@ -25,18 +26,17 @@ class ExceptionHelperTest {
     }
 
     @Test
-    void testUnknownException() {
-        String message = "this is a test";
-        Throwable t = makeNonJavaException(message);
-        assertEquals(t.getMessage(), message(t));
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), status(t));
-    }
-
-    @Test
     void testJavaThrowable() {
         Throwable t = makeNullPointerException();
         assertEquals(t.getMessage(), message(t));
         assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), status(t));
+    }
+
+    @Test
+    void testCustomWebApplicationException() {
+        CustomWebApplicationException c = new CustomWebApplicationException("this is a test", Status.NOT_FOUND.getStatusCode());
+        assertEquals(c.getMessage(), message(c));
+        assertEquals(c.getResponse().getStatus(), status(c));
     }
 
     @Test
@@ -62,6 +62,13 @@ class ExceptionHelperTest {
     void testPersistenceException() {
         Throwable t = makePersistenceException();
         assertTrue(contains(message(t), "database", "updated"));
+        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), status(t));
+    }
+
+    @Test
+    void testUnknownException() {
+        Throwable t = makeNonJavaException("this is a test");
+        assertEquals(t.getMessage(), message(t));
         assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), status(t));
     }
 

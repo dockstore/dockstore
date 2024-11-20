@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import jakarta.persistence.PersistenceException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -59,9 +60,10 @@ public class ExceptionHelper {
      */
     public Info info() {
         return handleJavaThrowable()
+            .or(() -> handleCustomWebApplicationException())
             .or(() -> handleConstraintViolationException())
             .or(() -> handlePersistenceException())
-            .or(() -> result(HttpStatus.SC_BAD_REQUEST))
+            .or(() -> result(HttpStatus.SC_INTERNAL_SERVER_ERROR))
             .get();
     }
 
@@ -91,6 +93,12 @@ public class ExceptionHelper {
         String className = throwable.getClass().getName();
         return (className.startsWith("java.") || className.startsWith("javax."))
             ? result(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            : NONE;
+    }
+
+    private Optional<Info> handleCustomWebApplicationException() {
+        return (throwable instanceof CustomWebApplicationException c)
+            ? result(c.getMessage(), c.getResponse().getStatus())
             : NONE;
     }
 
