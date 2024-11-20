@@ -122,7 +122,7 @@ public class ExceptionHelper {
                 case "case_insensitive_toolname" -> same("a tool", "name");
                 case "case_insensitive_workflow_workflowname" -> same("a workflow", "name");
                 case "check_valid_doi" -> "the DOI is not valid";
-                case "check_valid_orcid" -> "the ORCID is not valid";
+                case "check_valid_orcid" -> "the ORCID identifier is not valid";
                 case "tool_toolname_check" -> same("a tool", "name");
                 case "unique_col_aliases" -> same("a collection", "alias");
                 case "unique_doi_name" -> same("a DOI", "name");
