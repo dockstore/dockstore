@@ -10,29 +10,34 @@ public final class DoiHelper {
         String name = computeName(entry, version);
         String url = computeUrl(entry, version);
         String metadata = computeMetadata(name, entry, version);
-        return new DummyDoiService().createDoi(name, url, metadata);
+        return getDoiService().createDoi(name, url, metadata);
     }
 
     public String createDoi(Entry<?, ?> entry) {
         /*
         // TODO
+        Version = getRepresentativeVersion(entry);
         String id = computeId(entry);
         String metadata = computeMetadata(id, entry, defaultVersion);
         String url = computeUrl(entry);
-        return new EzidDoiService().createDoi(id, metadata, url);
+        return getDoiService().createDoi(id, metadata, url);
         */
         return "10.TODO/TODO";
     }
 
-    public static String computeName(Entry<?, ?> entry, Version<?> version) {
+    private String computeName(Entry<?, ?> entry, Version<?> version) {
         return "10.5072/FK2.%d.%d".formatted(entry.getId(), version.getId());
     }
 
-    public static String computeMetadata(String name, Entry<?, ?> entry, Version<?> version) {
+    private String computeMetadata(String name, Entry<?, ?> entry, Version<?> version) {
         return DataCiteHelper.createDataCiteXmlMetadataForVersion(name, entry, version);
     }
 
-    public static String computeUrl(Entry<?, ?> entry, Version<?> version) {
+    private String computeUrl(Entry<?, ?> entry, Version<?> version) {
         return MetadataResourceHelper.createVersionURL(entry, version);
+    }
+
+    private DoiService getDoiService() {
+        return new DummyDoiService();
     }
 }

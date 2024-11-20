@@ -161,6 +161,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String checkUrlLambdaUrl;
 
+    private String ezidUser;
+
+    private String ezidPassword;
+
     private String sourceFilePathRegex = "^[a-zA-Z0-9 ./_-]*$";
 
     private String sourceFilePathViolationMessage = "Filenames and paths must not contain characters other than letters, digits, '.', '/', '-', '_', and ' '.";
@@ -1196,6 +1200,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setCheckUrlLambdaVersion(String checkUrlLambdaVersion) {
             this.checkUrlLambdaVersion = checkUrlLambdaVersion;
+        }
+
+        public String getEzidUser() {
+            return ezidUser;
+        }
+
+        public void setEzidUser(String ezidUser) {
+            this.ezidUser = ezidUser;
+        }
+
+        public String getEzidPassword() {
+            return ezidPassword;
+        }
+
+        public void setEzidPassword(String ezidPassword) {
+            this.ezidPassword = ezidPassword;
         }
     }
 }
