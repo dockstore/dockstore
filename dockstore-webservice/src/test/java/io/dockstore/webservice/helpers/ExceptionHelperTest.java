@@ -29,40 +29,40 @@ class ExceptionHelperTest {
         String message = "this is a test";
         Throwable t = makeNonJavaException(message);
         assertEquals(t.getMessage(), message(t));
-        assertEquals(Status.BAD_REQUEST, status(t));
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), status(t));
     }
 
     @Test
     void testJavaThrowable() {
         Throwable t = makeNullPointerException();
         assertEquals(t.getMessage(), message(t));
-        assertEquals(Status.INTERNAL_SERVER_ERROR, status(t));
+        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), status(t));
     }
 
     @Test
     void testConstraintViolationException() {
         Throwable t = makeConstraintViolationException("xyz_123");
         assertTrue(contains(message(t), "constraint", "violated", "xyz_123"));
-        assertEquals(Status.CONFLICT, status(t));
+        assertEquals(Status.CONFLICT.getStatusCode(), status(t));
 
         t = wrap(t, "something went wrong");
         assertTrue(contains(message(t), "constraint", "violated", "xyz_123"));
-        assertEquals(Status.CONFLICT, status(t));
+        assertEquals(Status.CONFLICT.getStatusCode(), status(t));
 
         t = makeConstraintViolationException("check_valid_doi");
         assertTrue(contains(message(t), "doi", "valid"));
-        assertEquals(Status.CONFLICT, status(t));
+        assertEquals(Status.CONFLICT.getStatusCode(), status(t));
 
         t = makeConstraintViolationException(null);
         assertTrue(contains(message(t), "constraint", "violated"));
-        assertEquals(Status.CONFLICT, status(t));
+        assertEquals(Status.CONFLICT.getStatusCode(), status(t));
     }
 
     @Test
     void testPersistenceException() {
         Throwable t = makePersistenceException();
         assertTrue(contains(message(t), "database", "updated"));
-        assertEquals(Status.INTERNAL_SERVER_ERROR, status(t));
+        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), status(t));
     }
 
     @Test
