@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.PersistenceException;
+import jakarta.ws.rs.core.Response.Status;
 import org.hibernate.TransactionException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
@@ -28,40 +29,40 @@ class ExceptionHelperTest {
         String message = "this is a test";
         Throwable t = makeNonJavaException(message);
         assertEquals(t.getMessage(), message(t));
-        assertEquals(400, status(t));
+        assertEquals(Status.BAD_REQUEST, status(t));
     }
 
     @Test
     void testJavaThrowable() {
         Throwable t = makeNullPointerException();
         assertEquals(t.getMessage(), message(t));
-        assertEquals(500, status(t));
+        assertEquals(Status.INTERNAL_SERVER_ERROR, status(t));
     }
 
     @Test
     void testConstraintViolationException() {
         Throwable t = makeConstraintViolationException("xyz_123");
         assertTrue(contains(message(t), "constraint", "violated", "xyz_123"));
-        assertEquals(409, status(t));
+        assertEquals(Status.CONFLICT, status(t));
 
         t = wrap(t, "something went wrong");
         assertTrue(contains(message(t), "constraint", "violated", "xyz_123"));
-        assertEquals(409, status(t));
+        assertEquals(Status.CONFLICT, status(t));
 
         t = makeConstraintViolationException("check_valid_doi");
         assertTrue(contains(message(t), "doi", "valid"));
-        assertEquals(409, status(t));
+        assertEquals(Status.CONFLICT, status(t));
 
         t = makeConstraintViolationException(null);
         assertTrue(contains(message(t), "constraint", "violated"));
-        assertEquals(409, status(t));
+        assertEquals(Status.CONFLICT, status(t));
     }
 
     @Test
     void testPersistenceException() {
         Throwable t = makePersistenceException();
         assertTrue(contains(message(t), "database", "updated"));
-        assertEquals(500, status(t));
+        assertEquals(Status.INTERNAL_SERVER_ERROR, status(t));
     }
 
     @Test
