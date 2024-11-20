@@ -55,7 +55,7 @@ jobs:
 
       - name: Deploy with mvnw
         run: |
-          if [ -eq 'develop' ${{ github.ref_name }} ]; then
+          if [ ${{ github.ref_name }} == develop ]; then
             ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
           else
             CHANGELIST_VERSION=.0-${{ github.ref_name }}-SNAPSHOT
