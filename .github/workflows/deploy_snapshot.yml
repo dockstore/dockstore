@@ -59,6 +59,7 @@ jobs:
             ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
           else
             CHANGELIST_VERSION=.0-${{ github.ref_name }}-SNAPSHOT
+            CHANGELIST_VERSION=${CHANGELIST_VERSION//\//_}
             ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests -Dchangelist=$CHANGELIST_VERSION
           fi
         env: 
