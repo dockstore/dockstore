@@ -600,6 +600,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;
     }
 
+    public String getEzidUser() {
+        return ezidUser;
+    }
+
+    public void setEzidUser(String ezidUser) {
+        this.ezidUser = ezidUser;
+    }
+
+    public String getEzidPassword() {
+        return ezidPassword;
+    }
+
+    public void setEzidPassword(String ezidPassword) {
+        this.ezidPassword = ezidPassword;
+    }
+
     public String getSourceFilePathRegex() {
         return sourceFilePathRegex;
     }
@@ -1200,22 +1216,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setCheckUrlLambdaVersion(String checkUrlLambdaVersion) {
             this.checkUrlLambdaVersion = checkUrlLambdaVersion;
-        }
-
-        public String getEzidUser() {
-            return ezidUser;
-        }
-
-        public void setEzidUser(String ezidUser) {
-            this.ezidUser = ezidUser;
-        }
-
-        public String getEzidPassword() {
-            return ezidPassword;
-        }
-
-        public void setEzidPassword(String ezidPassword) {
-            this.ezidPassword = ezidPassword;
         }
     }
 }
