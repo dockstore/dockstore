@@ -101,7 +101,6 @@ public class ClientRateLimitHelper {
 
     private Optional<RemainingAndReset> getRemainingAndReset(Map<String, List<String>> headers) {
         final Map<String, List<String>> map = new CaseInsensitiveMap(headers);
-        final List<String> remaining = map.get(REMAINING_HEADER);
         final Optional<Integer> optRemaining = getFirstIntHeaderValue(map.get(REMAINING_HEADER));
         final Optional<Integer> optReset = getFirstIntHeaderValue(map.get(RESET_HEADER));
         if (optRemaining.isPresent() && optReset.isPresent()) {
