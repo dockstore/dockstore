@@ -54,7 +54,13 @@ jobs:
           distribution: 'adopt'
 
       - name: Deploy with mvnw
-        run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
+        run: |
+          if [ -eq 'develop' ${{ github.ref_name }} ]; then
+            ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
+          else
+            CHANGELIST_VERSION=.0-${{ github.ref_name }}-SNAPSHOT
+            ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests -Dchangelist=$CHANGELIST_VERSION
+          fi
         env: 
           SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
 
