@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers.doi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -37,7 +38,7 @@ public class EzidDoiService implements DoiService {
 
     public String createDoi(String name, String url, String metadata) {
         try {
-            String request = anvl("_target", url) + anvl("datacite", metadata);
+            String request = anvl("_target", remapLocalhost(url)) + anvl("datacite", metadata);
             URL ezid = new URL("https://ezid.cdlib.org/id/doi:" + name);
             if (ezid.openConnection() instanceof HttpsURLConnection c) {
                 c.setRequestMethod("PUT");
@@ -50,14 +51,14 @@ public class EzidDoiService implements DoiService {
                 try (OutputStream out = c.getOutputStream()) {
                     out.write(toBytes(request));
                 }
-                String response;
-                try (InputStream in = c.getInputStream()) {
-                    response = toString(in.readAllBytes());
-                }
-                c.disconnect();
-                if (c.getResponseCode() == HttpStatus.SC_CREATED) {
+                int code = c.getResponseCode();
+                if (code == HttpStatus.SC_CREATED) {
                     return name;
                 } else {
+                    String response;
+                    try (InputStream in = code < HttpStatus.SC_BAD_REQUEST ? c.getInputStream() : c.getErrorStream()) {
+                        response = toString(in.readAllBytes());
+                    }
                     throw new RuntimeException("Could not create DOI: " + response);
                 }
             } else {
@@ -66,6 +67,20 @@ public class EzidDoiService implements DoiService {
         } catch (IOException e) {
             throw new RuntimeException("IO exception", e);
         }
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private String remapLocalhost(String url) {
+        if (url.startsWith("http://localhost")) {
+            // EZID fails with 403 (Forbidden) if you attempt to create a DOI that references localhost.
+            // Point any such URLs at qa instead.
+            try {
+                return new URL("https", "qa.dockstore.org", 443, new URL(url).getFile()).toString();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("could not remap url");
+            }
+        }
+        return url;
     }
 
     private static String anvl(String key, String value) {
