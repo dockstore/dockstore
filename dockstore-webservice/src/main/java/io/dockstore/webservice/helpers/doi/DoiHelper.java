@@ -1,23 +1,34 @@
 package io.dockstore.webservice.helpers.doi;
 
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 
 public final class DoiHelper {
 
-    public String createDoi(Entry<?, ?> entry, Version<?> version) {
+    private static DockstoreWebserviceConfiguration config;
+
+    private DoiHelper() {
+        // this space intentionally left empty
+    }
+
+    public static void setConfig(DockstoreWebserviceConfiguration config) {
+        DoiHelper.config = config;
+    }
+
+    public static String createDoi(Entry<?, ?> entry, Version<?> version) {
         String name = computeName(entry, version);
         String url = computeUrl(entry, version);
         String metadata = computeMetadata(name, entry, version);
         return getDoiService().createDoi(name, url, metadata);
     }
 
-    public String createDoi(Entry<?, ?> entry) {
+    public static String createDoi(Entry<?, ?> entry) {
         /*
-        // TODO
-        Version = getRepresentativeVersion(entry);
-        String id = computeId(entry);
+        // TODO, this method might look something like:
+        Version defaultVersion = getRepresentativeVersion(entry);
+        String name = computeName(entry);
         String metadata = computeMetadata(id, entry, defaultVersion);
         String url = computeUrl(entry);
         return getDoiService().createDoi(id, metadata, url);
@@ -25,19 +36,25 @@ public final class DoiHelper {
         return "10.TODO/TODO";
     }
 
-    private String computeName(Entry<?, ?> entry, Version<?> version) {
+    private static String computeName(Entry<?, ?> entry, Version<?> version) {
         return "10.5072/FK2.%d.%d".formatted(entry.getId(), version.getId());
     }
 
-    private String computeMetadata(String name, Entry<?, ?> entry, Version<?> version) {
-        return DataCiteHelper.createDataCiteXmlMetadataForVersion(name, entry, version);
-    }
-
-    private String computeUrl(Entry<?, ?> entry, Version<?> version) {
+    private static String computeUrl(Entry<?, ?> entry, Version<?> version) {
         return MetadataResourceHelper.createVersionURL(entry, version);
     }
 
-    private DoiService getDoiService() {
-        return new DummyDoiService();
+    private static String computeMetadata(String name, Entry<?, ?> entry, Version<?> version) {
+        return DataCiteHelper.createDataCiteXmlMetadataForVersion(name, entry, version);
+    }
+
+    private static DoiService getDoiService() {
+        String ezidUser = config.getEzidUser();
+        String ezidPassword = config.getEzidPassword();
+        if (ezidUser != null && ezidPassword != null) {
+            return new EzidDoiService(ezidUser, ezidPassword);
+        } else {
+            return new DummyDoiService();
+        }
     }
 }

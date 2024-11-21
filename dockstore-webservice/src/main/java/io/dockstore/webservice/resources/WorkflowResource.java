@@ -78,7 +78,6 @@ import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
-import io.dockstore.webservice.helpers.doi.DoiHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -1988,8 +1987,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         String fileName = EntryVersionHelper.generateZipFileName(workflow.getWorkflowPath(), workflowVersion.getName());
-
-        new DoiHelper().createDoi(workflow, workflow.getActualDefaultVersion());
 
         return Response.ok().entity((StreamingOutput) output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();

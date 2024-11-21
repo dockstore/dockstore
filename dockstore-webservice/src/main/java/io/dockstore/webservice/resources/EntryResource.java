@@ -490,7 +490,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         String doiName;
         try {
-            doiName = new DoiHelper().createDoi(entry, version);
+            doiName = DoiHelper.createDoi(entry, version);
         } catch (RuntimeException e) {
             LOG.error("Could not create custom DOI", e);
             throw new CustomWebApplicationException("Could not create custom DOI", HttpStatus.SC_BAD_REQUEST);
