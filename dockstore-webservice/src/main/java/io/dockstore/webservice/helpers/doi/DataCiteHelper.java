@@ -31,9 +31,17 @@ import org.apache.commons.lang3.StringUtils;
 
 public final class DataCiteHelper {
 
+    /**
+     * "Unavailable value" code per https://www.dublincore.org/groups/kernel/spec/ and https://ezid.cdlib.org/doc/apidoc.html
+     */
+    private static final String UNAVAILABLE_VALUE = "(:unav:)";
+
     private DataCiteHelper() {
     }
 
+    /**
+     * Create DataCite XML metadata per https://datacite-metadata-schema.readthedocs.io/_/downloads/en/4.5/pdf/
+     */
     public static String createDataCiteXmlMetadataForVersion(String name, Entry<?, ?> entry, Version<?> version) {
         try {
             StringWriter s = new StringWriter();
@@ -48,7 +56,7 @@ public final class DataCiteHelper {
 
             writer.writeStartElement("identifier");
             writer.writeAttribute("identifierType", "DOI");
-            writer.writeCharacters("(:tbi)"); // TODO change to DOI name
+            writer.writeCharacters(name);
             writer.writeEndElement();
 
             writer.writeStartElement("creators");
@@ -120,6 +128,6 @@ public final class DataCiteHelper {
     }
 
     private static String computeDescription(Entry<?, ?> entry, Version<?> version) {
-        return StringUtils.firstNonEmpty(version.getDescription(), "None");
+        return StringUtils.firstNonEmpty(version.getDescription(), UNAVAILABLE_VALUE);
     }
 }
