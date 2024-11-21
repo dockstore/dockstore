@@ -4,6 +4,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import org.apache.commons.lang3.StringUtils;
 
 public final class DoiHelper {
 
@@ -37,7 +38,8 @@ public final class DoiHelper {
     }
 
     private static String computeName(Entry<?, ?> entry, Version<?> version) {
-        return "10.5072/FK2.%d.%d".formatted(entry.getId(), version.getId());
+        String shoulder = StringUtils.firstNonEmpty(config.getCustomDoiShoulder(), "10.5072/FK2");
+        return "%s.%d.%d".formatted(shoulder, entry.getId(), version.getId());
     }
 
     private static String computeUrl(Entry<?, ?> entry, Version<?> version) {

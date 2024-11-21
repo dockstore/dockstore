@@ -468,7 +468,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created custom DOI", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Doi.class)))
     public Doi generateCustomDoi(@Parameter(hidden = true, name = "user")@Auth User user,
         @Parameter(name = "entryId", description = "Entry to generate the DOI for", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
-
         @Parameter(name = "versionId", description = "Version to generate the DOI for", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkNotNullEntry(entry);
