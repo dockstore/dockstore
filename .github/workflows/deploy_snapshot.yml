@@ -10,6 +10,7 @@ on:
 jobs:
   deploy_snapshot:
     uses: dockstore/workflow-actions/.github/workflows/deploy_snapshot.yaml@seab-6771/reusable-image-deploy
+    secrets: inherit
 
   deploy_image:
     uses: dockstore/workflow-actions/.github/workflows/deploy_image.yaml@seab-6771/reusable-image-deploy
