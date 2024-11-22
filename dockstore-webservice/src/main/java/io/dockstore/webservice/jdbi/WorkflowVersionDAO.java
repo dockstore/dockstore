@@ -24,6 +24,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -64,12 +65,12 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
      * @param excludeHidden boolean value to exclude hidden versions (used for public page)
      *
      */
-    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol, boolean excludeHidden) {
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol, boolean excludeHidden, long featuredVersionId) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<WorkflowVersion> query = criteriaQuery();
         Root<WorkflowVersion> version = query.from(WorkflowVersion.class);
 
-        List<Predicate> predicates = processQuery(sortCol, sortOrder, cb, query, version);
+        List<Predicate> predicates = processQuery(sortCol, sortOrder, cb, query, version, featuredVersionId);
         predicates.add(cb.equal(version.get("parent").get("id"), workflowId));
         if (excludeHidden) {
             predicates.add(cb.isFalse(version.get("versionMetadata").get("hidden")));
@@ -95,7 +96,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return query.getResultList();
     }
 
-    private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version) {
+    private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version, long featuredVersionId) {
         List<Predicate> predicates = new ArrayList<>();
 
         Path<Object> versionId = version.get("id");
@@ -127,10 +128,13 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 query.orderBy(cb.asc(sortPath), cb.asc(versionId));
             }
         } else {
+            Expression<Object> defaultHighest = cb.selectCase()
+                .when(cb.equal(versionId, featuredVersionId), 1)
+                .otherwise(0);
             if ("desc".equalsIgnoreCase(sortOrder)) {
-                query.orderBy(cb.desc(versionId));
+                query.orderBy(cb.desc(defaultHighest), cb.desc(versionId));
             } else {
-                query.orderBy(cb.asc(versionId));
+                query.orderBy(cb.asc(defaultHighest), cb.asc(versionId));
             }
         }
         return predicates;
