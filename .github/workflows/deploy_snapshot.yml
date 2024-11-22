@@ -2,10 +2,12 @@ name: Deploy develop snapshot
 
 on:
   push:
-    branches: ['**']
-      
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    # Run for all branches except the following
+    branches-ignore:
+      - 'master'
+      - 'release/**'
+      - 'hotfix/**'
+      - 'dependabot/**'
   
 jobs:
   deploy_snapshot:

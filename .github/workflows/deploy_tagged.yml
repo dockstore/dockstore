@@ -1,7 +1,8 @@
 name: Tagged release deploy
 
 on:
-  workflow_dispatch:
+  push:
+    tags: [ '**' ]
 
 jobs:
   build:
