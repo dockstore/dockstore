@@ -453,7 +453,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
-        @DefaultValue("lastModified") @QueryParam("sortCol") String sortCol,
+        @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -480,7 +480,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
-        @DefaultValue("lastModified") @QueryParam("sortCol") String sortCol,
+        @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
