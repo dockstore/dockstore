@@ -450,7 +450,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getWorkflowVersions(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(
-                name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @QueryParam("sortCol") String sortCol,
@@ -477,7 +477,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getPublicWorkflowVersions(
             @Parameter(
-                name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @QueryParam("sortCol") String sortCol,

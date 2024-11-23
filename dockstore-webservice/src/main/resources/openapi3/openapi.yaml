@@ -7581,7 +7581,7 @@ paths:
       description: Return paginated versions in an public entry
       operationId: getPublicWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
@@ -8619,7 +8619,7 @@ paths:
       description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
