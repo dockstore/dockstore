@@ -65,12 +65,12 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
      * @param excludeHidden boolean value to exclude hidden versions (used for public page)
      *
      */
-    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol, boolean excludeHidden, long featuredVersionId) {
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int limit, int offset, String sortOrder, String sortCol, boolean excludeHidden, long representativeVersionId) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<WorkflowVersion> query = criteriaQuery();
         Root<WorkflowVersion> version = query.from(WorkflowVersion.class);
 
-        List<Predicate> predicates = processQuery(sortCol, sortOrder, cb, query, version, featuredVersionId);
+        List<Predicate> predicates = processQuery(sortCol, sortOrder, cb, query, version, representativeVersionId);
         predicates.add(cb.equal(version.get("parent").get("id"), workflowId));
         if (excludeHidden) {
             predicates.add(cb.isFalse(version.get("versionMetadata").get("hidden")));
@@ -96,7 +96,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return query.getResultList();
     }
 
-    private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version, long featuredVersionId) {
+    private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version, long representativeVersionId) {
         List<Predicate> predicates = new ArrayList<>();
 
         Path<Object> versionId = version.get("id");
@@ -129,7 +129,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
             }
         } else {
             Expression<Object> defaultHighest = cb.selectCase()
-                .when(cb.equal(versionId, featuredVersionId), 1)
+                .when(cb.equal(versionId, representativeVersionId), 1)
                 .otherwise(0);
             if ("desc".equalsIgnoreCase(sortOrder)) {
                 query.orderBy(cb.desc(defaultHighest), cb.desc(versionId));
