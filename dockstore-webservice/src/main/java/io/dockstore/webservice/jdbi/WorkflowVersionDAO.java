@@ -99,14 +99,14 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version, long representativeVersionId) {
         List<Predicate> predicates = new ArrayList<>();
 
-        Path<Object> versionId = version.get("id");
+        Path<?> versionId = version.get("id");
+        Expression<?> sortExpression;
         if (!Strings.isNullOrEmpty(sortCol)) {
-            Path<Object> sortPath;
-            Path<Object> versionMetadata = version.get("versionMetadata");
+            Path<?> versionMetadata = version.get("versionMetadata");
             if ("open".equalsIgnoreCase(sortCol)) {
-                sortPath = versionMetadata.get("publicAccessibleTestParameterFile");
+                sortExpression = versionMetadata.get("publicAccessibleTestParameterFile");
             } else if ("descriptorTypeVersions".equalsIgnoreCase(sortCol)) {
-                sortPath = versionMetadata.get("descriptorTypeVersions");
+                sortExpression = versionMetadata.get("descriptorTypeVersions");
             } else {
                 boolean hasSortCol = version.getModel()
                         .getAttributes()
@@ -120,22 +120,17 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                             HttpStatus.SC_BAD_REQUEST);
 
                 }
-                sortPath = version.get(sortCol);
-            }
-            if ("desc".equalsIgnoreCase(sortOrder)) {
-                query.orderBy(cb.desc(sortPath), cb.desc(versionId));
-            } else {
-                query.orderBy(cb.asc(sortPath), cb.asc(versionId));
+                sortExpression = version.get(sortCol);
             }
         } else {
-            Expression<Object> defaultHighest = cb.selectCase()
+            sortExpression = cb.selectCase()
                 .when(cb.equal(versionId, representativeVersionId), 1)
                 .otherwise(0);
-            if ("desc".equalsIgnoreCase(sortOrder)) {
-                query.orderBy(cb.desc(defaultHighest), cb.desc(versionId));
-            } else {
-                query.orderBy(cb.asc(defaultHighest), cb.asc(versionId));
-            }
+        }
+        if ("desc".equalsIgnoreCase(sortOrder)) {
+            query.orderBy(cb.desc(sortExpression), cb.desc(versionId));
+        } else {
+            query.orderBy(cb.asc(sortExpression), cb.asc(versionId));
         }
         return predicates;
     }
