@@ -100,6 +100,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         List<Predicate> predicates = new ArrayList<>();
 
         Path<?> versionId = version.get("id");
+        Path<?> lastModified = version.get("lastModified");
         Expression<?> sortExpression;
         if (!Strings.isNullOrEmpty(sortCol)) {
             Path<?> versionMetadata = version.get("versionMetadata");
@@ -128,9 +129,9 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 .otherwise(0);
         }
         if ("desc".equalsIgnoreCase(sortOrder)) {
-            query.orderBy(cb.desc(sortExpression), cb.desc(versionId));
+            query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
         } else {
-            query.orderBy(cb.asc(sortExpression), cb.asc(versionId));
+            query.orderBy(cb.asc(sortExpression), cb.asc(lastModified), cb.asc(versionId));
         }
         return predicates;
     }
