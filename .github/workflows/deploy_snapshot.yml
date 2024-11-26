@@ -2,7 +2,7 @@ name: Deploy develop snapshot
 
 on:
   push:
-    # Run for all branches except the following 
+    # Run for all branches except the following
     branches-ignore:
       - 'master'
       - 'release/**'
