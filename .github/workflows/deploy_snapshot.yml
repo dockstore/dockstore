@@ -15,6 +15,7 @@ jobs:
     with:
       createDockerImage: true
       quayRepository: dockstore-webservice
+      imageArtifactsPath: dockstore-webservice/target/dockstore-webservice*[^s].jar
     secrets: inherit
 
   deploy_db_docs:
