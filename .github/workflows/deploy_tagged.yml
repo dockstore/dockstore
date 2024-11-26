@@ -5,12 +5,9 @@ on:
     tags: [ '**' ]
 
 jobs:
-  build:
-    uses: dockstore/workflow-actions/.github/workflows/deploy_tagged.yaml@seab-6771/reusable-image-deploy
-    secrets: inherit
-
-  deploy_image:
-    uses: dockstore/workflow-actions/.github/workflows/deploy_image.yaml@seab-6771/reusable-image-deploy
+  deploy_artifacts:
+    uses: dockstore/workflow-actions/.github/workflows/deploy_artifacts.yaml@seab-6771/reusable-image-deploy
     with:
+      createDockerImage: true
       quayRepository: dockstore-webservice
     secrets: inherit
