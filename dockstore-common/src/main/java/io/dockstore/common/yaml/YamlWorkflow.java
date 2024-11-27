@@ -133,6 +133,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @Override
+    @AbsolutePath
     public String getReadMePath() {
         return readMePath;
     }
