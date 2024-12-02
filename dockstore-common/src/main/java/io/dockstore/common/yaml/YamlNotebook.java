@@ -188,6 +188,7 @@ public class YamlNotebook implements Workflowish {
     }
 
     @Override
+    @AbsolutePath
     public String getReadMePath() {
         return readMePath;
     }
