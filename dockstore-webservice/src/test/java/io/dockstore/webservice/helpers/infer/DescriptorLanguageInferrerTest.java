@@ -24,7 +24,9 @@ class DescriptorLanguageInferrerTest {
 
     @Test
     void testNonSpaceSeparatorsPattern() {
-        Assertions.assertArrayEquals(new String[]{"/a.wdl", "b.cwl"}, DescriptorLanguageInferrer.NON_SPACE_SEPARATORS.split("/a.wdl,'b.cwl',"));
+        Assertions.assertArrayEquals(new String[]{"/a.wdl", "b.cwl", "c.cwl"}, DescriptorLanguageInferrer.NON_SPACE_SEPARATORS.split("/a.wdl,'b.cwl',\"c.cwl\""));
+        Assertions.assertArrayEquals(new String[]{"/a.wdl", "b.cwl"}, DescriptorLanguageInferrer.NON_SPACE_SEPARATORS.split("/a.wdl\nb.cwl"));
+        Assertions.assertArrayEquals(new String[]{"/a.wdl", "b.cwl"}, DescriptorLanguageInferrer.NON_SPACE_SEPARATORS.split("/a.wdl\tb.cwl"));
         Assertions.assertArrayEquals(new String[]{}, DescriptorLanguageInferrer.NON_SPACE_SEPARATORS.split("!\"#$%&'()*+,:<=>?@[\\]^`{|}~"));
         Assertions.assertArrayEquals(new String[]{"AZaz09./_- "}, DescriptorLanguageInferrer.NON_SPACE_SEPARATORS.split("AZaz09./_- "));
     }

@@ -48,7 +48,7 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
     /**
      * Regular expression that matches the non-space characters that can separate paths from other content.
      */
-    protected static final Pattern NON_SPACE_SEPARATORS = Pattern.compile("[!-,:-@\\[-^`{-~]+");
+    protected static final Pattern NON_SPACE_SEPARATORS = Pattern.compile("[!-,:-@\\[-^`{-~\u0000-\u001f]+");
     /**
      * The minimum length of a string that we will consider as a potential referenced path.
      */
@@ -98,15 +98,31 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         }).toList();
     }
 
+    /**
+     * Given a list of specified paths, analyze the content of the corresponding files and remove the paths that
+     * appear to be referenced from at least one of the files.
+     */
     protected List<String> removeReferencedPaths(FileTree fileTree, List<String> paths) {
         Set<String> unreferencedPaths = new LinkedHashSet<>(paths);
         paths.forEach(path -> unreferencedPaths.removeAll(determineReferencedPaths(fileTree, path)));
         return toList(unreferencedPaths);
     }
 
+    /**
+     * Analyze the content of the specified file, and compute a list of absolute paths that represent
+     * references to other files from the specified file.  By design, no parsing is performed, so some of the
+     * computed file references may be spurious.
+     */
     protected List<String> determineReferencedPaths(FileTree fileTree, String srcPath) {
         String content = removeComments(readFile(fileTree, srcPath));
         List<String> paths = new ArrayList<>();
+        // Split the file into chunks at the non-space separators and convert the chunks that rememble file references to absolute paths.
+        // Spaces are ambiguous, they could be: a) part of a file path, or b) separate a filename from another syntactic construct.
+        // Without including language/file-type-specific logic such as parsing, which we are specifically trying to avoid in the
+        // .dockstore.yml inference code, we have no way of conclusively differentiating the two cases.
+        // So, we process each full chunk, then split the full chunk into subchunks at the spaces, and process each subchunk.
+        // That way, we handle both cases, and any spurious computed paths will very likely be ignored during subsequent processing,
+        // because they do not point at actual files.
         for (String chunk: NON_SPACE_SEPARATORS.split(content)) {
             if (isReferencedPath(chunk)) {
                 toAbsolutePath(srcPath, chunk).ifPresent(paths::add);
