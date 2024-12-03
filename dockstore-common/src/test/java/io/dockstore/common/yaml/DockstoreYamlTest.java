@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
@@ -566,5 +567,24 @@ class DockstoreYamlTest {
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             assertTrue(ex.getMessage().contains(DockstoreYamlHelper.BETTER_NO_SINGLE_ARGUMENT_CONSTRUCTOR_YAML_EXCEPTION_MESSAGE));
         }
+    }
+
+    @Test
+    void testDisableDoiGenerationMustBeTrue() {
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("disableDoiGeneration: true", "disableDoiGeneration: false"), true);
+            fail("Should not succeed because only true is allowed for disableDoiGeneration");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains("must be true"));
+        }
+    }
+
+    @Test
+    void testDisableDoiGeneration() throws DockstoreYamlHelper.DockstoreYamlException {
+        final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML, true);
+        assertEquals(1, dockstoreYaml12.getWorkflows().stream().map(YamlWorkflow::getDisableDoiGeneration).filter(Objects::nonNull).count(),
+                "There should be 1 workflow with disableDoiGeneration = true ");
+        assertEquals(1, dockstoreYaml12.getNotebooks().stream().map(YamlNotebook::getDisableDoiGeneration).filter(Objects::nonNull).count(),
+                "There should be 1 notebook with disableDoiGeneration = true ");
     }
 }

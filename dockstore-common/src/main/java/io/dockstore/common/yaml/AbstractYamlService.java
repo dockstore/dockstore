@@ -16,6 +16,7 @@
 package io.dockstore.common.yaml;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +69,8 @@ public abstract class AbstractYamlService {
     private Map<String, DataSet> data;
 
     private boolean latestTagAsDefault = false;
+
+    private Boolean disableDoiGeneration;
 
     public String getAuthor() {
         return author;
@@ -156,6 +159,15 @@ public abstract class AbstractYamlService {
 
     public void setLatestTagAsDefault(boolean latestTagAsDefault) {
         this.latestTagAsDefault = latestTagAsDefault;
+    }
+
+    @AssertTrue
+    public Boolean getDisableDoiGeneration() {
+        return disableDoiGeneration;
+    }
+
+    public void setDisableDoiGeneration(Boolean disableDoiGeneration) {
+        this.disableDoiGeneration = disableDoiGeneration;
     }
 
     /**

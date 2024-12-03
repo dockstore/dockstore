@@ -21,6 +21,7 @@ import io.dockstore.common.yaml.constraints.AbsolutePath;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class YamlWorkflow implements Workflowish {
     private String primaryDescriptorPath;
     private String readMePath;
     private String topic;
+    private Boolean disableDoiGeneration;
 
     /**
      * Change the workflow's publish-state, if set.
@@ -148,5 +150,15 @@ public class YamlWorkflow implements Workflowish {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    @Override
+    @AssertTrue
+    public Boolean getDisableDoiGeneration() {
+        return disableDoiGeneration;
+    }
+
+    public void setDisableDoiGeneration(Boolean disableDoiGeneration) {
+        this.disableDoiGeneration = disableDoiGeneration;
     }
 }
