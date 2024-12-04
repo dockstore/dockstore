@@ -3,7 +3,7 @@ on:
   push:
     tags:
       - '**'
-    # Run for all branches except the following  
+    # Run for all branches except the following
     branches-ignore:
       - 'master'
       - 'release/**'
