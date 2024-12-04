@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = AbsolutePathValidator.class)
 public @interface AbsolutePath {
 
-    String message() default "the path must be an absolute path to be valid";
+    String message() default "must be an absolute path to be valid";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 

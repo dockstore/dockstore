@@ -30,6 +30,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -42,10 +43,14 @@ import io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.Entry;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Objects;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -246,5 +251,67 @@ class OpenAPIGeneralIT extends BaseIT {
 
         // Can get published tool by alias as anon user
         assertNotNull(anonEntriesApi.getEntryByAlias("foobar"), "Should retrieve the tool by alias");
+    }
+
+    /**
+     * Tests that the getPublicWorkflowVesions function excludes hidden versions correctly.
+     */
+    @Test
+    void testGetPublicWorkflowVersions() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
+
+        Workflow workflow = registerWorkflowWithTwoVersions();
+
+        //publish workflow
+        workflow = workflowsOpenApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
+        //Hide version
+        workflowVersions.get(1).setHidden(true);
+        workflowsOpenApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
+
+        List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
+        assertEquals(1, publicWorkflowVersions.size(), "Should exclude hidden version thus only have 1 version");
+    }
+
+    @Test
+    void testWorkflowVersionsSorting() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
+
+        Workflow workflow = registerWorkflowWithTwoVersions();
+        // Test sorting by name in ascending order
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "asc");
+        assertEquals("master", workflowVersions.get(0).getName(), "The first version should be master");
+
+        // Test sorting by name in descending order
+        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "desc");
+        assertEquals("testCWL", workflowVersions.get(0).getName(), "The first version should be testCWL");
+    }
+
+    private Workflow registerWorkflowWithTwoVersions() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
+
+        // refresh all
+        workflowsOpenApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getShortName(), "");
+
+        // refresh individual that is valid
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsOpenApi
+                .getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", WorkflowSubClass.valueOf(BIOWORKFLOW), "");
+
+
+        // Refresh a single version
+        workflow = workflowsOpenApi.refreshVersion(workflow.getId(), "master", false);
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
+
+        // Refresh another version
+        workflow = workflowsOpenApi.refreshVersion(workflow.getId(), "testCWL", false);
+        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
+
+        return workflow;
     }
 }

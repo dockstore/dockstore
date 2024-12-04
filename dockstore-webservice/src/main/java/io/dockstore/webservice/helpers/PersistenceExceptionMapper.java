@@ -15,11 +15,11 @@
  */
 package io.dockstore.webservice.helpers;
 
+import io.dropwizard.jersey.errors.ErrorMessage;
 import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,14 +28,11 @@ public class PersistenceExceptionMapper implements ExceptionMapper<PersistenceEx
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistenceExceptionMapper.class);
 
-
     @Override
     public Response toResponse(PersistenceException e) {
         LOGGER.warn("failure caught by PersistenceExceptionMapper", e);
-        if (e.getCause() instanceof ConstraintViolationException) {
-            return ConstraintExceptionMapper.getResponse((ConstraintViolationException) e.getCause());
-        } else {
-            return TransactionExceptionMapper.processResponse(e);
-        }
+        ExceptionHelper.Info info = new ExceptionHelper(e).info();
+        String message = "Your request failed for the following reason: %s.  Please change your request if necessary and try again".formatted(info.message());
+        return Response.status(info.status()).entity(new ErrorMessage(info.status(), message)).build();
     }
 }

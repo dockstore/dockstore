@@ -1899,7 +1899,8 @@ public class OrganizationIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow = hostedApi.editHostedWorkflow(sourcefiles, hostedWorkflow.getId());
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
         workflowsApi.publish1(hostedWorkflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
+
         Long idToAddAndDelete = workflowVersions.get(0).getId();
         String idToAddAndDeleteString = workflowVersions.get(0).getName();
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), idToAddAndDelete);

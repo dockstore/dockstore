@@ -28,6 +28,8 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -266,15 +268,33 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     }
 
-    public List<Workflow> findPublishedByOrganizationAndRepository(SourceControl sourceControl, String organization, String repository) {
-        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganizationAndRepository")
+    public List<Workflow> findPublishedBySourceOrgRepo(SourceControl sourceControl, String organization, String repository) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceOrgRepo")
                 .setParameter("sourcecontrol", sourceControl)
                 .setParameter("organization", organization)
                 .setParameter("repository", repository));
     }
 
+    public List<Workflow> findPublishedBySourceOrgRepoLatestReleaseDate(SourceControl sourceControl, String organization, String repository, Integer daysSinceLastRelease) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceOrgRepoReleaseDate")
+                .setParameter("releaseDate", getTimestamp(daysSinceLastRelease))
+                .setParameter("sourcecontrol", sourceControl)
+                .setParameter("organization", organization)
+                .setParameter("repository", repository));
+    }
+
+    private static Timestamp getTimestamp(Integer daysSinceLastRelease) {
+        return Timestamp.valueOf(LocalDateTime.now().minusDays(daysSinceLastRelease));
+    }
+
     public List<Workflow> findPublishedBySourceControl(SourceControl sourceControl) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControl")
+                .setParameter("sourcecontrol", sourceControl));
+    }
+
+    public List<Workflow> findPublishedBySourceControlLatestReleaseDate(SourceControl sourceControl, Integer daysSinceLastRelease) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedBySourceControlLatestReleaseDate")
+                .setParameter("releaseDate", getTimestamp(daysSinceLastRelease))
                 .setParameter("sourcecontrol", sourceControl));
     }
 
