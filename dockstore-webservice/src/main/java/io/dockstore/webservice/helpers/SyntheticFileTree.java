@@ -25,15 +25,22 @@ import java.util.stream.Collectors;
 
 /**
  * Implements a memory-based FileTree, empty upon construction, to which
- * files are added via the `addFile` method.  Useful to unit test code that
- * uses FileTrees, without needing to create an actual tree of files (on
- * GitHub, the local filesystem, within a resource file, etc) and then
- * reference it via a compatible FileTree implementation.
+ * files are added by specifying their absolute path and content via the
+ * `addFile` method.  Useful to unit test code that uses FileTrees, without
+ * needing to create an actual tree of files (on GitHub, the local
+ * filesystem, within a resource file, etc).  Currently, the implementation
+ * of `listFiles` has O(N) runtime, where N is the number of files.
  */
 public class SyntheticFileTree implements FileTree {
 
+    /**
+     * Maps absolute file paths to file content.
+     */
     private Map<String, String> pathToContent = new HashMap<>();
-    private static final String SLASH = "/";
+    /**
+     * The Dockstore file path separator.
+     */
+    private static final String FILE_SEPARATOR = "/";
 
     @Override
     public String readFile(String filePath) {
@@ -51,7 +58,7 @@ public class SyntheticFileTree implements FileTree {
             .filter(path -> path.startsWith(normalizedDirPath))
             .map(path -> path.substring(normalizedDirPath.length()))
             .filter(path -> !path.isEmpty())
-            .map(path -> path.split(SLASH)[0])
+            .map(path -> path.split(FILE_SEPARATOR)[0])
             .collect(Collectors.toSet()));
     }
 
@@ -70,6 +77,6 @@ public class SyntheticFileTree implements FileTree {
     }
 
     private String addSlash(String dirPath) {
-        return dirPath.endsWith(SLASH) ? dirPath : dirPath + SLASH;
+        return dirPath.endsWith(FILE_SEPARATOR) ? dirPath : dirPath + FILE_SEPARATOR;
     }
 }

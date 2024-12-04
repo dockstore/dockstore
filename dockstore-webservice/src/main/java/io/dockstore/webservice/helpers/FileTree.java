@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * Abstracts read-only access to a tree of files.
- * Methods with analogs in `SourceCodeRepoInterface` are intended to have the sam semantics.
+ * Methods with analogs in `SourceCodeRepoInterface` are intended to have the same semantics.
  */
 public interface FileTree {
 

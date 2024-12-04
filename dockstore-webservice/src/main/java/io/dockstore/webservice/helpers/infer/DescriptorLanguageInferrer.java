@@ -20,6 +20,7 @@ package io.dockstore.webservice.helpers.infer;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.InvalidPathException;
@@ -176,7 +177,11 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
     protected String readFile(FileTree tree, String path) {
         String content = tree.readFile(path);
         if (content == null) {
-            throw new CustomWebApplicationException("could not find file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            // Currently, all code should be using this method to read a file that it knows exists,
+            // because its path has previously been retrieved from the FileTree.
+            // So, log something that indicates that a file can't be found, which probably indicates a bug.
+            LOG.error("inferrer could not find file {}", Utilities.cleanForLogging(path));
+            throw new CustomWebApplicationException("could not find file", HttpStatus.SC_NOT_FOUND);
         }
         return content;
     }
