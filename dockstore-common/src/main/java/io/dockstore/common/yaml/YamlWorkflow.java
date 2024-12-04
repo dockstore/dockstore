@@ -153,7 +153,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @Override
-    @AssertTrue
+    @AssertTrue // TODO: Added as part of https://ucsc-cgl.atlassian.net/browse/SEAB-6805. Remove when we turn on automatic DOIs for everyone
     public Boolean getDisableDoiGeneration() {
         return disableDoiGeneration;
     }

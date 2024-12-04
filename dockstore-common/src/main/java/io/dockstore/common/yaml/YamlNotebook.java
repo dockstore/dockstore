@@ -207,8 +207,8 @@ public class YamlNotebook implements Workflowish {
         this.topic = topic;
     }
 
-    @AssertTrue
     @Override
+    @AssertTrue // TODO: Added as part of https://ucsc-cgl.atlassian.net/browse/SEAB-6805. Remove when we turn on automatic DOIs for everyone
     public Boolean getDisableDoiGeneration() {
         return disableDoiGeneration;
     }
