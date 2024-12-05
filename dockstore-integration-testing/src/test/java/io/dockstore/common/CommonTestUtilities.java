@@ -622,8 +622,10 @@ public final class CommonTestUtilities {
         assertTrue(log.toLowerCase().contains("git repo"));
     }
 
-    public static void restartElasticsearch() throws IOException {
-
+    public static void restartElasticsearch() {
+        // see https://ucsc-cgl.atlassian.net/browse/SEAB-6834
+        // revert associated commit to re-enable restarting of elasticsearch
+        // this should make elasticsearch tests more independent from one another
     }
 
     // These two functions are duplicated from SwaggerUtility in dockstore-client to prevent importing dockstore-client
