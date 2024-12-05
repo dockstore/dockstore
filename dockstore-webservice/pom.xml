@@ -890,6 +890,10 @@
             <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-integration-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
