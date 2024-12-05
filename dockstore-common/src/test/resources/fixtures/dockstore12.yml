@@ -17,7 +17,7 @@ workflows:
          - develop
        tags:
          - gwas*
-     disableDoiGeneration: true
+     enableAutoDois: false
   -  name: foobar2
      subclass: cwl
      publish: no
@@ -44,7 +44,7 @@ service:
     multi-omic and clinical/phenotype data.
     It is recommended that you configure a reverse proxy to handle HTTPS
   publish: True
-  disableDoiGeneration: true
+  enableAutoDois: false
   files:
     - docker-compose.yml
     - README.md
@@ -95,4 +95,4 @@ notebooks:
   - name: notebook1
     path: /notebook1.ipynb
     kernel: quay.io/seqware/seqware_full/1.1
-    disableDoiGeneration: true
+    enableAutoDois: false

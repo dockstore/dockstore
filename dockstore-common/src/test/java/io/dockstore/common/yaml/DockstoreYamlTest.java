@@ -570,21 +570,21 @@ class DockstoreYamlTest {
     }
 
     @Test
-    void testDisableDoiGenerationMustBeTrue() {
+    void testEnableAutoDoisMustBeFalse() {
         try {
-            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("disableDoiGeneration: true", "disableDoiGeneration: false"), true);
-            fail("Should not succeed because only true is allowed for disableDoiGeneration");
+            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("enableAutoDois: false", "enableAutoDois: true"), true);
+            fail("Should not succeed because only false is allowed for enableAutoDois");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue(ex.getMessage().contains("must be true"));
+            assertTrue(ex.getMessage().contains("must be false"));
         }
     }
 
     @Test
     void testDisableDoiGeneration() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML, true);
-        assertEquals(1, dockstoreYaml12.getWorkflows().stream().map(YamlWorkflow::getDisableDoiGeneration).filter(Objects::nonNull).count(),
-                "There should be 1 workflow with disableDoiGeneration = true ");
-        assertEquals(1, dockstoreYaml12.getNotebooks().stream().map(YamlNotebook::getDisableDoiGeneration).filter(Objects::nonNull).count(),
-                "There should be 1 notebook with disableDoiGeneration = true ");
+        assertEquals(1, dockstoreYaml12.getWorkflows().stream().map(YamlWorkflow::getEnableAutoDois).filter(Objects::nonNull).count(),
+                "There should be 1 workflow with enableAutoDois = false ");
+        assertEquals(1, dockstoreYaml12.getNotebooks().stream().map(YamlNotebook::getEnableAutoDois).filter(Objects::nonNull).count(),
+                "There should be 1 notebook with enableAutoDois = false ");
     }
 }

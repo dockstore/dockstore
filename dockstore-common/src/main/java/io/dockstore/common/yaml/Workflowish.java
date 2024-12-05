@@ -17,7 +17,7 @@ public interface Workflowish {
     Filters getFilters();
     List<String> getTestParameterFiles();
     String getPrimaryDescriptorPath();
-    Boolean getDisableDoiGeneration();
+    Boolean getEnableAutoDois();
 
     /**
      * Optional: Document a specific readme path that can override the base readme file.
