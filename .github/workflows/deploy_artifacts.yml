@@ -25,6 +25,7 @@ jobs:
     permissions:
       contents: read
       pages: write
+      id-token: write
       
     # Service containers to run with `container-job`
     services:
