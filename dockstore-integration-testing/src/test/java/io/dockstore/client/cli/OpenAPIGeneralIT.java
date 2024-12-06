@@ -290,6 +290,23 @@ class OpenAPIGeneralIT extends BaseIT {
         assertEquals("testCWL", workflowVersions.get(0).getName(), "The first version should be testCWL");
     }
 
+    @Test
+    void testWorkflowVersionsDefaultSorting() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
+
+        Workflow workflow = registerWorkflowWithTwoVersions();
+        List<String> versionNames = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null).stream().map(WorkflowVersion::getName).toList();
+        assertTrue(versionNames.size() >= 2);
+
+        // set each version as the default and confirm that when we don't specify a sortCol to `getWorkflowVersion`, the default version is first in the returned list
+        for (String versionName: versionNames) {
+            workflowsOpenApi.updateDefaultVersion1(workflow.getId(), versionName);
+            List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
+            assertEquals(versionName, workflowVersions.get(0).getName(), "the default version should be sorted first");
+        }
+    }
+
     private Workflow registerWorkflowWithTwoVersions() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);

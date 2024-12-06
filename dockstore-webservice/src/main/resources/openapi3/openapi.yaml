@@ -7581,7 +7581,7 @@ paths:
       description: Return paginated versions in an public entry
       operationId: getPublicWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
@@ -7607,7 +7607,6 @@ paths:
         name: sortCol
         schema:
           type: string
-          default: lastModified
       - in: query
         name: sortOrder
         schema:
@@ -8620,7 +8619,7 @@ paths:
       description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
@@ -8642,11 +8641,12 @@ paths:
           format: int32
           default: 0
           minimum: 0
-      - in: query
+      - description: "column used to sort versions. if omitted, the webservice determines\
+          \ the sort order, currently default version first"
+        in: query
         name: sortCol
         schema:
           type: string
-          default: lastModified
       - in: query
         name: sortOrder
         schema:

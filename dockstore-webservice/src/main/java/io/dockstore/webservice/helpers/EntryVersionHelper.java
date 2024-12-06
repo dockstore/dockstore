@@ -466,6 +466,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     /**
+     * Return the ID of the version that is most representative of the Entry,
+     * or -1 if no such version exists.
+     */
+    static long determineRepresentativeVersionId(Entry entry) {
+        return determineRepresentativeVersion(entry).map(Version::getId).orElse(-1L);
+    }
+
+    /**
      * Determine which Version of the specified Entry is most representative of the Entry.
      * The resulting Version is used to generate identifying information about the Entry
      * (Search fields, AI topic, and perhaps other things)
