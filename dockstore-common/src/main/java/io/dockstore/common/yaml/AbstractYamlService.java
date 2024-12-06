@@ -16,6 +16,7 @@
 package io.dockstore.common.yaml;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +69,8 @@ public abstract class AbstractYamlService {
     private Map<String, DataSet> data;
 
     private boolean latestTagAsDefault = false;
+
+    private Boolean enableAutoDois;
 
     public String getAuthor() {
         return author;
@@ -156,6 +159,15 @@ public abstract class AbstractYamlService {
 
     public void setLatestTagAsDefault(boolean latestTagAsDefault) {
         this.latestTagAsDefault = latestTagAsDefault;
+    }
+
+    @AssertFalse // TODO: Added as part of https://ucsc-cgl.atlassian.net/browse/SEAB-6805. Remove when we turn on automatic DOIs for everyone
+    public Boolean getEnableAutoDois() {
+        return enableAutoDois;
+    }
+
+    public void setEnableAutoDois(Boolean enableAutoDois) {
+        this.enableAutoDois = enableAutoDois;
     }
 
     /**
