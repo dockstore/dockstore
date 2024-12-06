@@ -453,7 +453,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
-        @QueryParam("sortCol") String sortCol,
+        @Parameter(name = "sortCol", description = "column used to sort versions. if omitted, the webservice determines the sort order, currently default version first", required = false, in = ParameterIn.QUERY) @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
