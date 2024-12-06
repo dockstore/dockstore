@@ -8641,8 +8641,8 @@ paths:
           format: int32
           default: 0
           minimum: 0
-      - description: "column used to sort versions. if omitted, the webservice will\
-          \ determine the sort order, currently default version first"
+      - description: "column used to sort versions. if omitted, the webservice determines\
+          \ the sort order, currently default version first"
         in: query
         name: sortCol
         schema:
