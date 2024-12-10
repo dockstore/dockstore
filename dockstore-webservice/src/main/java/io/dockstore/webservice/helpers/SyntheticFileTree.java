@@ -19,17 +19,19 @@ package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 /**
  * Implements a memory-based FileTree, empty upon construction, to which
  * files are added by specifying their absolute path and content via the
  * `addFile` method.  Useful to unit test code that uses FileTrees, without
  * needing to create an actual tree of files (on GitHub, the local
- * filesystem, within a resource file, etc).  Currently, the implementation
- * of `listFiles` has O(N) runtime, where N is the number of files.
+ * filesystem, within a resource file, etc).  In general, the current
+ * implementation is not optimized for performance. For example, currently,
+ * `listFiles` has O(N) runtime, where N is the number of files.
  */
 public class SyntheticFileTree implements FileTree {
 
@@ -49,17 +51,22 @@ public class SyntheticFileTree implements FileTree {
 
     @Override
     public List<String> listFiles(String dirPath) {
-        String normalizedDirPath = addSlash(dirPath);
+        Set<String> fileNames = new HashSet<>();
         // Find the paths that begin with the specified path,
         // strip the specified path from the front, and
         // extract the first component of the remaining path.
         // Collect to a set to eliminate duplicate directory results.
-        return new ArrayList<>(pathToContent.keySet().stream()
-            .filter(path -> path.startsWith(normalizedDirPath))
-            .map(path -> path.substring(normalizedDirPath.length()))
-            .filter(path -> !path.isEmpty())
-            .map(path -> path.split(FILE_SEPARATOR)[0])
-            .collect(Collectors.toSet()));
+        String prefix = addSlash(dirPath);
+        for (String path: pathToContent.keySet()) {
+            if (path.startsWith(prefix)) {
+                String suffix = path.substring(prefix.length());
+                if (!suffix.isEmpty()) {
+                    String fileName = suffix.split(FILE_SEPARATOR)[0];
+                    fileNames.add(fileName);
+                }
+            }
+        }
+        return new ArrayList<>(fileNames);
     }
 
     @Override

@@ -28,8 +28,8 @@ public class SyntheticFileTreeTest {
     @Test
     void testEmpty() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
-        Assertions.assertEquals(null, fileTree.readFile("/"));
-        Assertions.assertEquals(null, fileTree.readFile("/foo.txt"));
+        Assertions.assertNull(fileTree.readFile("/"));
+        Assertions.assertNull(fileTree.readFile("/foo.txt"));
         sameElements(List.of(), fileTree.listFiles("/"));
         sameElements(List.of(), fileTree.listFiles("/foo_dir/"));
         sameElements(List.of(), fileTree.listFiles("/foo_dir"));
@@ -49,6 +49,7 @@ public class SyntheticFileTreeTest {
         Assertions.assertEquals(content, fileTree.readFile(path));
         sameElements(List.of("foo"), fileTree.listFiles("/"));
         sameElements(List.of(name), fileTree.listFiles(dir));
+        sameElements(List.of(name), fileTree.listFiles(dir + "/"));
         sameElements(List.of(), fileTree.listFiles(path));
         sameElements(List.of(path), fileTree.listPaths());
     }
@@ -68,11 +69,34 @@ public class SyntheticFileTreeTest {
     }
 
     @Test
-    void testDuplicateDirectories() {
+    void testTwoFilesSameSubdirectory() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
         fileTree.addFile("/a/1.txt", "one");
         fileTree.addFile("/a/2.txt", "two");
         sameElements(List.of("a"), fileTree.listFiles("/"));
+        sameElements(List.of("1.txt", "2.txt"), fileTree.listFiles("/a"));
+    }
+
+    @Test
+    void testTwoSubdirectories() {
+        final SyntheticFileTree fileTree = new SyntheticFileTree();
+        fileTree.addFile("/a/1.txt", "one");
+        fileTree.addFile("/b/2.txt", "two");
+        sameElements(List.of("a", "b"), fileTree.listFiles("/"));
+        sameElements(List.of("1.txt"), fileTree.listFiles("/a"));
+        sameElements(List.of("2.txt"), fileTree.listFiles("/b"));
+    }
+
+    @Test
+    void testMoreMissingFiles() {
+        final SyntheticFileTree fileTree = new SyntheticFileTree();
+        fileTree.addFile("/a/file.txt", "content");
+        Assertions.assertNull(fileTree.readFile("/"));
+        Assertions.assertNull(fileTree.readFile("/a"));
+        Assertions.assertNull(fileTree.readFile("/a/"));
+        Assertions.assertNull(fileTree.readFile("/none"));
+        Assertions.assertNull(fileTree.readFile("/a/none.txt"));
+        Assertions.assertNull(fileTree.readFile("/a/none.txt/"));
     }
 
     private void sameElements(Collection<String> a, Collection<String> b) {
