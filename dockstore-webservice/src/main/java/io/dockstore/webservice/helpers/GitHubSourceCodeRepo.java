@@ -262,6 +262,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Reads a Zip file from GitHub that contains the tree corresponding to the specified repository and reference.
+     * @param repositoryId GitHub repository ID
+     * @param reference GitHub reference
+     * @return Zip file contents
      */
     public byte[] readZip(String repositoryId, String reference) {
         GHRepository repo;
