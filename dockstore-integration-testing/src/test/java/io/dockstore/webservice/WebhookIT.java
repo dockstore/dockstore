@@ -1095,6 +1095,23 @@ class WebhookIT extends BaseIT {
     }
 
     /**
+     * https://ucsc-cgl.atlassian.net/browse/SEAB-6850
+     */
+    @Test
+    void testGitHubReleaseUserHasAnExpiredGitHubToken() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        testingPostgres.runUpdateStatement("update token set content='invalidtoken' where username = '%s' and tokensource='github.com'".formatted(USER_2_USERNAME));
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+        // Test starts from scratch
+        final Long userlessWorkflows = testingPostgres.runSelectStatement(
+                "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
+        assertEquals(1, userlessWorkflows);
+
+    }
+
+    /**
      * Tests:
      * An unpublished workflow with invalid versions can have its descriptor type changed
      * The workflow can then have new valid versions registered

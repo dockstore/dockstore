@@ -768,8 +768,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         final GitHubSourceCodeRepo userSourceCodeRepo = new GitHubSourceCodeRepo(profile.username,
                                 gitHubToken.getContent());
                         // Get a map of all repos the user has permissions to
-                        final Map<String, String> map = userSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-                        return map.values().contains(repository);
+                        try {
+                            final Map<String, String> map = userSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+                            return map.values().contains(repository);
+                        } catch (CustomWebApplicationException ex) {
+                            // https://ucsc-cgl.atlassian.net/browse/SEAB-6850 - User had an expired token, exception wrapped here:
+                            // io.dockstore.webservice.helpers.SourceCodeRepoInterface.handleGetWorkflowGitUrl2RepositoryIdError
+                            LOG.error("Error listing user's repositories ", ex);
+                            return false;
+                        }
                     }
                     return false;
                 }).toList();
