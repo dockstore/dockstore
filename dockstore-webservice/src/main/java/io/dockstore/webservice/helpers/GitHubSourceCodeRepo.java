@@ -261,6 +261,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
+     * Reads a Zip file from GitHub that contains the tree corresponding to the specified repository and reference.
+     * @param repositoryId GitHub repository ID
+     * @param reference GitHub reference
+     * @return Zip file contents
+     */
+    public byte[] readZip(String repositoryId, String reference) {
+        GHRepository repo;
+        try {
+            String sha = getCommitID(repositoryId, reference);
+            repo = github.getRepository(repositoryId);
+            return repo.readZip(in -> IOUtils.toByteArray(in), sha);
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readZip while trying to get reference " + reference + " from repository " + repositoryId + ", " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
      * This method appears to read files from github in a cache-aware manner, taking into account symlinks and submodules.
      *
      * @param originalFileName the original filename that we're looking for

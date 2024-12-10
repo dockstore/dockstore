@@ -6916,6 +6916,41 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/github/infer/{owner}/{repo}/{ref}:
+    get:
+      deprecated: true
+      description: Infer the entries in the file tree of a GitHub repository reference.
+      operationId: inferEntries
+      parameters:
+      - description: repo owner
+        in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - description: repo name
+        in: path
+        name: repo
+        required: true
+        schema:
+          type: string
+      - description: "reference, could contain slashes which need to be urlencoded"
+        in: path
+        name: ref
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/github/install:
     post:
       description: Handle the installation of our GitHub app onto a repository or

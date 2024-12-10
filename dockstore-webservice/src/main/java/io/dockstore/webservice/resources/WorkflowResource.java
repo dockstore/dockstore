@@ -68,8 +68,11 @@ import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -80,6 +83,9 @@ import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
+import io.dockstore.webservice.helpers.infer.Inferrer;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -2140,6 +2146,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Path("/github/infer/{owner}/{repo}/{ref}")
+    @Timed
+    @UnitOfWork
+    @Operation(description = "Infer the entries in the file tree of a GitHub repository reference.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Deprecated
+    public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
+        @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
+        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+        // Get GitHub tokens.
+        List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
+        if (tokens.isEmpty()) {
+            throw new CustomWebApplicationException("Could not find GitHub token.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Create github source code repo.
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+
+        // Create FileTree.
+        String ownerAndRepo = owner + "/" + repo;
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+
+        // Infer entries.
+        InferrerHelper inferrerHelper = new InferrerHelper();
+        List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
+
+        // Create and return .dockstore.yml
+        return inferrerHelper.toDockstoreYaml(entries);
     }
 
     /**
