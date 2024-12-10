@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import io.dockstore.common.Partner;
@@ -41,6 +42,7 @@ import io.swagger.model.ToolV1;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -49,8 +51,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -77,6 +82,8 @@ import org.apache.http.HttpStatus;
 @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)
 public class ToolsExtendedApi {
 
+    private static final int MAX_AI_CANDIDATES_PAGINATION_LIMIT = 1000;
+    private static final String DEFAULT_AI_CANDIDATES_PAGINATION_LIMIT = "1000";
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     @GET
@@ -389,6 +396,30 @@ public class ToolsExtendedApi {
         @PathParam("id") String id,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.getAITopicCandidate(id);
+    }
+
+    @GET
+    @UnitOfWork
+    @Path("/aiTopicCandidates")
+    @RolesAllowed({"curator", "admin"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getAITopicCandidates", description = "Get all published tools that are AI topic candidates and their representative version if it exists, otherwise an empty string is returned as the version name.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                    + "", description = GetAITopicCandidates.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))), headers = @Header(name = X_TOTAL_COUNT, description = "Total count of AI topic candidates", schema = @Schema(type = "integer", format = "int64"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                    + "", description = GetAITopicCandidates.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        })
+    public Response getAITopicCandidates(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(in = ParameterIn.QUERY, description = "Start index of paging. If this exceeds the current result set return an empty set. If not specified in the request, this will start at the beginning of the results.") @Min(0) @DefaultValue("0") @QueryParam("offset") Integer offset,
+            @Parameter(in = ParameterIn.QUERY, description = "Amount of records to return in a given page.") @Min(1) @Max(MAX_AI_CANDIDATES_PAGINATION_LIMIT) @DefaultValue(DEFAULT_AI_CANDIDATES_PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.getAITopicCandidates(offset, limit);
+    }
+
+    private static final class GetAITopicCandidates {
+        public static final String OK_RESPONSE = "Retrieved published tools that are AI topic candidates and a single representative version name if it exists, otherwise an empty string is returned as the version name.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 
     private static final class AiTopicCandidateGet {

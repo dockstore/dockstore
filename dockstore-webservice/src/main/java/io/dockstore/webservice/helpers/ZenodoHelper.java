@@ -27,6 +27,7 @@ import io.dockstore.webservice.resources.SourceControlResourceInterface;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.ApiException;
+import io.swagger.zenodo.client.ApiResponse;
 import io.swagger.zenodo.client.api.AccessLinksApi;
 import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
@@ -52,6 +53,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -86,6 +88,15 @@ public final class ZenodoHelper {
     public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
     public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
+    /**
+     * How long to wait for Zenodo rate limit to get reset. Normally it should get reset after 1 minute; add one more second to safe.
+     */
+    private static final Duration MAX_WAIT_FOR_ZENODO_RATE_RESET = Duration.ofSeconds(61);
+    /**
+     * How low the number for remaining rate-limited Zenodo requests should get before waiting for a rate limit reset. Normal rate limit
+     * is 133 requests per minute; 10 seems like a safe buffer.
+     */
+    private static final int ZENODO_REQUESTS_REMAINING_PADDING = 10;
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
     private static String dockstoreZenodoAccessToken;
@@ -389,17 +400,21 @@ public final class ZenodoHelper {
      * @return
      */
     public static List<GitHubRepoDois> findDoisForGitHubRepo(String gitHubRepo) {
+        LOG.info("Looking for DOIs for repo {}", gitHubRepo);
         final ApiClient zenodoClient = createDockstoreZenodoClient();
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         final String query = "metadata.related_identifiers.identifier:/https:\\/\\/github.com\\/%s\\/tree\\/.+/".formatted(gitHubRepo.replace("/", "\\/"));
         final int pageSize = 1; // We can only handle 1 DOI for a GitHub initiator, so no point asking for more
         try {
-            final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
+            final ApiResponse<SearchResult> response = previewApi.listRecordsWithHttpInfo(query, "bestmatch", 1, pageSize);
+            zenodoClientRateLimitHelper().checkRateLimit(response.getHeaders());
+            final SearchResult records = response.getData();
             final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
             return dois.stream()
                     .map(conceptAndDoi -> {
-                        final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
-                        final List<TagAndDoi> taggedVersions = findTaggedVersions(recordVersions.getHits().getHits(), gitHubRepo);
+                        final ApiResponse<SearchResult> versionsResponse = getRecordVersions(zenodoClient, conceptAndDoi.doi());
+                        zenodoClientRateLimitHelper().checkRateLimit(versionsResponse.getHeaders());
+                        final List<TagAndDoi> taggedVersions = findTaggedVersions(versionsResponse.getData().getHits().getHits(), gitHubRepo);
                         return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
                     })
                     .toList();
@@ -407,6 +422,10 @@ public final class ZenodoHelper {
             LOG.error("Error discovering DOIs for GitHub repo %s".formatted(gitHubRepo), e);
             return List.of();
         }
+    }
+
+    private static ClientRateLimitHelper zenodoClientRateLimitHelper() {
+        return new ClientRateLimitHelper(MAX_WAIT_FOR_ZENODO_RATE_RESET, ZENODO_REQUESTS_REMAINING_PADDING);
     }
 
     /**
@@ -448,9 +467,9 @@ public final class ZenodoHelper {
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
-    static SearchResult getRecordVersions(ApiClient zenodoClient, String doi) {
+    static ApiResponse<SearchResult> getRecordVersions(ApiClient zenodoClient, String doi) {
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
-        return previewApi.getRecordVersions(extractRecordIdFromDoi(doi));
+        return previewApi.getRecordVersionsWithHttpInfo(extractRecordIdFromDoi(doi));
     }
 
     /**
@@ -962,7 +981,7 @@ public final class ZenodoHelper {
      * @return
      */
     public static boolean canAutomaticallyCreateDockstoreOwnedDoi(Workflow workflow, WorkflowVersion workflowVersion) {
-        final boolean validPublishedTag = workflow.getIsPublished() && workflowVersion.isValid() && workflowVersion.getReferenceType() == ReferenceType.TAG;
+        final boolean validPublishedTag = workflow.isAutoGenerateDois() && workflow.getIsPublished() && workflowVersion.isValid() && workflowVersion.getReferenceType() == ReferenceType.TAG;
         return validPublishedTag && !hasExistingDOIForWorkflowVersion(workflowVersion, DoiInitiator.DOCKSTORE);
     }
 

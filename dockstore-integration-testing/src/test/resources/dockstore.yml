@@ -41,8 +41,9 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10s
 
 server:
   applicationConnectors:
-    - type: custom-http
+    - type: http
       port: 8080
+      uriCompliance: LEGACY
   adminConnectors:
     - type: http
       port: 8001
@@ -54,7 +55,7 @@ limitConfig:
 metricsConfig:
   s3BucketName: local-dockstore-metrics-data
   # LocalStack usually runs at this endpoint
-  s3EndpointOverride: http://localhost:4566
+  s3EndpointOverride: https://s3.localhost.localstack.cloud:4566
 
 database:
   # the name of your JDBC driver

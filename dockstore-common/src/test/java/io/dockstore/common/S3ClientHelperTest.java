@@ -38,6 +38,10 @@ class S3ClientHelperTest {
         assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow", S3ClientHelper.convertToolIdToPartialKey(toolId));
         toolId = "quay.io/pancancer/pcawg-bwa-mem-workflow/thing";
         assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing", S3ClientHelper.convertToolIdToPartialKey(toolId));
+        toolId = "#notebook/github.com/dockstore/trs-notebook";
+        assertEquals("notebook/github.com/dockstore/trs-notebook", S3ClientHelper.convertToolIdToPartialKey(toolId));
+        toolId = "#service/github.com/dockstore/simple-service";
+        assertEquals("service/github.com/dockstore/simple-service", S3ClientHelper.convertToolIdToPartialKey(toolId));
     }
 
     @Test
@@ -55,6 +59,20 @@ class S3ClientHelperTest {
         // Key of tool with tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing";
         assertEquals("quay.io/pancancer/pcawg-bwa-mem-workflow/thing", S3ClientHelper.getToolId(s3Key));
+
+        // Key of notebook with no notebook name
+        s3Key = "notebook/github.com/dockstore/trs-notebook/1.0/terra/foo.json";
+        assertEquals("#notebook/github.com/dockstore/trs-notebook", S3ClientHelper.getToolId(s3Key));
+        // Key of notebook with notebook name
+        s3Key = "notebook/github.com/dockstore/trs-notebook%2Ffoo/1.0/terra/foo.json";
+        assertEquals("#notebook/github.com/dockstore/trs-notebook/foo", S3ClientHelper.getToolId(s3Key));
+
+        // Key of service with no service name
+        s3Key = "service/github.com/dockstore/trs-service/1.0/terra/foo.json";
+        assertEquals("#service/github.com/dockstore/trs-service", S3ClientHelper.getToolId(s3Key));
+        // Key of service with service name
+        s3Key = "service/github.com/dockstore/trs-service%2Ffoo/1.0/terra/foo.json";
+        assertEquals("#service/github.com/dockstore/trs-service/foo", S3ClientHelper.getToolId(s3Key));
     }
 
     @Test

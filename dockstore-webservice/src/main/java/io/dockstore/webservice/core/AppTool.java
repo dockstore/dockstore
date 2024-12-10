@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.EntryLite.EntryLiteAppTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
@@ -59,6 +61,11 @@ public class AppTool extends Workflow {
     @Override
     public AppTool createEmptyEntry() {
         return new AppTool();
+    }
+
+    @Override
+    public EntryLite<AppTool> createEntryLite() {
+        return new EntryLiteAppTool(this);
     }
 
     @Override

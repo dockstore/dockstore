@@ -21,13 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
@@ -45,6 +38,7 @@ import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.model.PublishRequest;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
@@ -628,27 +622,10 @@ public final class CommonTestUtilities {
         assertTrue(log.toLowerCase().contains("git repo"));
     }
 
-    public static void restartElasticsearch() throws IOException {
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
-
-        try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
-                .sslConfig(config.getSSLConfig()).build(); DockerClient instance = DockerClientImpl.getInstance(config, httpClient)) {
-            List<Container> exec = instance.listContainersCmd().exec();
-            Optional<Container> elasticsearch = exec.stream().filter(container -> container.getImage().contains("elasticsearch"))
-                    .findFirst();
-            if (elasticsearch.isPresent()) {
-                Container container = elasticsearch.get();
-                try {
-                    instance.restartContainerCmd(container.getId());
-                    // Wait 25 seconds for elasticsearch to become ready
-                    // TODO: Replace with better wait
-                    Thread.sleep(25000);
-                } catch (Exception e) {
-                    System.err.println("Problems restarting Docker container");
-                }
-            }
-
-        }
+    public static void restartElasticsearch() {
+        // see https://ucsc-cgl.atlassian.net/browse/SEAB-6834
+        // revert associated commit to re-enable restarting of elasticsearch
+        // this should make elasticsearch tests more independent from one another
     }
 
     // These two functions are duplicated from SwaggerUtility in dockstore-client to prevent importing dockstore-client
@@ -670,17 +647,18 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client, String acceptType) {
+    public static <T> ApiResponse<T> invokeAPI(String path, GenericType<T> type, ApiClient client, String acceptType) {
         return client
-            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "application/zip",
-                new String[] { "BEARER" }, type).getData();
+            .invokeAPI(path, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "text/plain",
+                new String[] { "BEARER" }, type);
     }
 
-    /**
-     * Get an arbitrary URL with the accept type defaulting to "application/zip".
-     */
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
-        return getArbitraryURL(url, type, client, "application/zip");
+    public static String getContentType(ApiResponse<?> response) {
+        return response.getHeaders().entrySet().stream()
+            .filter(entry -> "Content-Type".equalsIgnoreCase(entry.getKey()))
+            .map(entry -> entry.getValue().get(0))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("response contained no Content-Type header"));
     }
 
     /**
