@@ -17,9 +17,10 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.HashMap;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implements a FileTree that wraps a specified FileTree, delegates to
@@ -41,37 +42,32 @@ public class CachingFileTree implements FileTree {
 
     private final FileTree fileTree;
     /**
-     * Maps file paths to saved file content.
+     * Cache of file paths to file content.
      */
-    private final Map<String, String> filePathToContent = new HashMap<>();
+    private final LoadingCache<String, Optional<String>> filePathToContent;
     /**
-     * Maps directory paths to saved directory contents.
+     * Cache of directory paths to directory contents.
      */
-    private final Map<String, List<String>> dirPathToFiles = new HashMap<>();
+    private final LoadingCache<String, List<String>> dirPathToFiles;
+    /**
+     * Value returned by call to `fileTree.listPaths()`, or null if not yet called.
+     */
     private List<String> paths;
 
     public CachingFileTree(FileTree fileTree) {
         this.fileTree = fileTree;
+        this.filePathToContent = Caffeine.newBuilder().build(filePath -> Optional.ofNullable(intern(fileTree.readFile(filePath))));
+        this.dirPathToFiles = Caffeine.newBuilder().build(dirPath -> fileTree.listFiles(dirPath));
     }
 
     @Override
     public String readFile(String filePath) {
-        if (filePathToContent.containsKey(filePath)) {
-            return filePathToContent.get(filePath);
-        }
-        String content = fileTree.readFile(filePath);
-        filePathToContent.put(filePath, content);
-        return content;
+        return filePathToContent.get(filePath).orElse(null);
     }
 
     @Override
     public List<String> listFiles(String dirPath) {
-        if (dirPathToFiles.containsKey(dirPath)) {
-            return dirPathToFiles.get(dirPath);
-        }
-        List<String> files = fileTree.listFiles(dirPath);
-        dirPathToFiles.put(dirPath, files);
-        return files;
+        return dirPathToFiles.get(dirPath);
     }
 
     @Override
@@ -80,5 +76,9 @@ public class CachingFileTree implements FileTree {
             paths = fileTree.listPaths();
         }
         return paths;
+    }
+
+    private String intern(String value) {
+        return value != null ? value.intern() : null;
     }
 }
