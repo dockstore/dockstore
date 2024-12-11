@@ -1102,6 +1102,8 @@ class WebhookIT extends BaseIT {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
+        final Long initialWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(0, initialWorkflowCount, "There should be no workflows to start");
         // Make USER_2_USERNAME's token invalid, which behaves similar to an expired token
         testingPostgres.runUpdateStatement("update token set content='expiredtoken' where username = '%s' and tokensource='github.com'".formatted(USER_2_USERNAME));
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));

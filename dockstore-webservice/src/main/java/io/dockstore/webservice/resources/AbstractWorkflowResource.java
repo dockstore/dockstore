@@ -774,7 +774,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         } catch (CustomWebApplicationException ex) {
                             // https://ucsc-cgl.atlassian.net/browse/SEAB-6850 - User had an expired token, exception wrapped here:
                             // io.dockstore.webservice.helpers.SourceCodeRepoInterface.handleGetWorkflowGitUrl2RepositoryIdError
-                            LOG.error("Error listing user's repositories ", ex);
+                            LOG.info("Error listing user's repositories for determining permissions", ex);
                             return false;
                         }
                     }
