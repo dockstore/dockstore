@@ -1109,12 +1109,14 @@ class WebhookIT extends BaseIT {
                 "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
         assertEquals(1, userlessWorkflows);
         final Long wvCount1 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertEquals(1, wvCount1, "The userless workflow should now have 1 version1");
+        assertEquals(1, wvCount1, "The userless workflow should now have 1 version");
 
 
         // Ensure update also doesn't fail
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.2", "thisisafakeuser", null, List.of(USER_2_USERNAME));
-        final Long wvCount2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstore.wdl'", long.class); // 0.2 also has CWL version
+
+        // 0.2 also creates a CWL version, so only look for WDL versions
+        final Long wvCount2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstore.wdl'", long.class);
         assertEquals(2, wvCount2, "The userless workflow should now have 2 WDL versions");
     }
 
