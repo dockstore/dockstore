@@ -17,6 +17,7 @@ workflows:
          - develop
        tags:
          - gwas*
+     enableAutoDois: false
   -  name: foobar2
      subclass: cwl
      publish: no
@@ -43,6 +44,7 @@ service:
     multi-omic and clinical/phenotype data.
     It is recommended that you configure a reverse proxy to handle HTTPS
   publish: True
+  enableAutoDois: false
   files:
     - docker-compose.yml
     - README.md
@@ -93,3 +95,4 @@ notebooks:
   - name: notebook1
     path: /notebook1.ipynb
     kernel: quay.io/seqware/seqware_full/1.1
+    enableAutoDois: false

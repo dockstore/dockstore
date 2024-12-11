@@ -21,6 +21,7 @@ import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -45,6 +46,7 @@ public class YamlNotebook implements Workflowish {
     private List<YamlAuthor> authors = new ArrayList<>();
     private List<String> testParameterFiles = new ArrayList<>();
     private List<String> otherFiles = new ArrayList<>();
+    private Boolean enableAutoDois;
 
     @EntryName
     public String getName() {
@@ -188,6 +190,7 @@ public class YamlNotebook implements Workflowish {
     }
 
     @Override
+    @AbsolutePath
     public String getReadMePath() {
         return readMePath;
     }
@@ -202,5 +205,15 @@ public class YamlNotebook implements Workflowish {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    @Override
+    @AssertFalse // TODO: Added as part of https://ucsc-cgl.atlassian.net/browse/SEAB-6805. Remove when we turn on automatic DOIs for everyone
+    public Boolean getEnableAutoDois() {
+        return enableAutoDois;
+    }
+
+    public void setEnableAutoDois(Boolean enableAutoDois) {
+        this.enableAutoDois = enableAutoDois;
     }
 }
