@@ -1102,13 +1102,20 @@ class WebhookIT extends BaseIT {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
-        testingPostgres.runUpdateStatement("update token set content='invalidtoken' where username = '%s' and tokensource='github.com'".formatted(USER_2_USERNAME));
+        // Make USER_2_USERNAME's token invalid, which behaves similar to an expired token
+        testingPostgres.runUpdateStatement("update token set content='expiredtoken' where username = '%s' and tokensource='github.com'".formatted(USER_2_USERNAME));
         handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));
-        // Test starts from scratch
         final Long userlessWorkflows = testingPostgres.runSelectStatement(
                 "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
         assertEquals(1, userlessWorkflows);
+        final Long wvCount1 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
+        assertEquals(1, wvCount1, "The userless workflow should now have 1 version1");
 
+
+        // Ensure update also doesn't fail
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.2", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+        final Long wvCount2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstore.wdl'", long.class); // 0.2 also has CWL version
+        assertEquals(2, wvCount2, "The userless workflow should now have 2 WDL versions");
     }
 
     /**
