@@ -17,8 +17,11 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,28 +31,27 @@ public class SyntheticFileTreeTest {
     @Test
     void testEmpty() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
-        Assertions.assertNull(fileTree.readFile("/"));
-        Assertions.assertNull(fileTree.readFile("/foo.txt"));
-        sameElements(List.of(), fileTree.listFiles("/"));
-        sameElements(List.of(), fileTree.listFiles("/foo_dir/"));
-        sameElements(List.of(), fileTree.listFiles("/foo_dir"));
+        Assertions.assertNull(fileTree.readFile(path("/")));
+        Assertions.assertNull(fileTree.readFile(path("/foo.txt")));
+        sameElements(List.of(), fileTree.listFiles(path("/")));
+        sameElements(List.of(), fileTree.listFiles(path("/foo_dir/")));
+        sameElements(List.of(), fileTree.listFiles(path("/foo_dir")));
         sameElements(List.of(), fileTree.listPaths());
     }
 
     @Test
     void testSingleFile() {
-        final String dir = "/foo";
+        final Path dir = path("/foo");
         final String name = "bar.txt";
-        final String path = dir + "/" + name;
+        final Path path = dir.resolve(name);
         final String content = "some content";
         final SyntheticFileTree fileTree = new SyntheticFileTree();
         fileTree.addFile(path, content);
-        Assertions.assertEquals(null, fileTree.readFile("/"));
-        Assertions.assertEquals(null, fileTree.readFile("dir"));
+        Assertions.assertEquals(null, fileTree.readFile(path("/")));
+        Assertions.assertEquals(null, fileTree.readFile(dir));
         Assertions.assertEquals(content, fileTree.readFile(path));
-        sameElements(List.of("foo"), fileTree.listFiles("/"));
+        sameElements(List.of("foo"), fileTree.listFiles(path("/")));
         sameElements(List.of(name), fileTree.listFiles(dir));
-        sameElements(List.of(name), fileTree.listFiles(dir + "/"));
         sameElements(List.of(), fileTree.listFiles(path));
         sameElements(List.of(path), fileTree.listPaths());
     }
@@ -57,53 +59,57 @@ public class SyntheticFileTreeTest {
     @Test
     void testMultipleFiles() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
-        fileTree.addFile("/1.txt", "one");
-        fileTree.addFile("/dir/2.txt", "two");
-        Assertions.assertEquals("one", fileTree.readFile("/1.txt"));
-        Assertions.assertEquals(null, fileTree.readFile("/2.txt"));
-        Assertions.assertEquals("two", fileTree.readFile("/dir/2.txt"));
-        sameElements(List.of("1.txt", "dir"), fileTree.listFiles("/"));
-        sameElements(List.of("2.txt"), fileTree.listFiles("/dir"));
-        sameElements(List.of(), fileTree.listFiles("/dir/2.txt"));
-        sameElements(List.of("/1.txt", "/dir/2.txt"), fileTree.listPaths());
+        fileTree.addFile(path("/1.txt"), "one");
+        fileTree.addFile(path("/dir/2.txt"), "two");
+        Assertions.assertEquals("one", fileTree.readFile(path("/1.txt")));
+        Assertions.assertEquals(null, fileTree.readFile(path("/2.txt")));
+        Assertions.assertEquals("two", fileTree.readFile(path("/dir/2.txt")));
+        sameElements(List.of("1.txt", "dir"), fileTree.listFiles(path("/")));
+        sameElements(List.of("2.txt"), fileTree.listFiles(path("/dir")));
+        sameElements(List.of(), fileTree.listFiles(path("/dir/2.txt")));
+        sameElements(List.of(path("/1.txt"), path("/dir/2.txt")), fileTree.listPaths());
     }
 
     @Test
     void testTwoFilesSameSubdirectory() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
-        fileTree.addFile("/a/1.txt", "one");
-        fileTree.addFile("/a/2.txt", "two");
-        sameElements(List.of("a"), fileTree.listFiles("/"));
-        sameElements(List.of("1.txt", "2.txt"), fileTree.listFiles("/a"));
+        fileTree.addFile(path("/a/1.txt"), "one");
+        fileTree.addFile(path("/a/2.txt"), "two");
+        sameElements(List.of("a"), fileTree.listFiles(path("/")));
+        sameElements(List.of("1.txt", "2.txt"), fileTree.listFiles(path("/a")));
     }
 
     @Test
     void testTwoSubdirectories() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
-        fileTree.addFile("/a/1.txt", "one");
-        fileTree.addFile("/b/2.txt", "two");
-        sameElements(List.of("a", "b"), fileTree.listFiles("/"));
-        sameElements(List.of("1.txt"), fileTree.listFiles("/a"));
-        sameElements(List.of("2.txt"), fileTree.listFiles("/b"));
+        fileTree.addFile(path("/a/1.txt"), "one");
+        fileTree.addFile(path("/b/2.txt"), "two");
+        sameElements(List.of("a", "b"), fileTree.listFiles(path("/")));
+        sameElements(List.of("1.txt"), fileTree.listFiles(path("/a")));
+        sameElements(List.of("2.txt"), fileTree.listFiles(path("/b")));
     }
 
     @Test
     void testMoreMissingFiles() {
         final SyntheticFileTree fileTree = new SyntheticFileTree();
-        fileTree.addFile("/a/file.txt", "content");
-        Assertions.assertNull(fileTree.readFile("/"));
-        Assertions.assertNull(fileTree.readFile("/a"));
-        Assertions.assertNull(fileTree.readFile("/a/"));
-        Assertions.assertNull(fileTree.readFile("/none"));
-        Assertions.assertNull(fileTree.readFile("/a/none.txt"));
-        Assertions.assertNull(fileTree.readFile("/a/none.txt/"));
+        fileTree.addFile(path("/a/file.txt"), "content");
+        Assertions.assertNull(fileTree.readFile(path("/")));
+        Assertions.assertNull(fileTree.readFile(path("/a")));
+        Assertions.assertNull(fileTree.readFile(path("/a/")));
+        Assertions.assertNull(fileTree.readFile(path("/none")));
+        Assertions.assertNull(fileTree.readFile(path("/a/none.txt")));
+        Assertions.assertNull(fileTree.readFile(path("/a/none.txt/")));
     }
 
-    private void sameElements(Collection<String> a, Collection<String> b) {
-        List<String> aList = new ArrayList<>(a);
-        aList.sort(String::compareTo);
-        List<String> bList = new ArrayList<>(b);
-        bList.sort(String::compareTo);
+    private <T extends Comparable<? super T>> void sameElements(Collection<T> a, Collection<T> b) {
+        List<T> aList = new ArrayList<>(a);
+        Collections.sort(aList);
+        List<T> bList = new ArrayList<>(b);
+        Collections.sort(bList);
         Assertions.assertEquals(aList, bList);
+    }
+
+    private Path path(String name, String... names) {
+        return Paths.get(name, names);
     }
 }

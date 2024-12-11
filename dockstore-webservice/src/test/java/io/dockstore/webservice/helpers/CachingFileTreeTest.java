@@ -17,6 +17,9 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,48 +31,56 @@ public class CachingFileTreeTest {
     @Test
     void test() {
         SyntheticFileTree syntheticFileTree = new SyntheticFileTree();
-        syntheticFileTree.addFile("/a/1.txt", "one");
-        syntheticFileTree.addFile("/foo.bar", "foobar");
+        syntheticFileTree.addFile(path("/a/1.txt"), "one");
+        syntheticFileTree.addFile(path("/foo.bar"), "foobar");
         FileTree cachedFileTree = new CachingFileTree(new RepeatedCallDetectorFileTree(syntheticFileTree));
         for (int i = 0; i < 3; i++) {
             // test readFile
-            for (String filePath: List.of("/a/1.txt", "/foo.bar", "/missing.txt")) {
-                Assertions.assertEquals(syntheticFileTree.readFile(filePath), cachedFileTree.readFile(filePath), filePath);
+            for (Path filePath: paths("/a/1.txt", "/foo.bar", "/missing.txt")) {
+                Assertions.assertEquals(syntheticFileTree.readFile(filePath), cachedFileTree.readFile(filePath));
             }
             // test listFiles
-            for (String dirPath: List.of("/", "/a", "/a/b")) {
-                Assertions.assertEquals(syntheticFileTree.listFiles(dirPath), cachedFileTree.listFiles(dirPath), dirPath);
+            for (Path dirPath: paths("/", "/a", "/a/b")) {
+                Assertions.assertEquals(syntheticFileTree.listFiles(dirPath), cachedFileTree.listFiles(dirPath));
             }
             // test listPaths
             Assertions.assertEquals(syntheticFileTree.listPaths(), cachedFileTree.listPaths());
         }
     }
 
+    private Path path(String stringPath) {
+        return Paths.get(stringPath);
+    }
+
+    private List<Path> paths(String... stringPaths) {
+        return Arrays.asList(stringPaths).stream().map(this::path).toList();
+    }
+
     private static class RepeatedCallDetectorFileTree implements FileTree {
         private final FileTree fileTree;
-        private final Set<String> readFileArgs = new HashSet<>();
-        private final Set<String> listFilesArgs = new HashSet<>();
+        private final Set<Path> readFileArgs = new HashSet<>();
+        private final Set<Path> listFilesArgs = new HashSet<>();
         private boolean listedPaths = false;
 
         RepeatedCallDetectorFileTree(FileTree fileTree) {
             this.fileTree = fileTree;
         }
 
-        public String readFile(String filePath) {
+        public String readFile(Path filePath) {
             if (!readFileArgs.add(filePath)) {
                 calledMoreThanOnce();
             }
             return fileTree.readFile(filePath);
         }
 
-        public List<String> listFiles(String dirPath) {
+        public List<String> listFiles(Path dirPath) {
             if (!listFilesArgs.add(dirPath)) {
                 calledMoreThanOnce();
             }
             return fileTree.listFiles(dirPath);
         }
 
-        public List<String> listPaths() {
+        public List<Path> listPaths() {
             if (listedPaths) {
                 calledMoreThanOnce();
             }

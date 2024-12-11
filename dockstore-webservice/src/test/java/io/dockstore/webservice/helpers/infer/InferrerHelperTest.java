@@ -24,6 +24,8 @@ import io.dockstore.common.ValidationConstants;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.helpers.SyntheticFileTree;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
@@ -51,65 +53,65 @@ class InferrerHelperTest {
 
     @Test
     void testFindCwl() {
-        fileTree.addFile("/workflow.cwl", "class: Workflow");
-        Assertions.assertEquals(List.of(cwlWorkflow("/workflow.cwl", null)), inferrerHelper.infer(fileTree));
+        fileTree.addFile(path("/workflow.cwl"), "class: Workflow");
+        Assertions.assertEquals(List.of(cwlWorkflow(path("/workflow.cwl"), null)), inferrerHelper.infer(fileTree));
     }
 
     @Test
     void testFindWdl() {
-        fileTree.addFile("/workflow.wdl", "workflow some_workflow {\n}");
-        Assertions.assertEquals(List.of(wdlWorkflow("/workflow.wdl", "some_workflow")), inferrerHelper.infer(fileTree));
+        fileTree.addFile(path("/workflow.wdl"), "workflow some_workflow {\n}");
+        Assertions.assertEquals(List.of(wdlWorkflow(path("/workflow.wdl"), "some_workflow")), inferrerHelper.infer(fileTree));
     }
 
     @Test
     void testFindIpynb() {
-        fileTree.addFile("/notebook.ipynb", "\"python\"");
-        Assertions.assertEquals(List.of(jupyterNotebook("/notebook.ipynb", null)), inferrerHelper.infer(fileTree));
+        fileTree.addFile(path("/notebook.ipynb"), "\"python\"");
+        Assertions.assertEquals(List.of(jupyterNotebook(path("/notebook.ipynb"), null)), inferrerHelper.infer(fileTree));
     }
 
     @Test
     void testIgnoreOtherFiles() {
-        fileTree.addFile("/workflow.cwl", "class: Workflow");
-        fileTree.addFile("/workflow.wdl", "workflow some_workflow {\n}");
-        fileTree.addFile("/notebook.ipynb", "\"python\"");
-        fileTree.addFile("/not_an_entry.txt", "");
-        fileTree.addFile("/image.gif", "");
+        fileTree.addFile(path("/workflow.cwl"), "class: Workflow");
+        fileTree.addFile(path("/workflow.wdl"), "workflow some_workflow {\n}");
+        fileTree.addFile(path("/notebook.ipynb"), "\"python\"");
+        fileTree.addFile(path("/not_an_entry.txt"), "");
+        fileTree.addFile(path("/image.gif"), "");
         Assertions.assertEquals(3, inferrerHelper.infer(fileTree).size());
     }
 
     @Test
     void testEliminateReferencedFiles() {
-        fileTree.addFile("/sub/main.cwl", "class: Workflow\n'$include': /referenced.cwl");
-        fileTree.addFile("/referenced.cwl", "class: Workflow");
-        Assertions.assertEquals(List.of(cwlWorkflow("/sub/main.cwl", null)), inferrerHelper.infer(fileTree));
+        fileTree.addFile(path("/sub/main.cwl"), "class: Workflow\n'$include': /referenced.cwl");
+        fileTree.addFile(path("/referenced.cwl"), "class: Workflow");
+        Assertions.assertEquals(List.of(cwlWorkflow(path("/sub/main.cwl"), null)), inferrerHelper.infer(fileTree));
     }
 
     @Test
     void testDifferentiateCwlTool() {
-        fileTree.addFile("/tool.cwl", "class: CommandLineTool");
-        Assertions.assertEquals(List.of(cwlTool("/tool.cwl", null)), inferrerHelper.infer(fileTree));
+        fileTree.addFile(path("/tool.cwl"), "class: CommandLineTool");
+        Assertions.assertEquals(List.of(cwlTool(path("/tool.cwl"), null)), inferrerHelper.infer(fileTree));
     }
 
     @Test
     void testIgnoreWdlTask() {
-        fileTree.addFile("/task.wdl", "task some_task { }");
+        fileTree.addFile(path("/task.wdl"), "task some_task { }");
         Assertions.assertEquals(List.of(), inferrerHelper.infer(fileTree));
     }
 
     void testExtractLanguageFromIpynb() {
-        fileTree.addFile("/notebook.ipynb", "\"language\": \"r\"");
+        fileTree.addFile(path("/notebook.ipynb"), "\"language\": \"r\"");
         Inferrer.Entry expected = new Inferrer.Entry(
             EntryType.NOTEBOOK,
             DescriptorLanguage.JUPYTER,
             DescriptorLanguageSubclass.R,
-            "/notebook.ipynb",
+            path("/notebook.ipynb"),
             null);
         Assertions.assertEquals(List.of(expected), inferrerHelper.infer(fileTree));
     }
 
     @Test
     void testNameFromPath() {
-        List<Inferrer.Entry> in = List.of(wdlWorkflow("/sub/some_workflow.wdl", null));
+        List<Inferrer.Entry> in = List.of(wdlWorkflow(path("/sub/some_workflow.wdl"), null));
         List<Inferrer.Entry> out = inferrerHelper.refine(in);
         Assertions.assertEquals(1, out.size());
         Assertions.assertEquals("some_workflow", out.get(0).name());
@@ -117,7 +119,7 @@ class InferrerHelperTest {
 
     @Test
     void testNamesLegal() {
-        List<Inferrer.Entry> in = List.of(wdlWorkflow("/sub/_$123%_-_abc_.wdl", null));
+        List<Inferrer.Entry> in = List.of(wdlWorkflow(path("/sub/_$123%_-_abc_.wdl"), null));
         List<Inferrer.Entry> out = inferrerHelper.refine(in);
         Assertions.assertEquals(1, out.size());
         Assertions.assertEquals("123_abc", out.get(0).name());
@@ -126,8 +128,8 @@ class InferrerHelperTest {
     @Test
     void testNamesUnique() {
         List<Inferrer.Entry> in = List.of(
-            wdlWorkflow("/x.wdl", "a"),
-            wdlWorkflow("/y.wdl", "a"));
+            wdlWorkflow(path("/x.wdl"), "a"),
+            wdlWorkflow(path("/y.wdl"), "a"));
         List<Inferrer.Entry> out = inferrerHelper.refine(in);
         Assertions.assertEquals(2, out.size());
         Assertions.assertEquals("a_1", out.get(0).name());
@@ -157,8 +159,8 @@ class InferrerHelperTest {
     @Test
     void testEliminateDuplicatePaths() {
         List<Inferrer.Entry> in = List.of(
-            wdlWorkflow("/workflow.wdl", "a"),
-            wdlWorkflow("/workflow.wdl", "b"));
+            wdlWorkflow(path("/workflow.wdl"), "a"),
+            wdlWorkflow(path("/workflow.wdl"), "b"));
         List<Inferrer.Entry> out = inferrerHelper.refine(in);
         Assertions.assertEquals(1, out.size());
     }
@@ -166,10 +168,10 @@ class InferrerHelperTest {
     @Test
     void testToDockstoreYaml() throws DockstoreYamlHelper.DockstoreYamlException {
         List<Inferrer.Entry> in = List.of(
-            wdlWorkflow("/workflow.wdl", "wdl_workflow_name"),
-            cwlWorkflow("/workflow.cwl", "cwl_workflow_name"),
-            cwlTool("/tool.cwl", "cwl_tool_name"),
-            jupyterNotebook("/notebook.ipynb", "jupyter_notebook_name"));
+            wdlWorkflow(path("/workflow.wdl"), "wdl_workflow_name"),
+            cwlWorkflow(path("/workflow.cwl"), "cwl_workflow_name"),
+            cwlTool(path("/tool.cwl"), "cwl_tool_name"),
+            jupyterNotebook(path("/notebook.ipynb"), "jupyter_notebook_name"));
         String stringYaml = inferrerHelper.toDockstoreYaml(in);
         DockstoreYaml12 parsedYaml = DockstoreYamlHelper.readAsDockstoreYaml12(stringYaml, true);
         Assertions.assertEquals(1, parsedYaml.getTools().size());
@@ -177,17 +179,21 @@ class InferrerHelperTest {
         Assertions.assertEquals(1, parsedYaml.getNotebooks().size());
     }
 
-    private String randomPath() {
+    private Path randomPath() {
         int len = random.nextInt(64);
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < len; i++) {
             char c = (char)random.nextInt(33, 128);
             builder.append(c);
         }
-        return "/" + builder.toString();
+        return Paths.get("/" + builder.toString());
     }
 
-    private Inferrer.Entry cwlWorkflow(String path, String name) {
+    private Path path(String stringPath) {
+        return Paths.get(stringPath);
+    }
+
+    private Inferrer.Entry cwlWorkflow(Path path, String name) {
         return new Inferrer.Entry(
             EntryType.WORKFLOW,
             DescriptorLanguage.CWL,
@@ -196,7 +202,7 @@ class InferrerHelperTest {
             name);
     }
 
-    private Inferrer.Entry cwlTool(String path, String name) {
+    private Inferrer.Entry cwlTool(Path path, String name) {
         return new Inferrer.Entry(
             EntryType.APPTOOL,
             DescriptorLanguage.CWL,
@@ -205,7 +211,7 @@ class InferrerHelperTest {
             name);
     }
 
-    private Inferrer.Entry wdlWorkflow(String path, String name) {
+    private Inferrer.Entry wdlWorkflow(Path path, String name) {
         return new Inferrer.Entry(
             EntryType.WORKFLOW,
             DescriptorLanguage.WDL,
@@ -214,7 +220,7 @@ class InferrerHelperTest {
             name);
     }
 
-    private Inferrer.Entry jupyterNotebook(String path, String name) {
+    private Inferrer.Entry jupyterNotebook(Path path, String name) {
         return new Inferrer.Entry(
             EntryType.NOTEBOOK,
             DescriptorLanguage.JUPYTER,

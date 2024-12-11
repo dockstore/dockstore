@@ -21,6 +21,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.FileTree;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -41,7 +42,7 @@ public interface Inferrer {
     /**
      * Describes an inferred entry.
      */
-    public record Entry(EntryType type, DescriptorLanguage language, DescriptorLanguageSubclass subclass, String path, String name) {
+    public record Entry(EntryType type, DescriptorLanguage language, DescriptorLanguageSubclass subclass, Path path, String name) {
         public Entry changeName(String newName) {
             return new Entry(type, language, subclass, path, newName);
         }

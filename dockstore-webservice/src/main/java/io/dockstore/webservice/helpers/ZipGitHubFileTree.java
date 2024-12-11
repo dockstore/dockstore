@@ -22,6 +22,8 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +58,7 @@ public class ZipGitHubFileTree implements FileTree {
     private final String repository;
     private final String ref;
     private final ZipFile zipFile;
-    private final Map<String, ZipArchiveEntry> pathToEntry;
+    private final Map<Path, ZipArchiveEntry> pathToEntry;
 
     public ZipGitHubFileTree(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String ref) {
         this.gitHubSourceCodeRepo = gitHubSourceCodeRepo;
@@ -79,9 +81,9 @@ public class ZipGitHubFileTree implements FileTree {
     }
 
     @Override
-    public String readFile(String path) {
+    public String readFile(Path filePath) {
         // If specified file is included in the ZipFile, uncompress its content, convert it to a string, and return it.
-        ZipArchiveEntry entry = pathToEntry.get(path);
+        ZipArchiveEntry entry = pathToEntry.get(filePath);
         if (entry != null) {
             try (InputStream in = zipFile.getInputStream(entry)) {
                 return IOUtils.toString(in, StandardCharsets.UTF_8);
@@ -91,16 +93,16 @@ public class ZipGitHubFileTree implements FileTree {
             }
         }
         // Otherwise, use our existing GitHub API code [to handle symlinks and submodules].
-        return gitHubSourceCodeRepo.readFile(path, repository, ref);
+        return gitHubSourceCodeRepo.readFile(filePath.toString(), repository, ref);
     }
 
     @Override
-    public List<String> listFiles(String path) {
-        return gitHubSourceCodeRepo.listFiles(path, repository, ref);
+    public List<String> listFiles(Path dirPath) {
+        return gitHubSourceCodeRepo.listFiles(dirPath.toString(), repository, ref);
     }
 
     @Override
-    public List<String> listPaths() {
+    public List<Path> listPaths() {
         return new ArrayList<>(pathToEntry.keySet());
     }
 
@@ -108,13 +110,13 @@ public class ZipGitHubFileTree implements FileTree {
      * Computes a file's absolute path, relative to the repo root, from the information in a specified Zip entry.
      * In a GitHub Zipball, all file paths are prepended with a path component formed from the repo/ref information, which this code strips off.
      */
-    private String pathFromEntry(ZipArchiveEntry entry) {
+    private Path pathFromEntry(ZipArchiveEntry entry) {
         String[] parts = entry.getName().split("/", 2);
         if (parts.length != 2) {
             LOG.error("could not parse ZipArchiveEntry: " + stringifyAndClean(entry));
             throw new CustomWebApplicationException("could not read GitHub repository", HttpStatus.SC_BAD_REQUEST);
         }
-        return "/" + parts[1];
+        return Paths.get("/", parts[1]);
     }
 
     private String stringifyAndClean(Object obj) {

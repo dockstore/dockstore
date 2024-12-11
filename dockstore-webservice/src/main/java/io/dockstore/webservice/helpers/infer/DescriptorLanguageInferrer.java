@@ -24,7 +24,7 @@ import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -65,7 +65,7 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
     @Override
     public List<Entry> infer(FileTree fileTree) {
         // Get a list of paths that are probably descriptors.
-        List<String> paths = fileTree.listPaths().stream().filter(this::isDescriptorPath).toList();
+        List<Path> paths = fileTree.listPaths().stream().filter(this::isDescriptorPath).toList();
         // Remove paths that likely correspond to tests, subtasks, etc.
         paths = removeNonPrimaryPaths(paths);
         // Remove paths that are referenced by other descriptors.
@@ -74,7 +74,7 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         return paths.stream().flatMap(path -> infer(fileTree, path).stream()).toList();
     }
 
-    public List<Entry> infer(FileTree fileTree, String path) {
+    public List<Entry> infer(FileTree fileTree, Path path) {
         if (isDescriptorPath(path)) {
             EntryType type = determineType(fileTree, path);
             if (type != null) {
@@ -86,15 +86,19 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         return List.of();
     }
 
+    protected final boolean isDescriptorPath(Path path) {
+        return isDescriptorPath(path.toString());
+    }
+
     protected abstract boolean isDescriptorPath(String path);
 
     /**
      * Remove the paths that probably don't represent primary descriptors
      * that the user would want to reference in their .dockstore.yml
      */
-    protected List<String> removeNonPrimaryPaths(List<String> paths) {
+    protected List<Path> removeNonPrimaryPaths(List<Path> paths) {
         return paths.stream().filter(path -> {
-            String lower = path.toLowerCase();
+            String lower = path.toString().toLowerCase();
             return !(lower.contains("test") || lower.contains("archive") || lower.contains("debug"));
         }).toList();
     }
@@ -103,8 +107,8 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
      * Given a list of specified paths, analyze the content of the corresponding files and remove the paths that
      * appear to be referenced from at least one of the files.
      */
-    protected List<String> removeReferencedPaths(FileTree fileTree, List<String> paths) {
-        Set<String> unreferencedPaths = new LinkedHashSet<>(paths);
+    protected List<Path> removeReferencedPaths(FileTree fileTree, List<Path> paths) {
+        Set<Path> unreferencedPaths = new LinkedHashSet<>(paths);
         paths.forEach(path -> unreferencedPaths.removeAll(determineReferencedPaths(fileTree, path)));
         return toList(unreferencedPaths);
     }
@@ -114,9 +118,9 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
      * references to other files from the specified file.  By design, no parsing is performed, so some of the
      * computed file references may be spurious.
      */
-    protected List<String> determineReferencedPaths(FileTree fileTree, String srcPath) {
+    protected List<Path> determineReferencedPaths(FileTree fileTree, Path srcPath) {
         String content = removeComments(readFile(fileTree, srcPath));
-        List<String> paths = new ArrayList<>();
+        List<Path> paths = new ArrayList<>();
         // Split the file into chunks at the non-space separators and convert the chunks that rememble file references to absolute paths.
         // Spaces are ambiguous, they could be: a) part of a file path, or b) separate a filename from another syntactic construct.
         // Without including language/file-type-specific logic such as parsing, which we are specifically trying to avoid in the
@@ -141,16 +145,16 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         return possiblePath.length() >= MIN_REFERENCED_PATH_LENGTH && possiblePath.contains(DOT) && isDescriptorPath(possiblePath);
     }
 
-    private Optional<String> toAbsolutePath(String currentPath, String relativeOrAbsolutePath) {
+    private Optional<Path> toAbsolutePath(Path currentPath, String relativeOrAbsolutePath) {
         try {
-            return Optional.of(Paths.get(currentPath).resolve(relativeOrAbsolutePath).normalize().toString());
+            return Optional.of(currentPath.resolve(relativeOrAbsolutePath).normalize());
         } catch (InvalidPathException e) {
             // If either path was invalid, ignore and continue.
             return Optional.empty();
         }
     }
 
-    protected EntryType determineType(FileTree fileTree, String path) {
+    protected EntryType determineType(FileTree fileTree, Path path) {
         Set<EntryType> entryTypes = language.getEntryTypes();
         // If this descriptor language only supports one type of entry, return it.
         if (entryTypes.size() == 1) {
@@ -160,11 +164,11 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         throw new UnsupportedOperationException();
     }
 
-    protected String determineName(FileTree fileTree, String path) {
+    protected String determineName(FileTree fileTree, Path path) {
         return null;
     }
 
-    protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
+    protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, Path path, EntryType type) {
         Set<DescriptorLanguageSubclass> subclasses = DescriptorLanguageSubclass.valuesForEntryType(type);
         // If this descriptor language only supports one type of subclass, return it.
         if (subclasses.size() == 1) {
@@ -174,13 +178,13 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         throw new UnsupportedOperationException();
     }
 
-    protected String readFile(FileTree tree, String path) {
+    protected String readFile(FileTree tree, Path path) {
         String content = tree.readFile(path);
         if (content == null) {
             // Currently, all code should be using this method to read a file that it knows exists,
             // because its path has previously been retrieved from the FileTree.
             // So, log something that indicates that a file can't be found, which probably indicates a bug.
-            LOG.error("inferrer could not find file {}", Utilities.cleanForLogging(path));
+            LOG.error("inferrer could not find file {}", Utilities.cleanForLogging(path.toString()));
             throw new CustomWebApplicationException("could not find file", HttpStatus.SC_NOT_FOUND);
         }
         return content;

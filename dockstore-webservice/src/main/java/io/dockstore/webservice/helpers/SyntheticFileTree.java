@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,39 +39,32 @@ public class SyntheticFileTree implements FileTree {
     /**
      * Maps absolute file paths to file content.
      */
-    private Map<String, String> pathToContent = new HashMap<>();
+    private Map<Path, String> pathToContent = new HashMap<>();
     /**
      * The Dockstore file path separator.
      */
     private static final String FILE_SEPARATOR = "/";
 
     @Override
-    public String readFile(String filePath) {
+    public String readFile(Path filePath) {
         return pathToContent.get(filePath);
     }
 
     @Override
-    public List<String> listFiles(String dirPath) {
-        Set<String> fileNames = new HashSet<>();
-        // Find the paths that begin with the specified path,
-        // strip the specified path from the front, and
-        // extract the first component of the remaining path.
-        // Collect to a set to eliminate duplicate directory results.
-        String prefix = addSlash(dirPath);
-        for (String path: pathToContent.keySet()) {
-            if (path.startsWith(prefix)) {
-                String suffix = path.substring(prefix.length());
-                if (!suffix.isEmpty()) {
-                    String fileName = suffix.split(FILE_SEPARATOR)[0];
-                    fileNames.add(fileName);
+    public List<String> listFiles(Path dirPath) {
+        Set<String> files = new HashSet<>();
+        for (Path filePath: pathToContent.keySet()) {
+            if (filePath.startsWith(dirPath)) {
+                if (filePath.getNameCount() > dirPath.getNameCount()) {
+                    files.add(filePath.getName(dirPath.getNameCount()).toString());
                 }
             }
         }
-        return new ArrayList<>(fileNames);
+        return new ArrayList<>(files);
     }
 
     @Override
-    public List<String> listPaths() {
+    public List<Path> listPaths() {
         return new ArrayList<>(pathToContent.keySet());
     }
 
@@ -79,11 +73,7 @@ public class SyntheticFileTree implements FileTree {
      * @param path absolute path of the file
      * @param content content of the file
      */
-    public void addFile(String path, String content) {
+    public void addFile(Path path, String content) {
         pathToContent.put(path, content);
-    }
-
-    private String addSlash(String dirPath) {
-        return dirPath.endsWith(FILE_SEPARATOR) ? dirPath : dirPath + FILE_SEPARATOR;
     }
 }

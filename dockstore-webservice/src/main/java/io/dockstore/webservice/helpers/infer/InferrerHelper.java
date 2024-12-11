@@ -25,6 +25,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.FileTree;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -75,7 +76,7 @@ public class InferrerHelper {
                     return path.endsWith(".cwl");
                 }
                 @Override
-                protected EntryType determineType(FileTree fileTree, String path) {
+                protected EntryType determineType(FileTree fileTree, Path path) {
                     String content = readFile(fileTree, path);
                     if (lineContainsRegex("^class:\\s*Workflow", content)) {
                         return EntryType.WORKFLOW;
@@ -93,7 +94,7 @@ public class InferrerHelper {
                     return path.endsWith(".wdl");
                 }
                 @Override
-                protected EntryType determineType(FileTree fileTree, String path) {
+                protected EntryType determineType(FileTree fileTree, Path path) {
                     String content = readFile(fileTree, path);
                     if (lineContainsRegex("^workflow\\s", content)) {
                         return EntryType.WORKFLOW;
@@ -101,7 +102,7 @@ public class InferrerHelper {
                     return null;
                 }
                 @Override
-                protected String determineName(FileTree fileTree, String path) {
+                protected String determineName(FileTree fileTree, Path path) {
                     String content = readFile(fileTree, path);
                     return groupFromLineContainingRegex("^workflow\\s+(\\S+)\\s", 1, content);
                 }
@@ -113,7 +114,7 @@ public class InferrerHelper {
                     return path.endsWith("/nextflow.config");
                 }
                 @Override
-                protected List<String> determineReferencedPaths(FileTree fileTree, String path) {
+                protected List<Path> determineReferencedPaths(FileTree fileTree, Path path) {
                     return List.of();
                 }
             };
@@ -131,11 +132,11 @@ public class InferrerHelper {
                     return path.endsWith(".ipynb");
                 }
                 @Override
-                protected List<String> determineReferencedPaths(FileTree fileTree, String path) {
+                protected List<Path> determineReferencedPaths(FileTree fileTree, Path path) {
                     return List.of();
                 }
                 @Override
-                protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, String path, EntryType type) {
+                protected DescriptorLanguageSubclass determineSubclass(FileTree fileTree, Path path, EntryType type) {
                     String content = readFile(fileTree, path).toLowerCase();
                     // Look for some json that sets the "language" field to one of the legal values.
                     for (DescriptorLanguageSubclass subclass: DescriptorLanguageSubclass.valuesForEntryType(type)) {
@@ -167,7 +168,7 @@ public class InferrerHelper {
     }
 
     private List<Inferrer.Entry> removeDuplicatePaths(List<Inferrer.Entry> entries) {
-        Set<String> paths = new HashSet<>();
+        Set<Path> paths = new HashSet<>();
         return entries.stream().filter(entry -> paths.add(entry.path())).toList();
     }
 
@@ -238,12 +239,12 @@ public class InferrerHelper {
         }).toList();
     }
 
-    private String nameFromPath(String path) {
-        String[] pathParts = path.split("/");
-        if (pathParts.length == 0) {
+    private String nameFromPath(Path path) {
+        Path fileName = path.getFileName();
+        if (fileName == null) {
             return null;
         }
-        String[] nameParts = pathParts[pathParts.length - 1].split("\\.");
+        String[] nameParts = fileName.toString().split("\\.");
         if (nameParts.length == 0) {
             return null;
         }

@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,15 +45,15 @@ public class CachingFileTree implements FileTree {
     /**
      * Cache of file paths to file content.
      */
-    private final LoadingCache<String, Optional<String>> filePathToContent;
+    private final LoadingCache<Path, Optional<String>> filePathToContent;
     /**
      * Cache of directory paths to directory contents.
      */
-    private final LoadingCache<String, List<String>> dirPathToFiles;
+    private final LoadingCache<Path, List<String>> dirPathToFiles;
     /**
      * Value returned by call to `fileTree.listPaths()`, or null if not yet called.
      */
-    private List<String> paths;
+    private List<Path> paths;
 
     public CachingFileTree(FileTree fileTree) {
         this.fileTree = fileTree;
@@ -61,17 +62,17 @@ public class CachingFileTree implements FileTree {
     }
 
     @Override
-    public String readFile(String filePath) {
+    public String readFile(Path filePath) {
         return filePathToContent.get(filePath).orElse(null);
     }
 
     @Override
-    public List<String> listFiles(String dirPath) {
+    public List<String> listFiles(Path dirPath) {
         return dirPathToFiles.get(dirPath);
     }
 
     @Override
-    public List<String> listPaths() {
+    public List<Path> listPaths() {
         if (paths == null) {
             paths = fileTree.listPaths();
         }
