@@ -453,7 +453,7 @@ class GitHubWorkflowIT extends BaseIT {
         trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW, quayDigestVersionName);
         assertEquals(1, trsVersion.getImages().size(), "Should be one image in this TRS version");
         trsVersion.getImages().forEach(image -> assertEquals(
-            "quay.io/ga4gh-dream/dockstore-tool-helloworld@sha256:3a854fd1ebd970011fa57c8c099347314eda36cc746fd831f4deff9a1d433718", image.getImageName()));
+            "quay.io/ga4gh-dream/dockstore-tool-helloworld@sha256:71c0f43d9081cb14411adae56773762b1e829f7175645484571dcb1c6e120d23", image.getImageName()));
 
         // Workflow with Docker Hub image specified using a tag (6 images actually retrieved, one per architecture type)
         String dockerHubTagVersionName = "dockerHubTagImage";
