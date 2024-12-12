@@ -78,9 +78,9 @@ public final class AliasHelper {
      * @param blockFormat if true don't allow specific formats
      * @return the Workflow Version
      */
-    public static WorkflowVersion addWorkflowVersionAliasesAndCheck(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
+    public static WorkflowVersion addWorkflowVersionAliases(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
             WorkflowVersionDAO workflowVersionDAO, Optional<User> user, Long id, String aliases, boolean blockFormat) {
-        WorkflowVersion workflowVersion = getAndCheckWorkflowVersionResource(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, user, id);
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(id);
         Set<String> oldAliases = workflowVersion.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
