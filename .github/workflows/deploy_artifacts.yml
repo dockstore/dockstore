@@ -12,7 +12,7 @@ on:
   
 jobs:
   deploy_artifacts:
-    uses: dockstore/workflow-actions/.github/workflows/deploy_artifacts.yaml@seab-6860/image-changelist
+    uses: dockstore/workflow-actions/.github/workflows/deploy_artifacts.yaml@main
     with:
       createDockerImage: true
       quayRepository: dockstore-webservice
