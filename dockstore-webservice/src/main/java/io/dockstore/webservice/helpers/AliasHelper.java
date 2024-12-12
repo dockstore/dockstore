@@ -96,4 +96,8 @@ public final class AliasHelper {
         newAliases.forEach(alias -> workflowVersion.getAliases().put(alias, new Alias()));
         return workflowVersion;
     }
+
+    public static String createWorkflowVersionAliasUrl(String dockstoreUrl, Workflow workflow, String alias) {
+        return "%s/aliases/%s-versions/%s".formatted(dockstoreUrl, workflow.getEntryTypeMetadata().getTerm(), alias);
+    }
 }
