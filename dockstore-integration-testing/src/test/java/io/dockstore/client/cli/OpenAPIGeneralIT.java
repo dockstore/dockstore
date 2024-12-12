@@ -282,11 +282,11 @@ class OpenAPIGeneralIT extends BaseIT {
 
         Workflow workflow = registerWorkflowWithTwoVersions();
         // Test sorting by name in ascending order
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, "name", "asc");
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "asc", null);
         assertEquals("master", workflowVersions.get(0).getName(), "The first version should be master");
 
         // Test sorting by name in descending order
-        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, "name", "desc");
+        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "desc", null);
         assertEquals("testCWL", workflowVersions.get(0).getName(), "The first version should be testCWL");
     }
 
