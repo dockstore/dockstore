@@ -556,7 +556,7 @@ public final class ZenodoHelper {
 
         // Add the workflow version alias as a related identifier on Zenodo
         // E.g https://dockstore.org/aliases/workflow-versions/10.5281-zenodo.2630727
-        final String aliasUrl = "%s/aliases/%s-versions/%s".formatted(dockstoreUrl, workflow.getEntryTypeMetadata().getTerm(), doiAlias);
+        final String aliasUrl = AliasHelper.createWorkflowVersionAliasUrl(dockstoreUrl, workflow, doiAlias);
         addUriToRelatedIdentifierList(relatedIdentifierList, aliasUrl);
 
         // Add the UI2 link to the workflow to Zenodo as a related identifier
