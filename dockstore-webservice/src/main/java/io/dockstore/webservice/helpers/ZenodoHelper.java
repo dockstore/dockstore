@@ -1,7 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Doi;
@@ -524,7 +522,7 @@ public final class ZenodoHelper {
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion) {
         final String sourceControlPath = workflow.getWorkflowPath();
-        final String workflowVersionPrimaryDescriptorPath = WORKFLOW_PREFIX + "/" + sourceControlPath;
+        final String workflowVersionPrimaryDescriptorPath = workflow.getEntryTypeMetadata().getTrsPrefix() + sourceControlPath;
         final String workflowVersionPrimaryDescriptorPathPlainText;
         try {
             workflowVersionPrimaryDescriptorPathPlainText =
@@ -558,7 +556,7 @@ public final class ZenodoHelper {
 
         // Add the workflow version alias as a related identifier on Zenodo
         // E.g https://dockstore.org/aliases/workflow-versions/10.5281-zenodo.2630727
-        final String aliasUrl = dockstoreUrl + "/aliases/workflow-versions/" + doiAlias;
+        final String aliasUrl = "%s/aliases/%s-versions/%s".formatted(dockstoreUrl, workflow.getEntryTypeMetadata().getTerm(), doiAlias);
         addUriToRelatedIdentifierList(relatedIdentifierList, aliasUrl);
 
         // Add the UI2 link to the workflow to Zenodo as a related identifier
