@@ -266,12 +266,12 @@ class OpenAPIGeneralIT extends BaseIT {
         //publish workflow
         workflow = workflowsOpenApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         //Hide version
         workflowVersions.get(1).setHidden(true);
         workflowsOpenApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
 
-        List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
+        List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null, null);
         assertEquals(1, publicWorkflowVersions.size(), "Should exclude hidden version thus only have 1 version");
     }
 
@@ -282,11 +282,11 @@ class OpenAPIGeneralIT extends BaseIT {
 
         Workflow workflow = registerWorkflowWithTwoVersions();
         // Test sorting by name in ascending order
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "asc");
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, "name", "asc");
         assertEquals("master", workflowVersions.get(0).getName(), "The first version should be master");
 
         // Test sorting by name in descending order
-        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "desc");
+        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, "name", "desc");
         assertEquals("testCWL", workflowVersions.get(0).getName(), "The first version should be testCWL");
     }
 
