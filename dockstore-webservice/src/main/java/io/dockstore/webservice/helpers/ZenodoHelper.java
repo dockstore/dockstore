@@ -521,12 +521,10 @@ public final class ZenodoHelper {
      *     %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion) {
-        final String sourceControlPath = workflow.getWorkflowPath();
-        final String workflowVersionPrimaryDescriptorPath = workflow.getEntryTypeMetadata().getTrsPrefix() + sourceControlPath;
-        final String workflowVersionPrimaryDescriptorPathPlainText;
+        final String trsId = workflow.getTrsId();
+        final String baseTrsUrl;
         try {
-            workflowVersionPrimaryDescriptorPathPlainText =
-                    ToolsImplCommon.getUrl(workflowVersionPrimaryDescriptorPath, dockstoreGA4GHBaseUrl);
+            baseTrsUrl = ToolsImplCommon.getUrl(trsId, dockstoreGA4GHBaseUrl);
         } catch (UnsupportedEncodingException e) {
             LOG.error("Could not create Zenodo related identifier. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create Zenodo related identifier",
@@ -536,9 +534,8 @@ public final class ZenodoHelper {
         final String workflowDescriptorName = workflowVersion.getWorkflowPath();
         Path p = Paths.get(workflowDescriptorName);
         final String descriptorFile = p.getFileName().toString();
-        final String versionOfWorkflow = workflowVersion.getName();
-        return workflowVersionPrimaryDescriptorPathPlainText + "/versions/" + versionOfWorkflow
-                + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
+        final String versionName = workflowVersion.getName();
+        return baseTrsUrl + "/versions/" + versionName + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
     }
 
     /**
