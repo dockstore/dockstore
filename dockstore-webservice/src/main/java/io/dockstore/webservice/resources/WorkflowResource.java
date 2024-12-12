@@ -470,12 +470,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-<<<<<<< Updated upstream
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false, EntryVersionHelper.determineRepresentativeVersionId(workflow));
-=======
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false);
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, EntryVersionHelper.determineRepresentativeVersionId(workflow));
         versions.forEach(version -> initializeAdditionalFields(include, version));
->>>>>>> Stashed changes
         return new LinkedHashSet<>(versions);
     }
 
@@ -489,13 +485,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getPublicWorkflowVersions(
-<<<<<<< Updated upstream
             @Parameter(
-                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-=======
-        @Parameter(
                 name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
->>>>>>> Stashed changes
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @QueryParam("sortCol") String sortCol,
@@ -507,12 +498,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getPublicVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-<<<<<<< Updated upstream
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, EntryVersionHelper.determineRepresentativeVersionId(workflow));
-=======
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true);
         versions.forEach(version -> initializeAdditionalFields(include, version));
->>>>>>> Stashed changes
         return new LinkedHashSet<>(versions);
     }
 
