@@ -66,13 +66,12 @@ public final class AliasHelper {
 
     /**
      * Add aliases to a Workflow Version
-     * and check that they are valid before adding them:
-     * Only works for owner of the entry
+     * and check that the aliases are valid before adding them:
      * If blockFormat false, then no limit on format
      * @param authenticatedResourceInterface interface to check users and entries
      * @param workflowDAO Workflow data access object
      * @param workflowVersionDAO Workflow Version data access object
-     * @param user user authenticated to issue a DOI for the workflow
+     * @param user user that's adding aliases for the version
      * @param id the id of the Entry
      * @param aliases a comma separated string of aliases
      * @param blockFormat if true don't allow specific formats
