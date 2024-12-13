@@ -454,6 +454,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    @SuppressWarnings("checkstyle:parameternumber")
     public Set<WorkflowVersion> getWorkflowVersions(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(
                 name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
@@ -461,6 +462,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @Parameter(name = "sortCol", description = "column used to sort versions. if omitted, the webservice determines the sort order, currently default version first", required = false, in = ParameterIn.QUERY) @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
@@ -469,6 +471,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        versions.forEach(version -> initializeAdditionalFields(include, version));
         return new LinkedHashSet<>(versions);
     }
 
@@ -488,6 +491,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
         @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkNotNullEntry(workflow);
@@ -495,6 +499,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        versions.forEach(version -> initializeAdditionalFields(include, version));
         return new LinkedHashSet<>(versions);
     }
 

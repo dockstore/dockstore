@@ -7647,6 +7647,12 @@ paths:
         schema:
           type: string
           default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -8687,6 +8693,12 @@ paths:
         schema:
           type: string
           default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:

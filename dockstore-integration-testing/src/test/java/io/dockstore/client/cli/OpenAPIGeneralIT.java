@@ -266,12 +266,12 @@ class OpenAPIGeneralIT extends BaseIT {
         //publish workflow
         workflow = workflowsOpenApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         //Hide version
         workflowVersions.get(1).setHidden(true);
         workflowsOpenApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
 
-        List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null);
+        List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null, null);
         assertEquals(1, publicWorkflowVersions.size(), "Should exclude hidden version thus only have 1 version");
     }
 
@@ -282,11 +282,11 @@ class OpenAPIGeneralIT extends BaseIT {
 
         Workflow workflow = registerWorkflowWithTwoVersions();
         // Test sorting by name in ascending order
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "asc");
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "asc", null);
         assertEquals("master", workflowVersions.get(0).getName(), "The first version should be master");
 
         // Test sorting by name in descending order
-        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "desc");
+        workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, "name", "desc", null);
         assertEquals("testCWL", workflowVersions.get(0).getName(), "The first version should be testCWL");
     }
 
@@ -296,13 +296,13 @@ class OpenAPIGeneralIT extends BaseIT {
         WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
 
         Workflow workflow = registerWorkflowWithTwoVersions();
-        List<String> versionNames = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null).stream().map(WorkflowVersion::getName).toList();
+        List<String> versionNames = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream().map(WorkflowVersion::getName).toList();
         assertTrue(versionNames.size() >= 2);
 
         // set each version as the default and confirm that when we don't specify a sortCol to `getWorkflowVersion`, the default version is first in the returned list
         for (String versionName: versionNames) {
             workflowsOpenApi.updateDefaultVersion1(workflow.getId(), versionName);
-            List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null);
+            List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
             assertEquals(versionName, workflowVersions.get(0).getName(), "the default version should be sorted first");
         }
     }
