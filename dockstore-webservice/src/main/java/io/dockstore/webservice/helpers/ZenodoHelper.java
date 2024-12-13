@@ -1,7 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Doi;
@@ -504,12 +502,10 @@ public final class ZenodoHelper {
      *     %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion) {
-        final String sourceControlPath = workflow.getWorkflowPath();
-        final String workflowVersionPrimaryDescriptorPath = WORKFLOW_PREFIX + "/" + sourceControlPath;
-        final String workflowVersionPrimaryDescriptorPathPlainText;
+        final String trsId = workflow.getTrsId();
+        final String baseTrsUrl;
         try {
-            workflowVersionPrimaryDescriptorPathPlainText =
-                    ToolsImplCommon.getUrl(workflowVersionPrimaryDescriptorPath, dockstoreGA4GHBaseUrl);
+            baseTrsUrl = ToolsImplCommon.getUrl(trsId, dockstoreGA4GHBaseUrl);
         } catch (UnsupportedEncodingException e) {
             LOG.error("Could not create Zenodo related identifier. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create Zenodo related identifier",
@@ -519,9 +515,8 @@ public final class ZenodoHelper {
         final String workflowDescriptorName = workflowVersion.getWorkflowPath();
         Path p = Paths.get(workflowDescriptorName);
         final String descriptorFile = p.getFileName().toString();
-        final String versionOfWorkflow = workflowVersion.getName();
-        return workflowVersionPrimaryDescriptorPathPlainText + "/versions/" + versionOfWorkflow
-                + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
+        final String versionName = workflowVersion.getName();
+        return baseTrsUrl + "/versions/" + versionName + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
     }
 
     /**
@@ -539,7 +534,7 @@ public final class ZenodoHelper {
 
         // Add the workflow version alias as a related identifier on Zenodo
         // E.g https://dockstore.org/aliases/workflow-versions/10.5281-zenodo.2630727
-        final String aliasUrl = dockstoreUrl + "/aliases/workflow-versions/" + doiAlias;
+        final String aliasUrl = AliasHelper.createWorkflowVersionAliasUrl(dockstoreUrl, workflow, doiAlias);
         addUriToRelatedIdentifierList(relatedIdentifierList, aliasUrl);
 
         // Add the UI2 link to the workflow to Zenodo as a related identifier
