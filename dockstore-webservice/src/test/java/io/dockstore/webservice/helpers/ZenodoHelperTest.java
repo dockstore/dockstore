@@ -18,6 +18,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Doi.DoiType;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
@@ -81,7 +82,7 @@ class ZenodoHelperTest {
     }
 
     @Test
-    void testcreateWorkflowTrsUrl() {
+    void testCreateWorkflowTrsUrl() {
         final Workflow workflow = new BioWorkflow();
 
         final WorkflowVersion workflowVersion = new WorkflowVersion();
@@ -99,6 +100,26 @@ class ZenodoHelperTest {
         String trsUrl = ZenodoHelper.createWorkflowTrsUrl(workflow, workflowVersion);
         assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere"
                 + "%2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl", trsUrl);
+    }
+
+    @Test
+    void testCreateNotebookTrsUrl() {
+        final Notebook notebook = new Notebook();
+        notebook.setSourceControl(SourceControl.GITHUB);
+        notebook.setOrganization("SomeOrganization");
+        notebook.setRepository("a-repository");
+        notebook.setWorkflowName("cool-notebook");
+        notebook.setDescriptorType(DescriptorLanguage.JUPYTER);
+
+        final WorkflowVersion version = new WorkflowVersion();
+        version.setWorkflowPath("a-file.ipynb");
+        version.setName("1.2.34");
+
+        DockstoreWebserviceConfiguration config = createDockstoreConfiguration();
+        ZenodoHelper.initConfig(config);
+        String trsUrl = ZenodoHelper.createWorkflowTrsUrl(notebook, version);
+        assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23notebook%2Fgithub.com%2FSomeOrganization%2Fa-repository"
+                + "%2Fcool-notebook/versions/1.2.34/PLAIN-jupyter/descriptor/a-file.ipynb", trsUrl);
     }
 
     @Test
