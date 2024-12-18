@@ -356,7 +356,7 @@ public final class ZenodoHelper {
         // This code also checks that the alias does not start with an invalid prefix
         // If it does, this will generate an exception, the alias will not be added
         // to the workflow version, but there may be an invalid Related Identifier URL on the Zenodo entry
-        AliasHelper.addWorkflowVersionAliasesAndCheck(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, workflowOwner,
+        AliasHelper.addWorkflowVersionAliases(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, workflowOwner,
                 workflowVersion.getId(), zenodoDoiResult.doiAlias(), false);
 
         return zenodoDoiResult;
