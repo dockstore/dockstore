@@ -5,7 +5,7 @@ parameters:
     default: "21.0.2"
   postgres-tag:
     type: string
-    default: "16.6"
+    default: "16.4"
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:

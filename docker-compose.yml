@@ -45,7 +45,7 @@ services:
     # networks:
       # - elastic
   postgres_db:
-    image: postgres:16.6
+    image: postgres:16.4
     command: postgres -c jit=off
     container_name: postgres1
     environment:
