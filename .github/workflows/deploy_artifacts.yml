@@ -19,7 +19,7 @@ jobs:
     secrets: inherit
 
   deploy_db_docs:
-    if: ${{ github.ref_type == 'branch' && github.ref_name == 'develop' }}
+    if: ${{ github.ref_type == 'branch' && github.ref_name == 'feature/what_if_postgres_16' }}
     runs-on: ubuntu-22.04
     
     permissions:
