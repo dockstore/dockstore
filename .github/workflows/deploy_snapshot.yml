@@ -1,25 +1,15 @@
-name: Deploy artifacts
+name: Deploy develop snapshot
+
 on:
   push:
-    tags:
-      - '**'
-    # Run for all branches except the following
-    branches-ignore:
-      - 'master'
-      - 'release/**'
-      - 'hotfix/**'
-      - 'dependabot/**'
+    branches:
+      - develop
+      
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
   
 jobs:
-  deploy_artifacts:
-    uses: dockstore/workflow-actions/.github/workflows/deploy_artifacts.yaml@main
-    with:
-      createDockerImage: true
-      quayRepository: dockstore-webservice
-    secrets: inherit
-
-  deploy_db_docs:
-    if: ${{ github.ref_type == 'branch' && github.ref_name == 'develop' }}
+  build:
     runs-on: ubuntu-22.04
     
     permissions:
@@ -32,7 +22,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres:13.7
+        image: postgres:16.4
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: dockstore
@@ -64,8 +54,54 @@ jobs:
           java-version: '21.0.2+13.0.LTS'
           distribution: 'adopt'
 
-      - name: Build
-        run: ./mvnw -B clean install -DskipTests
+      - name: Deploy with mvnw
+        run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
+        env: 
+          SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: docker_checksum_upload_from_github
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # neat, quay itself uses manual github actions https://github.com/quay/quay/blob/master/.github/workflows/build-and-publish.yaml
+      - name: Login to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Set folder name
+        run: |
+          S3_FOLDER=${GITHUB_REF##refs/tags/}
+          if [ $GITHUB_REF == $S3_FOLDER ]; then
+            # If this isn't a tag, it must be a branch
+            S3_FOLDER=${GITHUB_REF##refs/heads/}
+          fi
+          echo "S3_FOLDER=${S3_FOLDER//\//_}" >> $GITHUB_ENV
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: quay.io/dockstore/dockstore-webservice:${{env.S3_FOLDER}}
+
+      - name: Create checksums
+        run: |
+          docker inspect quay.io/dockstore/dockstore-webservice:${{env.S3_FOLDER}} | grep -A 1 RepoDigests
+          docker inspect quay.io/dockstore/dockstore-webservice:${{env.S3_FOLDER}} | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt        
+          
+      - name: Get short SHA
+        id: slug
+        run: echo "::set-output name=sha7::$(echo ${GITHUB_SHA} | cut -c1-7)"
+
+      - name: Copy checksum files
+        run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{ env.S3_FOLDER }}-${{ steps.slug.outputs.sha7 }}/image-digest.txt
 
       # deploy database documentation and also verify that non-confidential migrations seem sane
       - name: Setup Pages
@@ -83,3 +119,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        
