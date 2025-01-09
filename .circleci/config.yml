@@ -380,7 +380,8 @@ jobs:
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
               -Dtest=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
+              # dockstore-language-plugin-parent has no tests, add -DfailIfNoTests=false to not have tests fail
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -DfailIfNoTests=false -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
 
