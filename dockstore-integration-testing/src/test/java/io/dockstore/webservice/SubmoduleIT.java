@@ -135,6 +135,6 @@ class SubmoduleIT extends BaseIT {
         assertFalse(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
         final List<LambdaEvent> lambdaEventsByOrganization = lambdaEventsApi.getLambdaEventsByOrganization("dockstore-testing", 0, 10, null, null, null);
-        assertTrue(lambdaEventsByOrganization.stream().anyMatch(e -> e.getMessage().contains("Failed to import") && e.getMessage().contains("Not found wdl-common/wdl")));
+        assertTrue(lambdaEventsByOrganization.stream().anyMatch(e -> e.getMessage().contains("Failed to import") && e.getMessage().contains("File not found: wdl-common/wdl")));
     }
 }
