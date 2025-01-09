@@ -37,6 +37,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(ConfidentialTest.NAME)
 class SubmoduleIT extends BaseIT {
 
+    public static final int EXPECTED_NUM_SOURCEFILES = 19;
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
     @SystemStub
@@ -63,7 +64,21 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
-        assertEquals(19, sourcefiles.size());
+        assertEquals(EXPECTED_NUM_SOURCEFILES, sourcefiles.size());
+    }
+
+    @Test
+    void testLocalImportWithHttpsImport() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.11-no-submodule-https-imports", USER_2_USERNAME);
+
+        Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
+        assertTrue(foobar.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
+        // this tag removes a common local import in a local import resulting in a huge load of https imports
+        assertEquals(EXPECTED_NUM_SOURCEFILES - 1, sourcefiles.size());
     }
 
     @Test
@@ -80,7 +95,7 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
-        assertEquals(19, sourcefiles.size());
+        assertEquals(EXPECTED_NUM_SOURCEFILES, sourcefiles.size());
 
         // cannot use generated equals or toString since ids will be different
         List<String> allNormalPaths = sourcefiles.stream().map(SourceFile::getPath).sorted().toList();
@@ -114,7 +129,7 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         // this one is inside a different repo which points to yet a different repo
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
-        assertEquals(19, sourcefiles.size());
+        assertEquals(EXPECTED_NUM_SOURCEFILES, sourcefiles.size());
     }
 
     @Test
