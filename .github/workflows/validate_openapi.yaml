@@ -5,13 +5,13 @@ on: [push]
 
 jobs:
   test_swagger_editor_validator_remote:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Swagger Editor Validator Remote
 
 
     steps:
       - uses: actions/checkout@v4
       - name: Validate OpenAPI definition
-        uses: char0n/swagger-editor-validate@v1.4.0
+        uses: swaggerexpert/apidom-validate@v1.4.0
         with:
           definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.yaml
