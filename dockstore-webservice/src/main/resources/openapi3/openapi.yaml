@@ -6916,6 +6916,41 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/github/infer/{owner}/{repo}/{ref}:
+    get:
+      deprecated: true
+      description: Infer the entries in the file tree of a GitHub repository reference.
+      operationId: inferEntries
+      parameters:
+      - description: repo owner
+        in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - description: repo name
+        in: path
+        name: repo
+        required: true
+        schema:
+          type: string
+      - description: "reference, could contain slashes which need to be urlencoded"
+        in: path
+        name: ref
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/github/install:
     post:
       description: Handle the installation of our GitHub app onto a repository or
@@ -7581,7 +7616,7 @@ paths:
       description: Return paginated versions in an public entry
       operationId: getPublicWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
@@ -7607,12 +7642,17 @@ paths:
         name: sortCol
         schema:
           type: string
-          default: lastModified
       - in: query
         name: sortOrder
         schema:
           type: string
           default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -8620,7 +8660,7 @@ paths:
       description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
@@ -8642,16 +8682,23 @@ paths:
           format: int32
           default: 0
           minimum: 0
-      - in: query
+      - description: "column used to sort versions. if omitted, the webservice determines\
+          \ the sort order, currently default version first"
+        in: query
         name: sortCol
         schema:
           type: string
-          default: lastModified
       - in: query
         name: sortOrder
         schema:
           type: string
           default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:

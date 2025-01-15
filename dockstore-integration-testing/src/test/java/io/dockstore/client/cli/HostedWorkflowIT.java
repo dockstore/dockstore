@@ -86,7 +86,7 @@ class HostedWorkflowIT extends BaseIT {
 
         // Test same for hosted workflows
         Workflow hostedWorkflow = CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
-        WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null, null, null).get(0);
+        WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null, null, null, null).get(0);
 
         // delete default version via DB
         testingPostgres.runUpdateStatement("update workflow set actualDefaultVersion = null");

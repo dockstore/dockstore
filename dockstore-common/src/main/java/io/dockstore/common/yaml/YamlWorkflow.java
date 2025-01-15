@@ -21,6 +21,7 @@ import io.dockstore.common.yaml.constraints.AbsolutePath;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class YamlWorkflow implements Workflowish {
     private String primaryDescriptorPath;
     private String readMePath;
     private String topic;
+    private Boolean enableAutoDois;
 
     /**
      * Change the workflow's publish-state, if set.
@@ -148,5 +150,15 @@ public class YamlWorkflow implements Workflowish {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    @Override
+    @AssertFalse // TODO: Added as part of https://ucsc-cgl.atlassian.net/browse/SEAB-6805. Remove when we turn on automatic DOIs for everyone
+    public Boolean getEnableAutoDois() {
+        return enableAutoDois;
+    }
+
+    public void setEnableAutoDois(Boolean enableAutoDois) {
+        this.enableAutoDois = enableAutoDois;
     }
 }

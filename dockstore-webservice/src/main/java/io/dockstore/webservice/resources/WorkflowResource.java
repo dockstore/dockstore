@@ -68,8 +68,11 @@ import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -80,6 +83,9 @@ import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
+import io.dockstore.webservice.helpers.infer.Inferrer;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -448,13 +454,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    @SuppressWarnings("checkstyle:parameternumber")
     public Set<WorkflowVersion> getWorkflowVersions(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(
-                name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
-        @DefaultValue("lastModified") @QueryParam("sortCol") String sortCol,
+        @Parameter(name = "sortCol", description = "column used to sort versions. if omitted, the webservice determines the sort order, currently default version first", required = false, in = ParameterIn.QUERY) @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
@@ -462,7 +470,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false);
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        versions.forEach(version -> initializeAdditionalFields(include, version));
         return new LinkedHashSet<>(versions);
     }
 
@@ -477,18 +486,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getPublicWorkflowVersions(
             @Parameter(
-                name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
         @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
-        @DefaultValue("lastModified") @QueryParam("sortCol") String sortCol,
+        @QueryParam("sortCol") String sortCol,
         @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include,
         @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkNotNullEntry(workflow);
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getPublicVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true);
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        versions.forEach(version -> initializeAdditionalFields(include, version));
         return new LinkedHashSet<>(versions);
     }
 
@@ -906,10 +917,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
+        long representativeVersionId = EntryVersionHelper.determineRepresentativeVersionId(workflow);
         sessionFactory.getCurrentSession().detach(workflow);
 
         // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
-        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0, null, null, false);
+        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0, null, null, false, representativeVersionId);
         SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
         if (versionName != null && workflowVersions.stream().noneMatch(version -> version.getName().equals(versionName))) {
             WorkflowVersion workflowVersionByWorkflowIdAndVersionName = this.workflowVersionDAO
@@ -2139,6 +2151,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Path("/github/infer/{owner}/{repo}/{ref}")
+    @Timed
+    @UnitOfWork
+    @Operation(description = "Infer the entries in the file tree of a GitHub repository reference.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Deprecated
+    public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
+        @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
+        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+        // Get GitHub tokens.
+        List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
+        if (tokens.isEmpty()) {
+            throw new CustomWebApplicationException("Could not find GitHub token.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Create github source code repo.
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+
+        // Create FileTree.
+        String ownerAndRepo = owner + "/" + repo;
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+
+        // Infer entries.
+        InferrerHelper inferrerHelper = new InferrerHelper();
+        List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
+
+        // Create and return .dockstore.yml
+        return inferrerHelper.toDockstoreYaml(entries);
     }
 
     /**

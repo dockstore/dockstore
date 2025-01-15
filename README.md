@@ -52,7 +52,7 @@ The following section is useful for Dockstore developers (e.g. those that want t
 The dependency environment for Dockstore is described by our 
 [CircleCI config](https://github.com/dockstore/dockstore/blob/develop/.circleci/config.yml) or [docker compose](docker-compose.yml). In addition to the dependencies for 
 Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed 
-and setup with the database user specified in [.circleci/config.yml](https://github.com/dockstore/dockstore/blob/1.11.10/.circleci/config.yml#L279) (ideally, postgres is needed only for integration tests but not unit tests).
+and setup with the database user specified in [.circleci/config.yml](https://github.com/dockstore/dockstore/blob/1.16.0/.circleci/config.yml#L279) (ideally, postgres is needed only for integration tests but not unit tests).
 
 ### Building
 

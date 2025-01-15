@@ -483,7 +483,7 @@ case class MapResolver(filePath: String) extends ImportResolver {
     val content = secondaryWdlFiles.get(absolutePath)
     val mapResolver = MapResolver(absolutePath)
     mapResolver.setSecondaryFiles(this.secondaryWdlFiles)
-    if (content == null) InvalidCheck(s"Not found $path for resolver with path $this.filePath").invalidNelCheck else ResolvedImportBundle(content, List(mapResolver), ResolvedImportRecord(absolutePath.toString)).validNelCheck
+    if (content == null) InvalidCheck(s"Not found $path for resolver with path $this.filePath").invalidNelCheck else ResolvedImportBundle(content, currentResolvers :+ mapResolver, ResolvedImportRecord(absolutePath.toString)).validNelCheck
   }
 
   override def cleanupIfNecessary(): ErrorOr[Unit] = ().validNel
