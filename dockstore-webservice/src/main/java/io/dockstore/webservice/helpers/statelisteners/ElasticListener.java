@@ -335,7 +335,7 @@ public class ElasticListener implements StateListenerInterface {
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
-        Doi selectedConceptDoi = getSelectedConceptDoi(entry);
+        Doi selectedConceptDoi = entry.getDefaultConceptDoi();
         Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
@@ -351,7 +351,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
-        objectNode.put("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
+        objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         return jsonNode;
     }
 
@@ -532,17 +532,6 @@ public class ElasticListener implements StateListenerInterface {
             allAuthors.add(new Author());
         }
         return allAuthors;
-    }
-
-    private static Doi getSelectedConceptDoi(Entry<?, ?> entry) {
-        if (!entry.getConceptDois().isEmpty()) {
-            Doi selectedDoi = entry.getConceptDois().get(entry.getDoiSelection());
-            if (selectedDoi == null) {
-                selectedDoi = entry.getDefaultConceptDoi();
-            }
-            return selectedDoi;
-        }
-        return null;
     }
 
 
