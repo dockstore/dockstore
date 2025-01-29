@@ -2187,8 +2187,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // if we inspected all of the branches and didn't find any that were releasable,
             // attempt to infer/deliver a .dockstore.yml on the "most important" branch.
             // note that for large organizations, this loop could be quite large if many repositories are added at the same time
-            final int maximumBranchCount = 5;
             for (String repository: repositories) {
+                final int maximumBranchCount = 5;
                 final List<String> importantBranches = identifyImportantBranches(repository, installationId);
                 final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
                 if (releasableReferences.isEmpty()) {
