@@ -1211,7 +1211,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Detect references that include a .dockstore.yml.
      */
     public List<String> detectDockstoreYml(String repositoryId, List<String> references) {
-        final int maxResults = 5;
         try {
             if (repositoryId == null) {
                 return List.of();
@@ -1220,7 +1219,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRepository repository = getRepository(repositoryId);
             // For a subset of references, return the corresponding refs that contain a .dockstore.yml.
             return references.stream()
-                .limit(maxResults)
                 .filter(ref -> hasDockstoreYml(repository, ref))
                 .toList();
 

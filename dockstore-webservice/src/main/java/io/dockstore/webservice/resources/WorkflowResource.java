@@ -2183,16 +2183,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
 
         if (added) {
-            // for each added repository, try to retrospectively release some old versions, and
-            // if we don't find any releasable branches, infer a dockstore.yml and deliver it to the user
+            // for each added repository, try to retrospectively release some old versions.
+            // if we inspected all of the branches and didn't find any that were releasable,
+            // attempt to infer/deliver a .dockstore.yml on the "most important" branch.
             // note that for large organizations, this loop could be quite large if many repositories are added at the same time
+            final int maximumBranchCount = 5;
             for (String repository: repositories) {
                 final List<String> importantBranches = identifyImportantBranches(repository, installationId);
-                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, importantBranches);
+                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
                 if (releasableReferences.isEmpty()) {
-                    if (!importantBranches.isEmpty()) {
-                        String mostImportantBranch = importantBranches.get(0);
-                        inferAndDeliverDockstoreYml(repository, installationId, mostImportantBranch);
+                    boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;
+                    if (inspectedAllBranches) {
+                        if (!importantBranches.isEmpty()) {
+                            String mostImportantBranch = importantBranches.get(0);
+                            inferAndDeliverDockstoreYml(repository, installationId, mostImportantBranch);
+                        }
                     }
                 } else {
                     for (String gitReference: releasableReferences) {
@@ -2206,6 +2211,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
+    }
+
+    private List<String> subList(List<String> values, int count) {
+        return values.stream().limit(count).toList();
     }
 
     @DELETE

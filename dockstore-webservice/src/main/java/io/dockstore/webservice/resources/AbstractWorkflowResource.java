@@ -421,15 +421,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId
      * @return
      */
-    protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> importantBranches) {
+    protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> branches) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
-            List<String> importantReferences = importantBranches.stream().map(branch -> "refs/heads/" + branch).toList();
-            return gitHubSourceCodeRepo.detectDockstoreYml(repository, importantReferences);
+            List<String> references = branches.stream().map(branch -> "refs/heads/" + branch).toList();
+            return gitHubSourceCodeRepo.detectDockstoreYml(repository, references);
         }
     }
 
     protected void inferAndDeliverDockstoreYml(String repository, long installationId, String branch) {
+        // TODO
+        LOG.error("infer .dockstore.yml %s, %s, %s".formatted(repository, installationId, branch));
     }
 
     /**
