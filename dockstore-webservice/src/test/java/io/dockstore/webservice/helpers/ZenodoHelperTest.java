@@ -7,23 +7,31 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.FixtureUtility;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.Utils;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.Doi.DoiType;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import io.swagger.zenodo.client.model.SearchResult;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -74,7 +82,7 @@ class ZenodoHelperTest {
     }
 
     @Test
-    void testcreateWorkflowTrsUrl() {
+    void testCreateWorkflowTrsUrl() {
         final Workflow workflow = new BioWorkflow();
 
         final WorkflowVersion workflowVersion = new WorkflowVersion();
@@ -92,6 +100,26 @@ class ZenodoHelperTest {
         String trsUrl = ZenodoHelper.createWorkflowTrsUrl(workflow, workflowVersion);
         assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere"
                 + "%2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl", trsUrl);
+    }
+
+    @Test
+    void testCreateNotebookTrsUrl() {
+        final Notebook notebook = new Notebook();
+        notebook.setSourceControl(SourceControl.GITHUB);
+        notebook.setOrganization("SomeOrganization");
+        notebook.setRepository("a-repository");
+        notebook.setWorkflowName("cool-notebook");
+        notebook.setDescriptorType(DescriptorLanguage.JUPYTER);
+
+        final WorkflowVersion version = new WorkflowVersion();
+        version.setWorkflowPath("a-file.ipynb");
+        version.setName("1.2.34");
+
+        DockstoreWebserviceConfiguration config = createDockstoreConfiguration();
+        ZenodoHelper.initConfig(config);
+        String trsUrl = ZenodoHelper.createWorkflowTrsUrl(notebook, version);
+        assertEquals("https://dockstore.org/api/ga4gh/trs/v2/tools/%23notebook%2Fgithub.com%2FSomeOrganization%2Fa-repository"
+                + "%2Fcool-notebook/versions/1.2.34/PLAIN-jupyter/descriptor/a-file.ipynb", trsUrl);
     }
 
     @Test
@@ -172,6 +200,37 @@ class ZenodoHelperTest {
         assertEquals(DoiInitiator.USER, getDoiBasedOnOrderOfPrecedence(dois).getInitiator());
     }
 
+    @Test
+    void testFindGitHubIntegrationDois() throws JsonProcessingException {
+        String fixture = FixtureUtility.fixture("fixtures/zenodoListRecords.json");
+        final SearchResult searchResult = Utils.jsonStringToObject(fixture, SearchResult.class);
+        final List<ZenodoHelper.ConceptAndDoi> dois = ZenodoHelper.findGitHubIntegrationDois(searchResult.getHits().getHits(), "coverbeck/cwlviewer");
+        assertEquals(List.of(new ZenodoHelper.ConceptAndDoi("10.5281/zenodo.11094520", "10.5281/zenodo.11099749")), dois);
+    }
+
+
+    @Test
+    void testTaggedVersions() throws JsonProcessingException {
+        String fixture = FixtureUtility.fixture("fixtures/zenodoVersions.json");
+        final SearchResult searchResult = Utils.jsonStringToObject(fixture, SearchResult.class);
+        final List<TagAndDoi> taggedVersions = ZenodoHelper.findTaggedVersions(searchResult.getHits().getHits(), "coverbeck/cwlviewer");
+        final List<TagAndDoi> expected = List.of(
+                new TagAndDoi("FourthTestTag", "10.5281/zenodo.11099749"),
+                new TagAndDoi("ThirdTestTag", "10.5281/zenodo.11095575"),
+                new TagAndDoi("SecondTestTag", "10.5281/zenodo.11095507"),
+                new TagAndDoi("testtag", "10.5281/zenodo.11094521"));
+        assertEquals(expected, taggedVersions);
+    }
+
+    @Test
+    void testTagFromRelatedIdentifier() {
+        assertEquals(Optional.empty(), ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/mytag"));
+        assertEquals(Optional.empty(), ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "nonsense-icalstring"));
+        assertEquals("mytag", ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/tree/mytag").get());
+        assertEquals("1.16", ZenodoHelper.tagFromRelatedIdentifier("dockstore/dockstore-cli", "https://github.com/dockstore/dockstore-cli/tree/1.16").get());
+    }
+
+
     private DockstoreWebserviceConfiguration createDockstoreConfiguration() {
         final DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.getExternalConfig().setBasePath("/api/");
@@ -179,4 +238,5 @@ class ZenodoHelperTest {
         config.getExternalConfig().setScheme("https");
         return config;
     }
+
 }

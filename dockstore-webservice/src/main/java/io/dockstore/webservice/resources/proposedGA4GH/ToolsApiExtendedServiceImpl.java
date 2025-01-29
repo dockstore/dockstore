@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,6 +31,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.UpdateAITopicRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -37,19 +39,22 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.metrics.ExecutionResponse;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBodyS3Handler.ExecutionsFromS3;
 import io.dockstore.webservice.core.metrics.ExecutionsResponseBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -63,6 +68,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -127,6 +134,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static WorkflowDAO workflowDAO = null;
     private static AppToolDAO appToolDAO = null;
     private static NotebookDAO notebookDAO = null;
+    private static BioWorkflowDAO bioWorkflowDAO = null;
+    private static ServiceDAO serviceDAO = null;
     private static WorkflowVersionDAO workflowVersionDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
@@ -151,6 +160,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setNotebookDAO(NotebookDAO notebookDAO) {
         ToolsApiExtendedServiceImpl.notebookDAO = notebookDAO;
+    }
+
+    public static void setBioWorkflowDAO(BioWorkflowDAO bioWorkflowDAO) {
+        ToolsApiExtendedServiceImpl.bioWorkflowDAO = bioWorkflowDAO;
+    }
+
+    public static void setServiceDAO(ServiceDAO serviceDAO) {
+        ToolsApiExtendedServiceImpl.serviceDAO = serviceDAO;
     }
 
     public static void setWorkflowVersionDAO(WorkflowVersionDAO workflowVersionDAO) {
@@ -514,6 +531,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
+            version.get().getVersionMetadata().setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
             return Response.noContent().build();
         } catch (JsonProcessingException | AwsServiceException | SdkClientException e) {
             LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
@@ -522,7 +540,18 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics) {
+    public Response getEntryVersionsToAggregate() {
+        List<EntryLiteAndVersionName> entryAndVersionNames = new ArrayList<>();
+        entryAndVersionNames.addAll(toolDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(bioWorkflowDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(notebookDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(appToolDAO.findEntryVersionsToAggregate());
+        entryAndVersionNames.addAll(serviceDAO.findEntryVersionsToAggregate());
+        return Response.ok(entryAndVersionNames).build();
+    }
+
+    @Override
+    public Response setAggregatedMetrics(String id, String versionId, Map<Partner, Metrics> aggregatedMetrics) {
         // Check that the entry and version exists
         Entry<?, ?> entry;
         try {
@@ -537,7 +566,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
-        version.getMetricsByPlatform().put(platform, aggregatedMetrics);
+        version.getMetricsByPlatform().clear();
+        version.getMetricsByPlatform().putAll(aggregatedMetrics);
+        version.getVersionMetadata().setLatestMetricsAggregationDate(Timestamp.from(Instant.now()));
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
         return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
@@ -644,6 +675,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
         }
 
+        if (executionsResponseBody.getExecutionResponses().stream().anyMatch(executionResponse -> executionResponse.getStatus() == HttpStatus.SC_OK)) {
+            version.getVersionMetadata().setLatestMetricsSubmissionDate(Timestamp.from(Instant.now()));
+        }
+
         return Response.status(HttpStatus.SC_MULTI_STATUS).entity(executionsResponseBody).build();
     }
 
@@ -686,11 +721,29 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         checkEntryNotNull(entry);
 
-        Optional<? extends Version<?>> versionOptional = getVersionCandidate(entry);
+        Optional<Version> versionOptional = EntryVersionHelper.determineRepresentativeVersion(entry);
         if (versionOptional.isEmpty()) {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
         return Response.ok(versionOptional.get().getName()).build();
+    }
+
+    @Override
+    public Response getAITopicCandidates(int offset, int limit) {
+        // Get published entries that don't have any topics
+        List<Entry> entriesWithNoTopics = workflowDAO.getPublishedEntriesWithNoTopics(offset, limit);
+        List<EntryLiteAndVersionName> aiTopicCandidates = entriesWithNoTopics.stream()
+                .map(entry -> {
+                    EntryLite entryLite = entry.createEntryLite();
+                    String versionCandidateName = EntryVersionHelper.determineRepresentativeVersion(entry)
+                            .map(Version::getName)
+                            .orElse(""); // Return empty string if there's no representative version
+                    return new EntryLiteAndVersionName(entryLite, versionCandidateName);
+                })
+                .toList();
+
+        long totalCount = workflowDAO.countPublishedEntriesWithNoTopics();
+        return Response.ok(aiTopicCandidates).header(X_TOTAL_COUNT, totalCount).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
@@ -713,35 +766,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         }
         return versionOptional;
-    }
-
-    /**
-     * Get candidate version that can be considered for an ai Topic (or other?)
-     * @param entry
-     * @return
-     */
-    private Optional<? extends Version<?>> getVersionCandidate(Entry<?, ?> entry) {
-        if (entry instanceof Workflow workflow) {
-            List<WorkflowVersion> workflowVersions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 1, 0);
-            if (!workflowVersions.isEmpty()) {
-                return Optional.of(workflowVersions.get(0));
-            }
-        } else if (entry instanceof Tool tool) {
-            Tag newestVersion = null;
-            Set<Tag> versions = tool.getWorkflowVersions();
-            for (Tag t : versions) {
-                if (newestVersion == null) {
-                    newestVersion = t;
-                } else {
-                    if (newestVersion.getDbUpdateDate().before(t.getDbUpdateDate())) {
-                        newestVersion = t;
-                    }
-                }
-
-            }
-            return Optional.ofNullable(newestVersion);
-        }
-        return Optional.empty();
     }
 
     private void deleteIndex(String index, RestHighLevelClient restClient) {

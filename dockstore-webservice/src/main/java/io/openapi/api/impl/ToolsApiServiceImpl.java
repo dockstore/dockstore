@@ -29,6 +29,7 @@ import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -83,6 +84,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -307,7 +309,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), null,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), value, user);
     }
 
     @Override
@@ -321,7 +323,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), relativePath,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), value, user);
     }
 
     private boolean contextContainsPlainText(ContainerRequestContext value) {
@@ -345,14 +347,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final DescriptorLanguage.FileType fileTypeActual = fileType.get();
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileTypeActual);
         final DescriptorLanguage.FileType testParamType = descriptorLanguage.getTestParamType();
-        return getFileByToolVersionID(id, versionId, testParamType, null, plainTextResponse, user);
+        return getFileByToolVersionID(id, versionId, testParamType, null, plainTextResponse, value, user);
     }
 
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
         // matching behaviour of the descriptor endpoint
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), user);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), value, user);
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
@@ -629,7 +631,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     @SuppressWarnings("checkstyle:methodlength")
     private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
-        boolean unwrap, Optional<User> user) {
+        boolean unwrap, ContainerRequestContext value, Optional<User> user) {
         Response.StatusType fileNotFoundStatus = getExtendedStatus(Status.NOT_FOUND,
             "version found, but file not found (bad filename, invalid file, etc.)");
 
@@ -724,7 +726,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     List<FileWrapper> toolTestsList = new ArrayList<>();
 
                     for (SourceFile file : testSourceFiles) {
-                        FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                        String selfPath = computeURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
+                        FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file, selfPath);
                         toolTests.setImageType(new EmptyImageType());
                         toolTestsList.add(toolTests);
                     }
@@ -743,6 +746,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         dockerfile.setOriginalFile(potentialDockerfile.get());
                         dockerfile.setImageType(new EmptyImageType());
                         toolVersion.setContainerfile(true);
+                        dockerfile.setDockstoreAbsolutePath(MoreObjects.firstNonNull(potentialDockerfile.get().getAbsolutePath(), ""));
+
+                        String url = computeURLFromEntryAndRequestURI(entry.getTrsId(), value.getUriInfo().getRequestUri().toASCIIString());
+                        dockerfile.setDockstoreSelfUrl(url);
+
                         List<FileWrapper> containerfilesList = new ArrayList<>();
                         containerfilesList.add(dockerfile);
                         return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
@@ -782,7 +790,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     final Path relativize = workingPath.relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
                     String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
                         .prependIfMissing(relativize.toString(), "/");
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
+
+                    String encode = URLEncoder.encode(sourceFile.getAbsolutePath(), StandardCharsets.UTF_8);
+                    String selfPath = value.getUriInfo().getRequestUri().toASCIIString();
+                    if (parameterPath == null) {
+                        selfPath = selfPath + "/" + encode;
+                    }
+                    String url = computeURLFromEntryAndRequestURI(entry.getTrsId(), selfPath);
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, url, sourceFile);
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
@@ -791,6 +806,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } finally {
             versionDAO.disableNameFilter();
         }
+    }
+
+    /**
+     * compute a base URL like how we do with TRS tools and then append the rest of the endpoint and parameters using the request uri
+     * this will retain the scheme and basepath which can be messed with by a load balancer or nginx
+     * @param entry
+     * @param selfPath
+     * @return
+     */
+    private static String computeURLFromEntryAndRequestURI(String entry, String selfPath) {
+        String url = ToolsImplCommon.getUrlFromId(config, entry);
+        return url + selfPath.split(URLEncoder.encode(entry, StandardCharsets.UTF_8))[1];
     }
 
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
@@ -925,6 +952,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String fileName = EntryVersionHelper.generateZipFileName(dockstoreID, name);
 
         return Response.ok().entity((StreamingOutput) output -> EntryVersionHelper.writeStreamAsZipStatic(sourceFiles, output, path))
+            .header("Content-Type", "application/zip")
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
@@ -966,6 +994,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(path.relativize(Paths.get(file.getAbsolutePath())).toString());
+            toolFile.setDockstoreAbsolutePath(file.getAbsolutePath());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
             // arbitrarily pick first checksum, seems like bug in specification, should probably be array
             final List<Checksum> checksums = convertToTRSChecksums(file);

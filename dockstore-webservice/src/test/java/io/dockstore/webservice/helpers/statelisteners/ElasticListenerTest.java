@@ -84,6 +84,7 @@ class ElasticListenerTest {
         initEntry(nextflowWorkflow);
         nextflowWorkflow.setDescriptorType(DescriptorLanguage.NEXTFLOW);
         nextflowVersion = new WorkflowVersion();
+        initVersion(nextflowVersion, FIRST_VERSION_NAME, FIRST_VERSION_ID, List.of());
         nextflowVersion.getVersionMetadata().setEngineVersions(List.of(NEXTFLOW_22_10_1));
         nextflowWorkflow.getWorkflowVersions().add(nextflowVersion);
 

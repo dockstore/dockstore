@@ -1,7 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Doi;
@@ -27,19 +25,23 @@ import io.dockstore.webservice.resources.SourceControlResourceInterface;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.ApiException;
+import io.swagger.zenodo.client.ApiResponse;
 import io.swagger.zenodo.client.api.AccessLinksApi;
 import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
 import io.swagger.zenodo.client.api.FilesApi;
+import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.AccessLink;
 import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.Community;
 import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
+import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,6 +51,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -58,6 +61,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
@@ -81,6 +86,15 @@ public final class ZenodoHelper {
     public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
     public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
+    /**
+     * How long to wait for Zenodo rate limit to get reset. Normally it should get reset after 1 minute; add one more second to safe.
+     */
+    private static final Duration MAX_WAIT_FOR_ZENODO_RATE_RESET = Duration.ofSeconds(61);
+    /**
+     * How low the number for remaining rate-limited Zenodo requests should get before waiting for a rate limit reset. Normal rate limit
+     * is 133 requests per minute; 10 seems like a safe buffer.
+     */
+    private static final int ZENODO_REQUESTS_REMAINING_PADDING = 10;
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
     private static String dockstoreZenodoAccessToken;
@@ -133,7 +147,7 @@ public final class ZenodoHelper {
      * @param authenticatedResourceInterface
      * @return
      */
-    public static void automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+    public static void automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
         if (StringUtils.isEmpty(dockstoreZenodoAccessToken)) {
             LOG.error("Dockstore Zenodo access token not found for automatic DOI creation, skipping");
             return;
@@ -159,7 +173,7 @@ public final class ZenodoHelper {
      * @param workflowOwner
      * @param authenticatedResourceInterface
      */
-    public static void automaticallyRegisterDockstoreDOIForRecentTags(Workflow workflow, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+    public static void automaticallyRegisterDockstoreDOIForRecentTags(Workflow workflow, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
         final List<WorkflowVersion> recentTags = workflowVersionDAO.getTagsByWorkflowIdOrderedByLastModified(workflow.getId(), AUTOMATIC_DOI_CREATION_VERSIONS_LIMIT);
         for (WorkflowVersion tag: recentTags) {
             automaticallyRegisterDockstoreDOI(workflow, tag, workflowOwner, authenticatedResourceInterface);
@@ -252,7 +266,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      */
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
-            WorkflowVersion workflowVersion, User workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface, DoiInitiator doiInitiator) {
+            WorkflowVersion workflowVersion, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface, DoiInitiator doiInitiator) {
 
         LOG.info("Registering {} Zenodo DOI for workflow {}, version {}", doiInitiator.name(), workflow.getWorkflowPath(), workflowVersion.getName());
         // Create Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
@@ -353,7 +367,7 @@ public final class ZenodoHelper {
         // This code also checks that the alias does not start with an invalid prefix
         // If it does, this will generate an exception, the alias will not be added
         // to the workflow version, but there may be an invalid Related Identifier URL on the Zenodo entry
-        AliasHelper.addWorkflowVersionAliasesAndCheck(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, workflowOwner,
+        AliasHelper.addWorkflowVersionAliases(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, workflowOwner,
                 workflowVersion.getId(), zenodoDoiResult.doiAlias(), false);
 
         return zenodoDoiResult;
@@ -368,6 +382,93 @@ public final class ZenodoHelper {
         return doi;
     }
 
+    /**
+     * Searches for Zenodo DOIs issued against the GitHub repository <code>gitHubRepo</code>.
+     * <p>
+     * The Zenodo API returns an ElasticSearch response. What we do is:
+     *
+     * <ol>
+     *     <li>Make a request to <code>https://zenodo.org/api/records?q=/https:\/\/github.com\/org\/repo\/tree\/.*&#47;</code></li>
+     *     <li>If there is no match, we're done. If there's a match, we have the most recent DOI version against the repo and use in the next step</li>
+     *     <li>Then send another request to <code>https://zenodo.org/api/records/[DOI ID from  previous step]/versions</code> to get all the
+     *     DOIs associated with that DOI</li>
+     * </ol>
+     *
+     * @param gitHubRepo the github repo in org/repo form, e.g., dockstore/dockstore-cli
+     * @return
+     */
+    public static List<GitHubRepoDois> findDoisForGitHubRepo(String gitHubRepo) {
+        LOG.info("Looking for DOIs for repo {}", gitHubRepo);
+        final ApiClient zenodoClient = createDockstoreZenodoClient();
+        final PreviewApi previewApi = new PreviewApi(zenodoClient);
+        final String query = "metadata.related_identifiers.identifier:/https:\\/\\/github.com\\/%s\\/tree\\/.+/".formatted(gitHubRepo.replace("/", "\\/"));
+        final int pageSize = 1; // We can only handle 1 DOI for a GitHub initiator, so no point asking for more
+        try {
+            final ApiResponse<SearchResult> response = previewApi.listRecordsWithHttpInfo(query, "bestmatch", 1, pageSize);
+            zenodoClientRateLimitHelper().checkRateLimit(response.getHeaders());
+            final SearchResult records = response.getData();
+            final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
+            return dois.stream()
+                    .map(conceptAndDoi -> {
+                        final ApiResponse<SearchResult> versionsResponse = getRecordVersions(zenodoClient, conceptAndDoi.doi());
+                        zenodoClientRateLimitHelper().checkRateLimit(versionsResponse.getHeaders());
+                        final List<TagAndDoi> taggedVersions = findTaggedVersions(versionsResponse.getData().getHits().getHits(), gitHubRepo);
+                        return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
+                    })
+                    .toList();
+        } catch (ApiException e) {
+            LOG.error("Error discovering DOIs for GitHub repo %s".formatted(gitHubRepo), e);
+            return List.of();
+        }
+    }
+
+    private static ClientRateLimitHelper zenodoClientRateLimitHelper() {
+        return new ClientRateLimitHelper(MAX_WAIT_FOR_ZENODO_RATE_RESET, ZENODO_REQUESTS_REMAINING_PADDING);
+    }
+
+    /**
+     * Returns the list of DOIs created by the GitHub-Zenodo integration. DOIs created by the integration have
+     * a metadata[].related_identifer whose value is of the pattern https://github.com/[org]/[repo]/tree/[tagName], e.g.,
+     * https://github.com/dockstore/dockstore-cli/tree/1.15
+     * @param hits
+     * @return
+     */
+    static List<ConceptAndDoi> findGitHubIntegrationDois(List<Hit> hits, String gitHubRepo) {
+        return hits.stream()
+                .map(hit -> new ConceptAndDoi(hit.getConceptdoi(), hit.getDoi()))
+                .toList();
+    }
+
+    /**
+     * Returns a list of GitHub tags with their associated DOIs from a Zenodo ElasticSearch response
+     * @param hits
+     * @param gitHubRepo
+     * @return
+     */
+    static List<TagAndDoi> findTaggedVersions(List<Hit> hits, String gitHubRepo) {
+        return hits.stream()
+                .filter(hit -> Objects.nonNull(hit.getMetadata()) && Objects.nonNull(hit.getMetadata().getRelatedIdentifiers()))
+                .map(hit -> {
+                    final String doi = hit.getDoi();
+                    final Optional<String> maybeTag = hit.getMetadata().getRelatedIdentifiers().stream()
+                            .map(relatedIdentifier -> tagFromRelatedIdentifier(gitHubRepo, relatedIdentifier.getIdentifier()))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .findFirst(); // We only support 1 DOI per initiator
+                    return maybeTag.map(tag -> new TagAndDoi(tag, doi)).orElse(null);
+                }).filter(Objects::nonNull).toList();
+    }
+
+    static Optional<String> tagFromRelatedIdentifier(String gitHubRepo, String ri) {
+        final Pattern pattern = Pattern.compile("^https://github.com/%s/tree/(\\S*)$".formatted(gitHubRepo));
+        final Matcher matcher = pattern.matcher(ri);
+        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    static ApiResponse<SearchResult> getRecordVersions(ApiClient zenodoClient, String doi) {
+        final PreviewApi previewApi = new PreviewApi(zenodoClient);
+        return previewApi.getRecordVersionsWithHttpInfo(extractRecordIdFromDoi(doi));
+    }
 
     /**
      * Create a workflow alias that uses a digital object identifier
@@ -420,12 +521,10 @@ public final class ZenodoHelper {
      *     %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion) {
-        final String sourceControlPath = workflow.getWorkflowPath();
-        final String workflowVersionPrimaryDescriptorPath = WORKFLOW_PREFIX + "/" + sourceControlPath;
-        final String workflowVersionPrimaryDescriptorPathPlainText;
+        final String trsId = workflow.getTrsId();
+        final String baseTrsUrl;
         try {
-            workflowVersionPrimaryDescriptorPathPlainText =
-                    ToolsImplCommon.getUrl(workflowVersionPrimaryDescriptorPath, dockstoreGA4GHBaseUrl);
+            baseTrsUrl = ToolsImplCommon.getUrl(trsId, dockstoreGA4GHBaseUrl);
         } catch (UnsupportedEncodingException e) {
             LOG.error("Could not create Zenodo related identifier. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create Zenodo related identifier",
@@ -435,9 +534,8 @@ public final class ZenodoHelper {
         final String workflowDescriptorName = workflowVersion.getWorkflowPath();
         Path p = Paths.get(workflowDescriptorName);
         final String descriptorFile = p.getFileName().toString();
-        final String versionOfWorkflow = workflowVersion.getName();
-        return workflowVersionPrimaryDescriptorPathPlainText + "/versions/" + versionOfWorkflow
-                + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
+        final String versionName = workflowVersion.getName();
+        return baseTrsUrl + "/versions/" + versionName + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
     }
 
     /**
@@ -455,7 +553,7 @@ public final class ZenodoHelper {
 
         // Add the workflow version alias as a related identifier on Zenodo
         // E.g https://dockstore.org/aliases/workflow-versions/10.5281-zenodo.2630727
-        final String aliasUrl = dockstoreUrl + "/aliases/workflow-versions/" + doiAlias;
+        final String aliasUrl = AliasHelper.createWorkflowVersionAliasUrl(dockstoreUrl, workflow, doiAlias);
         addUriToRelatedIdentifierList(relatedIdentifierList, aliasUrl);
 
         // Add the UI2 link to the workflow to Zenodo as a related identifier
@@ -816,22 +914,23 @@ public final class ZenodoHelper {
      * @param workflowVersion
      * @param user
      */
-    public static void checkCanRegisterDoi(Workflow workflow, WorkflowVersion workflowVersion, User user, DoiInitiator doiInitiator) {
+    public static void checkCanRegisterDoi(Workflow workflow, WorkflowVersion workflowVersion, Optional<User> user, DoiInitiator doiInitiator) {
         final String workflowNameAndVersion = workflowNameAndVersion(workflow, workflowVersion);
+        final String username = user.map(User::getUsername).orElse("n/a");
 
         if (!workflow.getIsPublished()) {
-            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, PUBLISHED_ENTRY_REQUIRED);
+            LOG.error("{}: Could not generate DOI for {}. {}", username, workflowNameAndVersion, PUBLISHED_ENTRY_REQUIRED);
             throw new CustomWebApplicationException(PUBLISHED_ENTRY_REQUIRED, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only require snapshotting for user-created DOIs
         if (doiInitiator == DoiInitiator.USER && !workflowVersion.isFrozen()) {
-            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, FROZEN_VERSION_REQUIRED);
+            LOG.error("{}: Could not generate DOI for {}. {}", username, workflowNameAndVersion, FROZEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, FROZEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
         }
 
         if (workflowVersion.isHidden()) {
-            LOG.error("{}: Could not generate DOI for {}. {}", user.getUsername(), workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED);
+            LOG.error("{}: Could not generate DOI for {}. {}", username, workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException(String.format("Could not generate DOI for %s. %s", workflowNameAndVersion, UNHIDDEN_VERSION_REQUIRED), HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -877,11 +976,28 @@ public final class ZenodoHelper {
      * @return
      */
     public static boolean canAutomaticallyCreateDockstoreOwnedDoi(Workflow workflow, WorkflowVersion workflowVersion) {
-        final boolean validPublishedTag = workflow.getIsPublished() && workflowVersion.isValid() && workflowVersion.getReferenceType() == ReferenceType.TAG;
+        final boolean validPublishedTag = workflow.isAutoGenerateDois() && workflow.getIsPublished() && workflowVersion.isValid() && workflowVersion.getReferenceType() == ReferenceType.TAG;
         return validPublishedTag && !hasExistingDOIForWorkflowVersion(workflowVersion, DoiInitiator.DOCKSTORE);
     }
 
     public record ZenodoDoiResult(String doiAlias, String doiUrl, String conceptDoi) {
     }
+
+    /**
+     * The discovered DOIs for a GitHub repo.
+     * @param repo - the GitHub repo, in org/repo format, e.g., dockstore/dockstore-cli
+     * @param conceptDoi
+     * @param tagAndDoi
+     */
+    public record GitHubRepoDois(String repo, String conceptDoi, List<TagAndDoi> tagAndDoi) {}
+
+    /**
+     * The name of a GitHub tag and the DOI that was created for it.
+     * @param gitHubTag the name of the GitHub tag, e.g., "1.0.1" (not a GitHub reference)
+     * @param doi the doi
+     */
+    public record TagAndDoi(String gitHubTag, String doi) {}
+
+    public record ConceptAndDoi(String conceptDoi, String doi) {}
 
 }

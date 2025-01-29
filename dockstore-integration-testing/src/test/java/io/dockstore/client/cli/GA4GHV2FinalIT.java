@@ -54,6 +54,7 @@ class GA4GHV2FinalIT extends GA4GHIT {
     void assertDescriptor(String descriptor) {
         assertThat(descriptor).contains("url");
         assertThat(descriptor).contains("content");
+        assertThat(descriptor).contains("dockstore_self_url");
     }
 
     @Test
@@ -184,6 +185,11 @@ class GA4GHV2FinalIT extends GA4GHIT {
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+
+        final String expected = SUPPORT.getObjectMapper()
+            .writeValueAsString(SUPPORT.getObjectMapper().readValue(fixture("fixtures/descriptorJsonWithSelfUrl.json"), new TypeReference<FileWrapper>() {
+            }));
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
     @Override

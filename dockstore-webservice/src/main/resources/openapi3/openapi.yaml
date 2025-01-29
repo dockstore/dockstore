@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.16.0-SNAPSHOT
+  version: 1.17.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -415,6 +415,60 @@ paths:
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags:
       - GA4GHV1
+  /api/ga4gh/v2/extended/aiTopicCandidates:
+    get:
+      description: "Get all published tools that are AI topic candidates and their\
+        \ representative version if it exists, otherwise an empty string is returned\
+        \ as the version name."
+      operationId: getAITopicCandidates
+      parameters:
+      - description: "Start index of paging. If this exceeds the current result set\
+          \ return an empty set. If not specified in the request, this will start\
+          \ at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Amount of records to return in a given page.
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+          maximum: 1000
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: "Retrieved published tools that are AI topic candidates and\
+            \ a single representative version name if it exists, otherwise an empty\
+            \ string is returned as the version name."
+          headers:
+            X-total-count:
+              description: Total count of AI topic candidates
+              schema:
+                type: integer
+                format: int64
+              style: simple
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       description: This endpoint returns entries of an organization.
@@ -435,6 +489,31 @@ paths:
                   $ref: '#/components/schemas/ToolV1'
           description: An array of Tools of the input organization.
       summary: List entries of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/entryVersionsToAggregate:
+    get:
+      description: This endpoint gets entry versions that have new execution metrics
+        to aggregate.
+      operationId: getEntryVersionsToAggregate
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Entry versions to aggregate retrieved successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+      security:
+      - BEARER: []
+      summary: Get entry versions that have new execution metrics to aggregate.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/organizations:
@@ -658,32 +737,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: Platform that the tool was executed on
-        in: query
-        name: platform
-        required: true
-        schema:
-          type: string
-          enum:
-          - GALAXY
-          - TERRA
-          - DNA_STACK
-          - DNA_NEXUS
-          - CGC
-          - NHLBI_BIODATA_CATALYST
-          - ANVIL
-          - CAVATICA
-          - NEXTFLOW_TOWER
-          - ELWAZI
-          - AGC
-          - OTHER
-          - ALL
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Metrics'
-        description: Aggregated metrics to add to the version
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Metrics'
+        description: A map of aggregated metrics for platforms to set as the version's
+          metrics
         required: true
       responses:
         "200":
@@ -6854,6 +6916,41 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/github/infer/{owner}/{repo}/{ref}:
+    get:
+      deprecated: true
+      description: Infer the entries in the file tree of a GitHub repository reference.
+      operationId: inferEntries
+      parameters:
+      - description: repo owner
+        in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - description: repo name
+        in: path
+        name: repo
+        required: true
+        schema:
+          type: string
+      - description: "reference, could contain slashes which need to be urlencoded"
+        in: path
+        name: ref
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/github/install:
     post:
       description: Handle the installation of our GitHub app onto a repository or
@@ -7514,6 +7611,61 @@ paths:
           description: default response
       tags:
       - workflows
+  /workflows/published/{workflowId}/workflowVersions:
+    get:
+      description: Return paginated versions in an public entry
+      operationId: getPublicWorkflowVersions
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+          description: Get workflow versions in an entry. Default is 100 versions
+        "400":
+          description: Bad Request
+      tags:
+      - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     delete:
       description: Delete a stubbed workflow for a registry and repository path.
@@ -7601,6 +7753,38 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SharedWorkflows'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/updateDois:
+    post:
+      description: "Searches Zenodo for DOIs referencing GitHub repos, and updates\
+        \ Dockstore entries with them"
+      operationId: updateDois
+      parameters:
+      - description: "Optional GitHub full repository name, e.g., myorg/myrepo, to\
+          \ only update entries for that repository"
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: Only check GitHub repos with releases over this number of days.
+          Don't set to check all repos
+        in: query
+        name: daysSinceLastRelease
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -7756,6 +7940,35 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/autogeneratedois:
+    put:
+      description: Whether Dockstore should auto-generate DOIs for GitHub tags
+      operationId: autoGenerateDois
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoDoiRequest'
+        description: The request to update DOI generation
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: default response
       security:
       - BEARER: []
       tags:
@@ -8444,16 +8657,48 @@ paths:
       - workflows
   /workflows/{workflowId}/workflowVersions:
     get:
-      description: Return first 200 versions in an entry
+      description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
         schema:
           type: integer
           format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: "column used to sort versions. if omitted, the webservice determines\
+          \ the sort order, currently default version first"
+        in: query
+        name: sortCol
+        schema:
+          type: string
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -8462,7 +8707,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in a workflow
+          description: Get workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
       security:
@@ -8771,6 +9016,15 @@ components:
           type: string
         role:
           type: string
+    AutoDoiRequest:
+      type: object
+      description: Request to control auto DOI generation
+      properties:
+        autoGenerateDois:
+          type: boolean
+          description: Whether to automatically generate DOIs
+      required:
+      - autoGenerateDois
     BioWorkflow:
       type: object
       allOf:
@@ -9014,10 +9268,20 @@ components:
         id:
           type: integer
           format: int64
+        isApprovedAITopic:
+          type: boolean
         labels:
           type: array
           items:
             type: string
+        topic:
+          type: string
+        topicSelection:
+          type: string
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - AI
         verified:
           type: boolean
         versionName:
@@ -9441,6 +9705,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9621,6 +9887,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9637,6 +9905,29 @@ components:
           items:
             $ref: '#/components/schemas/Version'
           uniqueItems: true
+    EntryLite:
+      type: object
+      properties:
+        entryPath:
+          type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
+        lastUpdated:
+          type: string
+          format: date-time
+        prettyPath:
+          type: string
+        trsId:
+          type: string
+    EntryLiteAndVersionName:
+      type: object
+      properties:
+        entryLite:
+          $ref: '#/components/schemas/EntryLite'
+        versionName:
+          type: string
     EntryType:
       type: string
       description: Entry type
@@ -9944,6 +10235,15 @@ components:
         content:
           type: string
           description: The content of the file itself. One of url or content is required.
+        dockstore_absolute_path:
+          type: string
+          description: Absolute path of the file.  A descriptor's path can be used
+            with zip from toolsIdVersionsVersionIdTypeFilesGet when format=zip is
+            specified
+        dockstore_self_url:
+          type: string
+          description: Self URL to this file in the toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+            endpoint
         image_type:
           $ref: '#/components/schemas/OneOfFileWrapperImageType'
         url:
@@ -9961,6 +10261,24 @@ components:
         content:
           type: string
         url:
+          type: string
+    GitCommit:
+      type: object
+      description: "Information about a commit on a GitHub push event. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push,\
+        \ under commits and head_commit"
+      properties:
+        author:
+          $ref: '#/components/schemas/GitHubUser'
+        committer:
+          $ref: '#/components/schemas/GitHubUser'
+    GitHubUser:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        username:
           type: string
     HealthCheckResult:
       type: object
@@ -10639,6 +10957,13 @@ components:
             type: string
             description: The SHA of the most recent commit on ref after the push
             example: 6d96270004515a0486bb7f76196a72b40c55a47f
+          commits:
+            type: array
+            description: An array of commit objects describing the pushed commits
+            items:
+              $ref: '#/components/schemas/GitCommit'
+          head_commit:
+            $ref: '#/components/schemas/GitCommit'
           ref:
             type: string
             description: The full git ref that was pushed
@@ -10996,7 +11321,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -11333,6 +11657,11 @@ components:
       properties:
         checksum:
           $ref: '#/components/schemas/Checksum'
+        dockstore_absolute_path:
+          type: string
+          description: Absolute path of the file.  A descriptor's path can be used
+            with zip from toolsIdVersionsVersionIdTypeFilesGet when format=zip is
+            specified
         file_type:
           type: string
           enum:
@@ -11923,7 +12252,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         author:
           type: string
         authors:
@@ -12052,6 +12380,9 @@ components:
     VersionMetadata:
       type: object
       properties:
+        aiTopicProcessed:
+          type: boolean
+          description: True if Dockstore has processed this version for an AI topic
         descriptorTypeVersions:
           type: array
           items:
@@ -12068,6 +12399,14 @@ components:
         id:
           type: integer
           format: int64
+        latestMetricsAggregationDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics aggregation
+        latestMetricsSubmissionDate:
+          type: integer
+          format: int64
+          description: The timestamp of the last metrics submission
         parsedInformationSet:
           type: array
           items:
@@ -12112,8 +12451,8 @@ components:
       description: Details about the release
       properties:
         published_at:
-          type: integer
-          format: int64
+          type: string
+          format: date-time
         tag_name:
           type: string
           description: Name of the tag associated with the release
@@ -12153,6 +12492,9 @@ components:
             $ref: '#/components/schemas/Author'
           readOnly: true
           uniqueItems: true
+        autoGenerateDois:
+          type: boolean
+          description: Whether to automatically generate DOIs for GitHub tags
         checker_id:
           type: integer
           format: int64
@@ -12327,6 +12669,8 @@ components:
           - AUTOMATIC
           - MANUAL
           - AI
+        trsId:
+          type: string
         type:
           type: string
         userIdToOrcidPutCode:
@@ -12366,7 +12710,6 @@ components:
       properties:
         aiTopicProcessed:
           type: boolean
-          description: True if Dockstore has processed this version for an AI topic
         aliases:
           type: object
           additionalProperties:

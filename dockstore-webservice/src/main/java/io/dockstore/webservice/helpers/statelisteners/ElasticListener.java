@@ -23,6 +23,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Label;
@@ -34,6 +35,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
@@ -41,7 +43,6 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -334,6 +335,7 @@ public class ElasticListener implements StateListenerInterface {
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
+        Doi selectedConceptDoi = entry.getDefaultConceptDoi();
         Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
@@ -349,6 +351,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
+        objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         return jsonNode;
     }
 
@@ -390,28 +393,6 @@ public class ElasticListener implements StateListenerInterface {
         }
     }
 
-    /**
-     * Similar to logic in https://github.com/dockstore/dockstore-ui2/blob/2.10.0/src/app/shared/entry.ts#L171
-     * except it will return a default version even if there is no valid version.
-     * @param entry
-     * @return
-     */
-    private static Version defaultVersionWithFallback(Entry entry) {
-        if (entry.getActualDefaultVersion() != null) {
-            return entry.getActualDefaultVersion();
-        }
-        final Stream<Version> stream = versionStream(entry.getWorkflowVersions());
-        return stream.max(Comparator.comparing(Version::getId)).orElse(null);
-    }
-
-    private static Stream<Version> versionStream(Set<Version> versions) {
-        if (versions.stream().anyMatch(Version::isValid)) {
-            return versions.stream().filter(Version::isValid);
-        } else {
-            return versions.stream();
-        }
-    }
-
     private static Set<Version> detachVersions(final Set<Version> originalWorkflowVersions, final Version defaultVersion) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
@@ -438,6 +419,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private static void copyEntryProperties(Entry detachedEntry, Entry entry) {
+        detachedEntry.setLastModified(entry.getLastModifiedDate());
         detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
@@ -451,7 +433,7 @@ public class ElasticListener implements StateListenerInterface {
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
 
         // Add the detached versions
-        Version defaultVersion = defaultVersionWithFallback(entry);
+        Version defaultVersion = EntryVersionHelper.determineRepresentativeVersion(entry).orElse(null);
         Set<Version> detachedVersions = detachVersions(entry.getWorkflowVersions(), defaultVersion);
         detachedEntry.setWorkflowVersions(detachedVersions);
     }

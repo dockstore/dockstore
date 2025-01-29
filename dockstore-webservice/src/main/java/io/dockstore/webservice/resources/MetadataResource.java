@@ -94,6 +94,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Year;
 import java.util.ArrayList;
@@ -332,7 +333,7 @@ public class MetadataResource {
     public Response getRunnerDependencies(
             @Parameter(name = "client_version", description = "The Dockstore client version (e.g. 1.13.0)", schema = @Schema(pattern = PipHelper.OPENAPI_SEM_VER_STRING))
             @ApiParam(value = "The Dockstore client version (e.g. 1.13.0)") @NotNull @QueryParam("client_version") String clientVersion,
-            @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
+            @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "3"))
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("3") @QueryParam("python_version") String pythonVersion,
             @Parameter(name = "runner", description = "The tool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "cwltool", allowableValues = {"cwltool"}))
             @ApiParam(value = "The tool runner", allowableValues = "cwltool") @DefaultValue("cwltool") @QueryParam("runner") String runner,
@@ -349,8 +350,12 @@ public class MetadataResource {
         }
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
         try {
-            String content = Resources.toString(this.getClass().getClassLoader()
-                    .getResource("requirements/" + fileVersion + "/requirements" + (pythonVersion.startsWith("3") ? "3" : "") + ".txt"), StandardCharsets.UTF_8);
+            URL resource = this.getClass().getClassLoader()
+                .getResource("requirements/" + fileVersion + "/requirements" + (pythonVersion.startsWith("3") ? "3" : "") + ".txt");
+            if (resource == null) {
+                throw new CustomWebApplicationException("Runner dependencies not found for given choice of python and client versions", HttpStatus.SC_NOT_FOUND);
+            }
+            String content = Resources.toString(resource, StandardCharsets.UTF_8);
             Map<String, String> pipDepMap = PipHelper.convertPipRequirementsStringToMap(content);
             return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                     .entity(unwrap ? content : pipDepMap).build();

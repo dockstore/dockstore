@@ -52,7 +52,7 @@ public final class AliasHelper {
      * @return the workflow version
      */
     public static WorkflowVersion getAndCheckWorkflowVersionResource(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
-            WorkflowVersionDAO workflowVersionDAO, User user, Long workflowVersionId) {
+            WorkflowVersionDAO workflowVersionDAO, Optional<User> user, Long workflowVersionId) {
         final WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
             LOG.error("Could not find workflow version using the workflow version id: " + workflowVersionId);
@@ -60,27 +60,26 @@ public final class AliasHelper {
         }
 
         Workflow workflow = getWorkflow(workflowDAO, workflowVersionId);
-        authenticatedResourceInterface.checkCanWrite(user, workflow);
+        authenticatedResourceInterface.checkCanWrite(user.orElse(null), workflow);
         return workflowVersion;
     }
 
     /**
      * Add aliases to a Workflow Version
-     * and check that they are valid before adding them:
-     * Only works for owner of the entry
+     * and check that the aliases are valid before adding them:
      * If blockFormat false, then no limit on format
      * @param authenticatedResourceInterface interface to check users and entries
      * @param workflowDAO Workflow data access object
      * @param workflowVersionDAO Workflow Version data access object
-     * @param user user authenticated to issue a DOI for the workflow
+     * @param user user that's adding aliases for the version
      * @param id the id of the Entry
      * @param aliases a comma separated string of aliases
      * @param blockFormat if true don't allow specific formats
      * @return the Workflow Version
      */
-    public static WorkflowVersion addWorkflowVersionAliasesAndCheck(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
-            WorkflowVersionDAO workflowVersionDAO, User user, Long id, String aliases, boolean blockFormat) {
-        WorkflowVersion workflowVersion = getAndCheckWorkflowVersionResource(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, user, id);
+    public static WorkflowVersion addWorkflowVersionAliases(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
+            WorkflowVersionDAO workflowVersionDAO, Optional<User> user, Long id, String aliases, boolean blockFormat) {
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(id);
         Set<String> oldAliases = workflowVersion.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
@@ -95,5 +94,9 @@ public final class AliasHelper {
 
         newAliases.forEach(alias -> workflowVersion.getAliases().put(alias, new Alias()));
         return workflowVersion;
+    }
+
+    public static String createWorkflowVersionAliasUrl(String dockstoreUrl, Workflow workflow, String alias) {
+        return "%s/aliases/%s-versions/%s".formatted(dockstoreUrl, workflow.getEntryTypeMetadata().getTerm(), alias);
     }
 }

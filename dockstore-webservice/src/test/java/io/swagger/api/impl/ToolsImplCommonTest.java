@@ -19,12 +19,12 @@ import static io.dockstore.webservice.DockstoreWebserviceApplication.GA4GH_API_P
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.Utils;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
@@ -77,7 +77,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", sourceFile));
+        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", "", sourceFile));
         FileWrapperV20beta expectedToolDescriptor = new FileWrapperV20beta();
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
@@ -92,7 +92,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", sourceFile));
+        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", "", sourceFile));
         FileWrapperV20beta expectedToolDescriptor = new FileWrapperV20beta();
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
@@ -299,8 +299,7 @@ class ToolsImplCommonTest {
 
     @SuppressWarnings("checkstyle:MethodLength")
     private void convertDockstoreWorkflowToTool(String toolname, boolean isService) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        ObjectMapper mapper = Utils.getObjectMapper();
         final String reference1 = "aaa";
         final String reference2 = "bbb";
         final String reference3 = "ccc";
@@ -512,7 +511,7 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile));
+        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile, null));
         FileWrapperV20beta expectedToolTests = new FileWrapperV20beta();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");

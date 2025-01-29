@@ -15,14 +15,14 @@ jobs:
     permissions:
       contents: read
       pages: write
-      id-token: write 
+      id-token: write
       
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres:13.7
+        image: postgres:16.4
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: dockstore
@@ -102,6 +102,9 @@ jobs:
 
       - name: Copy checksum files
         run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{ env.S3_FOLDER }}-${{ steps.slug.outputs.sha7 }}/image-digest.txt
+
+      - name: Copy checksum files (new)
+        run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{ env.S3_FOLDER }}-${{ steps.slug.outputs.sha7 }}/dockstore-webservice/image-digest.txt        
 
       # deploy database documentation and also verify that non-confidential migrations seem sane
       - name: Setup Pages

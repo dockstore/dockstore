@@ -15,7 +15,8 @@
 
 package io.dockstore.webservice.core;
 
-import io.dockstore.common.EntryType;
+import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.EntryLite.EntryLiteNotebook;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
@@ -38,6 +39,9 @@ import jakarta.persistence.Transient;
             + "FROM Notebook n LEFT JOIN n.workflowVersions v "
             + "WHERE n.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
             + "GROUP BY n.sourceControl, n.organization, n.repository, n.workflowName, n.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Notebook.getEntryLiteVersionsToAggregate", query =
+        "SELECT new io.dockstore.webservice.core.Entry$EntryLiteAndVersionName(new io.dockstore.webservice.core.database.EntryLite$EntryLiteNotebook(e.sourceControl, e.organization, e.repository, e.workflowName), v.name) "
+            + "FROM Notebook e, Version v where e.id = v.parent.id and (v.versionMetadata.latestMetricsSubmissionDate > v.versionMetadata.latestMetricsAggregationDate or (v.versionMetadata.latestMetricsSubmissionDate is not null and v.versionMetadata.latestMetricsAggregationDate is null))"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.NotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName) from Notebook n where n.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate",
             query = "SELECT new io.dockstore.webservice.core.database.RSSNotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName, n.lastUpdated, n.description) "
@@ -63,8 +67,8 @@ public class Notebook extends Workflow {
     }
 
     @Override
-    public EntryType getEntryType() {
-        return EntryType.NOTEBOOK;
+    public EntryLite<Notebook> createEntryLite() {
+        return new EntryLiteNotebook(this);
     }
 
     @Override

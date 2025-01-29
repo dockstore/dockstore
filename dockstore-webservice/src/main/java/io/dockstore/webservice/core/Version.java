@@ -96,7 +96,8 @@ import org.hibernate.annotations.UpdateTimestamp;
                 + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                 + "version.parent.id = :entryId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountVersionFrozenByEntryID", query = "SELECT sum (case when v.frozen = true then 1 else 0 end) FROM Version v WHERE v.parent.id = :id"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getPublicCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id and v.versionMetadata.hidden = false")
 })
 
 @FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = String.class), defaultCondition = "LOWER(:name) = LOWER(name)")
@@ -167,10 +168,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(columnDefinition = "boolean default false")
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
-
-    @Column(columnDefinition = "boolean default false")
-    @Schema(description = "True if Dockstore has processed this version for an AI topic")
-    private boolean aiTopicProcessed = false;
 
     // Warning: this is eagerly loaded because of two reasons:
     // the 4 @ApiModelProperty that uses version metadata
@@ -690,11 +687,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public boolean isAiTopicProcessed() {
-        return aiTopicProcessed;
+        return getVersionMetadata().isAiTopicProcessed();
     }
 
     public void setAiTopicProcessed(boolean aiTopicProcessed) {
-        this.aiTopicProcessed = aiTopicProcessed;
+        getVersionMetadata().setAiTopicProcessed(aiTopicProcessed);
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

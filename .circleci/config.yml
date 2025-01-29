@@ -5,7 +5,7 @@ parameters:
     default: "21.0.2"
   postgres-tag:
     type: string
-    default: "16.1"    
+    default: "16.4"
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -32,8 +32,8 @@ executors:
           - discovery.type: single-node
     resource_class: medium+
   machine_integration_test_exec:
-    machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
-      image: ubuntu-2204:2023.10.1
+    machine: # run the steps with Ubuntu VM
+      image: ubuntu-2204:2024.04.4
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -207,11 +207,7 @@ jobs:
       - run:
           name: build sam-cli
           command: |
-            # workaround https://github.com/aws/aws-sam-cli/issues/3791#issuecomment-1096604840
-            pip3 install Jinja2==2.11.3
-            pip3 install wheel \
-            && pip3 install --no-build-isolation "Cython<3" "pyyaml==5.4.1"
-            pip3 install aws-sam-cli==1.52.0 
+            pip3 install aws-sam-cli==1.121.0
             sudo apt install unzip
             wget -O wdl-parsing.zip https://github.com/dockstore/lambda/releases/download/0.2.2-SNAPSHOT/wdl-parsing.zip
             unzip wdl-parsing.zip
@@ -382,9 +378,9 @@ jobs:
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
-              -Dtest=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              -Dtest=`cat /tmp/tests-to-run.txt | tr ' ' ','` -Dsurefire.failIfNoSpecifiedTests=false | grep  -v "^Running Changeset:"
             else 
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Dsurefire.failIfNoSpecifiedTests=false -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
 

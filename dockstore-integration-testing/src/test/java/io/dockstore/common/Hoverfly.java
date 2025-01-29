@@ -265,6 +265,13 @@ public final class Hoverfly {
 
             .get("/user/emails").willReturn(success(GITHUB_EMAIL, MediaType.APPLICATION_JSON)));
 
+    public static final SimulationSource ZENODO_DOI_SEARCH = dsl(service(ZENODO_SIMULATION_URL)
+            .get("/api/records").anyQueryParams().anyBody()
+            .willReturn(success(fixture("fixtures/zenodoListRecords.json"), MediaType.APPLICATION_JSON))
+
+            .get("/api/records/11099749/versions").anyBody().anyQueryParams()
+            .willReturn(success(fixture("fixtures/zenodoVersions.json"), MediaType.APPLICATION_JSON)));
+
     private Hoverfly() {
         // utility class
     }

@@ -595,7 +595,7 @@ public class DockerRepoResource
             final long l = tagDAO.create(tag);
             Tag byId = tagDAO.findById(l);
             createdTags.add(byId);
-            this.eventDAO.createAddTagToEntryEvent(user, tool, byId);
+            this.eventDAO.createAddTagToEntryEvent(Optional.of(user), tool, byId);
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
@@ -725,7 +725,7 @@ public class DockerRepoResource
 
         Workflow checker = tool.getCheckerWorkflow();
 
-        final User foundUser = userDAO.findById(user.getId());
+        final Optional<User> foundUser = Optional.of(userDAO.findById(user.getId()));
         if (request.getPublish()) {
             if (tool.isPrivateAccess()) {
                 // Check that either tool maintainer email or author email is not null

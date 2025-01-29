@@ -1060,19 +1060,66 @@ class WebhookIT extends BaseIT {
     }
 
     /**
-     * This tests the GitHub release process does not work for users that do not exist on Dockstore
+     * This tests the GitHub release process works for users that do not exist on Dockstore
      */
     @Test
     void testGitHubReleaseNoWorkflowOnDockstoreNoUser() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
-        try {
-            handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
-            fail("Should not reach this statement.");
-        } catch (ApiException ex) {
-            assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow when user does not exist on Dockstore.");
-        }
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser");
+        // Test starts from scratch
+        final Long userlessWorkflows = testingPostgres.runSelectStatement(
+                "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
+        assertEquals(1, userlessWorkflows);
+
+        // Test fix for https://ucsc-cgl.atlassian.net/browse/SEAB-5994?focusedCommentId=48145 -- verify that publishing an ownerless workflow no longer throws an exception
+        handleGitHubRelease(client, "dockstore-testing/simple-notebook", "refs/tags/simple-published-v1", "thisisafakeuser");
+    }
+
+    /**
+     * Test that if a webhook committer, but not the sender, is a Dockstore user, the workflow gets added to the commiter
+     */
+    @Test
+    void testGitHubReleaseNoWorkflowSenderNotADockstoreUser() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+        // Only the 1 workflow is in the DB, verify that it has USER_2_USERNAME as a user, even though they were not the sender of the event
+        final String workflowUser = testingPostgres.runSelectStatement(
+                "select username from enduser e where e.id in (select ue.userid from user_entry ue where ue.entryid = (select w.id from workflow w where w.repository = 'workflow-dockstore-yml'))",
+                String.class);
+        assertEquals(USER_2_USERNAME, workflowUser);
+
+    }
+
+    /**
+     * https://ucsc-cgl.atlassian.net/browse/SEAB-6850
+     */
+    @Test
+    void testGitHubReleaseUserHasAnExpiredGitHubToken() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        final Long initialWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(0, initialWorkflowCount, "There should be no workflows to start");
+        // Make USER_2_USERNAME's token invalid, which behaves similar to an expired token
+        testingPostgres.runUpdateStatement("update token set content='expiredtoken' where username = '%s' and tokensource='github.com'".formatted(USER_2_USERNAME));
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+        final Long userlessWorkflows = testingPostgres.runSelectStatement(
+                "select count(*) from workflow w where w.id not in (select entryid from user_entry)", long.class);
+        assertEquals(1, userlessWorkflows);
+        final Long wvCount1 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
+        assertEquals(1, wvCount1, "The userless workflow should now have 1 version");
+
+
+        // Ensure update also doesn't fail
+        handleGitHubRelease(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.2", "thisisafakeuser", null, List.of(USER_2_USERNAME));
+
+        // 0.2 also creates a CWL version, so only look for WDL versions
+        final Long wvCount2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstore.wdl'", long.class);
+        assertEquals(2, wvCount2, "The userless workflow should now have 2 WDL versions");
     }
 
     /**
