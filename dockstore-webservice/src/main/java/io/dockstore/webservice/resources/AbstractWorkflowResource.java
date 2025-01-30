@@ -41,10 +41,12 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ExceptionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -58,6 +60,9 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
+import io.dockstore.webservice.helpers.infer.Inferrer;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -437,6 +442,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected void inferAndDeliverDockstoreYml(String repository, long installationId, String branch) {
         // TODO
         LOG.error("infer .dockstore.yml %s, %s, %s".formatted(repository, installationId, branch));
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, repository, "refs/heads/" + branch));
+
+        InferrerHelper inferrerHelper = new InferrerHelper();
+        List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
+
+        if (entries.size() > 0) {
+            LOG.error("found entries " + entries);
+            LOG.error(inferrerHelper.toDockstoreYaml(entries));
+        } else {
+            LOG.error("could not find any entries");
+        }
     }
 
     /**
