@@ -60,6 +60,18 @@ public class InferredEntries {
     // TODO description annotation
     private String repository;
 
+    @Column(nullable = false)
+    // TODO description annotation
+    private boolean complete;
+
+    @Column(nullable = false)
+    // TODO description annotation
+    private String reference;
+
+    @Column(nullable=true)
+    // TODO description annotation
+    private long entryCount;
+
     @Column(nullable = true)
     // TODO description annotation
     private String dockstoreYml;
@@ -94,6 +106,14 @@ public class InferredEntries {
         this.user = user;
     }
 
+    public SourceControl getSourceControl() {
+        return sourceControl;
+    }
+
+    public void setSourceControl(SourceControl sourceControl) {
+        this.sourceControl = sourceControl;
+    }
+
     public String getOrganization() {
         return organization;
     }
@@ -108,6 +128,30 @@ public class InferredEntries {
 
     public void setRepository(String repository) {
         this.repository = repository;
+    }
+
+    public String getReference() {
+        return reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
+    }
+
+    public boolean isComplete() {
+        return complete;
+    }
+
+    public void setComplete(boolean complete) {
+        this.complete = complete;
+    }
+
+    public long getEntryCount() {
+        return entryCount;
+    }
+
+    public void setEntryCount(long entryCount) {
+        this.entryCount = entryCount;
     }
 
     public String getDockstoreYml() {

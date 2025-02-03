@@ -2256,6 +2256,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // record installation event as lambda event
+        // TODO do this in transaction
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
@@ -2283,7 +2284,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     if (inspectedAllBranches) {
                         if (!importantBranches.isEmpty()) {
                             String mostImportantBranch = importantBranches.get(0);
-                            inferAndDeliverDockstoreYml(repository, installationId, mostImportantBranch);
+                            inferAndDeliverDockstoreYml(triggerUser, repository, installationId, mostImportantBranch);
                         }
                     }
                 } else {

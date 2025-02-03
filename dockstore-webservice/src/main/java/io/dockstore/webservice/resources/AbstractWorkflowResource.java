@@ -26,6 +26,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry.TopicSelection;
+import io.dockstore.webservice.core.InferredEntries;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -66,6 +67,7 @@ import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
+import io.dockstore.webservice.jdbi.InferredEntriesDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.OrcidAuthorDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -124,6 +126,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final LambdaEventDAO lambdaEventDAO;
     protected final FileFormatDAO fileFormatDAO;
     protected final OrcidAuthorDAO orcidAuthorDAO;
+    protected final InferredEntriesDAO inferredEntriesDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -147,6 +150,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.orcidAuthorDAO = new OrcidAuthorDAO(sessionFactory);
+        this.inferredEntriesDAO = new InferredEntriesDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -439,22 +443,60 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    protected void inferAndDeliverDockstoreYml(String repository, long installationId, String branch) {
-        // TODO
-        LOG.error("infer .dockstore.yml %s, %s, %s".formatted(repository, installationId, branch));
+    protected void inferAndDeliverDockstoreYml(Optional<User> user, String organizationAndRepository, long installationId, String branch) {
+        String organization = organizationAndRepository.split("/")[0];
+        String repository = organizationAndRepository.split("/")[1];
+
+        // TODO If we've already inferred on this repo, don't try again.
+        /*
+        if (inferredEntriesDAO.getMostRecent(organization, repository) != null) {
+            LOG.info("previous inference detected on branch {} in {}/{}", branch, organization, repository);
+        }
+        */
+
+        // Log the impending inference.
+        LOG.info("inferring .dockstore.yml on branch {} in repository {}", branch, repository);
+
+        // Create the repo and file tree.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
 
         FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, repository, "refs/heads/" + branch));
 
-        InferrerHelper inferrerHelper = new InferrerHelper();
-        List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
-
-        if (entries.size() > 0) {
-            LOG.error("found entries " + entries);
-            LOG.error(inferrerHelper.toDockstoreYaml(entries));
-        } else {
-            LOG.error("could not find any entries");
+        try {
+            InferrerHelper inferrerHelper = new InferrerHelper();
+            List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
+            String dockstoreYml = inferrerHelper.toDockstoreYaml(entries);
+            persistSuccessfulInference(user, organization, repository, branch, entries.size(), dockstoreYml);
+        } catch (RuntimeException e) {
+            persistFailedInference(user, organization, repository, branch, e);
+            throw e;
         }
+    }
+
+    private void persistSuccessfulInference(Optional<User> user, String organization, String repository, String branch, long entryCount, String dockstoreYml) {
+        LOG.info("found {} entries on branch {} in {}/{}", entryCount, branch, organization, repository);
+        InferredEntries inferredEntries = new InferredEntries();
+        user.ifPresent(inferredEntries::setUser);
+        inferredEntries.setSourceControl(SourceControl.GITHUB);
+        inferredEntries.setOrganization(organization);
+        inferredEntries.setRepository(repository);
+        inferredEntries.setReference(branch);
+        inferredEntries.setComplete(true);
+        inferredEntries.setEntryCount(entryCount);
+        inferredEntries.setDockstoreYml(dockstoreYml);
+        inferredEntriesDAO.create(inferredEntries);
+    }
+
+    private void persistFailedInference(Optional<User> user, String organization, String repository, String branch, RuntimeException e) {
+        LOG.error("exception while inferring entries on branch {} in {}/{}", branch, organization, repository, e);
+        InferredEntries inferredEntries = new InferredEntries();
+        user.ifPresent(inferredEntries::setUser);
+        inferredEntries.setSourceControl(SourceControl.GITHUB);
+        inferredEntries.setOrganization(organization);
+        inferredEntries.setRepository(repository);
+        inferredEntries.setReference(branch);
+        inferredEntries.setComplete(false);
+        inferredEntriesDAO.create(inferredEntries);
     }
 
     /**

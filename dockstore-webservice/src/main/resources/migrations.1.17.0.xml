@@ -34,6 +34,12 @@
             </column>
             <column name="repository" type="VARCHAR(255)">
             </column>
+            <column name="reference" type="VARCHAR(255)">
+            </column>
+            <column name="complete" type="BOOLEAN">
+            </column>
+            <column name="entrycount" type="BIGINT">
+            </column>
             <column name="dockstoreyml" type="TEXT">
             </column>
         </createTable>
