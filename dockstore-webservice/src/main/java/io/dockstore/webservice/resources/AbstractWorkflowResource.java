@@ -447,12 +447,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         String organization = organizationAndRepository.split("/")[0];
         String repository = organizationAndRepository.split("/")[1];
 
-        // TODO If we've already inferred on this repo, don't try again.
-        /*
-        if (inferredEntriesDAO.getMostRecent(organization, repository) != null) {
-            LOG.info("previous inference detected on branch {} in {}/{}", branch, organization, repository);
+        // If we've already inferred on this repo, don't try again.
+        if (inferredEntriesDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository) != null) {
+            LOG.info("previous inference activity detected in {}/{}", organization, repository);
+            return;
         }
-        */
 
         // Log the impending inference.
         LOG.info("inferring .dockstore.yml on branch {} in repository {}", branch, repository);
