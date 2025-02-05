@@ -82,7 +82,7 @@ POM as their parent.
         <docker-client.version>3.3.6</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
-        <bouncycastle.version>1.80</bouncycastle.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
         <moneta.version>1.4.2</moneta.version>
 
         <skipTests>false</skipTests>
@@ -1364,7 +1364,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-ext-jdk18on</artifactId>
-                <version>1.78.1</version>
+                <version>${bouncycastle.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

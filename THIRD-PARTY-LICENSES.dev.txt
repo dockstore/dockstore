@@ -11,7 +11,7 @@ Lists of 105 third-party dependencies.
      (Apache License, Version 2.0) AWS Java SDK :: Services :: Amazon Kinesis (software.amazon.awssdk:kinesis:2.28.7 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) AWS Java SDK :: Third Party :: Jackson-dataformat-cbor (software.amazon.awssdk:third-party-jackson-dataformat-cbor:2.28.7 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) aws-encryption-sdk-java (com.amazonaws:aws-encryption-sdk-java:2.4.1 - https://github.com/aws/aws-encryption-sdk-java)
-     (Bouncy Castle Licence) Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.80 - https://www.bouncycastle.org/download/bouncy-castle-java/)
+     (Bouncy Castle Licence) Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
      (Apache License, Version 2.0) Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.1.8 - https://github.com/ben-manes/caffeine)
      (Apache License, Version 2.0) ClassMate (com.fasterxml:classmate:1.5.1 - https://github.com/FasterXML/java-classmate)
      (The Apache License, Version 2.0) com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
