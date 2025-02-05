@@ -582,7 +582,7 @@ class DockstoreYamlTest {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML.replace("enableAutoDois: false", "enableAutoDois: true"), true);
         assertEquals(1, dockstoreYaml12.getWorkflows().stream().filter(w -> w.getEnableAutoDois() == Boolean.TRUE).count(),
                 "There should be 1 workflow with enableAutoDois = true ");
-        assertEquals(1, dockstoreYaml12.getNotebooks().stream().map(n -> n.getEnableAutoDois() == Boolean.TRUE).count(),
+        assertEquals(1, dockstoreYaml12.getNotebooks().stream().filter(n -> n.getEnableAutoDois() == Boolean.TRUE).count(),
                 "There should be 1 notebook with enableAutoDois = true ");
     }
 }
