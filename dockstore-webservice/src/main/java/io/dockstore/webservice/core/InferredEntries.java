@@ -34,7 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "inferred_entries")
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.InferredEntries.getLatestByRepository", query = "SELECT i from InferredEntries i WHERE i.sourcecontrol = :sourcecontrol AND i.organization = :organization AND i.repository = :repository ORDER BY i.dbcreatedate DESC")
+    @NamedQuery(name = "io.dockstore.webservice.core.InferredEntries.getLatestByRepository", query = "SELECT i from InferredEntries i WHERE i.sourceControl = :sourcecontrol AND i.organization = :organization AND i.repository = :repository ORDER BY i.dbCreateDate DESC")
 })
 public class InferredEntries {
     @Id

@@ -54,6 +54,7 @@ import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.InferredEntries;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notebook;
@@ -260,7 +261,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class, CostStatisticMetric.class,
-            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class) {
+            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class, InferredEntries.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
