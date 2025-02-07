@@ -161,4 +161,4 @@ public class InferredEntries {
     public void setDockstoreYml(String dockstoreYml) {
         this.dockstoreYml = dockstoreYml;
     }
-} 
+}
