@@ -459,20 +459,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Create the repo and file tree.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
 
-        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, repository, "refs/heads/" + branch));
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, organizationAndRepository, "refs/heads/" + branch));
 
         try {
             InferrerHelper inferrerHelper = new InferrerHelper();
             List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
-            String dockstoreYml = inferrerHelper.toDockstoreYaml(entries);
-            persistSuccessfulInference(user, organization, repository, branch, entries.size(), dockstoreYml);
+            String dockstoreYml = entries.isEmpty() ? null : inferrerHelper.toDockstoreYaml(entries);
+            persistCompleteInference(user, organization, repository, branch, entries.size(), dockstoreYml);
         } catch (RuntimeException e) {
-            persistFailedInference(user, organization, repository, branch, e);
-            throw e;
+            persistIncompleteInference(user, organization, repository, branch, e);
         }
     }
 
-    private void persistSuccessfulInference(Optional<User> user, String organization, String repository, String branch, long entryCount, String dockstoreYml) {
+    private void persistCompleteInference(Optional<User> user, String organization, String repository, String branch, long entryCount, String dockstoreYml) {
         LOG.info("found {} entries on branch {} in {}/{}", entryCount, branch, organization, repository);
         InferredEntries inferredEntries = new InferredEntries();
         user.ifPresent(inferredEntries::setUser);
@@ -486,7 +485,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         inferredEntriesDAO.create(inferredEntries);
     }
 
-    private void persistFailedInference(Optional<User> user, String organization, String repository, String branch, RuntimeException e) {
+    private void persistIncompleteInference(Optional<User> user, String organization, String repository, String branch, RuntimeException e) {
         LOG.error("exception while inferring entries on branch {} in {}/{}", branch, organization, repository, e);
         InferredEntries inferredEntries = new InferredEntries();
         user.ifPresent(inferredEntries::setUser);
