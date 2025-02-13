@@ -65,5 +65,9 @@ org.javamoney:moneta:pom:1.4.2                                      = badSig
 org.javamoney.moneta:moneta-core:pom:1.4.2                          = badSig
 javax.money:money-api:pom:1.1                                       = badSig
 
+com.auth0:java-jwt:pom:3.8.1                                        = noKey
+com.auth0:java-jwt:jar:3.8.1                                        = noKey
+
+
 * 									                                = noSig
 *									                                = any

@@ -96,6 +96,7 @@ workflows:
               only:
                 - master
                 - /^release.*$/
+                - /^hotfix.*$/
           requires:
             - full_build_check
       - sonar-cloud:
