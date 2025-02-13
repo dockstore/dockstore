@@ -9,6 +9,8 @@ on:
       - 'release/**'
       - 'hotfix/**'
       - 'dependabot/**'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
   
 jobs:
   deploy_artifacts:
