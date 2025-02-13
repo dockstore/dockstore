@@ -68,7 +68,7 @@ public class InferredEntries {
     // TODO description annotation
     private long entryCount;
 
-    @Column(nullable = true)
+    @Column(nullable = true, columnDefinition = "text")
     // TODO description annotation
     private String dockstoreYml;
 

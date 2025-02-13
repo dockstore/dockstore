@@ -28,7 +28,7 @@
             </column>
             <column name="userid" type="BIGINT">
             </column>
-            <column name="sourcecontrol" type="VARCHAR(255)">
+            <column name="sourcecontrol" type="TEXT">
                 <constraints nullable="false"/>
             </column>
             <column name="organization" type="VARCHAR(255)">
