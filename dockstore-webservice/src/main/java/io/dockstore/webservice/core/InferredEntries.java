@@ -58,11 +58,11 @@ public class InferredEntries {
 
     @Column(nullable = false)
     // TODO description annotation
-    private boolean complete;
+    private String reference;
 
     @Column(nullable = false)
     // TODO description annotation
-    private String reference;
+    private boolean complete;
 
     @Column(nullable = true)
     // TODO description annotation
