@@ -32,6 +32,7 @@ public enum Partner {
     NEXTFLOW_TOWER,
     ELWAZI,
     AGC,
+    TOIL,
     OTHER, // This is meant for platforms that want to submit Metrics to Dockstore, but they're not officially a Partner
     ALL; // Captures all platforms for submitting Metrics aggregated across all platforms
 

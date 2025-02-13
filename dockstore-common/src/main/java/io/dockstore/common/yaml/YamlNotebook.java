@@ -21,7 +21,6 @@ import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -208,7 +207,6 @@ public class YamlNotebook implements Workflowish {
     }
 
     @Override
-    @AssertFalse // TODO: Added as part of https://ucsc-cgl.atlassian.net/browse/SEAB-6805. Remove when we turn on automatic DOIs for everyone
     public Boolean getEnableAutoDois() {
         return enableAutoDois;
     }

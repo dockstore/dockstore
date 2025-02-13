@@ -233,6 +233,10 @@ public interface AuthenticatedResourceInterface {
         return user != null && user.getIsAdmin();
     }
 
+    default boolean isCurator(User user) {
+        return user != null && user.isCurator();
+    }
+
     default boolean isOwner(User user, Entry<?, ?> entry) {
         return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
     }
