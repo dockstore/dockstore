@@ -810,7 +810,6 @@ paths:
           - ELWAZI
           - AGC
           - TOIL
-          - TOIL
           - OTHER
           - ALL
       - description: The execution ID of the execution to retrieve
@@ -881,7 +880,6 @@ paths:
           - NEXTFLOW_TOWER
           - ELWAZI
           - AGC
-          - TOIL
           - TOIL
           - OTHER
           - ALL
@@ -955,7 +953,6 @@ paths:
           - NEXTFLOW_TOWER
           - ELWAZI
           - AGC
-          - TOIL
           - TOIL
           - OTHER
           - ALL
@@ -9176,7 +9173,6 @@ components:
           - ELWAZI
           - AGC
           - TOIL
-          - TOIL
           - OTHER
           - ALL
         supportedLanguages:
@@ -10932,7 +10928,6 @@ components:
           - ELWAZI
           - AGC
           - TOIL
-          - TOIL
           - OTHER
           - ALL
     Profile:
@@ -12043,7 +12038,6 @@ components:
           - NEXTFLOW_TOWER
           - ELWAZI
           - AGC
-          - TOIL
           - TOIL
           - OTHER
           - ALL
