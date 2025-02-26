@@ -20,6 +20,7 @@ import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 
 import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.WorkflowVersion;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -29,6 +30,8 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.metamodel.Attribute;
+import java.sql.Timestamp;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.http.HttpStatus;
@@ -100,7 +103,9 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         List<Predicate> predicates = new ArrayList<>();
 
         Path<?> versionId = version.get("id");
-        Path<?> lastModified = version.get("lastModified");
+        Path<Timestamp> lastModified = version.get("lastModified");
+        Path<?> name = version.get("name");
+        Path<?> referenceType = version.get("referenceType");
         Expression<?> sortExpression;
         if (!Strings.isNullOrEmpty(sortCol)) {
             Path<?> versionMetadata = version.get("versionMetadata");
@@ -124,9 +129,35 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 sortExpression = version.get(sortCol);
             }
         } else {
+            Expression<Double> typeExpression = cb.<Double>selectCase()
+                .when(cb.equal(name, "master"), 8.)
+                .when(cb.equal(name, "main"), 8.)
+                .when(cb.equal(name, "develop"), 7.)
+                .when(cb.equal(referenceType, ReferenceType.TAG), 3.)
+                .otherwise(1.);
+
+            Expression<Double> secondsPerDay = cb.literal(24 * 3600.);
+            Expression<Timestamp> now = cb.currentTimestamp();
+            Expression<Timestamp> modified = cb.coalesce(lastModified, version.get("dbCreateDate"));
+            Expression<Double> nowDays = cb.toDouble(cb.quot(cb.function("date_part", Double.class, cb.literal("epoch"), now), secondsPerDay));
+            Expression<Double> modifiedDays = cb.toDouble(cb.quot(cb.function("date_part", Double.class, cb.literal("epoch"), modified), secondsPerDay));
+            Expression<Double> tomorrowDays = cb.sum(cb.function("floor", Double.class, nowDays), 1.);
+
+            Expression<Double> ageDays = cb.diff(tomorrowDays, modifiedDays);
+            Expression<Double> ageWeight = cb.toDouble(cb.quot(1., cb.function("greatest", Double.class, ageDays, cb.literal(1e-5))));
+
+            Expression<Double> successfulCount = cb.literal(12.); // TODO
+            Expression<Double> successfulWeight = cb.function("ln", Double.class, cb.sum(10., successfulCount));
+
+            // ageWeight = cb.literal(1.);
+            successfulWeight = cb.literal(1.);
+
+            Expression<Double> scaledTypeExpression = cb.prod(cb.prod(typeExpression, ageWeight), successfulWeight);
+            // scaledTypeExpression = typeExpression;
+
             sortExpression = cb.selectCase()
-                .when(cb.equal(versionId, representativeVersionId), 1)
-                .otherwise(0);
+                .when(cb.equal(versionId, representativeVersionId), 1e9)
+                .otherwise(scaledTypeExpression);
         }
         if ("desc".equalsIgnoreCase(sortOrder)) {
             query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
