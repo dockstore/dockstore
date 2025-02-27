@@ -106,6 +106,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         Path<Timestamp> lastModified = version.get("lastModified");
         Path<?> name = version.get("name");
         Path<?> referenceType = version.get("referenceType");
+        Path<Boolean> valid = version.get("valid");
         Expression<?> sortExpression;
         if (!Strings.isNullOrEmpty(sortCol)) {
             Path<?> versionMetadata = version.get("versionMetadata");
@@ -142,17 +143,16 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
             Expression<Double> nowDays = cb.toDouble(cb.quot(cb.function("date_part", Double.class, cb.literal("epoch"), now), secondsPerDay));
             Expression<Double> modifiedDays = cb.toDouble(cb.quot(cb.function("date_part", Double.class, cb.literal("epoch"), modified), secondsPerDay));
             Expression<Double> tomorrowDays = cb.sum(cb.function("floor", Double.class, nowDays), 1.);
-
             Expression<Double> ageDays = cb.diff(tomorrowDays, modifiedDays);
             Expression<Double> ageWeight = cb.toDouble(cb.quot(1., cb.function("greatest", Double.class, ageDays, cb.literal(1e-5))));
 
-            Expression<Double> successfulCount = cb.literal(12.); // TODO
-            Expression<Double> successfulWeight = cb.function("ln", Double.class, cb.sum(10., successfulCount));
+            Expression<Double> validWeight = cb.<Double>selectCase()
+                .when(cb.isTrue(valid), 2.)
+                .otherwise(1.);
 
-            // ageWeight = cb.literal(1.);
-            successfulWeight = cb.literal(1.);
+            Expression<Double> metricsWeight = cb.literal(1.);
 
-            Expression<Double> scaledTypeExpression = cb.prod(cb.prod(typeExpression, ageWeight), successfulWeight);
+            Expression<Double> scaledTypeExpression = cb.prod(cb.prod(cb.prod(typeExpression, ageWeight), validWeight), metricsWeight);
             // scaledTypeExpression = typeExpression;
 
             sortExpression = cb.selectCase()
