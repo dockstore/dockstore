@@ -22,10 +22,13 @@ import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.Metrics;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -131,9 +134,9 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
             }
         } else {
             Expression<Double> typeExpression = cb.<Double>selectCase()
-                .when(cb.equal(name, "master"), 8.)
-                .when(cb.equal(name, "main"), 8.)
-                .when(cb.equal(name, "develop"), 7.)
+                .when(cb.equal(name, "master"), 20.)
+                .when(cb.equal(name, "main"), 20.)
+                .when(cb.equal(name, "develop"), 19.)
                 .when(cb.equal(referenceType, ReferenceType.TAG), 3.)
                 .otherwise(1.);
 
@@ -147,10 +150,13 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
             Expression<Double> ageWeight = cb.toDouble(cb.quot(1., cb.function("greatest", Double.class, ageDays, cb.literal(1e-5))));
 
             Expression<Double> validWeight = cb.<Double>selectCase()
-                .when(cb.isTrue(valid), 2.)
+                .when(cb.isTrue(valid), 3.)
                 .otherwise(1.);
 
-            Expression<Double> metricsWeight = cb.literal(1.);
+            Join<WorkflowVersion, Metrics> metrics = version.join("metricsByPlatform", JoinType.LEFT);
+            Expression<Double> metricsWeight = cb.<Double>selectCase()
+                .when(cb.isNotNull(metrics), 2.)
+                .otherwise(1.);
 
             Expression<Double> scaledTypeExpression = cb.prod(cb.prod(cb.prod(typeExpression, ageWeight), validWeight), metricsWeight);
             // scaledTypeExpression = typeExpression;
