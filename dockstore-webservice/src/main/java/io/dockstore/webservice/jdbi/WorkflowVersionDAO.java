@@ -128,10 +128,10 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 .when(cb.equal(versionId, representativeVersionId), 1)
                 .otherwise(0);
         }
-        if ("desc".equalsIgnoreCase(sortOrder)) {
-            query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
-        } else {
+        if ("asc".equalsIgnoreCase(sortOrder)) {
             query.orderBy(cb.asc(sortExpression), cb.asc(lastModified), cb.asc(versionId));
+        } else {
+            query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
         }
         return predicates;
     }
