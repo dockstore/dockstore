@@ -172,10 +172,10 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 .otherwise(weightedScore);
         }
 
-        if ("desc".equalsIgnoreCase(sortOrder)) {
-            query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
-        } else {
+        if ("asc".equalsIgnoreCase(sortOrder)) {
             query.orderBy(cb.asc(sortExpression), cb.asc(lastModified), cb.asc(versionId));
+        } else {
+            query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
         }
 
         return predicates;
