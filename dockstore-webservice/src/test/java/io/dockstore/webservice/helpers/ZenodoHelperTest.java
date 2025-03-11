@@ -145,12 +145,9 @@ class ZenodoHelperTest {
         final BioWorkflow bioWorkflow = new BioWorkflow();
         final WorkflowVersion workflowVersion = new WorkflowVersion();
         bioWorkflow.getWorkflowVersions().add(workflowVersion);
-        try {
-            ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow, workflowVersion);
-            fail("Should have failed");
-        } catch (CustomWebApplicationException ex) {
-            assertEquals(ZenodoHelper.AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, ex.getMessage());
-        }
+        ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow, workflowVersion);
+        assertEquals("Author not specified", depositMetadata.getCreators().get(0).getName());
+        assertEquals(1, depositMetadata.getCreators().size());
     }
 
     @Test
@@ -166,6 +163,7 @@ class ZenodoHelperTest {
         bioWorkflow.setActualDefaultVersion(workflowVersion);
         ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow, workflowVersion);
         assertEquals(joeBlow, depositMetadata.getCreators().get(0).getName());
+        assertEquals(1, depositMetadata.getCreators().size());
     }
 
     @Test

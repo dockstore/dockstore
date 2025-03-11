@@ -77,7 +77,6 @@ public final class ZenodoHelper {
     // The max number of versions to process when automatically creating DOIs for a workflow
     public static final int AUTOMATIC_DOI_CREATION_VERSIONS_LIMIT = 10;
     public static final String NO_ZENODO_USER_TOKEN = "Could not get Zenodo token for user";
-    public static final String AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO = "At least one author is required to publish to Zenodo";
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String UNHIDDEN_VERSION_REQUIRED = "Unhidden version required to generate DOI";
     public static final String PUBLISHED_ENTRY_REQUIRED = "Published entry required to generate DOI";
@@ -591,7 +590,9 @@ public final class ZenodoHelper {
         }
 
         if (setOfAuthors.isEmpty()) {
-            throw new CustomWebApplicationException(AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, HttpStatus.SC_BAD_REQUEST);
+            Author fillerAuthor = new Author();
+            fillerAuthor.setName("Author not specified");
+            setOfAuthors.add(fillerAuthor);
         }
 
         return setOfAuthors;
