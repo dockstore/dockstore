@@ -20,6 +20,7 @@ import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 
 import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.WorkflowVersion;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -29,7 +30,9 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.metamodel.Attribute;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -96,11 +99,13 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return query.getResultList();
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private List<Predicate> processQuery(String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<WorkflowVersion> version, long representativeVersionId) {
         List<Predicate> predicates = new ArrayList<>();
 
         Path<?> versionId = version.get("id");
-        Path<?> lastModified = version.get("lastModified");
+        Path<Timestamp> lastModified = version.get("lastModified");
+
         Expression<?> sortExpression;
         if (!Strings.isNullOrEmpty(sortCol)) {
             Path<?> versionMetadata = version.get("versionMetadata");
@@ -124,15 +129,55 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
                 sortExpression = version.get(sortCol);
             }
         } else {
+            // Create a sort expression that "scores" each version.
+            // To ensure that "relevant" versions appear first, we rank "mainstem" branches, tags, more recently-modified versions, valid versions, and versions with metrics higher.
+            Path<?> name = version.get("name");
+            Path<?> referenceType = version.get("referenceType");
+            Path<Boolean> valid = version.get("valid");
+            Path<? extends Collection> metricsByPlatform = version.get("metricsByPlatform");
+
+            // Compute the "age" of the version, which is the date since it was last modified, in days.
+            // To prevent the sort order from constantly changing, calculate the age relative to the beginning of tomorrow.
+            Expression<Double> secondsPerDay = cb.literal(24 * 3600.);
+            Expression<Timestamp> now = cb.currentTimestamp();
+            Expression<Timestamp> modified = cb.coalesce(lastModified, version.get("dbCreateDate"));
+            Expression<Double> nowDays = cb.toDouble(cb.quot(cb.function("date_part", Double.class, cb.literal("epoch"), now), secondsPerDay));
+            Expression<Double> modifiedDays = cb.toDouble(cb.quot(cb.function("date_part", Double.class, cb.literal("epoch"), modified), secondsPerDay));
+            Expression<Double> tomorrowDays = cb.sum(cb.function("floor", Double.class, nowDays), 1.);
+            Expression<Double> ageDays = cb.diff(tomorrowDays, modifiedDays);
+
+            // Calculate some weights based on the "age", validity, and presence of metrics.
+            Expression<Double> ageWeight = cb.toDouble(cb.quot(1., cb.function("greatest", Double.class, ageDays, cb.literal(0.5))));
+            Expression<Double> validWeight = cb.<Double>selectCase()
+                .when(cb.isTrue(valid), 3.)
+                .otherwise(1.);
+            Expression<Double> metricsWeight = cb.<Double>selectCase()
+                .when(cb.isNotEmpty(metricsByPlatform), 2.)
+                .otherwise(1.);
+
+            // Calculate a base "score", which ranks "mainstem" branches highest and tags higher.
+            Expression<Double> baseScore = cb.<Double>selectCase()
+                .when(cb.equal(name, "master"), 20.)
+                .when(cb.equal(name, "main"), 20.)
+                .when(cb.equal(name, "develop"), 19.)
+                .when(cb.equal(referenceType, ReferenceType.TAG), 2.)
+                .otherwise(1.);
+
+            // Combine the weights with our base score to get a weighted score.
+            Expression<Double> weightedScore = cb.prod(cb.prod(cb.prod(baseScore, ageWeight), validWeight), metricsWeight);
+
+            // The final "sort expression" uses our weighted score, except for the representative version, which always ranks highest.
             sortExpression = cb.selectCase()
-                .when(cb.equal(versionId, representativeVersionId), 1)
-                .otherwise(0);
+                .when(cb.equal(versionId, representativeVersionId), 1e9)
+                .otherwise(weightedScore);
         }
+
         if ("asc".equalsIgnoreCase(sortOrder)) {
             query.orderBy(cb.asc(sortExpression), cb.asc(lastModified), cb.asc(versionId));
         } else {
             query.orderBy(cb.desc(sortExpression), cb.desc(lastModified), cb.desc(versionId));
         }
+
         return predicates;
     }
 }
