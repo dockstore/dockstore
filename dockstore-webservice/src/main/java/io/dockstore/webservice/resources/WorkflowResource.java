@@ -2395,10 +2395,42 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDois(@Parameter(hidden = true) @Auth User user) {
         List<WorkflowIdVersionIdDoi> infos = workflowVersionDAO.getVersionsNeedingRetroactiveDois(1000000);
         // TODO insert logic here
+        // TODO three queries: workflowIdToDoiCount, missingDoiWorkflowIds, githubDoiWorkflowIds
+
+        // For each workflow, compute the number of DOIs currently issued.
+        Map<Long, Long> workflowIdToDoiCount = infos.stream()
+            .collect(Collectors.groupBy(WorkflowIdVersionIdDoi::workflowId, Collectors.counting()));
+
+        // List the workflows that have a version with no DOI, in ascending order of number of DOIs currently issued.
+        List<Long> mostEligibleWorkflowIds = infos.stream()
+            .filter(info -> info.doi == null)
+            .map(WorkflowIdVersionIdDoi::workflowId)
+            .distinct()
+            .sorted(workflowIdToDoiCount::get)
+            .limit(100)
+            .toList();
+
+        // Retrieve each workflow, determine the version most eligible version, and return them.
+        return mostEligibleWorkflowIds.stream()
+            .map(workflowDAO::findById)
+            .map(this::determineMostEligibleVersionForDoi)
+            .flatMap(Optional::stream)
+            .toList();
+
+        // TODO delete
         WorkflowIdVersionIdDoi info = infos.get(0);
         Workflow workflow = workflowDAO.findById(info.workflowId());
         WorkflowVersion version = workflowVersionDAO.findById(info.versionId());
         return List.of(new WorkflowAndVersion(workflow, version));
+    }
+
+    private Optional<WorkflowAndVersion> determineMostEligibleVersionForDoi(Workflow workflow) {
+        // TODO if the default version meets the criteria and doesn't have a doi, issue one
+        // TODO if a frozen version meets the criteria and doesn't have a doi, issue one
+        // get the versions, eliminate the versions that don't qualify, eliminate the versions that have a doi,
+        // and sort the remaining versions as follows:
+        // default version first, frozen versions next, then by lastModified, youngest first
+        // if there's at
     }
 
     /**
