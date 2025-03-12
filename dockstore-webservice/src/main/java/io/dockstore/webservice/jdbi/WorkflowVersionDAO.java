@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.WorkflowVersion.WorkflowIdVersionIdDoi;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -95,6 +96,12 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     public List<WorkflowVersion> getTagsByWorkflowIdOrderedByLastModified(long workflowId, int limit) {
         Query<WorkflowVersion> query = namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getTagsByWorkflowIdOrderedByLastModified");
         query.setParameter("id", workflowId);
+        query.setMaxResults(limit);
+        return query.getResultList();
+    }
+
+    public List<WorkflowIdVersionIdDoi> getVersionsNeedingRetroactiveDois(int limit) {
+        Query<WorkflowIdVersionIdDoi> query = currentSession().createNamedQuery("io.dockstore.webservice.core.WorkflowVersion.getEligibleTagsAndDois");
         query.setMaxResults(limit);
         return query.getResultList();
     }

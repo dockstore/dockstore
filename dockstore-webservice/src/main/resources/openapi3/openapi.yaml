@@ -7816,6 +7816,23 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/versionsNeedingRetroactiveDois:
+    get:
+      description: TODO
+      operationId: getVersionsNeedingRetroactiveDois
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowAndVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:
       description: Register a checker workflow and associates it with the given tool/workflow.
@@ -12703,6 +12720,13 @@ components:
           type: string
       required:
       - type
+    WorkflowAndVersion:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        workflow:
+          $ref: '#/components/schemas/Workflow'
     WorkflowSubClass:
       type: string
       enum:

@@ -63,6 +63,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.WorkflowVersion.WorkflowIdVersionIdDoi;
+import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
@@ -95,6 +97,7 @@ import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.Permission;
@@ -2381,6 +2384,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         return orcidAuthorInfo;
+    }
+
+    @GET
+    @RolesAllowed({"admin", "curator"})
+    @Path("/versionsNeedingRetroactiveDois")
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "getVersionsNeedingRetroactiveDois", description = "TODO", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDois(@Parameter(hidden = true) @Auth User user) {
+        List<WorkflowIdVersionIdDoi> infos = workflowVersionDAO.getVersionsNeedingRetroactiveDois(1000000);
+        // TODO insert logic here
+        WorkflowIdVersionIdDoi info = infos.get(0);
+        Workflow workflow = workflowDAO.findById(info.workflowId());
+        WorkflowVersion version = workflowVersionDAO.findById(info.versionId());
+        return List.of(new WorkflowAndVersion(workflow, version));
     }
 
     /**
