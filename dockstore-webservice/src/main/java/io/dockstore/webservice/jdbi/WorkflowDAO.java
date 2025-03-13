@@ -23,6 +23,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.Workflow.WorkflowIdToCount;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -33,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
@@ -356,5 +358,21 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             LOG.error("Could get workflow based on workflow version id " + workflowVersionId + ". Error is " + nre.getMessage(), nre);
             return Optional.empty();
         }
+    }
+
+    public Map<Long, Long> getWorkflowsAndDoiCounts() {
+        Query<WorkflowIdToCount> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsAndDoiCounts");
+        return query.getResultList().stream()
+           .collect(Collectors.toMap(WorkflowIdToCount::workflowId, WorkflowIdToCount::count));
+    }
+
+    public List<Long> getWorkflowsMissingDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsMissingDoi");
+        return query.getResultList();
+    }
+
+    public List<Long> getWorkflowsWithGitHubDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsWithGitHubDoi");
+        return query.getResultList();
     }
 }
