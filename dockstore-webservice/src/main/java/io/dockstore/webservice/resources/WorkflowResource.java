@@ -2395,7 +2395,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "getVersionsNeedingRetroactiveDois", description = "TODO", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDois(@Parameter(hidden = true) @Auth User user) {
         Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowIdsAndDoiCounts();
-        Set<Long> eligibleWorkflowIds = workflowDAO.getWorkflowIdsEligibleForDoi();
+        Set<Long> eligibleWorkflowIds = workflowDAO.getWorkflowIdsEligibleForRetroactiveDoi();
         Set<Long> gitHubDoiWorkflowIds = workflowDAO.getWorkflowIdsWithGitHubDoi();
 
         Comparator<Long> doiCountAscending = Comparator.comparing(workflowIdToDoiCount::get);
@@ -2411,19 +2411,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         LOG.info("most eligible workflows for dois: {}", mostEligibleWorkflowIds);
 
         return mostEligibleWorkflowIds.stream()
-            .map(this::determineMostEligibleVersionForDoi)
+            .map(this::determineBestVersionForRetroactiveDoi)
             .flatMap(Optional::stream)
             .toList();
     }
 
-    private Optional<WorkflowAndVersion> determineMostEligibleVersionForDoi(long workflowId) {
+    private Optional<WorkflowAndVersion> determineBestVersionForRetroactiveDoi(long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         if (workflow == null) {
             LOG.warn("could not find workflow {}", workflowId);
             return Optional.empty();
         }
 
-        List<WorkflowVersion> versions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId, Integer.MAX_VALUE, 0, null, null, false, -1);
+        List<WorkflowVersion> versions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId);
 
         Comparator<WorkflowVersion> defaultVersionFirst = Comparator.comparing((WorkflowVersion version) -> version == workflow.getActualDefaultVersion()).reversed();
         Comparator<WorkflowVersion> hasMetricsFirst = Comparator.comparing((WorkflowVersion version) -> version.getMetricsByPlatform().size() > 0).reversed();
@@ -2431,7 +2431,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Comparator<WorkflowVersion> order = defaultVersionFirst.thenComparing(hasMetricsFirst).thenComparing(recentlyModifiedFirst);
 
         Optional<WorkflowVersion> version = versions.stream()
-            .filter(this::isVersionEligibleForDoi)
+            .filter(this::isVersionEligibleForRetroactiveDoi)
             .sorted(order)
             .findFirst();
 
@@ -2444,7 +2444,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return version.map(v -> new WorkflowAndVersion(workflow, v));
     }
 
-    private boolean isVersionEligibleForDoi(WorkflowVersion version) {
+    private boolean isVersionEligibleForRetroactiveDoi(WorkflowVersion version) {
         return version.getReferenceType() == ReferenceType.TAG
             && version.isValid()
             && !version.isHidden()

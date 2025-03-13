@@ -368,8 +368,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
            .collect(Collectors.toMap(WorkflowIdToCount::workflowId, WorkflowIdToCount::count));
     }
 
-    public Set<Long> getWorkflowIdsEligibleForDoi() {
-        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsEligibleForDoi");
+    public Set<Long> getWorkflowIdsEligibleForRetroactiveDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsEligibleForRetroactiveDoi");
         return new LinkedHashSet<>(query.getResultList());
     }
 
