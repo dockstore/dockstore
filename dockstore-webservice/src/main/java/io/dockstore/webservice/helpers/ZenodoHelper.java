@@ -591,7 +591,7 @@ public final class ZenodoHelper {
 
         if (setOfAuthors.isEmpty()) {
             Author fillerAuthor = new Author();
-            fillerAuthor.setName("Author not specified");
+            fillerAuthor.setName(workflow.getOrganization());
             setOfAuthors.add(fillerAuthor);
         }
 

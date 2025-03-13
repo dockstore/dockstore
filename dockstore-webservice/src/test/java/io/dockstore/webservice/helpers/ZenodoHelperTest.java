@@ -144,9 +144,11 @@ class ZenodoHelperTest {
         final DepositMetadata depositMetadata = new DepositMetadata();
         final BioWorkflow bioWorkflow = new BioWorkflow();
         final WorkflowVersion workflowVersion = new WorkflowVersion();
+        final String organizationName = "some-organization";
         bioWorkflow.getWorkflowVersions().add(workflowVersion);
+        bioWorkflow.setOrganization(organizationName);
         ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow, workflowVersion);
-        assertEquals("Author not specified", depositMetadata.getCreators().get(0).getName());
+        assertEquals(organizationName, depositMetadata.getCreators().get(0).getName());
         assertEquals(1, depositMetadata.getCreators().size());
     }
 
