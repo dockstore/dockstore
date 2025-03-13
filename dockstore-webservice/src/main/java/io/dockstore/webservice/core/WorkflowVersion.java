@@ -58,8 +58,7 @@ import org.apache.commons.io.FilenameUtils;
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
-    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getTagsByWorkflowIdOrderedByLastModified", query = "SELECT v FROM WorkflowVersion v WHERE v.parent.id = :id AND v.referenceType = 'TAG' ORDER BY v.lastModified DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getEligibleTagsAndDois", query = "SELECT new io.dockstore.webservice.core.WorkflowVersion$WorkflowIdVersionIdDoi(w.id, v.id, VALUE(d)) from Workflow w JOIN w.workflowVersions v LEFT JOIN v.versionMetadata vm LEFT JOIN vm.dois d where w.isPublished AND v.referenceType = 'TAG' AND v.valid")
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getTagsByWorkflowIdOrderedByLastModified", query = "SELECT v FROM WorkflowVersion v WHERE v.parent.id = :id AND v.referenceType = 'TAG' ORDER BY v.lastModified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -302,6 +301,4 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return tagName;
         }
     }
-
-    public static record WorkflowIdVersionIdDoi (long workflowId, long versionId, Doi doi) {}
 }

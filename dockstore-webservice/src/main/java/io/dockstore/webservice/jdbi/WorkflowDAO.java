@@ -23,7 +23,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.Workflow.WorkflowIdToCount;
+import io.dockstore.webservice.core.database.WorkflowIdToCount;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
