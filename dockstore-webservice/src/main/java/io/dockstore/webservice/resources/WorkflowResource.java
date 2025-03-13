@@ -64,7 +64,6 @@ import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.WorkflowVersion.WorkflowIdVersionIdDoi;
 import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
@@ -98,7 +97,6 @@ import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.Permission;
@@ -147,8 +145,8 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -160,6 +158,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -2396,19 +2395,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "getVersionsNeedingRetroactiveDois", description = "TODO", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDois(@Parameter(hidden = true) @Auth User user) {
         Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowsAndDoiCounts();
-        List<Long> missingDoiWorkflowIds = workflowDAO.getWorkflowsMissingDoi();
+        List<Long> missingDoiWorkflowIds = workflowDAO.getWorkflowsMissingDoi(); // TODO change type to Set?
         List<Long> gitHubDoiWorkflowIds = workflowDAO.getWorkflowsWithGitHubDoi();
-        LOG.error("workflowIdToDoiCount {} {}", workflowIdToDoiCount, workflowIdToDoiCount.size());
-        LOG.error("missingDoiWorkflowIds {} {}", missingDoiWorkflowIds, missingDoiWorkflowIds.size());
-        LOG.error("gitHubDoiWorkflowIds {} {}", gitHubDoiWorkflowIds, gitHubDoiWorkflowIds.size());
-        
+
+        Comparator<Long> doiCountAscending = Comparator.comparing(workflowIdToDoiCount::get);
+        Comparator<Long> workflowIdDescending = Comparator.<Long>naturalOrder().reversed();
+        Comparator<Long> order = doiCountAscending.thenComparing(workflowIdDescending);
+
         List<Long> mostEligibleWorkflowIds = missingDoiWorkflowIds.stream()
-            .filter(id -> !gitHubDoiWorkflowIds.contains(id))
-            .sorted(Comparator.comparing(workflowIdToDoiCount::get))
-            .limit(100)
+            .filter(Predicate.not(gitHubDoiWorkflowIds::contains))
+            .sorted(order)
+            .limit(100) // TODO change to parameter
             .toList();
 
-        LOG.error("mostEligibleWorkflowIds {} {}", mostEligibleWorkflowIds, mostEligibleWorkflowIds.size());
+        LOG.info("most eligible workflows for dois: {}", mostEligibleWorkflowIds);
+
         return mostEligibleWorkflowIds.stream()
             .map(this::determineMostEligibleVersionForDoi)
             .flatMap(Optional::stream)
@@ -2416,34 +2417,38 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     private Optional<WorkflowAndVersion> determineMostEligibleVersionForDoi(long workflowId) {
-
         Workflow workflow = workflowDAO.findById(workflowId);
         if (workflow == null) {
+            LOG.warn("could not find workflow {}", workflowId);
             return Optional.empty();
         }
 
         List<WorkflowVersion> versions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId, Integer.MAX_VALUE, 0, null, null, false, -1);
 
-        Optional<WorkflowAndVersion> workflowAndVersion = versions.stream()
-            .filter(this::isVersionEligibleForDoi)
-            .sorted(Comparator.comparing(WorkflowVersion::getLastModified).reversed()) 
-            .findFirst()
-            .map(version -> new WorkflowAndVersion(workflow, version));
+        Comparator<WorkflowVersion> defaultVersionFirst = Comparator.comparing((WorkflowVersion version) -> version == workflow.getActualDefaultVersion()).reversed();
+        Comparator<WorkflowVersion> hasMetricsFirst = Comparator.comparing((WorkflowVersion version) -> version.getMetricsByPlatform().size() > 0).reversed();
+        Comparator<WorkflowVersion> recentlyModifiedFirst = Comparator.nullsLast(Comparator.comparing(WorkflowVersion::getLastModified).reversed());
+        Comparator<WorkflowVersion> order = defaultVersionFirst.thenComparing(hasMetricsFirst).thenComparing(recentlyModifiedFirst);
 
-        if (!workflowAndVersion.isPresent()) {
-            LOG.warn("could not find eligible version in workflow {}", workflowId);
+        Optional<WorkflowVersion> version = versions.stream()
+            .filter(this::isVersionEligibleForDoi)
+            .sorted(order)
+            .findFirst();
+
+        if (!version.isPresent()) {
+            LOG.warn("could not find eligible version for doi in workflow {}", workflowId);
         }
- 
+
         sessionFactory.getCurrentSession().clear();
 
-        return workflowAndVersion;
+        return version.map(v -> new WorkflowAndVersion(workflow, v));
     }
 
     private boolean isVersionEligibleForDoi(WorkflowVersion version) {
-        return version.getReferenceType() == ReferenceType.TAG &&
-            version.isValid() &&
-            !version.isHidden() &&
-            version.getDois().size() == 0;
+        return version.getReferenceType() == ReferenceType.TAG
+            && version.isValid()
+            && !version.isHidden()
+            && version.getDois().size() == 0;
     }
 
     /**
