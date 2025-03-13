@@ -2394,9 +2394,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @Operation(operationId = "getVersionsNeedingRetroactiveDois", description = "TODO", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDois(@Parameter(hidden = true) @Auth User user) {
-        Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowsAndDoiCounts();
-        List<Long> eligibleWorkflowIds = workflowDAO.getWorkflowsEligibleForDoi(); // TODO change type to Set?
-        List<Long> gitHubDoiWorkflowIds = workflowDAO.getWorkflowsWithGitHubDoi();
+        Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowIdsAndDoiCounts();
+        Set<Long> eligibleWorkflowIds = workflowDAO.getWorkflowIdsEligibleForDoi();
+        Set<Long> gitHubDoiWorkflowIds = workflowDAO.getWorkflowIdsWithGitHubDoi();
 
         Comparator<Long> doiCountAscending = Comparator.comparing(workflowIdToDoiCount::get);
         Comparator<Long> workflowIdDescending = Comparator.<Long>naturalOrder().reversed();

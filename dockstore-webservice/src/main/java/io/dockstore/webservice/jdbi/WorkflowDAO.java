@@ -33,9 +33,11 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -360,19 +362,19 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
     }
 
-    public Map<Long, Long> getWorkflowsAndDoiCounts() {
-        Query<WorkflowIdToCount> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsAndDoiCounts");
+    public Map<Long, Long> getWorkflowIdsAndDoiCounts() {
+        Query<WorkflowIdToCount> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsAndDoiCounts");
         return query.getResultList().stream()
            .collect(Collectors.toMap(WorkflowIdToCount::workflowId, WorkflowIdToCount::count));
     }
 
-    public List<Long> getWorkflowsEligibleForDoi() {
-        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsEligibleForDoi");
-        return query.getResultList();
+    public Set<Long> getWorkflowIdsEligibleForDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsEligibleForDoi");
+        return new LinkedHashSet<>(query.getResultList());
     }
 
-    public List<Long> getWorkflowsWithGitHubDoi() {
-        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsWithGitHubDoi");
-        return query.getResultList();
+    public Set<Long> getWorkflowIdsWithGitHubDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsWithGitHubDoi");
+        return new LinkedHashSet<>(query.getResultList());
     }
 }
