@@ -366,8 +366,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
            .collect(Collectors.toMap(WorkflowIdToCount::workflowId, WorkflowIdToCount::count));
     }
 
-    public List<Long> getWorkflowsMissingDoi() {
-        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsMissingDoi");
+    public List<Long> getWorkflowsEligibleForDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowsEligibleForDoi");
         return query.getResultList();
     }
 
