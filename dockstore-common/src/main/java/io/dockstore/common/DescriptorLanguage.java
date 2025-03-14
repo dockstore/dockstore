@@ -40,10 +40,10 @@ public enum DescriptorLanguage {
     // should be called 'Snakefile' (no suffix), the other descriptors should have the '.smk' suffix.
     // https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html
     SMK("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
-            Set.of("smk", ""), true, true, Set.of(WORKFLOW, APPTOOL, TOOL)) {
+            Set.of("Snakefile", "yaml", "yml"), true, true, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
+            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
         }
     },
     CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
@@ -61,13 +61,6 @@ public enum DescriptorLanguage {
     },
     GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true,
         Set.of("ga", "yaml", "yml"), true, false, Set.of(WORKFLOW)) {
-        @Override
-        public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
-        }
-    },
-    SNAKEMAKE("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
-        Set.of("Snakemake", "yaml", "yml"), true, false, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
