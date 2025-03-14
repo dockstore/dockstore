@@ -1894,6 +1894,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -2536,6 +2537,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -2852,6 +2854,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -7057,6 +7060,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -7845,6 +7849,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -8088,6 +8093,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -8124,6 +8130,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -8197,6 +8204,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -8440,6 +8448,7 @@ paths:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -10486,6 +10495,7 @@ components:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -10507,6 +10517,7 @@ components:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -10874,6 +10885,7 @@ components:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service
@@ -12536,6 +12548,7 @@ components:
           - CWL
           - WDL
           - gxformat2
+          - SMK
           - SWL
           - NFL
           - service

@@ -66,6 +66,13 @@ public enum DescriptorLanguage {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
         }
     },
+    SNAKEMAKE("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
+        Set.of("Snakemake", "yaml", "yml"), true, false, Set.of(WORKFLOW)) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
+        }
+    },
     // DOCKSTORE-2428 - demo how to add new workflow language
     SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, Set.of("swl"), false, false, Set.of(WORKFLOW, APPTOOL, TOOL)),
     NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false, Set.of(WORKFLOW)) {
@@ -245,7 +252,7 @@ public enum DescriptorLanguage {
     }
 
     /**
-     * Nextflow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
+     * Nextflow parameter files are described here <a href="https://github.com/nextflow-io/nextflow/issues/208">...</a>
      *
      */
     public enum FileType {

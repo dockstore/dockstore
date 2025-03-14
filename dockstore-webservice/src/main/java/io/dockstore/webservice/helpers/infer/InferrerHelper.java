@@ -125,6 +125,13 @@ public class InferrerHelper {
                     return path.endsWith(".ga");
                 }
             };
+        case SNAKEMAKE:
+            return new DescriptorLanguageInferrer(DescriptorLanguage.SNAKEMAKE) {
+                @Override
+                protected boolean isDescriptorPath(String path) {
+                    return path.endsWith("Snakefile");
+                }
+            };
         case JUPYTER:
             return new DescriptorLanguageInferrer(DescriptorLanguage.JUPYTER) {
                 @Override
