@@ -2389,27 +2389,31 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @GET
     @RolesAllowed({"admin", "curator"})
-    @Path("/versionsNeedingRetroactiveDois")
+    @Path("/versionsNeedingRetroactiveDoi")
     @UnitOfWork
     @Timed
-    @Operation(operationId = "getVersionsNeedingRetroactiveDois", description = "TODO", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDois(@Parameter(hidden = true) @Auth User user) {
+    @Operation(operationId = "getVersionsNeedingRetroactiveDoi", description = "Calculates a list of workflow versions that need a retroactive DOI", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDoi(@Parameter(hidden = true) @Auth User user,
+        @QueryParam("limit") @Min(1) @Max(1000) @DefaultValue("100") Integer limit) {
+        // Retrieve the information we'll use to select the workflows "most eligible" for a retroactive DOI.
         Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowIdsAndDoiCounts();
         Set<Long> eligibleWorkflowIds = workflowDAO.getWorkflowIdsEligibleForRetroactiveDoi();
         Set<Long> gitHubDoiWorkflowIds = workflowDAO.getWorkflowIdsWithGitHubDoi();
 
+        // Determine the workflows "most eligible" for a DOI, which are the workflows that don't have a GitHub DOI
+        // and have the lowest DOI count, with ties won by the workflow most recently created (highest ID).
         Comparator<Long> doiCountAscending = Comparator.comparing(workflowIdToDoiCount::get);
         Comparator<Long> workflowIdDescending = Comparator.<Long>naturalOrder().reversed();
         Comparator<Long> order = doiCountAscending.thenComparing(workflowIdDescending);
-
         List<Long> mostEligibleWorkflowIds = eligibleWorkflowIds.stream()
             .filter(Predicate.not(gitHubDoiWorkflowIds::contains))
             .sorted(order)
-            .limit(100) // TODO change to parameter
+            .limit(limit)
             .toList();
-
         LOG.info("most eligible workflows for dois: {}", mostEligibleWorkflowIds);
 
+        // For each of the "most eligible" workflows, determine the version that gets a new retroactive DOI.
         return mostEligibleWorkflowIds.stream()
             .map(this::determineBestVersionForRetroactiveDoi)
             .flatMap(Optional::stream)
@@ -2417,30 +2421,34 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     private Optional<WorkflowAndVersion> determineBestVersionForRetroactiveDoi(long workflowId) {
+        // Retrieve the workflow and its versions.
         Workflow workflow = workflowDAO.findById(workflowId);
         if (workflow == null) {
             LOG.warn("could not find workflow {}", workflowId);
             return Optional.empty();
         }
-
         List<WorkflowVersion> versions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId);
 
+        // Determine the version for which to generate a retroactive DOI, by filtering versions that already have
+        // a DOI or don't meet the requirements, and then select a remaining version using the following criteria:
+        // 1. Is default version
+        // 2. Has metrics
+        // 3. Most recently-modified
         Comparator<WorkflowVersion> defaultVersionFirst = Comparator.comparing((WorkflowVersion version) -> version == workflow.getActualDefaultVersion()).reversed();
         Comparator<WorkflowVersion> hasMetricsFirst = Comparator.comparing((WorkflowVersion version) -> version.getMetricsByPlatform().size() > 0).reversed();
         Comparator<WorkflowVersion> recentlyModifiedFirst = Comparator.nullsLast(Comparator.comparing(WorkflowVersion::getLastModified).reversed());
         Comparator<WorkflowVersion> order = defaultVersionFirst.thenComparing(hasMetricsFirst).thenComparing(recentlyModifiedFirst);
-
         Optional<WorkflowVersion> version = versions.stream()
             .filter(this::isVersionEligibleForRetroactiveDoi)
             .sorted(order)
             .findFirst();
-
         if (!version.isPresent()) {
             LOG.warn("could not find eligible version for doi in workflow {}", workflowId);
         }
 
+        // Clear the session to avoid it filling with entities that we no longer need.
         sessionFactory.getCurrentSession().clear();
-
+        // Return the workflow and version.
         return version.map(v -> new WorkflowAndVersion(workflow, v));
     }
 

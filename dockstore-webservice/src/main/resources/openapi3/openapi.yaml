@@ -7816,10 +7816,20 @@ paths:
       - BEARER: []
       tags:
       - workflows
-  /workflows/versionsNeedingRetroactiveDois:
+  /workflows/versionsNeedingRetroactiveDoi:
     get:
-      description: TODO
-      operationId: getVersionsNeedingRetroactiveDois
+      description: Calculates a list of workflow versions that need a retroactive
+        DOI
+      operationId: getVersionsNeedingRetroactiveDoi
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 1000
+          minimum: 1
       responses:
         default:
           content:
