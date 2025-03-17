@@ -373,8 +373,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return new LinkedHashSet<>(query.getResultList());
     }
 
-    public Set<Long> getWorkflowIdsWithGitHubDoi() {
-        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsWithGitHubDoi");
+    public Set<Long> getWorkflowIdsWithGitHubOrManualDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsWithGitHubOrManualDoi");
         return new LinkedHashSet<>(query.getResultList());
     }
 }

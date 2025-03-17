@@ -2399,15 +2399,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Retrieve the information we'll use to select the workflows "most eligible" for a retroactive DOI.
         Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowIdsAndDoiCounts();
         Set<Long> eligibleWorkflowIds = workflowDAO.getWorkflowIdsEligibleForRetroactiveDoi();
-        Set<Long> gitHubDoiWorkflowIds = workflowDAO.getWorkflowIdsWithGitHubDoi();
+        Set<Long> gitHubOrManualDoiWorkflowIds = workflowDAO.getWorkflowIdsWithGitHubOrManualDoi();
 
-        // Determine the workflows "most eligible" for a DOI, which are the workflows that don't have a GitHub DOI
+        // Determine the workflows "most eligible" for a DOI, which are the workflows that don't have a GitHub or manual DOI
         // and have the lowest DOI count, with ties won by the workflow most recently created (highest ID).
         Comparator<Long> doiCountAscending = Comparator.comparing(workflowIdToDoiCount::get);
         Comparator<Long> workflowIdDescending = Comparator.<Long>naturalOrder().reversed();
         Comparator<Long> order = doiCountAscending.thenComparing(workflowIdDescending);
         List<Long> mostEligibleWorkflowIds = eligibleWorkflowIds.stream()
-            .filter(Predicate.not(gitHubDoiWorkflowIds::contains))
+            .filter(Predicate.not(gitHubOrManualDoiWorkflowIds::contains))
             .sorted(order)
             .limit(limit)
             .toList();
