@@ -676,7 +676,47 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
+    }
 
+    @PUT
+    @RolesAllowed({"curator", "admin"})
+    @Timed
+    @UnitOfWork
+    @Beta
+    @Path("/{workflowId}/requestAutomaticDOI/{workflowVersionId}")
+    @Operation(operationId = "requestAutomaticDOIForWorkflowVersion", description = "Request a DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class)
+    public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        checkNotNullWorkflowVersion(workflowVersion, workflow, user);
+
+        ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
+        if (!ZenodoHelper.automaticallyRegisterDockstoreDOI(workflow, workflowVersion, Optional.empty(), this)) {
+            throw new CustomWebApplicationException("Could not register automatic DOI.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Workflow result = workflowDAO.findById(workflowId);
+        checkNotNullEntry(result);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+
+        WorkflowVersion resultVersion = workflowVersionDAO.findById(workflowVersionId);
+        checkNotNullWorkflowVersion(resultVersion, result, user);
+
+        return resultVersion;
+    }
+
+    private void checkNotNullWorkflowVersion(WorkflowVersion workflowVersion, Workflow workflow, User user) {
+        if (workflowVersion == null) {
+            LOG.error("{}: could not find version: {}", user.getUsername(), workflow.getWorkflowPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @POST
