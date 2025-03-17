@@ -684,13 +684,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Beta
     @Path("/{workflowId}/requestAutomaticDOI/{workflowVersionId}")
-    @Operation(operationId = "requestAutomaticDOIForWorkflowVersion", description = "Request a DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class)
-    public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
-        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+    @Operation(operationId = "requestAutomaticDOIForWorkflowVersion", description = "Request an automatic DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@Parameter(hidden = true, name = "user") @Auth User user,
+        @PathParam("workflowId") Long workflowId,
+        @PathParam("workflowVersionId") Long workflowVersionId,
+        String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
 

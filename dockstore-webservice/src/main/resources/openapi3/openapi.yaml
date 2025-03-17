@@ -8300,7 +8300,7 @@ paths:
       - workflows
   /workflows/{workflowId}/requestAutomaticDOI/{workflowVersionId}:
     put:
-      description: Request a DOI for this version of a workflow.
+      description: Request an automatic DOI for this version of a workflow.
       operationId: requestAutomaticDOIForWorkflowVersion
       parameters:
       - in: path
