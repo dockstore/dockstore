@@ -695,8 +695,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         checkNotNullWorkflowVersion(workflowVersion, workflow, user);
 
-        ApiClient zenodoClient = ZenodoHelper.createUserZenodoClient(user);
-        if (!ZenodoHelper.automaticallyRegisterDockstoreDOI(workflow, workflowVersion, Optional.empty(), this)) {
+        if (!ZenodoHelper.automaticallyRegisterDockstoreDOI(workflow, workflowVersion, Optional.of(user), this)) {
             throw new CustomWebApplicationException("Could not register automatic DOI.", HttpStatus.SC_BAD_REQUEST);
         }
 
