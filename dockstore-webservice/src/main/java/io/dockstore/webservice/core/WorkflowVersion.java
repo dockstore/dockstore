@@ -301,5 +301,4 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return tagName;
         }
     }
-
 }

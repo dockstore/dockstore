@@ -56,7 +56,13 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
     }
 
-
+    /**
+     * Returns all versions for the specific Workflow.
+     * @param workflowId id of workflow
+     */
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId) {
+        return getWorkflowVersionsByWorkflowId(workflowId, Integer.MAX_VALUE, 0, null, null, false, -1);
+    }
     /**
      * Returns workflow versions by its workflow id. This is used for pagination.
      *
