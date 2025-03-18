@@ -152,18 +152,21 @@ public final class ZenodoHelper {
             return false;
         }
 
-        if (canAutomaticallyCreateDockstoreOwnedDoi(workflow, workflowVersion)) {
-            ApiClient zenodoClient = createDockstoreZenodoClient();
-            try {
-                // Perform some checks to increase the chance of a DOI being successfully created
-                checkCanRegisterDoi(workflow, workflowVersion, workflowOwner, DoiInitiator.DOCKSTORE);
-                LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
-                registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
-                        DoiInitiator.DOCKSTORE);
-            } catch (CustomWebApplicationException e) {
-                LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
-                return false;
-            }
+        if (!canAutomaticallyCreateDockstoreOwnedDoi(workflow, workflowVersion)) {
+            LOG.warn("Could not create automatic DOI because {} does not meet requirements", workflowNameAndVersion(workflow, workflowVersion));
+            return false;
+        }
+
+        ApiClient zenodoClient = createDockstoreZenodoClient();
+        try {
+            // Perform some checks to increase the chance of a DOI being successfully created
+            checkCanRegisterDoi(workflow, workflowVersion, workflowOwner, DoiInitiator.DOCKSTORE);
+            LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
+            registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
+                    DoiInitiator.DOCKSTORE);
+        } catch (CustomWebApplicationException e) {
+            LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
+            return false;
         }
         return true;
     }
