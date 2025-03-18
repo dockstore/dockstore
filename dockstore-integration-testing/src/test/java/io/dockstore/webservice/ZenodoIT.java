@@ -660,6 +660,6 @@ class ZenodoIT {
         // Non-admin owner user should not have access.
         testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 2 + ", " + workflow.getId() + ")");
         exception = assertThrows(ApiException.class, () -> otherWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L, ""));
-        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
     }
 }
