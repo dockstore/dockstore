@@ -654,12 +654,12 @@ class ZenodoIT {
         Workflow workflow = adminWorkflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
 
         // Public should not have access.
-        ApiException exception = assertThrows(ApiException.class, () -> anonWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L));
+        ApiException exception = assertThrows(ApiException.class, () -> anonWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L, ""));
         assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
 
         // Non-admin owner user should not have access.
         testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 2 + ", " + workflow.getId() + ")");
-        exception = assertThrows(ApiException.class, () -> otherWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L));
+        exception = assertThrows(ApiException.class, () -> otherWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L, ""));
         assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
     }
 }

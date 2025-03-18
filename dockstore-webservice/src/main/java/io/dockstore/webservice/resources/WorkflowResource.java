@@ -687,7 +687,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "requestAutomaticDOIForWorkflowVersion", description = "Request an automatic DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@Parameter(hidden = true, name = "user") @Auth User user,
         @PathParam("workflowId") Long workflowId,
-        @PathParam("workflowVersionId") Long workflowVersionId) {
+        @PathParam("workflowVersionId") Long workflowVersionId,
+        String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
 

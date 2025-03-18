@@ -8315,6 +8315,11 @@ paths:
         schema:
           type: integer
           format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
       responses:
         default:
           content:
