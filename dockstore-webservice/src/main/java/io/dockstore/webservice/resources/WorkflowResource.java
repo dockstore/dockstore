@@ -692,7 +692,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@Parameter(hidden = true, name = "user") @Auth User user,
         @PathParam("workflowId") Long workflowId,
         @PathParam("workflowVersionId") Long workflowVersionId,
-        String emptyBody) {
+        @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
 
