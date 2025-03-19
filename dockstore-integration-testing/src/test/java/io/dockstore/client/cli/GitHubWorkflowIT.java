@@ -248,6 +248,18 @@ class GitHubWorkflowIT extends BaseIT {
     }
 
     @Test
+    void testSnakemakePlugin() {
+        // TODO setup snakemake plugin in integration testing environment
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_PLUGIN, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/.snakemake-workflow-catalog.yml", true);
+
+    }
+
+    @Test
     void testGettingMultiArchImagesFromQuay() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
