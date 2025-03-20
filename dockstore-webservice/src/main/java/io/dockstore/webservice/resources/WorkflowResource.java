@@ -680,7 +680,44 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
+    }
 
+    @PUT
+    @RolesAllowed({"curator", "admin"})
+    @Timed
+    @UnitOfWork
+    @Beta
+    @Path("/{workflowId}/requestAutomaticDOI/{workflowVersionId}")
+    @Operation(operationId = "requestAutomaticDOIForWorkflowVersion", description = "Request an automatic DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@Parameter(hidden = true, name = "user") @Auth User user,
+        @PathParam("workflowId") Long workflowId,
+        @PathParam("workflowVersionId") Long workflowVersionId,
+        @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        checkNotNullWorkflowVersion(workflowVersion, workflow, user);
+
+        if (!ZenodoHelper.automaticallyRegisterDockstoreDOI(workflow, workflowVersion, Optional.of(user), this)) {
+            throw new CustomWebApplicationException("Could not register automatic DOI.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Workflow result = workflowDAO.findById(workflowId);
+        checkNotNullEntry(result);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+
+        WorkflowVersion resultVersion = workflowVersionDAO.findById(workflowVersionId);
+        checkNotNullWorkflowVersion(resultVersion, result, user);
+
+        return resultVersion;
+    }
+
+    private void checkNotNullWorkflowVersion(WorkflowVersion workflowVersion, Workflow workflow, User user) {
+        if (workflowVersion == null) {
+            LOG.error("{}: could not find version: {}", user.getUsername(), workflow.getWorkflowPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @POST

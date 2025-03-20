@@ -8325,6 +8325,41 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/requestAutomaticDOI/{workflowVersionId}:
+    put:
+      description: Request an automatic DOI for this version of a workflow.
+      operationId: requestAutomaticDOIForWorkflowVersion
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/requestDOI/{workflowVersionId}:
     put:
       description: Request a DOI for this version of a workflow.
