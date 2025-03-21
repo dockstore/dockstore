@@ -295,7 +295,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
         checkNotNullToken(token);
-        if (!user.isCurator() && !user.getIsAdmin()) {
+        if (!user.getIsAdmin()) {
             checkUserId(user, token.getUserId());
         }
 

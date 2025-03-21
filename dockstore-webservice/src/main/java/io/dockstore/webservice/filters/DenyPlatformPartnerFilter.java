@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Deny all requests by a "platformPartner" user to an endpoint that does not have a @RolesAllowed annotation.
+ * Deny any request by a "platformPartner" user to an authorized endpoint (an endpoint that requires a User) that does not have a @RolesAllowed annotation.
  */
 @Provider
 public class DenyPlatformPartnerFilter implements ContainerRequestFilter {

@@ -505,14 +505,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     public String createPlatformPartnerToken(@Parameter(hidden = true, name = "user")@Auth User user,
         @PathParam("userId") long userId) {
-        User fetchedUser = userDAO.findById(userId);
-        checkNotNullUser(fetchedUser);
+        User targetUser = userDAO.findById(userId);
+        checkNotNullUser(targetUser);
 
-        if (!fetchedUser.isPlatformPartner()) {
-            throw new CustomWebApplicationException("User must be a platform partner.", HttpStatus.SC_BAD_REQUEST);
+        if (!targetUser.isPlatformPartner()) {
+            throw new CustomWebApplicationException("Target user must be a platform partner.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        Token dockstoreToken = tokenDAO.createDockstoreToken(userId, fetchedUser.getUsername());
+        Token dockstoreToken = tokenDAO.createDockstoreToken(userId, targetUser.getUsername());
         return dockstoreToken.getContent();
     }
 
