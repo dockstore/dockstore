@@ -6781,6 +6781,25 @@ paths:
       - BEARER: []
       tags:
       - users
+    post:
+      description: Create a Dockstore token for a platform partner user.
+      operationId: createPlatformPartnerToken
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: The new token.
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/workflows:
     get:
       description: List all workflows owned by the authenticated user.

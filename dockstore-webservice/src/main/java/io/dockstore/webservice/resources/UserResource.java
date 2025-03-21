@@ -495,6 +495,26 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return tokenDAO.findByUserId(userId);
     }
 
+    @POST
+    @Timed
+    @UnitOfWork()
+    @RolesAllowed("admin")
+    @Path("/{userId}/tokens")
+    @Operation(operationId = "createPlatformPartnerToken", description = "Create a Dockstore token for a platform partner user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The new token.")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    public String createPlatformPartnerToken(@Parameter(hidden = true, name = "user")@Auth User user,
+        @PathParam("userId") long userId) {
+        User fetchedUser = userDAO.findById(userId);
+        checkNotNullUser(fetchedUser);
+
+        if (!fetchedUser.isPlatformPartner()) {
+            throw new CustomWebApplicationException("User must be a platform partner.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Token dockstoreToken = tokenDAO.createDockstoreToken(userId, fetchedUser.getUsername());
+        return dockstoreToken.getContent();
+    }
 
     @GET
     @Timed
