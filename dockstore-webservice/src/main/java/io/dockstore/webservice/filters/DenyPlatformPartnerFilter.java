@@ -17,7 +17,6 @@
 
 package io.dockstore.webservice.filters;
 
-import io.dockstore.webservice.SimpleAuthorizer;
 import io.dockstore.webservice.core.User;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.ForbiddenException;
@@ -28,7 +27,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
 import java.lang.reflect.Method;
 import java.security.Principal;
-import java.text.MessageFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
