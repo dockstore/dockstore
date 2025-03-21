@@ -159,7 +159,7 @@ public class BaseIT {
      * @param toPublish
      * @return Published workflow
      */
-    static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+    public static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
         // Manually register
         Workflow workflow = workflowsApi
@@ -302,14 +302,14 @@ public class BaseIT {
         SUPPORT.after();
     }
 
-    protected static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(String username, TestingPostgres testingPostgresParameter) {
+    public static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(String username, TestingPostgres testingPostgresParameter) {
         return CommonTestUtilities.getOpenAPIWebClient(true, username, testingPostgresParameter);
     }
 
     /**
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
-    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgresParameter) {
+    public static ApiClient getWebClient(String username, TestingPostgres testingPostgresParameter) {
         return CommonTestUtilities.getWebClient(true, username, testingPostgresParameter);
     }
 

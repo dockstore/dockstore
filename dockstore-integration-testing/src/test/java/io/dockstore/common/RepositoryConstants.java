@@ -51,7 +51,7 @@ public final class RepositoryConstants {
         public static final String TEST_SERVICE = "dockstore-testing/test-service";
         public static final String SOURCEFILE_TESTING = "dockstore-testing/sourcefile-testing";
 
-        public static final String SNAKEMAKE_PLUGIN = "dockstore-testing/rna-seq-star-deseq2";
+        public static final String SNAKEMAKE_WORKFLOW = "dockstore-testing/rna-seq-star-deseq2";
 
     }
 }

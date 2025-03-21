@@ -227,7 +227,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
             return results;
         } catch (NullPointerException e) {
-            // ignore, cannot assume plugins are well-behaved
+            // ignore, cannot assume plugins are well-behaved and a badly-behaved plugin shouldn't bring the rest of the webservice down
             LOG.error("plugin threw NullPointer exception, dodging");
             return new HashMap<>();
         }
