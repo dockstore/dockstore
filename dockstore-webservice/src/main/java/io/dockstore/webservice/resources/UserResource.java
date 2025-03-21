@@ -507,7 +507,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @PathParam("userId") long userId) {
         User targetUser = userDAO.findById(userId);
         checkNotNullUser(targetUser);
-
         if (!targetUser.isPlatformPartner()) {
             throw new CustomWebApplicationException("Target user must be a platform partner.", HttpStatus.SC_BAD_REQUEST);
         }
