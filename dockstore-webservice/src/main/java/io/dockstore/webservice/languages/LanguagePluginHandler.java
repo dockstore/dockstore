@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 OICR
+ *    Copyright 2025 OICR and UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -226,9 +226,9 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 results.put(entry.getKey(), sourceFile);
             }
             return results;
-        } catch (NullPointerException e) {
+        } catch (RuntimeException e) {
             // ignore, cannot assume plugins are well-behaved and a badly-behaved plugin shouldn't bring the rest of the webservice down
-            LOG.error("plugin threw NullPointer exception, dodging");
+            LOG.error("plugin threw RuntimeException, dodging: ", e);
             return new HashMap<>();
         }
     }

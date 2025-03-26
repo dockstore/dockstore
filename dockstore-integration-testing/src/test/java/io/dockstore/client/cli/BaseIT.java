@@ -159,7 +159,7 @@ public class BaseIT {
      * @param toPublish
      * @return Published workflow
      */
-    public static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+    static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
         // Manually register
         Workflow workflow = workflowsApi
@@ -174,6 +174,38 @@ public class BaseIT {
         // Publish
         if (toPublish) {
             workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+            assertTrue(workflow.isIsPublished());
+        }
+        return workflow;
+    }
+
+    /**
+     * Manually register and publish a workflow with the given path and name
+     *
+     * @param workflowsApi
+     * @param workflowPath
+     * @param workflowName
+     * @param descriptorType
+     * @param sourceControl
+     * @param descriptorPath
+     * @param toPublish
+     * @return Published workflow
+     */
+    public static io.dockstore.openapi.client.model.Workflow openManualRegisterAndPublish(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        // Manually register
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi
+            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
+                "/test.json");
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.STUB, workflow.getMode());
+
+        // Refresh
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Publish
+        if (toPublish) {
+            workflow = workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
             assertTrue(workflow.isIsPublished());
         }
         return workflow;
@@ -309,7 +341,7 @@ public class BaseIT {
     /**
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
-    public static ApiClient getWebClient(String username, TestingPostgres testingPostgresParameter) {
+    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgresParameter) {
         return CommonTestUtilities.getWebClient(true, username, testingPostgresParameter);
     }
 

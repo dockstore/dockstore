@@ -1,5 +1,5 @@
 /*
- *    Copyright 2020 OICR
+ *    Copyright 2025 OICR and UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,18 +31,17 @@ import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DescriptorLanguageBean;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.openapi.model.DescriptorType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DescriptorLanguageBean;
-import io.swagger.client.model.Workflow;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -134,7 +133,7 @@ class SnakemakePluginIT {
 
     @Test
     void testSnakemakeLanguagePlugin() {
-        MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
+        MetadataApi metadataApi = new MetadataApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // should have default languages plus galaxy via plugin
         assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
@@ -147,12 +146,11 @@ class SnakemakePluginIT {
 
     @Test
     void testSnakemakePluginPublish() {
-        final ApiClient webClient = BaseIT.getWebClient(TestUser.TEST_USER2.dockstoreUserName, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(TestUser.TEST_USER2.dockstoreUserName, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = BaseIT.getOpenAPIWebClient(TestUser.TEST_USER2.dockstoreUserName, testingPostgres);
-        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
 
-        Workflow workflow = BaseIT.manualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/.snakemake-workflow-catalog.yml", true);
+        io.dockstore.openapi.client.model.Workflow workflow = BaseIT.openManualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/.snakemake-workflow-catalog.yml", true);
         List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SMK.getShortName(), null, null, null, null, null, null, null, null, null);
         assertTrue(workflow.isIsPublished());
         assertEquals(1, tools.size());

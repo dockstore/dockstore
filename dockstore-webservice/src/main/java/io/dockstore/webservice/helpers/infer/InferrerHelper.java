@@ -129,7 +129,7 @@ public class InferrerHelper {
             return new DescriptorLanguageInferrer(DescriptorLanguage.SMK) {
                 @Override
                 protected boolean isDescriptorPath(String path) {
-                    return path.endsWith("Snakefile");
+                    return path.endsWith(".snakemake-workflow-catalog.yml");
                 }
             };
         case JUPYTER:
