@@ -169,6 +169,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Partner platformPartner;
 
     @Column(columnDefinition = "boolean default 'false'")
+    @Schema(description = "Indicates whether this user is a robot that submits metrics");
+    private boolean metricsRobot;
+
+    @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
 
