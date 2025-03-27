@@ -20,7 +20,7 @@
                    context="1.17.0">
     <changeSet author="svonworl" id="addMetricsRobotProperty">
         <addColumn tableName="enduser">
-            <column defaultValueBoolean="false" name="metricsRobot" type="bool">
+            <column defaultValueBoolean="false" name="metricsrobot" type="bool">
                  <constraints nullable="false"/>
             </column>
         </addColumn>
