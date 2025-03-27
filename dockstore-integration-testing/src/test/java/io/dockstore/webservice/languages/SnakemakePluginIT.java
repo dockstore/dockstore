@@ -75,7 +75,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(WorkflowTest.NAME)
 class SnakemakePluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
-    public static final String SNAKEMAKE_PLUGIN_VERSION = "0.0.1";
+    public static final String SNAKEMAKE_PLUGIN_VERSION = "0.0.3";
     public static final String SNAKEMAKE_PLUGIN_FILENAME = "snakemake-language-interface-" + SNAKEMAKE_PLUGIN_VERSION + ".jar";
     public static final String SNAKEMAKE_PLUGIN_LOCATION =
         "https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/snakemake-language-interface/"
@@ -150,7 +150,7 @@ class SnakemakePluginIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
 
-        io.dockstore.openapi.client.model.Workflow workflow = BaseIT.openManualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/.snakemake-workflow-catalog.yml", true);
+        io.dockstore.openapi.client.model.Workflow workflow = BaseIT.openManualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/workflow/Snakefile", true);
         List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SMK.getShortName(), null, null, null, null, null, null, null, null, null);
         assertTrue(workflow.isIsPublished());
         assertEquals(1, tools.size());
