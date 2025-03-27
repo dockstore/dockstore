@@ -49,4 +49,5 @@ public class PrivilegeRequest {
 
     public void setMetricsRobot(boolean metricsRobot) {
         this.metricsRobot = metricsRobot;
+    }
 }
