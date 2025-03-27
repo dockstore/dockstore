@@ -169,7 +169,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Partner platformPartner;
 
     @Column(columnDefinition = "boolean default 'false'")
-    @Schema(description = "Indicates whether this user is a robot that submits metrics");
+    @Schema(description = "Indicates whether this user is a robot that submits metrics")
     private boolean metricsRobot;
 
     @Column(columnDefinition = "boolean default 'false'")

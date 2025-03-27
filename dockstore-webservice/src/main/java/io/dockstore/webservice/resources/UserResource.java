@@ -500,15 +500,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork()
     @RolesAllowed("admin")
     @Path("/{userId}/tokens")
-    @Operation(operationId = "createPlatformPartnerToken", description = "Create a Dockstore token for a platform partner user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "createMetricsRobotToken", description = "Create a Dockstore token for a metrics robot user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The new token.")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
-    public String createPlatformPartnerToken(@Parameter(hidden = true, name = "user")@Auth User user,
+    public String createMetricsRobotToken(@Parameter(hidden = true, name = "user")@Auth User user,
         @PathParam("userId") long userId) {
         User targetUser = userDAO.findById(userId);
         checkNotNullUser(targetUser);
-        if (!targetUser.isPlatformPartner()) {
-            throw new CustomWebApplicationException("Target user must be a platform partner.", HttpStatus.SC_BAD_REQUEST);
+        if (!targetUser.isMetricsRobot()) {
+            throw new CustomWebApplicationException("Target user must be a metrics robot.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Token dockstoreToken = tokenDAO.createDockstoreToken(userId, targetUser.getUsername());
@@ -1204,6 +1204,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         targetUser.setIsAdmin(privilegeRequest.isAdmin());
         targetUser.setCurator(privilegeRequest.isCurator());
         targetUser.setPlatformPartner(privilegeRequest.getPlatformPartner());
+        targetUser.setMetricsRobot(privilegeRequest.getMetricsRobot());
 
         // Invalidate any tokens corresponding to the target user.
         tokenDAO.findByUserId(targetUser.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));

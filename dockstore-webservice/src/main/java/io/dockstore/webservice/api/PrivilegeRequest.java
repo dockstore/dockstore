@@ -13,6 +13,7 @@ public class PrivilegeRequest {
     private boolean admin;
     private boolean curator;
     private Partner platformPartner;
+    private boolean metricsRobot;
 
     @JsonProperty
     public boolean isAdmin() {
@@ -40,4 +41,12 @@ public class PrivilegeRequest {
     public void setPlatformPartner(Partner platformPartner) {
         this.platformPartner = platformPartner;
     }
+
+    @JsonProperty
+    public boolean getMetricsRobot() {
+        return metricsRobot;
+    }
+
+    public void setMetricsRobot(boolean metricsRobot) {
+        this.metricsRobot = metricsRobot;
 }
