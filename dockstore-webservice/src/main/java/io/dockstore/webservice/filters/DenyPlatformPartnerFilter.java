@@ -45,7 +45,7 @@ public class DenyPlatformPartnerFilter implements ContainerRequestFilter {
         if (requestContext != null) {
             final Principal principal = requestContext.getSecurityContext().getUserPrincipal();
             if (principal instanceof User user) {
-                if (user.isPlatformPartner()) {
+                if (user.isMetricsRobot()) {
                     final Method resourceMethod = resourceInfo.getResourceMethod();
                     if (resourceMethod != null) {
                         final RolesAllowed rolesAllowedAnnotation = resourceMethod.getAnnotation(RolesAllowed.class);

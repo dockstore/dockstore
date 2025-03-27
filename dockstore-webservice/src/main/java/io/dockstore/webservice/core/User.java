@@ -587,6 +587,14 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.platformPartner = platformPartner;
     }
 
+    public boolean isMetricsRobot() {
+        return metricsRobot;
+    }
+
+    public void setMetricsRobot(boolean metricsRobot) {
+        this.metricsRobot = metricsRobot;
+    }
+
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)
      * The order of the properties are important, the UI lists these properties in this order.
