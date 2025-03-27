@@ -31,11 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Deny any request by a "platformPartner" user to an authorized endpoint (an endpoint that requires a User) that does not have a @RolesAllowed annotation.
+ * Deny any request by a "robot" user to an authorized endpoint (an endpoint that requires a User) that does not have a @RolesAllowed annotation.
  */
 @Provider
-public class DenyPlatformPartnerFilter implements ContainerRequestFilter {
-    private static final Logger LOG = LoggerFactory.getLogger(DenyPlatformPartnerFilter.class);
+public class DenyRobotFilter implements ContainerRequestFilter {
+    private static final Logger LOG = LoggerFactory.getLogger(DenyRobotFilter.class);
 
     @Context
     private ResourceInfo resourceInfo;

@@ -168,7 +168,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Schema(description = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER)
     private Partner platformPartner;
 
-    @Column(columnDefinition = "boolean default 'false'")
+    @Column(nullable = false, columnDefinition = "boolean default 'false'")
     @Schema(description = "Indicates whether this user is a robot that submits metrics")
     private boolean metricsRobot;
 

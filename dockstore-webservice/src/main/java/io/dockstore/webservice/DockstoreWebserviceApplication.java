@@ -87,7 +87,7 @@ import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.filters.AdminPrivilegesFilter;
 import io.dockstore.webservice.filters.AuthenticatedUserFilter;
-import io.dockstore.webservice.filters.DenyPlatformPartnerFilter;
+import io.dockstore.webservice.filters.DenyRobotFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.DiagnosticsHelper;
@@ -657,7 +657,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new AuthenticatedUserFilter());
 
-        environment.jersey().register(new DenyPlatformPartnerFilter());
+        environment.jersey().register(new DenyRobotFilter());
 
         // Swagger providers
         environment.jersey().register(SwaggerSerializers.class);
