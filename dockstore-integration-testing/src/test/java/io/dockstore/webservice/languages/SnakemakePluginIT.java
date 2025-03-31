@@ -37,6 +37,7 @@ import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DescriptorLanguageBean;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
@@ -150,7 +151,7 @@ class SnakemakePluginIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
 
-        io.dockstore.openapi.client.model.Workflow workflow = BaseIT.openManualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/workflow/Snakefile", true);
+        Workflow workflow = BaseIT.openManualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/workflow/Snakefile", true);
         List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SMK.getShortName(), null, null, null, null, null, null, null, null, null);
         assertTrue(workflow.isIsPublished());
         assertEquals(1, tools.size());
