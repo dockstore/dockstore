@@ -426,8 +426,8 @@ class UserResourceOpenApiIT extends BaseIT {
     void testCreateMetricsRobotToken() {
         UsersApi anonApi = new UsersApi(getAnonymousOpenAPIWebClient());
         UsersApi userApi = new UsersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
-        UsersApi adminApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
-        UsersApi robotApi = new UsersApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres));
+        UsersApi adminApi = new UsersApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
+        UsersApi robotApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         PrivilegeRequest privilegeRequest = new PrivilegeRequest();
         privilegeRequest.setMetricsRobot(true);
         adminApi.setUserPrivileges(privilegeRequest, robotApi.getUser().getId());
