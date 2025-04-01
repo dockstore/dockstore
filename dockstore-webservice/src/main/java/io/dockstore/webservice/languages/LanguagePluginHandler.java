@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 OICR
+ *    Copyright 2025 OICR and UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -195,36 +195,42 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
         };
 
-        final Map<String, FileMetadata> stringPairMap = minimalLanguageInterface
-            .indexWorkflowFiles(filepath, content, reader);
-        Map<String, SourceFile> results = new HashMap<>();
-        for (Map.Entry<String, FileMetadata> entry : stringPairMap.entrySet()) {
+        try {
+            final Map<String, FileMetadata> stringPairMap = minimalLanguageInterface
+                .indexWorkflowFiles(filepath, content, reader);
+            Map<String, SourceFile> results = new HashMap<>();
+            for (Map.Entry<String, FileMetadata> entry : stringPairMap.entrySet()) {
 
-            // The language plugins don't necessarily set the file type
-            // so query the plugin to find out what the imported file
-            // type should be, because this is needed in downstream code.
-            // We assume if imported files are not descriptors or not test files they are Dockerfiles,
-            // however this may not be true for some languages, and we may have to change this
-            DescriptorLanguage.FileType type;
-            if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
-                type = minimalLanguageInterface.getDescriptorLanguage().getFileType();
-            } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
-                type = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
-            } else {
-                // For some languages this may be incorrect
-                type = FileType.DOCKERFILE;
+                // The language plugins don't necessarily set the file type
+                // so query the plugin to find out what the imported file
+                // type should be, because this is needed in downstream code.
+                // We assume if imported files are not descriptors or not test files they are Dockerfiles,
+                // however this may not be true for some languages, and we may have to change this
+                DescriptorLanguage.FileType type;
+                if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                    type = minimalLanguageInterface.getDescriptorLanguage().getFileType();
+                } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
+                    type = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
+                } else {
+                    // For some languages this may be incorrect
+                    type = FileType.DOCKERFILE;
+                }
+                if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
+                    // TODO: this needs to be more sophisticated
+                    type = DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML;
+                }
+                String path = entry.getKey();
+                String fileContent = entry.getValue().content();
+                SourceFile sourceFile = SourceFile.limitedBuilder().type(type).content(fileContent).paths(path).build();
+                sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
+                results.put(entry.getKey(), sourceFile);
             }
-            if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
-                // TODO: this needs to be more sophisticated
-                type = DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML;
-            }
-            String path = entry.getKey();
-            String fileContent = entry.getValue().content();
-            SourceFile sourceFile = SourceFile.limitedBuilder().type(type).content(fileContent).paths(path).build();
-            sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
-            results.put(entry.getKey(), sourceFile);
+            return results;
+        } catch (RuntimeException e) {
+            // ignore, cannot assume plugins are well-behaved and a badly-behaved plugin shouldn't bring the rest of the webservice down
+            LOG.error("plugin threw RuntimeException, dodging: ", e);
+            return new HashMap<>();
         }
-        return results;
     }
 
     @Override

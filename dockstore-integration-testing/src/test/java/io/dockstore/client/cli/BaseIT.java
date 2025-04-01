@@ -179,6 +179,38 @@ public class BaseIT {
         return workflow;
     }
 
+    /**
+     * Manually register and publish a workflow with the given path and name
+     *
+     * @param workflowsApi
+     * @param workflowPath
+     * @param workflowName
+     * @param descriptorType
+     * @param sourceControl
+     * @param descriptorPath
+     * @param toPublish
+     * @return Published workflow
+     */
+    public static io.dockstore.openapi.client.model.Workflow openManualRegisterAndPublish(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        // Manually register
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi
+            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
+                "/test.json");
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.STUB, workflow.getMode());
+
+        // Refresh
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Publish
+        if (toPublish) {
+            workflow = workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+            assertTrue(workflow.isIsPublished());
+        }
+        return workflow;
+    }
+
     static void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -302,7 +334,7 @@ public class BaseIT {
         SUPPORT.after();
     }
 
-    protected static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(String username, TestingPostgres testingPostgresParameter) {
+    public static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(String username, TestingPostgres testingPostgresParameter) {
         return CommonTestUtilities.getOpenAPIWebClient(true, username, testingPostgresParameter);
     }
 

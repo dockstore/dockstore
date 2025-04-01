@@ -125,6 +125,13 @@ public class InferrerHelper {
                     return path.endsWith(".ga");
                 }
             };
+        case SMK:
+            return new DescriptorLanguageInferrer(DescriptorLanguage.SMK) {
+                @Override
+                protected boolean isDescriptorPath(String path) {
+                    return "/workflow/Snakefile".equalsIgnoreCase(path);
+                }
+            };
         case JUPYTER:
             return new DescriptorLanguageInferrer(DescriptorLanguage.JUPYTER) {
                 @Override
@@ -148,7 +155,6 @@ public class InferrerHelper {
                     return DescriptorLanguageSubclass.PYTHON;
                 }
             };
-        case SMK:
         case SWL:
         case SERVICE:
             return null;
