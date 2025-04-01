@@ -43,7 +43,7 @@ public class PrivilegeRequest {
     }
 
     @JsonProperty
-    public boolean getMetricsRobot() {
+    public boolean isMetricsRobot() {
         return metricsRobot;
     }
 
