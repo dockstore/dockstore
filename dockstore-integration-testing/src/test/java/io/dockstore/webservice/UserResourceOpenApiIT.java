@@ -39,6 +39,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
+import io.dockstore.openapi.client.api.TokensApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.EntryType;
@@ -47,6 +48,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.Profile;
 import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.TokenUser;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.Workflow;
@@ -428,10 +430,13 @@ class UserResourceOpenApiIT extends BaseIT {
 
     @Test
     void testMetricsRobot() {
+        String userUsername = OTHER_USERNAME;
+        String adminUsername = ADMIN_USERNAME;
+        String robotUsername = USER_2_USERNAME;
         UsersApi anonApi = new UsersApi(getAnonymousOpenAPIWebClient());
-        UsersApi userApi = new UsersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
-        UsersApi adminApi = new UsersApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
-        UsersApi robotApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        UsersApi userApi = new UsersApi(getOpenAPIWebClient(userUsername, testingPostgres));
+        UsersApi adminApi = new UsersApi(getOpenAPIWebClient(adminUsername, testingPostgres));
+        UsersApi robotApi = new UsersApi(getOpenAPIWebClient(robotUsername, testingPostgres));
         long robotId = robotApi.getUser().getId();
 
         // NOT able to create a metrics robot that has other privileges.
@@ -453,7 +458,7 @@ class UserResourceOpenApiIT extends BaseIT {
         assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(noPrivileges, robotId));
 
         // Confirm that the metrics robot does not have any other privileges.
-        User robot = robotApi.getUser();
+        User robot = getUser(adminApi, robotUsername);
         assertTrue(robot.isMetricsRobot());
         assertFalse(robot.isIsAdmin());
         assertFalse(robot.isCurator());
@@ -461,26 +466,59 @@ class UserResourceOpenApiIT extends BaseIT {
 
         // The robot user should be able to access the metrics submission endpoints, and should NOT be able to access other authenticated endpoints.
         // We don't synthesize a valid metrics request here, but instead check the status code to determine "how far" the request got.
-        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
+        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
         assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> robotApi.changeUsername("newname"));
 
-        // Should only be able to create a metrics robot token should only succeed if the initiating user is an admin and the target user is a metrics robot.
-        List<UsersApi> apis = List.of(anonApi, userApi, adminApi, robotApi);
-        for (UsersApi initiator: apis) {
-            for (UsersApi target: apis) {
-                User targetUser = target.getUser();
-                if (targetUser != null) {
-                    long targetUserId = target.getUser().getId();
-                    if (initiator == adminApi && target == robotApi) {
-                        String token = initiator.createMetricsRobotToken(targetUserId);
-                        assertEquals(64, token.length());
-                        assertTrue(StringUtils.containsOnly(token, "0123456789abcdef"));
+        // Update token ID sequence number so that it doesn't collide with existing tokens.
+        testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+
+        // Only admins should be able to create metrics robot tokens, and only for a metrics robot user.
+        // All other combinations of initiator and target users should fail.
+        for (UsersApi initiator: List.of(anonApi, userApi, adminApi, robotApi)) {
+            for (String target: List.of(userUsername, adminUsername, robotUsername)) {
+                if (!(initiator == adminApi && target == robotUsername)) {
+                    int expectedCode;
+                    if (initiator == anonApi) {
+                        expectedCode = HttpStatus.SC_UNAUTHORIZED;
+                    } else if (initiator == adminApi) {
+                        expectedCode = HttpStatus.SC_BAD_REQUEST;
                     } else {
-                        assertThrows(ApiException.class, () -> initiator.createMetricsRobotToken(targetUserId));
+                        expectedCode = HttpStatus.SC_FORBIDDEN;
                     }
+                    User targetUser = getUser(adminApi, target);
+                    assertThrowsCode(expectedCode, () -> initiator.createMetricsRobotToken(targetUser.getId()));
                 }
             }
         }
+
+        // Admin should be able to delete a robot Dockstore token.
+        TokenUser token = getDockstoreToken(adminApi, robotId);
+        new TokensApi(getOpenAPIWebClient(adminUsername, testingPostgres)).deleteToken(token.getId());
+
+        // Admin should be able to create a robot Dockstore token.
+        String tokenContent = adminApi.createMetricsRobotToken(robotId);
+        assertEquals(64, tokenContent.length());
+        assertTrue(StringUtils.containsOnly(tokenContent, "0123456789abcdef"));
+
+        // Confirm that robot Dockstore token has new ID.
+        token = getDockstoreToken(adminApi, robotId);
+        assertEquals(100, token.getId());
+
+        // Robot user should still be able to access the metrics submission endpoints.
+        UsersApi refreshedRobotApi = new UsersApi(getOpenAPIWebClient(robotUsername, testingPostgres));
+        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> refreshedRobotApi.changeUsername("newname"));
+    }
+
+    private User getUser(UsersApi adminApi, String username) {
+        return adminApi.listUser(username, "");
+    }
+
+    private TokenUser getDockstoreToken(UsersApi adminApi, long userId) {
+        return adminApi.getUserTokens(userId).stream()
+            .filter(t -> t.getTokenSource().toString().equals("dockstore"))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("could not get token"));
     }
 
     private void assertThrowsCode(int statusCode, Executable executable) {
