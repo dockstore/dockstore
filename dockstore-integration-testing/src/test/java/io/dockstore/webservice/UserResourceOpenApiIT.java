@@ -36,6 +36,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Partner;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
@@ -500,9 +501,10 @@ class UserResourceOpenApiIT extends BaseIT {
         assertEquals(64, tokenContent.length());
         assertTrue(StringUtils.containsOnly(tokenContent, "0123456789abcdef"));
 
-        // Confirm that robot Dockstore token has new ID.
+        // Confirm that robot Dockstore token was updated and matches what was returned.
         token = getDockstoreToken(adminApi, robotId);
         assertEquals(100, token.getId());
+        assertEquals(tokenContent, getDockstoreTokenContent(testingPostgres, robotId));
 
         // Robot user should still be able to access the metrics submission endpoints.
         UsersApi refreshedRobotApi = new UsersApi(getOpenAPIWebClient(robotUsername, testingPostgres));
@@ -519,6 +521,10 @@ class UserResourceOpenApiIT extends BaseIT {
             .filter(t -> t.getTokenSource().toString().equals("dockstore"))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("could not get token"));
+    }
+
+    private String getDockstoreTokenContent(TestingPostgres testingPostgres, long userId) {
+        return testingPostgres.runSelectStatement("select content from token where userid = %d and tokensource = 'dockstore'".formatted(userId), String.class);
     }
 
     private void assertThrowsCode(int statusCode, Executable executable) {
