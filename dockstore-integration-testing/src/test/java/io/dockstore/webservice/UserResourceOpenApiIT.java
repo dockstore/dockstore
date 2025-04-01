@@ -33,14 +33,17 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.Partner;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryUpdateTime;
+import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.Profile;
 import io.dockstore.openapi.client.model.StarRequest;
@@ -58,6 +61,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -423,34 +427,64 @@ class UserResourceOpenApiIT extends BaseIT {
     }
 
     @Test
-    void testCreateMetricsRobotToken() {
+    void testMetricsRobot() {
         UsersApi anonApi = new UsersApi(getAnonymousOpenAPIWebClient());
         UsersApi userApi = new UsersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
         UsersApi adminApi = new UsersApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         UsersApi robotApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
-        PrivilegeRequest privilegeRequest = new PrivilegeRequest();
-        privilegeRequest.setMetricsRobot(true);
-        adminApi.setUserPrivileges(privilegeRequest, robotApi.getUser().getId());
+        long robotId = robotApi.getUser().getId();
 
+        // NOT able to create a metrics robot that has other privileges.
+        PrivilegeRequest robotPlusAdminPrivileges = new PrivilegeRequest();
+        robotPlusAdminPrivileges.setMetricsRobot(true);
+        robotPlusAdminPrivileges.setAdmin(true);
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(robotPlusAdminPrivileges, robotId));
+
+        // Able to create a metrics robot with no other privileges.
+        PrivilegeRequest robotPrivileges = new PrivilegeRequest();
+        robotPrivileges.setMetricsRobot(true);
+        adminApi.setUserPrivileges(robotPrivileges, robotId);
+
+        // NOT able to add more privileges to an existing metrics robot.
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(robotPlusAdminPrivileges, robotId));
+
+        // NOT able to remove metrics robot privileges.
+        PrivilegeRequest noPrivileges = new PrivilegeRequest();
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(noPrivileges, robotId));
+
+        // Confirm that the metrics robot does not have any other privileges.
+        User robot = robotApi.getUser();
+        assertTrue(robot.isMetricsRobot());
+        assertFalse(robot.isIsAdmin());
+        assertFalse(robot.isCurator());
+        assertNull(robot.getPlatformPartner());
+
+        // The robot user should be able to access the metrics submission endpoints, and should NOT be able to access other authenticated endpoints.
+        // We don't synthesize a valid metrics request here, but instead check the status code to determine "how far" the request got.
+        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> robotApi.changeUsername("newname"));
+
+        // Should only be able to create a metrics robot token should only succeed if the initiating user is an admin and the target user is a metrics robot.
         List<UsersApi> apis = List.of(anonApi, userApi, adminApi, robotApi);
-
-        // createMetricsRobotToken should only succeed if the initiating user is an admin and the target user is a metrics robot.
         for (UsersApi initiator: apis) {
             for (UsersApi target: apis) {
-                long targetUserId = target.getUser().getId();
-                if (initiator == adminApi && target == robotApi) {
-                    String token = initiator.createMetricsRobotToken(targetUserId);
-                    assertEquals(64, token.length());
-                    assertTrue(StringUtils.containsOnly(token, "0123456789abcdef"));
-                } else {
-                    assertThrows(ApiException.class, () -> initiator.createMetricsRobotToken(targetUserId));
+                User targetUser = target.getUser();
+                if (targetUser != null) {
+                    long targetUserId = target.getUser().getId();
+                    if (initiator == adminApi && target == robotApi) {
+                        String token = initiator.createMetricsRobotToken(targetUserId);
+                        assertEquals(64, token.length());
+                        assertTrue(StringUtils.containsOnly(token, "0123456789abcdef"));
+                    } else {
+                        assertThrows(ApiException.class, () -> initiator.createMetricsRobotToken(targetUserId));
+                    }
                 }
             }
         }
+    }
 
-        // The robot user should now have a token, and should be able to access the metrics submission endpoints, and should NOT be able to access other authenticated endpoints.
-        // TODO submit metrics successfully
-        assertThrows(ApiException.class, () -> robotApi.changeUsername("newusername"));
-        
+    private void assertThrowsCode(int statusCode, Executable executable) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(statusCode, exception.getCode());
     }
 }
