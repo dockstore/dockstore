@@ -69,6 +69,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -671,6 +674,15 @@ public final class ZenodoHelper {
         String description = workflow.getDescription();
         // The Zenodo API requires at description of at least three characters
         String descriptionStr = (description == null || description.isEmpty()) ? "No description specified" : workflow.getDescription();
+
+
+        // convert from Markdown to HTML (feels weird but plain text from (e.g.) WDL descriptors should remain unmolested even if not Markdown)
+        // most descriptions are just READMEs
+        Parser parser = Parser.builder().build();
+        Node document = parser.parse(descriptionStr);
+        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        descriptionStr = renderer.render(document);
+
         depositMetadata.setDescription(descriptionStr);
 
         // We will set the Zenodo workflow version publication date to the date of the DOI issuance
