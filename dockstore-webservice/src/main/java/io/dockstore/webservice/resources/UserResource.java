@@ -501,7 +501,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @RolesAllowed("admin")
     @Path("/{userId}/tokens")
     @Operation(operationId = "createMetricsRobotToken", description = "Create a Dockstore token for a metrics robot user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The new token.")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The new token.", content = @Content(schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     public String createMetricsRobotToken(@Parameter(hidden = true, name = "user")@Auth User user,
         @PathParam("userId") long userId) {

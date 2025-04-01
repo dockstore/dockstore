@@ -52,6 +52,7 @@ import io.dockstore.webservice.helpers.GitHubAppHelper;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -421,4 +422,35 @@ class UserResourceOpenApiIT extends BaseIT {
         assertTrue(curatorUsersApi.getUser().isCurator(), "A user should be able to see if they themself is a curator");
     }
 
+    @Test
+    void testCreateMetricsRobotToken() {
+        UsersApi anonApi = new UsersApi(getAnonymousOpenAPIWebClient());
+        UsersApi userApi = new UsersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        UsersApi adminApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        UsersApi robotApi = new UsersApi(getOpenAPIWebClient(USER_4_USERNAME, testingPostgres));
+        PrivilegeRequest privilegeRequest = new PrivilegeRequest();
+        privilegeRequest.setMetricsRobot(true);
+        adminApi.setUserPrivileges(privilegeRequest, robotApi.getUser().getId());
+
+        List<UsersApi> apis = List.of(anonApi, userApi, adminApi, robotApi);
+
+        // createMetricsRobotToken should only succeed if the initiating user is an admin and the target user is a metrics robot.
+        for (UsersApi initiator: apis) {
+            for (UsersApi target: apis) {
+                long targetUserId = target.getUser().getId();
+                if (initiator == adminApi && target == robotApi) {
+                    String token = initiator.createMetricsRobotToken(targetUserId);
+                    assertEquals(64, token.length());
+                    assertTrue(StringUtils.containsOnly(token, "0123456789abcdef"));
+                } else {
+                    assertThrows(ApiException.class, () -> initiator.createMetricsRobotToken(targetUserId));
+                }
+            }
+        }
+
+        // The robot user should now have a token, and should be able to access the metrics submission endpoints, and should NOT be able to access other authenticated endpoints.
+        // TODO submit metrics successfully
+        assertThrows(ApiException.class, () -> robotApi.changeUsername("newusername"));
+        
+    }
 }

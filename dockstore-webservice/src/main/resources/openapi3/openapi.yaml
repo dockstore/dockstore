@@ -6793,6 +6793,10 @@ paths:
           format: int64
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                type: string
           description: The new token.
         "403":
           description: Forbidden
