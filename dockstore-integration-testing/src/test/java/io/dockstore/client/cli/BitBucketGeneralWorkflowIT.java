@@ -191,9 +191,6 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         // Unpublish workflow
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
-
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
         assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");

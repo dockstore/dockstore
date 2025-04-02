@@ -182,12 +182,6 @@ class CheckerWorkflowIT extends BaseIT {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
 
-        try {
-            workflowApi.restub(refreshedEntry.getCheckerId());
-            fail("Should not be able to restub the checker");
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-        }
     }
 
     /**

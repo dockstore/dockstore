@@ -202,9 +202,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE;
-    public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
-    public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
-    public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
     public static final String YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION = "Your user does not have access to this organization.";
 
@@ -232,59 +229,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.permissionsInterface = permissionsInterface;
         dashboardPrefix = configuration.getDashboard();
         isProduction = configuration.getExternalConfig().computeIsProduction();
-    }
-
-    /**
-     * TODO: this should not be a GET either
-     *
-     * @param user
-     * @param workflowId
-     * @return
-     */
-    @GET
-    @Path("/{workflowId}/restub")
-    @Timed
-    @UnitOfWork
-    @Operation(operationId = "restub", summary = "Restub a workflow", description = "Restub a workflow", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Restub a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
-    public Workflow restub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkNotNullEntry(workflow);
-        // Check that workflow is valid to restub
-        if (workflow.getIsPublished()) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
-        }
-        if (workflow.isIsChecker()) {
-            throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
-        }
-        if (!workflow.getConceptDois().isEmpty() && isProduction) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
-        }
-        if (versionDAO.getVersionsFrozen(workflowId) > 0) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        checkCanWrite(user, workflow);
-        checkNotHosted(workflow);
-        checkNotDockstoreYml(workflow);
-
-        workflow.setMode(WorkflowMode.STUB);
-
-        // go through and delete versions for a stub
-        for (WorkflowVersion version : workflow.getWorkflowVersions()) {
-            workflowVersionDAO.delete(version);
-        }
-        workflow.setActualDefaultVersion(null);
-        workflow.getWorkflowVersions().clear();
-
-        // Do we maintain the checker workflow association? For now we won't
-        workflow.setCheckerWorkflow(null);
-
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        return workflow;
-
     }
 
     /**

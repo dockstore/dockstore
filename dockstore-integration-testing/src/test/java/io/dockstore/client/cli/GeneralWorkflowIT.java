@@ -163,9 +163,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals(0, count6, "there should be 0 published entries, there are " + count6);
 
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
-
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
         assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
@@ -317,47 +314,6 @@ class GeneralWorkflowIT extends BaseIT {
         assertEquals(1, count, "there should be 1 matching workflow version, there is " + count);
     }
 
-    /**
-     * This tests that a restub will work on an unpublished, full workflow
-     */
-    @Test
-    void testRestub() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-
-        // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
-            SourceControl.GITHUB, "/Dockstore.cwl", false);
-
-        // Restub workflow
-        workflowsApi.restub(workflow.getId());
-
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertEquals(0, count, "there should be 0 workflow versions, there are " + count);
-    }
-
-    /**
-     * This tests that a restub will not work on an published, full workflow
-     */
-    @Test
-    void testRestubError() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-
-        // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
-            SourceControl.GITHUB, "/Dockstore.cwl", false);
-
-        // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-
-        // Restub
-        try {
-            workflow = workflowsApi.restub(workflow.getId());
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("A workflow must be unpublished to restub"));
-        }
-    }
 
     /**
      * Tests updating workflow descriptor type when a workflow is FULL and when it is a STUB
@@ -766,8 +722,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
         assertTrue(4 <= count4, "there should be at least 4 invalid versions, there are " + count4);
 
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
 
         // Update workflow to WDL
         workflow.setWorkflowPath("/Dockstore.wdl");
@@ -909,12 +863,6 @@ class GeneralWorkflowIT extends BaseIT {
                 long.class);
         assertEquals(0, count7, "The given workflow should now have contact info and description");
 
-        // restub
-        workflow = workflowsApi.restub(workflow.getId());
-        final long count8 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB
-                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
-        assertEquals(1, count8, "The workflow should now be a stub");
 
         // Convert to WDL workflow
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
@@ -924,8 +872,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count9 = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype='wdl'", long.class);
         assertEquals(1, count9, "there should be 1 wdl workflow" + count9);
 
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
 
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
@@ -1069,9 +1015,6 @@ class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals(2, count4, "there should be two sourcefiles that are cwl test parameter files, there are " + count4);
-
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
 
         // Change to WDL
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
