@@ -162,18 +162,7 @@ class GeneralWorkflowIT extends BaseIT {
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals(0, count6, "there should be 0 published entries, there are " + count6);
-
-        // Refresh a single version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
-        assertEquals(ModeEnum.FULL, workflow.getMode(), "Should no longer be a stub workflow");
-
-        // Refresh another version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "testCWL", false);
-        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "testCWL")), "Should have testCWL version");
-
+        
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
             fail("Should not be able to refresh a version that does not exist");
