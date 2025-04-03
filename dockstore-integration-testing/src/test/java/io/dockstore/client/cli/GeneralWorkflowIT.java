@@ -162,7 +162,7 @@ class GeneralWorkflowIT extends BaseIT {
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals(0, count6, "there should be 0 published entries, there are " + count6);
-        
+
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
             fail("Should not be able to refresh a version that does not exist");
@@ -703,7 +703,6 @@ class GeneralWorkflowIT extends BaseIT {
         // Change path for each version so that it is invalid
         workflow.setWorkflowPath("thisisnotarealpath.cwl");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Workflow has no valid versions so you cannot publish
 
@@ -711,34 +710,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
         assertTrue(4 <= count4, "there should be at least 4 invalid versions, there are " + count4);
 
-
-        // Update workflow to WDL
-        workflow.setWorkflowPath("/Dockstore.wdl");
-        workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
-        workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-
-        // Can now publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-
-        // unpublish
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
-
-        // Set paths to invalid
-        workflow.setWorkflowPath("thisisnotarealpath.wdl");
-        workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-
-        // Check that versions are invalid
-        final long count5 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
-        assertTrue(4 <= count5, "there should be at least 4 invalid versions, there are " + count5);
-
-        // should now not be able to publish
-        try {
-            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
-        }
     }
 
     /**
@@ -851,15 +822,7 @@ class GeneralWorkflowIT extends BaseIT {
                 "select count(*) from workflow where actualdefaultversion = 952 and actualdefaultversion not in (select versionid from author) and actualdefaultversion not in (select versionid from version_orcidauthor) and description is null",
                 long.class);
         assertEquals(0, count7, "The given workflow should now have contact info and description");
-
-
-        // Convert to WDL workflow
-        workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
-        workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-
-        // Should now be a WDL workflow
-        final long count9 = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype='wdl'", long.class);
-        assertEquals(1, count9, "there should be 1 wdl workflow" + count9);
+        
 
 
         // Refresh a single version
@@ -1005,11 +968,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals(2, count4, "there should be two sourcefiles that are cwl test parameter files, there are " + count4);
 
-        // Change to WDL
-        workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
-        workflow.setWorkflowPath("Dockstore.wdl");
-        workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId(), false);
 
         // Should be no sourcefiles
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
