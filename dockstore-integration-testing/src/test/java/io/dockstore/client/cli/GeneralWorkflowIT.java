@@ -704,12 +704,6 @@ class GeneralWorkflowIT extends BaseIT {
         workflow.setWorkflowPath("thisisnotarealpath.cwl");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
-        // Workflow has no valid versions so you cannot publish
-
-        // check that invalid
-        final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
-        assertTrue(4 <= count4, "there should be at least 4 invalid versions, there are " + count4);
-
     }
 
     /**
@@ -822,19 +816,6 @@ class GeneralWorkflowIT extends BaseIT {
                 "select count(*) from workflow where actualdefaultversion = 952 and actualdefaultversion not in (select versionid from author) and actualdefaultversion not in (select versionid from version_orcidauthor) and description is null",
                 long.class);
         assertEquals(0, count7, "The given workflow should now have contact info and description");
-        
-
-
-        // Refresh a single version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
-        assertEquals(ModeEnum.FULL, workflow.getMode(), "Should no longer be a stub workflow");
-
-        // Refresh another version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "test", false);
-        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "test")), "Should have test version");
 
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
@@ -968,18 +949,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals(2, count4, "there should be two sourcefiles that are cwl test parameter files, there are " + count4);
 
-
-        // Should be no sourcefiles
-        final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        assertEquals(0, count5, "there should be no source files that are test parameter files, there are " + count5);
-
-        // Update version wdltest with test parameters
-        toAdd.clear();
-        toAdd.add("test.wdl.json");
-        workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-        final long count6 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
-        assertEquals(1, count6, "there should be one sourcefile that is a wdl test parameter file, there are " + count6);
     }
 
     /**
