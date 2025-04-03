@@ -492,8 +492,11 @@ class UserResourceOpenApiIT extends BaseIT {
             }
         }
 
-        // Admin should be able to delete a robot Dockstore token.
+        // A robot user should not be able to delete their Dockstore token.
         TokenUser token = getDockstoreToken(adminApi, robotId);
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> new TokensApi(getOpenAPIWebClient(robotUsername, testingPostgres)).deleteToken(token.getId()));
+
+        // Admin should be able to delete a robot Dockstore token.
         new TokensApi(getOpenAPIWebClient(adminUsername, testingPostgres)).deleteToken(token.getId());
 
         // Admin should be able to create a robot Dockstore token.
@@ -502,8 +505,8 @@ class UserResourceOpenApiIT extends BaseIT {
         assertTrue(StringUtils.containsOnly(tokenContent, "0123456789abcdef"));
 
         // Confirm that robot Dockstore token was updated and matches what was returned.
-        token = getDockstoreToken(adminApi, robotId);
-        assertEquals(100, token.getId());
+        TokenUser newToken = getDockstoreToken(adminApi, robotId);
+        assertEquals(100, newToken.getId());
         assertEquals(tokenContent, getDockstoreTokenContent(testingPostgres, robotId));
 
         // Robot user should still be able to access the metrics submission endpoints.
