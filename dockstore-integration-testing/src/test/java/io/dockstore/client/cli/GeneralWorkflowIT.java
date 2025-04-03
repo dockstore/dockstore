@@ -44,7 +44,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.Workflow.TopicSelectionEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.client.model.WorkflowVersion.DoiStatusEnum;
