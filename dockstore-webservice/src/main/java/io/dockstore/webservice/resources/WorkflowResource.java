@@ -2298,6 +2298,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // record installation event as lambda event
+        // TODO do this in transaction
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
@@ -2312,20 +2313,38 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
 
         if (added) {
-            // make some educated guesses whether we should try to retrospectively release some old versions
+            // for each added repository, try to retrospectively release some old versions.
+            // if we inspected all of the branches and didn't find any that were releasable,
+            // attempt to infer/deliver a .dockstore.yml on the "most important" branch.
             // note that for large organizations, this loop could be quite large if many repositories are added at the same time
             for (String repository: repositories) {
-                final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
-                for (String gitReference: strings) {
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                            Utilities.cleanForLogging(username)));
+                final int maximumBranchCount = 5;
+                final List<String> importantBranches = identifyImportantBranches(repository, installationId);
+                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
+                if (releasableReferences.isEmpty()) {
+                    boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;
+                    if (inspectedAllBranches) {
+                        if (!importantBranches.isEmpty()) {
+                            String mostImportantBranch = importantBranches.get(0);
+                            inferAndDeliverDockstoreYml(triggerUser, repository, installationId, mostImportantBranch);
+                        }
                     }
-                    githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                } else {
+                    for (String gitReference: releasableReferences) {
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                                Utilities.cleanForLogging(username)));
+                        }
+                        githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                    }
                 }
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
+    }
+
+    private List<String> subList(List<String> values, int count) {
+        return values.stream().limit(count).toList();
     }
 
     @DELETE

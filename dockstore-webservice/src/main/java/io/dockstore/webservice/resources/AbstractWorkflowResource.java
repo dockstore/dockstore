@@ -26,6 +26,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry.TopicSelection;
+import io.dockstore.webservice.core.InferredEntries;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -41,10 +42,12 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ExceptionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -52,14 +55,19 @@ import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.RateLimitHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
+import io.dockstore.webservice.helpers.infer.Inferrer;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
+import io.dockstore.webservice.jdbi.InferredEntriesDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.OrcidAuthorDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -118,6 +126,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final LambdaEventDAO lambdaEventDAO;
     protected final FileFormatDAO fileFormatDAO;
     protected final OrcidAuthorDAO orcidAuthorDAO;
+    protected final InferredEntriesDAO inferredEntriesDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -141,6 +150,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.orcidAuthorDAO = new OrcidAuthorDAO(sessionFactory);
+        this.inferredEntriesDAO = new InferredEntriesDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -412,22 +422,79 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
+    protected List<String> identifyImportantBranches(String repository, long installationId) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+        try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
+            return gitHubSourceCodeRepo.listBranchesByImportance(repository);
+        }
+    }
+
     /**
      * Identify git references that may be worth trying to handle as a github apps release event
      * @param repository
      * @param installationId
      * @return
      */
-    protected Set<String> identifyGitReferencesToRelease(String repository, long installationId) {
+    protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> branches) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
-        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
+            List<String> references = branches.stream().map(branch -> "refs/heads/" + branch).toList();
+            return gitHubSourceCodeRepo.detectDockstoreYml(repository, references);
+        }
+    }
 
-        // see if there is a .dockstore.yml on any branch that was just added
-        Set<String> branchCandidates = new HashSet<>(gitHubSourceCodeRepo.detectDockstoreYml(repository));
+    protected void inferAndDeliverDockstoreYml(Optional<User> user, String organizationAndRepository, long installationId, String branch) {
+        String organization = organizationAndRepository.split("/")[0];
+        String repository = organizationAndRepository.split("/")[1];
 
-        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
-        return branchCandidates;
+        // If we've already inferred on this repo, don't try again.
+        if (inferredEntriesDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository) != null) {
+            LOG.info("previous inference activity detected in {}/{}", organization, repository);
+            return;
+        }
+
+        // Log the impending inference.
+        LOG.info("inferring .dockstore.yml on branch {} in repository {}", branch, repository);
+
+        // Create the repo and file tree.
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, organizationAndRepository, "refs/heads/" + branch));
+
+        try {
+            InferrerHelper inferrerHelper = new InferrerHelper();
+            List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
+            String dockstoreYml = entries.isEmpty() ? null : inferrerHelper.toDockstoreYaml(entries);
+            persistCompleteInference(user, organization, repository, branch, entries.size(), dockstoreYml);
+        } catch (RuntimeException e) {
+            persistIncompleteInference(user, organization, repository, branch, e);
+        }
+    }
+
+    private void persistCompleteInference(Optional<User> user, String organization, String repository, String branch, long entryCount, String dockstoreYml) {
+        LOG.info("found {} entries on branch {} in {}/{}", entryCount, branch, organization, repository);
+        InferredEntries inferredEntries = new InferredEntries();
+        user.ifPresent(inferredEntries::setUser);
+        inferredEntries.setSourceControl(SourceControl.GITHUB);
+        inferredEntries.setOrganization(organization);
+        inferredEntries.setRepository(repository);
+        inferredEntries.setReference(branch);
+        inferredEntries.setComplete(true);
+        inferredEntries.setEntryCount(entryCount);
+        inferredEntries.setDockstoreYml(dockstoreYml);
+        inferredEntriesDAO.create(inferredEntries);
+    }
+
+    private void persistIncompleteInference(Optional<User> user, String organization, String repository, String branch, RuntimeException e) {
+        LOG.error("exception while inferring entries on branch {} in {}/{}", branch, organization, repository, e);
+        InferredEntries inferredEntries = new InferredEntries();
+        user.ifPresent(inferredEntries::setUser);
+        inferredEntries.setSourceControl(SourceControl.GITHUB);
+        inferredEntries.setOrganization(organization);
+        inferredEntries.setRepository(repository);
+        inferredEntries.setReference(branch);
+        inferredEntries.setComplete(false);
+        inferredEntriesDAO.create(inferredEntries);
     }
 
     /**

@@ -66,7 +66,7 @@ public class ZipGitHubFileTree implements FileTree {
         this.ref = ref;
         // Read the Zip contents and create an in-memory ZipFile.
         byte[] zipBytes = gitHubSourceCodeRepo.readZip(repository, ref);
-        LOG.info("downloaded Zip of GitHub repository: %n bytes".formatted(zipBytes.length));
+        LOG.info("downloaded Zip of GitHub repository: %d bytes".formatted(zipBytes.length));
         SeekableInMemoryByteChannel zipChannel = new SeekableInMemoryByteChannel(zipBytes);
         try {
             zipFile = new ZipFile(zipChannel);
