@@ -1386,6 +1386,11 @@ POM as their parent.
                 <artifactId>bcprov-ext-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark</artifactId>
+                <version>0.24.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
