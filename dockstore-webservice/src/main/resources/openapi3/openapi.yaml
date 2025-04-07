@@ -6781,6 +6781,29 @@ paths:
       - BEARER: []
       tags:
       - users
+    post:
+      description: Create a Dockstore token for a metrics robot user.
+      operationId: createMetricsRobotToken
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: The new token.
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/workflows:
     get:
       description: List all workflows owned by the authenticated user.
@@ -10975,6 +10998,8 @@ components:
           type: boolean
         curator:
           type: boolean
+        metricsRobot:
+          type: boolean
         platformPartner:
           type: string
           enum:
@@ -12081,6 +12106,9 @@ components:
           type: boolean
           description: Indicates whether the user is an admin.  The value is always
             false unless requested for oneself or by an admin
+        metricsRobot:
+          type: boolean
+          description: Indicates whether this user is a robot that submits metrics
         name:
           type: string
         orcid:

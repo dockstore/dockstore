@@ -495,6 +495,25 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return tokenDAO.findByUserId(userId);
     }
 
+    @POST
+    @Timed
+    @UnitOfWork()
+    @RolesAllowed("admin")
+    @Path("/{userId}/tokens")
+    @Operation(operationId = "createMetricsRobotToken", description = "Create a Dockstore token for a metrics robot user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The new token.", content = @Content(schema = @Schema(implementation = String.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    public String createMetricsRobotToken(@Parameter(hidden = true, name = "user")@Auth User user,
+        @PathParam("userId") long userId) {
+        User targetUser = userDAO.findById(userId);
+        checkNotNullUser(targetUser);
+        if (!targetUser.isMetricsRobot()) {
+            throw new CustomWebApplicationException("Target user must be a metrics robot.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Token dockstoreToken = tokenDAO.createDockstoreToken(targetUser.getId(), targetUser.getUsername());
+        return dockstoreToken.getContent();
+    }
 
     @GET
     @Timed
@@ -1181,10 +1200,21 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
         }
 
+        // Once a user is a metrics robot, it is forever a metrics robot.
+        if (targetUser.isMetricsRobot()) {
+            throw new CustomWebApplicationException("A metrics robot's privileges cannot be changed", HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Set the new privileges.
         targetUser.setIsAdmin(privilegeRequest.isAdmin());
         targetUser.setCurator(privilegeRequest.isCurator());
         targetUser.setPlatformPartner(privilegeRequest.getPlatformPartner());
+        targetUser.setMetricsRobot(privilegeRequest.isMetricsRobot());
+
+        // A metrics robot user cannot have any other privileges.
+        if (targetUser.isMetricsRobot() && (targetUser.getIsAdmin() || targetUser.isCurator() || targetUser.isPlatformPartner())) {
+            throw new CustomWebApplicationException("A metrics robot cannot have any other privileges", HttpStatus.SC_BAD_REQUEST);
+        }
 
         // Invalidate any tokens corresponding to the target user.
         tokenDAO.findByUserId(targetUser.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
