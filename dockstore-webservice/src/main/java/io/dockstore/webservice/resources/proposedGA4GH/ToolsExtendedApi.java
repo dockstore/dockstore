@@ -236,7 +236,7 @@ public class ToolsExtendedApi {
 
     @POST
     @UnitOfWork
-    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @RolesAllowed({"curator", "admin", "platformPartner", "metricsRobot"})
     @Path("/{id}/versions/{version_id}/executions")
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = ExecutionMetricsPost.SUMMARY, notes = ExecutionMetricsPost.DESCRIPTION, authorizations = {
@@ -314,7 +314,7 @@ public class ToolsExtendedApi {
 
     @GET
     @UnitOfWork(readOnly = true)
-    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @RolesAllowed({"curator", "admin", "platformPartner", "metricsRobot"})
     @Path("/{id}/versions/{version_id}/execution")
     @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "executionGet", summary = ExecutionGet.SUMMARY, description = ExecutionGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
@@ -336,7 +336,7 @@ public class ToolsExtendedApi {
 
     @PUT
     @UnitOfWork
-    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @RolesAllowed({"curator", "admin", "platformPartner", "metricsRobot"})
     @Path("/{id}/versions/{version_id}/executions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})

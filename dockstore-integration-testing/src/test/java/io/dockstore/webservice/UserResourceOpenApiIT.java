@@ -33,17 +33,23 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.Partner;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
+import io.dockstore.openapi.client.api.TokensApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryUpdateTime;
+import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.Profile;
 import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.TokenUser;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.Workflow;
@@ -52,11 +58,13 @@ import io.dockstore.webservice.helpers.GitHubAppHelper;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -421,4 +429,109 @@ class UserResourceOpenApiIT extends BaseIT {
         assertTrue(curatorUsersApi.getUser().isCurator(), "A user should be able to see if they themself is a curator");
     }
 
+    @Test
+    void testMetricsRobot() {
+        String userUsername = OTHER_USERNAME;
+        String adminUsername = ADMIN_USERNAME;
+        String robotUsername = USER_2_USERNAME;
+        UsersApi anonApi = new UsersApi(getAnonymousOpenAPIWebClient());
+        UsersApi userApi = new UsersApi(getOpenAPIWebClient(userUsername, testingPostgres));
+        UsersApi adminApi = new UsersApi(getOpenAPIWebClient(adminUsername, testingPostgres));
+        UsersApi robotApi = new UsersApi(getOpenAPIWebClient(robotUsername, testingPostgres));
+        long robotId = robotApi.getUser().getId();
+
+        // NOT able to create a metrics robot that has other privileges.
+        PrivilegeRequest robotPlusAdminPrivileges = new PrivilegeRequest();
+        robotPlusAdminPrivileges.setMetricsRobot(true);
+        robotPlusAdminPrivileges.setAdmin(true);
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(robotPlusAdminPrivileges, robotId));
+
+        // Able to create a metrics robot with no other privileges.
+        PrivilegeRequest robotPrivileges = new PrivilegeRequest();
+        robotPrivileges.setMetricsRobot(true);
+        adminApi.setUserPrivileges(robotPrivileges, robotId);
+
+        // NOT able to add more privileges to an existing metrics robot.
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(robotPlusAdminPrivileges, robotId));
+
+        // NOT able to remove metrics robot privileges.
+        PrivilegeRequest noPrivileges = new PrivilegeRequest();
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(noPrivileges, robotId));
+
+        // Confirm that the metrics robot does not have any other privileges.
+        User robot = getUser(adminApi, robotUsername);
+        assertTrue(robot.isMetricsRobot());
+        assertFalse(robot.isIsAdmin());
+        assertFalse(robot.isCurator());
+        assertNull(robot.getPlatformPartner());
+
+        // The robot user should be able to access the metrics submission endpoints, and should NOT be able to access other authenticated endpoints.
+        // We don't synthesize a valid metrics request here, but instead check the status code to determine "how far" the request got.
+        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> robotApi.changeUsername("newname"));
+
+        // Update token ID sequence number so that it doesn't collide with existing tokens.
+        testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+
+        // Only admins should be able to create metrics robot tokens, and only for a metrics robot user.
+        // All other combinations of initiator and target users should fail.
+        for (UsersApi initiator: List.of(anonApi, userApi, adminApi, robotApi)) {
+            for (String target: List.of(userUsername, adminUsername, robotUsername)) {
+                if (!(initiator == adminApi && target == robotUsername)) {
+                    int expectedCode;
+                    if (initiator == anonApi) {
+                        expectedCode = HttpStatus.SC_UNAUTHORIZED;
+                    } else if (initiator == adminApi) {
+                        expectedCode = HttpStatus.SC_BAD_REQUEST;
+                    } else {
+                        expectedCode = HttpStatus.SC_FORBIDDEN;
+                    }
+                    User targetUser = getUser(adminApi, target);
+                    assertThrowsCode(expectedCode, () -> initiator.createMetricsRobotToken(targetUser.getId()));
+                }
+            }
+        }
+
+        // A robot user should not be able to delete their Dockstore token.
+        TokenUser token = getDockstoreToken(adminApi, robotId);
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> new TokensApi(getOpenAPIWebClient(robotUsername, testingPostgres)).deleteToken(token.getId()));
+
+        // Admin should be able to delete a robot Dockstore token.
+        new TokensApi(getOpenAPIWebClient(adminUsername, testingPostgres)).deleteToken(token.getId());
+
+        // Admin should be able to create a robot Dockstore token.
+        String tokenContent = adminApi.createMetricsRobotToken(robotId);
+        assertEquals(64, tokenContent.length());
+        assertTrue(StringUtils.containsOnly(tokenContent, "0123456789abcdef"));
+
+        // Confirm that robot Dockstore token was updated and matches what was returned.
+        TokenUser newToken = getDockstoreToken(adminApi, robotId);
+        assertEquals(100, newToken.getId());
+        assertEquals(tokenContent, getDockstoreTokenContent(testingPostgres, robotId));
+
+        // Robot user should still be able to access the metrics submission endpoints.
+        UsersApi refreshedRobotApi = new UsersApi(getOpenAPIWebClient(robotUsername, testingPostgres));
+        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> refreshedRobotApi.changeUsername("newname"));
+    }
+
+    private User getUser(UsersApi adminApi, String username) {
+        return adminApi.listUser(username, "");
+    }
+
+    private TokenUser getDockstoreToken(UsersApi adminApi, long userId) {
+        return adminApi.getUserTokens(userId).stream()
+            .filter(t -> t.getTokenSource().toString().equals("dockstore"))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("could not get token"));
+    }
+
+    private String getDockstoreTokenContent(TestingPostgres testingPostgres, long userId) {
+        return testingPostgres.runSelectStatement("select content from token where userid = %d and tokensource = 'dockstore'".formatted(userId), String.class);
+    }
+
+    private void assertThrowsCode(int statusCode, Executable executable) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(statusCode, exception.getCode());
+    }
 }

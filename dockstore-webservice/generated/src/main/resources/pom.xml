@@ -993,6 +993,12 @@
       <version>2.18.2</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark</artifactId>
+      <version>0.24.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>

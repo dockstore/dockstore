@@ -31,9 +31,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.model.Userinfoplus;
-import com.google.common.base.Charsets;
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -84,7 +81,6 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Collections;
@@ -123,7 +119,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      */
     public static final JsonFactory JSON_FACTORY = new JacksonFactory();
     public static final String ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE = "Admins and curators may not login with Google";
-    public static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -300,7 +295,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
         checkNotNullToken(token);
-        checkUserId(user, token.getUserId());
+        if (!user.getIsAdmin()) {
+            checkUserId(user, token.getUserId());
+        }
 
         // invalidate cache now that we're deleting the token
         cachingAuthenticator.invalidate(token.getContent());
@@ -504,7 +501,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         user = userDAO.findById(userID);
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
-            dockstoreToken = createDockstoreToken(userID, user.getUsername());
+            dockstoreToken = tokenDAO.createDockstoreToken(userID, user.getUsername());
         }
 
         if (googleToken == null) {
@@ -660,7 +657,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw loginFailedException();
             }
             LOG.info("Could not find user's dockstore token. Making new one...");
-            dockstoreToken = createDockstoreToken(userID, user.getUsername());
+            dockstoreToken = tokenDAO.createDockstoreToken(userID, user.getUsername());
         }
 
         if (githubToken == null) {
@@ -693,24 +690,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             username = githubLogin + count++;
         }
         return username;
-    }
-
-    private Token createDockstoreToken(long userID, String githubLogin) {
-        Token dockstoreToken;
-        final int bufferLength = 1024;
-        final byte[] buffer = new byte[bufferLength];
-        SECURE_RANDOM.nextBytes(buffer);
-        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-        final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
-
-        dockstoreToken = new Token();
-        dockstoreToken.setTokenSource(TokenType.DOCKSTORE);
-        dockstoreToken.setContent(dockstoreAccessToken);
-        dockstoreToken.setUserId(userID);
-        dockstoreToken.setUsername(githubLogin);
-        long dockstoreTokenId = tokenDAO.create(dockstoreToken);
-        dockstoreToken = tokenDAO.findById(dockstoreTokenId);
-        return dockstoreToken;
     }
 
     public boolean shouldRestrictUser(String username) {

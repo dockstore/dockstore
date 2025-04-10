@@ -32,7 +32,8 @@ public class SimpleAuthorizer implements Authorizer<User> {
     public static final String ADMIN = "admin";
     public static final String CURATOR = "curator";
     public static final String PLATFORM_PARTNER = "platformPartner";
-    public static final List<String> ROLES = List.of(ADMIN, CURATOR, PLATFORM_PARTNER);
+    public static final String METRICS_ROBOT = "metricsRobot";
+    public static final List<String> ROLES = List.of(ADMIN, CURATOR, PLATFORM_PARTNER, METRICS_ROBOT);
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthorizer.class);
 
     @Override
@@ -47,6 +48,8 @@ public class SimpleAuthorizer implements Authorizer<User> {
             return principal.isCurator();
         } else if (PLATFORM_PARTNER.equalsIgnoreCase(role)) {
             return principal.isPlatformPartner();
+        } else if (METRICS_ROBOT.equalsIgnoreCase(role)) {
+            return principal.isMetricsRobot();
         } else {
             return true;
         }
