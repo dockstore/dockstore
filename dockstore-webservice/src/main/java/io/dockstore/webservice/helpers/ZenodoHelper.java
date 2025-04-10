@@ -53,9 +53,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -66,6 +67,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
@@ -685,8 +687,10 @@ public final class ZenodoHelper {
 
         depositMetadata.setDescription(descriptionStr);
 
-        // We will set the Zenodo workflow version publication date to the date of the DOI issuance
-        depositMetadata.setPublicationDate(ZonedDateTime.now().toLocalDate().toString());
+        // Set the publication date to the GitHub tag creation date, which should be stored in version.lastModified.
+        // version.lastModified can be null, so use version.dbUpdateDate, which cannot be null, as a backup.
+        Date lastModifiedDate = ObjectUtils.firstNonNull(workflowVersion.getLastModified(), workflowVersion.getDbUpdateDate());
+        depositMetadata.setPublicationDate(formatDate(lastModifiedDate));
 
         depositMetadata.setVersion(workflowVersion.getName());
 
@@ -695,6 +699,14 @@ public final class ZenodoHelper {
         setMetadataCreator(depositMetadata, workflow, workflowVersion);
 
         setMetadataCommunities(depositMetadata);
+    }
+
+    /**
+     * Convert a Date into a String of the form 'YYYY-MM-DD'
+     * @param date date to convert
+     */
+    private static String formatDate(Date date) {
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString();
     }
 
     /**
