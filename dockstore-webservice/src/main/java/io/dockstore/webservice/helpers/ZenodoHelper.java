@@ -689,8 +689,8 @@ public final class ZenodoHelper {
 
         // Set the publication date to the GitHub tag creation date, which should be stored in version.lastModified.
         // version.lastModified can be null, so use version.dbUpdateDate, which cannot be null, as a backup.
-        Date modifiedDate = ObjectUtils.firstNonNull(workflowVersion.getLastModified(), workflowVersion.getDbUpdateDate());
-        depositMetadata.setPublicationDate(formatDate(modifiedDate));
+        Date lastModifiedDate = ObjectUtils.firstNonNull(workflowVersion.getLastModified(), workflowVersion.getDbUpdateDate());
+        depositMetadata.setPublicationDate(formatDate(lastModifiedDate));
 
         depositMetadata.setVersion(workflowVersion.getName());
 
