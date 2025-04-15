@@ -25,8 +25,6 @@ RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artif
 
 # Include snakemake language plugin
 ARG snakemake_plugin_version=0.0.3
-RUN apt-get install -y wget
-RUN mkdir -p /root/.dockstore/language-plugins
 RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/snakemake-language-interface/${snakemake_plugin_version}/snakemake-language-interface-${snakemake_plugin_version}.jar
 
 
