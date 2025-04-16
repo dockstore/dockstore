@@ -9493,6 +9493,8 @@ components:
           type: string
         zenodoScope:
           type: string
+        zenodoUrl:
+          type: string
     Cost:
       type: object
       description: Cost represents a monetary amount in USD

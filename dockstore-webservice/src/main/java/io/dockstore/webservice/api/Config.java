@@ -23,6 +23,7 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     private String discourseUrl;
     private String gitCommitId;
     private String gitBuildVersion;
+    private String zenodoUrl;
 
 
     private Config() {
@@ -43,6 +44,7 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
         final ConfigHelper.GitInfo gitInfo = ConfigHelper.readGitProperties("git.properties");
         config.gitCommitId = gitInfo.commitId;
         config.gitBuildVersion = gitInfo.buildVersion;
+        config.zenodoUrl = webConfig.getZenodoUrl();
         return config;
     }
 
@@ -84,5 +86,9 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
 
     public String getGitBuildVersion() {
         return gitBuildVersion;
+    }
+
+    public String getZenodoUrl() {
+        return zenodoUrl;
     }
 }
