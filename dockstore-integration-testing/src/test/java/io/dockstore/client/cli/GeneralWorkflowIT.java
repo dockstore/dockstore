@@ -706,6 +706,8 @@ class GeneralWorkflowIT extends BaseIT {
         // Change path for each version so that it is invalid
         workflow.setWorkflowPath("thisisnotarealpath.cwl");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflowsApi.refresh(workflow.getId(), false);
+
 
         // check that invalid
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
