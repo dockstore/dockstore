@@ -162,6 +162,10 @@ class GeneralWorkflowIT extends BaseIT {
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals(0, count6, "there should be 0 published entries, there are " + count6);
 
+        // Refresh a single version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
+
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
             fail("Should not be able to refresh a version that does not exist");
@@ -703,6 +707,9 @@ class GeneralWorkflowIT extends BaseIT {
         workflow.setWorkflowPath("thisisnotarealpath.cwl");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
+        // check that invalid
+        final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
+        assertTrue(4 <= count4, "there should be at least 4 invalid versions, there are " + count4);
     }
 
     /**

@@ -190,6 +190,13 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         // Unpublish workflow
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
+        // Refresh a single version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
+
+        // Refresh another version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import", false);
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")), "Should have cwl_import version");
 
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);

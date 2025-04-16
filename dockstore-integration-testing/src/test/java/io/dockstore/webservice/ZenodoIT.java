@@ -418,13 +418,6 @@ class ZenodoIT {
         assertTrue(exception.getMessage().contains(UNHIDDEN_VERSION_REQUIRED));
         testingPostgres.runUpdateStatement("update version_metadata set hidden = false");
 
-        // Unpublish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(false));
-
-
-        // Publish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
-
         // Should not be able to register DOI without Zenodo token
         exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
         assertTrue(exception.getMessage().contains(NO_ZENODO_USER_TOKEN));
