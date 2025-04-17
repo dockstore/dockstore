@@ -43,7 +43,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     // the clauses that look like "(e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag)))" can be removed once the version ids are consistent
     @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE from Event e where e.tool.id = :entryId OR e.workflow.id = :entryId OR e.apptool.id = :entryId OR e.service.id = :entryId OR e.notebook.id = :entryId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE from Event e WHERE e.organization.id = :organizationId"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.countAllForOrganization", query = "SELECT COUNT(*) FROM Event eve WHERE eve.organization.id = :organizationId")
+    @NamedQuery(name = "io.dockstore.webservice.core.Event.countAllForOrganization", query = "SELECT COUNT(*) FROM Event eve WHERE eve.organization.id = :organizationId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Event.findByIds", query = "SELECT e from Event e WHERE e.id IN :ids ORDER BY e.id DESC")
 })
 public class Event {
     @Id

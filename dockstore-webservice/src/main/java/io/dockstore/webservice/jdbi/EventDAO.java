@@ -18,6 +18,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.List;
@@ -39,6 +40,10 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public Event findById(Long id) {
         return get(id);
+    }
+
+    public List<Event> findByIds(List<Long> ids) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.Event.findByIds").setParameter("ids", ids).list();
     }
 
     public long create(Event event) {
@@ -77,20 +82,22 @@ public class EventDAO extends AbstractDAO<Event> {
 
     private List<Event> findEvents(User loggedInUser, PredicateBuilder predicateBuilder, Integer offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<Event> query = cb.createQuery(Event.class);
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<Event> event = query.from(Event.class);
+        Path<Long> eventId = event.get("id");
 
         Predicate specifiedPredicate = predicateBuilder.build(cb, event);
         Predicate accessPredicate = accessPredicateBuilder(loggedInUser).build(cb, event);
 
-        query.select(event);
+        query.select(eventId);
         query.where(cb.and(specifiedPredicate, accessPredicate));
-        query.orderBy(cb.desc(event.get("id")));
+        query.orderBy(cb.desc(eventId));
 
         int checkedOffset = Math.max(MoreObjects.firstNonNull(offset, 0), 0);
         int checkedLimit = Math.min(MoreObjects.firstNonNull(limit, DEFAULT_LIMIT), MAX_LIMIT);
 
-        return currentSession().createQuery(query).setFirstResult(checkedOffset).setMaxResults(checkedLimit).getResultList();
+        List<Long> eventIds = currentSession().createQuery(query).setFirstResult(checkedOffset).setMaxResults(checkedLimit).getResultList();
+        return findByIds(eventIds);
     }
 
     private PredicateBuilder organizationPredicateBuilder(Set<Long> organizationIds) {
