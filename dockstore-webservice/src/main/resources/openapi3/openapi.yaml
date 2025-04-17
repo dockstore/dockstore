@@ -8476,29 +8476,6 @@ paths:
       - BEARER: []
       tags:
       - workflows
-  /workflows/{workflowId}/restub:
-    get:
-      description: Restub a workflow
-      operationId: restub
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
-      security:
-      - BEARER: []
-      summary: Restub a workflow
-      tags:
-      - workflows
   /workflows/{workflowId}/secondaryDescriptors:
     get:
       description: Get the corresponding descriptor documents from source control.

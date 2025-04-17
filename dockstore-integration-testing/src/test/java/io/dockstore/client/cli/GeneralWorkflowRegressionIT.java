@@ -218,28 +218,6 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     }
 
     /**
-     * This tests that a restub will work on an unpublished, full workflow
-     */
-    @Test
-    @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_9_0)
-    void testRestubOld() {
-        // Set up DB
-
-        // Refresh and then restub
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
-
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertEquals(0, count, "there should be 0 workflow versions, there are " + count);
-    }
-
-    /**
      * Tests that convert with valid imports will work (for WDL)
      */
     @Test

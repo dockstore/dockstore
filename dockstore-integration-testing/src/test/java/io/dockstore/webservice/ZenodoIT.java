@@ -35,8 +35,6 @@ import static io.dockstore.webservice.helpers.ZenodoHelper.NO_DOCKSTORE_DOI;
 import static io.dockstore.webservice.helpers.ZenodoHelper.NO_ZENODO_USER_TOKEN;
 import static io.dockstore.webservice.helpers.ZenodoHelper.PUBLISHED_ENTRY_REQUIRED;
 import static io.dockstore.webservice.helpers.ZenodoHelper.UNHIDDEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -412,10 +410,6 @@ class ZenodoIT {
         // Should be able to refresh a workflow with a frozen version without throwing an error
         workflowsApi.refresh1(githubWorkflow.getId(), false);
 
-        // should not be able to restub whether published or not since there is a snapshot/frozen
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
-
         // should not be able to request a DOI for a hidden version
         testingPostgres.runUpdateStatement("update version_metadata set hidden = true");
         master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
@@ -423,16 +417,6 @@ class ZenodoIT {
         exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
         assertTrue(exception.getMessage().contains(UNHIDDEN_VERSION_REQUIRED));
         testingPostgres.runUpdateStatement("update version_metadata set hidden = false");
-
-        // Unpublish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(false));
-
-        // don't die horribly when stubbing something with snapshots, explain the error
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
-
-        // Publish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Should not be able to register DOI without Zenodo token
         exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
@@ -452,9 +436,6 @@ class ZenodoIT {
 
         // unpublish workflow
         workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
-
-        // Should not be able to restub an unpublished workflow that has a frozen version or a DOI, depending upon the environment
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
     }
 
     @Test

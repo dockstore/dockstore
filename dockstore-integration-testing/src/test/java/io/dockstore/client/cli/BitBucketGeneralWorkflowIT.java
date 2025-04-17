@@ -39,7 +39,6 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
@@ -191,18 +190,12 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         // Unpublish workflow
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
-
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
-        assertEquals(ModeEnum.FULL, workflow.getMode(), "Should no longer be a stub workflow");
 
         // Refresh another version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import", false);
-        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")), "Should have cwl_import version");
 
         try {

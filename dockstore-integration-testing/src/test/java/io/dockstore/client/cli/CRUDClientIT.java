@@ -611,18 +611,6 @@ class CRUDClientIT extends BaseIT {
         assertThrows(ApiException.class,  () -> workflowApi.refresh(hostedWorkflow.getId(), false));
     }
 
-    /**
-     * Ensures that hosted workflows cannot be restubed
-     */
-    @Test
-    void testRestubHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
-        assertThrows(ApiException.class,  () -> workflowApi.restub(hostedWorkflow.getId()));
-    }
 
     /**
      * Ensures that hosted workflows cannot be updated
