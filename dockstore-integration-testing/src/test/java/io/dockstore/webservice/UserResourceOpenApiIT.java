@@ -47,6 +47,7 @@ import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryUpdateTime;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
+import io.dockstore.openapi.client.model.PrivilegeRequest.MetricsRobotPartnerEnum;
 import io.dockstore.openapi.client.model.Profile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.TokenUser;
@@ -442,13 +443,13 @@ class UserResourceOpenApiIT extends BaseIT {
 
         // NOT able to create a metrics robot that has other privileges.
         PrivilegeRequest robotPlusAdminPrivileges = new PrivilegeRequest();
-        robotPlusAdminPrivileges.setMetricsRobot(true);
+        robotPlusAdminPrivileges.setMetricsRobotPartner(MetricsRobotPartnerEnum.TOIL);
         robotPlusAdminPrivileges.setAdmin(true);
         assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> adminApi.setUserPrivileges(robotPlusAdminPrivileges, robotId));
 
         // Able to create a metrics robot with no other privileges.
         PrivilegeRequest robotPrivileges = new PrivilegeRequest();
-        robotPrivileges.setMetricsRobot(true);
+        robotPrivileges.setMetricsRobotPartner(MetricsRobotPartnerEnum.TOIL);
         adminApi.setUserPrivileges(robotPrivileges, robotId);
 
         // NOT able to add more privileges to an existing metrics robot.
