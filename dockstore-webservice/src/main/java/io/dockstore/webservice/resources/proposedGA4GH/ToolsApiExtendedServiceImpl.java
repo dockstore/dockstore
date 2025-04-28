@@ -794,7 +794,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      */
     private void checkPlatformForRole(User user, Partner platform) {
         if (user.isPlatformPartner() && user.getPlatformPartner() != platform
-           || user.isMetricsRobot() && user.getMetricsRobotPartner() != platform) {
+            || user.isMetricsRobot() && user.getMetricsRobotPartner() != platform) {
             throw new CustomWebApplicationException(FORBIDDEN_PLATFORM, HttpStatus.SC_FORBIDDEN);
         }
     }
