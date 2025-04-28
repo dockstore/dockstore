@@ -468,8 +468,11 @@ class UserResourceOpenApiIT extends BaseIT {
 
         // The robot user should be able to access the metrics submission endpoints, and should NOT be able to access other authenticated endpoints.
         // We don't synthesize a valid metrics request here, but instead check the status code to determine "how far" the request got.
-        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
+        assertThrowsCode(HttpStatus.SC_UNPROCESSABLE_ENTITY, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TOIL.name(), "malformedId", "malformedVersionId", null));
         assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> robotApi.changeUsername("newname"));
+
+        // The robot user should NOT be able to submit metrics for a different platform.
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionMetricsPost(new ExecutionsRequestBody(), Partner.TERRA.name(), "malformedId", "malformedVersionId", null));
 
         // Update token ID sequence number so that it doesn't collide with existing tokens.
         testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
