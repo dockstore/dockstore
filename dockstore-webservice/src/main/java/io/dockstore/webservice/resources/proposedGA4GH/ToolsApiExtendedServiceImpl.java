@@ -501,7 +501,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
         checkActualPlatform(platform);
-        checkPlatformForPlatformPartnerUser(owner, platform);
+        checkPlatformForRole(owner, platform);
 
         // Check that the entry and version exists
         Entry<?, ?> entry;
@@ -593,7 +593,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response getExecution(String id, String versionId, Partner platform, String executionId, User user) {
-        checkPlatformForPlatformPartnerUser(user, platform);
+        checkPlatformForRole(user, platform);
 
         Entry<?, ?> entry;
         try {
@@ -626,7 +626,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response updateExecutionMetrics(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
-        checkPlatformForPlatformPartnerUser(owner, platform);
+        checkPlatformForRole(owner, platform);
         final long ownerId = owner.getId();
 
         // Check that the entry and version exists
