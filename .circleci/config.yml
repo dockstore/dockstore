@@ -727,6 +727,6 @@ commands:
             sudo apt install -y xmlstarlet
             for file in ~/test-results/**/*
             do
-              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file || true
             done
           when: always
