@@ -52,7 +52,7 @@
         </sql>
         <sql dbms="postgresql">
             CREATE TRIGGER update_metrics_robot_to_non_metrics_robot BEFORE UPDATE ON enduser FOR EACH ROW WHEN (OLD.metricsrobotpartner IS NOT NULL AND NEW.metricsrobotpartner IS NULL) EXECUTE FUNCTION raise_metrics_robot_privileges_exception();
-            CREATE TRIGGER update_metrics_robot_to_add_privileges BEFORE UPDATE ON enduser FOR EACH ROW WHEN (NEW.metricsrobotpartner IS NOT NULL AND (NEW.isadmin OR NEW.curator OR NEW.platformpartner IS NOT NULL)) EXECUTE FUNCTION raise_metrics_robot_privileges_exception();
+            ALTER TABLE enduser ADD CONSTRAINT metrics_robot_cannot_have_other_privileges CHECK (NOT (metricsrobotpartner IS NOT NULL AND (isadmin OR curator OR platformpartner IS NOT NULL)));
         </sql>
     </changeSet>
 </databaseChangeLog>
