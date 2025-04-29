@@ -410,6 +410,9 @@ public class SourceFile implements Comparable<SourceFile> {
         STUB
     }
 
+    /**
+     * Be extra safe with content going into elasticsearch
+     */
     public static class UserStringToStringSerializer extends JsonSerializer<String> {
 
         @Override
@@ -417,6 +420,7 @@ public class SourceFile implements Comparable<SourceFile> {
             JsonGenerator jsonGenerator,
             SerializerProvider serializerProvider)
             throws IOException {
+            // more options for cleaning html at https://jsoup.org/cookbook/cleaning-html/safelist-sanitizer
             jsonGenerator.writeObject(Jsoup.clean(string, Safelist.none()));
         }
     }

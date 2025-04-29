@@ -1,7 +1,11 @@
 package io.dockstore.webservice.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,5 +79,16 @@ class SourceFileTest {
                 testBadPath(goodPath + bad + goodPath);
             }
         }
+    }
+
+    @Test
+    void testHTMLInSourceFile() throws JsonProcessingException {
+        SourceFile a = new SourceFile();
+        a.setContent("abc<blink>de</blink><marquee>fghi</marquee>jklmnop");
+        ObjectMapper mapper = new ObjectMapper();
+        String s = mapper.writeValueAsString(a);
+        JsonNode jsonNode = mapper.readTree(s);
+        String content = jsonNode.get("content").asText();
+        assertEquals("abcdefghijklmnop", content);
     }
 }
