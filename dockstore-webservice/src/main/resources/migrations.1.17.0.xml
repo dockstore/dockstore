@@ -51,7 +51,7 @@
             UPDATE enduser SET metricsrobotpartner = CASE WHEN metricsrobotpartner = 'true' THEN 'TOIL' ELSE NULL END;
         </sql>
         <sql dbms="postgresql">
-            CREATE TRIGGER update_metrics_robot_to_non_metrics_robot BEFORE UPDATE ON enduser FOR EACH ROW WHEN (OLD.metricsrobotpartner IS NOT NULL AND NOT NEW.metricsrobotpartner IS NULL) EXECUTE FUNCTION raise_metrics_robot_privileges_exception();
+            CREATE TRIGGER update_metrics_robot_to_non_metrics_robot BEFORE UPDATE ON enduser FOR EACH ROW WHEN (OLD.metricsrobotpartner IS NOT NULL AND NEW.metricsrobotpartner IS NULL) EXECUTE FUNCTION raise_metrics_robot_privileges_exception();
             CREATE TRIGGER update_metrics_robot_to_add_privileges BEFORE UPDATE ON enduser FOR EACH ROW WHEN (NEW.metricsrobotpartner IS NOT NULL AND (NEW.isadmin OR NEW.curator OR NEW.platformpartner IS NOT NULL)) EXECUTE FUNCTION raise_metrics_robot_privileges_exception();
         </sql>
     </changeSet>
