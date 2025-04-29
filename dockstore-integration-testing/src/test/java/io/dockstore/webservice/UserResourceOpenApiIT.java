@@ -56,7 +56,6 @@ import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
-import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -473,7 +472,8 @@ class UserResourceOpenApiIT extends BaseIT {
         assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> robotApi.changeUsername("newname"));
 
         // The robot user should NOT be able to access metrics for a different platform.
-        assertThrowsCodeAndMessage(HttpStatus.SC_BAD_REQUEST, ToolsApiExtendedServiceImpl.FORBIDDEN_PLATFORM, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionGet("malformedId", "malformedVersionId", Partner.TERRA.name(), "malformedExecutionId"));
+        assertThrowsCode(HttpStatus.SC_BAD_REQUEST, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionGet("malformedId", "malformedVersionId", Partner.TOIL.name(), "malformedExecutionId"));
+        assertThrowsCode(HttpStatus.SC_FORBIDDEN, () -> new ExtendedGa4GhApi(getOpenAPIWebClient(robotUsername, testingPostgres)).executionGet("malformedId", "malformedVersionId", Partner.TERRA.name(), "malformedExecutionId"));
 
         // Update token ID sequence number so that it doesn't collide with existing tokens.
         testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
@@ -538,11 +538,5 @@ class UserResourceOpenApiIT extends BaseIT {
     private void assertThrowsCode(int statusCode, Executable executable) {
         ApiException exception = assertThrows(ApiException.class, executable);
         assertEquals(statusCode, exception.getCode());
-    }
-
-    private void assertThrowsCodeAndMessage(int statusCode, String message, Executable executable) {
-        ApiException exception = assertThrows(ApiException.class, executable);
-        assertEquals(statusCode, exception.getCode());
-        assertEquals(message, exception.getMessage());
     }
 }
