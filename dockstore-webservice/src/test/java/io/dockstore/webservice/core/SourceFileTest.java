@@ -85,7 +85,7 @@ class SourceFileTest {
     void testHTMLInSourceFile() throws JsonProcessingException {
         SourceFile a = new SourceFile();
         a.setContent("abc<blink>de</blink><marquee>fghi</marquee>jklmnop");
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().addMixIn(SourceFile.class, SourceFile.ElasticSearchMixin.class);
         String s = mapper.writeValueAsString(a);
         JsonNode jsonNode = mapper.readTree(s);
         String content = jsonNode.get("content").asText();

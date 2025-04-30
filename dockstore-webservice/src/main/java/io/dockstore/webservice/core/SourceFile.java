@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -133,7 +134,6 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
-    @JsonSerialize(using = UserStringToStringSerializer.class, as = String.class)
     private String content;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -408,6 +408,18 @@ public class SourceFile implements Comparable<SourceFile> {
          * The file represents a stub.  The content field is null.
          */
         STUB
+    }
+
+    /**
+     * Be extra safe with content going into elasticsearch
+     */
+    public interface ElasticSearchMixin {
+
+        @JsonProperty
+        String getSourceFiles();
+
+        @JsonSerialize(using = UserStringToStringSerializer.class, as = String.class)
+        String getContent();
     }
 
     /**
