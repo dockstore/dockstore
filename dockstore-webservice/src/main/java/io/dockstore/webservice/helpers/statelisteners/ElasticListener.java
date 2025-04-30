@@ -15,11 +15,8 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -78,8 +75,6 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.hibernate.Hibernate;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -556,20 +551,5 @@ public class ElasticListener implements StateListenerInterface {
      */
     public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
         return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow workflow && !workflow.isIsChecker())).toList();
-    }
-
-    /**
-     * Be extra safe with content going into elasticsearch
-     */
-    public static class UserStringToStringSerializer extends JsonSerializer<String> {
-
-        @Override
-        public void serialize(String string,
-            JsonGenerator jsonGenerator,
-            SerializerProvider serializerProvider)
-            throws IOException {
-            // more options for cleaning html at https://jsoup.org/cookbook/cleaning-html/safelist-sanitizer
-            jsonGenerator.writeObject(Jsoup.clean(string, Safelist.none()));
-        }
     }
 }
