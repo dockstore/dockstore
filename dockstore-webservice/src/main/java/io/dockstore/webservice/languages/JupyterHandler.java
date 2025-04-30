@@ -234,7 +234,7 @@ public class JupyterHandler implements LanguageHandlerInterface {
             String entryLanguage = workflow.getDescriptorTypeSubclass().toString();
             String notebookLanguage = extractProgrammingLanguage(notebook);
             if (!entryLanguage.equalsIgnoreCase(notebookLanguage)) {
-                return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
+                return negativeValidation(notebookPath, String.format("The notebook's programming language must match the 'language' field specified in .dockstore.yml ('%s')", entryLanguage));
             }
         } catch (JsonParseException ex) {
             return negativeValidation(notebookPath, "Error reading the notebook programming language", ex);
