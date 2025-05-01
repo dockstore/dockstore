@@ -242,6 +242,7 @@ class SamPermissionsImplTest {
         assertTrue(samPermissionsImpl.canDoAction(janeDoeUserMock, fooWorkflow, Action.READ));
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
         assertFalse(samPermissionsImpl.canDoAction(janeDoeUserMock, gooWorkflow, Action.READ));
+        assertFalse(samPermissionsImpl.canDoAction(null, gooWorkflow, Action.READ));
     }
 
     @Test
@@ -255,6 +256,7 @@ class SamPermissionsImplTest {
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
         when(gooWorkflow.getWorkflowPath()).thenReturn(GOO_WORKFLOW_NAME);
         assertFalse(samPermissionsImpl.canDoAction(janeDoeUserMock, gooWorkflow, Action.WRITE));
+        assertFalse(samPermissionsImpl.canDoAction(null, gooWorkflow, Action.WRITE));
     }
 
     @Test
