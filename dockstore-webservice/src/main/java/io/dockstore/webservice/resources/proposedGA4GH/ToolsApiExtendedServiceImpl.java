@@ -501,7 +501,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
         checkActualPlatform(platform);
-        checkPlatformForPlatformPartnerUser(owner, platform);
+        checkPlatformForRole(owner, platform);
 
         // Check that the entry and version exists
         Entry<?, ?> entry;
@@ -593,7 +593,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response getExecution(String id, String versionId, Partner platform, String executionId, User user) {
-        checkPlatformForPlatformPartnerUser(user, platform);
+        checkPlatformForRole(user, platform);
 
         Entry<?, ?> entry;
         try {
@@ -626,7 +626,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response updateExecutionMetrics(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
-        checkPlatformForPlatformPartnerUser(owner, platform);
+        checkPlatformForRole(owner, platform);
         final long ownerId = owner.getId();
 
         // Check that the entry and version exists
@@ -788,12 +788,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     /**
-     * Checks if the user is a platform partner and if the platform they're trying to access is the platform they have permissions for.
+     * Checks if the user is a platform partner or metrics robot and if the platform they're trying to access is the platform they have permissions for.
      * @param user
      * @param platform
      */
-    private void checkPlatformForPlatformPartnerUser(User user, Partner platform) {
-        if (user.isPlatformPartner() && user.getPlatformPartner() != platform) {
+    private void checkPlatformForRole(User user, Partner platform) {
+        if (user.isPlatformPartner() && user.getPlatformPartner() != platform
+            || user.isMetricsRobot() && user.getMetricsRobotPartner() != platform) {
             throw new CustomWebApplicationException(FORBIDDEN_PLATFORM, HttpStatus.SC_FORBIDDEN);
         }
     }
