@@ -48,7 +48,7 @@ POM as their parent.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.17</revision>
+        <revision>1.18</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <dropwizard.version>4.0.12</dropwizard.version>
