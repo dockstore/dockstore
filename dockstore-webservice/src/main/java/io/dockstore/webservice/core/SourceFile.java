@@ -17,6 +17,11 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.gson.ExclusionStrategy;
@@ -53,6 +58,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -66,6 +72,8 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -400,5 +408,32 @@ public class SourceFile implements Comparable<SourceFile> {
          * The file represents a stub.  The content field is null.
          */
         STUB
+    }
+
+    /**
+     * Be extra safe with content going into elasticsearch
+     */
+    public interface ElasticSearchMixin {
+
+        @JsonProperty
+        String getSourceFiles();
+
+        @JsonSerialize(using = UserStringToStringSerializer.class, as = String.class)
+        String getContent();
+    }
+
+    /**
+     * Be extra safe with content going into elasticsearch
+     */
+    public static class UserStringToStringSerializer extends JsonSerializer<String> {
+
+        @Override
+        public void serialize(String string,
+            JsonGenerator jsonGenerator,
+            SerializerProvider serializerProvider)
+            throws IOException {
+            // more options for cleaning html at https://jsoup.org/cookbook/cleaning-html/safelist-sanitizer
+            jsonGenerator.writeObject(Jsoup.clean(string, Safelist.none()));
+        }
     }
 }

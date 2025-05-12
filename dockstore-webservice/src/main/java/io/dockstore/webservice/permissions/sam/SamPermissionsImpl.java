@@ -430,6 +430,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
+        if (user == null) {
+            return false;
+        }
         if (hasGoogleToken(user)) {
             try {
                 final ResourcesApi resourcesApi = getResourcesApi(user);
