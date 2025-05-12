@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.17.0-SNAPSHOT
+  version: 1.17.0
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -10975,8 +10975,23 @@ components:
           type: boolean
         curator:
           type: boolean
-        metricsRobot:
-          type: boolean
+        metricsRobotPartner:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - TOIL
+          - OTHER
+          - ALL
         platformPartner:
           type: string
           enum:
@@ -12085,7 +12100,24 @@ components:
             false unless requested for oneself or by an admin
         metricsRobot:
           type: boolean
+        metricsRobotPartner:
+          type: string
           description: Indicates whether this user is a robot that submits metrics
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - TOIL
+          - OTHER
+          - ALL
         name:
           type: string
         orcid:

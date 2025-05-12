@@ -1209,7 +1209,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         targetUser.setIsAdmin(privilegeRequest.isAdmin());
         targetUser.setCurator(privilegeRequest.isCurator());
         targetUser.setPlatformPartner(privilegeRequest.getPlatformPartner());
-        targetUser.setMetricsRobot(privilegeRequest.isMetricsRobot());
+        targetUser.setMetricsRobotPartner(privilegeRequest.getMetricsRobotPartner());
 
         // A metrics robot user cannot have any other privileges.
         if (targetUser.isMetricsRobot() && (targetUser.getIsAdmin() || targetUser.isCurator() || targetUser.isPlatformPartner())) {

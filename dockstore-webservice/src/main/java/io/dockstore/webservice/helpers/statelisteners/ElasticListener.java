@@ -87,7 +87,7 @@ public class ElasticListener implements StateListenerInterface {
     public static final String NOTEBOOKS_INDEX = "notebooks";
     public static final List<String> INDEXES = EntryTypeMetadata.values().stream().filter(EntryTypeMetadata::isEsSupported).map(EntryTypeMetadata::getEsIndex).toList();
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
-    private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class).addMixIn(SourceFile.class, SourceFile.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     protected static final String EXECUTION_PARTNERS = "execution_partners";
     protected static final String VALIDATION_PARTNERS = "validation_partners";
