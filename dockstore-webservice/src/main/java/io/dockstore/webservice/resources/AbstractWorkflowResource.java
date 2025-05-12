@@ -43,6 +43,7 @@ import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.ExceptionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -886,11 +887,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (ex instanceof ClassCastException) {
             return "Could not parse input.";
         }
-        String message = ex.getMessage();
         if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
-            message = DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + message;
+            return DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + ex.getMessage();
         }
-        return message;
+        return new ExceptionHelper(ex).message();
     }
 
     /**

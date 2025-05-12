@@ -35,8 +35,6 @@ import static io.dockstore.webservice.helpers.ZenodoHelper.NO_DOCKSTORE_DOI;
 import static io.dockstore.webservice.helpers.ZenodoHelper.NO_ZENODO_USER_TOKEN;
 import static io.dockstore.webservice.helpers.ZenodoHelper.PUBLISHED_ENTRY_REQUIRED;
 import static io.dockstore.webservice.helpers.ZenodoHelper.UNHIDDEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
-import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -72,6 +70,9 @@ import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.specto.hoverfly.junit5.HoverflyExtension;
 import io.specto.hoverfly.junit5.api.HoverflyConfig;
 import io.specto.hoverfly.junit5.api.HoverflyCore;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
@@ -409,10 +410,6 @@ class ZenodoIT {
         // Should be able to refresh a workflow with a frozen version without throwing an error
         workflowsApi.refresh1(githubWorkflow.getId(), false);
 
-        // should not be able to restub whether published or not since there is a snapshot/frozen
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
-
         // should not be able to request a DOI for a hidden version
         testingPostgres.runUpdateStatement("update version_metadata set hidden = true");
         master = workflowsApi.getWorkflowVersionById(workflowId, versionId, "");
@@ -420,16 +417,6 @@ class ZenodoIT {
         exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
         assertTrue(exception.getMessage().contains(UNHIDDEN_VERSION_REQUIRED));
         testingPostgres.runUpdateStatement("update version_metadata set hidden = false");
-
-        // Unpublish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(false));
-
-        // don't die horribly when stubbing something with snapshots, explain the error
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
-        assertTrue(exception.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
-
-        // Publish workflow
-        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Should not be able to register DOI without Zenodo token
         exception = assertThrows(ApiException.class, () -> workflowsApi.requestDOIForWorkflowVersion(workflowId, versionId, ""));
@@ -449,9 +436,6 @@ class ZenodoIT {
 
         // unpublish workflow
         workflowsApi.publish1(workflowBeforeFreezing.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
-
-        // Should not be able to restub an unpublished workflow that has a frozen version or a DOI, depending upon the environment
-        exception = assertThrows(ApiException.class, () -> workflowsApi.restub(workflowId));
     }
 
     @Test
@@ -526,11 +510,11 @@ class ZenodoIT {
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
-        final List<Workflow> workflows = workflowsApi.updateDois(null);
+        final List<Workflow> workflows = workflowsApi.updateDois(null, null);
         workflows.forEach(workflow -> {
             assertEquals(CONCEPT_DOI, workflow.getConceptDois().get(DoiInitiator.GITHUB.toString()).getName());
             assertEquals(DoiSelectionEnum.GITHUB, workflow.getDoiSelection());
-            final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+            final List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
             workflowVersions.stream().filter(w -> "0.8".equals(w.getName())).forEach(wv -> {
                 final Doi doi = wv.getDois().get(DoiInitiator.GITHUB.toString());
                 assertEquals(VERSION_DOI, doi.getName());
@@ -549,10 +533,32 @@ class ZenodoIT {
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
-        assertEquals(List.of(), workflowsApi.updateDois("foo/bar"), "No workflows are in foo/bar");
-        final ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.updateDois("NotAnOrgSlashRepoFormat"));
+        assertEquals(List.of(), workflowsApi.updateDois("foo/bar", null), "No workflows are in foo/bar");
+        final ApiException exception = assertThrows(ApiException.class, () -> workflowsApi.updateDois("NotAnOrgSlashRepoFormat", null));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
-        assertEquals(2, workflowsApi.updateDois(DockstoreTesting.WORKFLOW_DOCKSTORE_YML).size(), "Should update 2 workflows");
+        assertEquals(2, workflowsApi.updateDois(DockstoreTesting.WORKFLOW_DOCKSTORE_YML, null).size(), "Should update 2 workflows");
+    }
+
+    @Test
+    void testUpdateDoisLastReleaseDate(Hoverfly hoverfly) {
+        hoverfly.simulate(ZENODO_DOI_SEARCH);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        final Duration duration = Duration.ofDays(2);
+        final DateTimeFormatter psqlTimestampFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd hh:mm:ss");
+        final String twoDaysAgo = LocalDateTime.now().minus(duration).format(psqlTimestampFormatter);
+        // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true, latestreleasedate = '%s';".formatted(twoDaysAgo));
+        List<Workflow> workflows = workflowsApi.updateDois(null, 1);
+        assertEquals(0, workflows.size(), "Should update 0 workflows because lastreleasedate is more than a day ago");
+        final String oneDayAgo = LocalDateTime.now().format(psqlTimestampFormatter);
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true, latestreleasedate = '%s';".formatted(
+                oneDayAgo));
+        workflows = workflowsApi.updateDois(null, 1);
+        assertEquals(2, workflows.size(), "Should update 2 workflows because lastreleasedate is within a day ago");
     }
 
     @Test
@@ -566,19 +572,19 @@ class ZenodoIT {
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true;");
 
-        List<Workflow> workflows = workflowsApi.updateDois(null);
+        List<Workflow> workflows = workflowsApi.updateDois(null, null);
         final String conceptDoiName = workflows.get(0).getConceptDois().get(DoiSelectionEnum.GITHUB.name()).getName();
-        assertEquals(0, workflowsApi.updateDois(null).size(), "No workflows should be updated there are no new DOIs");
+        assertEquals(0, workflowsApi.updateDois(null, null).size(), "No workflows should be updated there are no new DOIs");
 
         // Hack to remove GITHUB initiator version DOIs; need to change name because of DB constraint that names must be unique
         testingPostgres.runUpdateStatement("update doi set name ='" + FAKE_VERSION_DOI + "', initiator = 'DOCKSTORE' where type = 'VERSION'");
-        workflows = workflowsApi.updateDois(null);
+        workflows = workflowsApi.updateDois(null, null);
         assertEquals(2, workflows.size(), "Concept DOI exists, but version DOIs are new");
-        workflowsApi.getWorkflowVersions(workflows.get(0).getId()).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
+        workflowsApi.getWorkflowVersions(workflows.get(0).getId(), null, null, null, null, null).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
                 "Version DOI for GitHub initiator should be set"));
 
         testingPostgres.runUpdateStatement("update doi set name = '" + conceptDoiName.replace('7', '8') + "' where type = 'CONCEPT'");
-        assertEquals(0, workflowsApi.updateDois(null).size(), "There is a new concept DOI, but the existing concept DOI takes precedence");
+        assertEquals(0, workflowsApi.updateDois(null, null).size(), "There is a new concept DOI, but the existing concept DOI takes precedence");
 
     }
 
@@ -617,5 +623,24 @@ class ZenodoIT {
         // To test this, make the "OTHER" user a workflow owner by associating it via the user_entry table.
         testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 2 + ", " + workflow.getId() + ")");
         otherWorkflowsApi.autoGenerateDois(autoDoiRequest, workflow.getId());
+    }
+
+    @Test
+    void testRequestAutomaticDoiEndpointSecurity() {
+        WorkflowsApi anonWorkflowsApi = new WorkflowsApi(getAnonymousOpenAPIWebClient());
+        WorkflowsApi adminWorkflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres));
+        WorkflowsApi otherWorkflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, OTHER_USERNAME, testingPostgres));
+
+        handleGitHubRelease(adminWorkflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", ADMIN_USERNAME);
+        Workflow workflow = adminWorkflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
+
+        // Public should not have access.
+        ApiException exception = assertThrows(ApiException.class, () -> anonWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L, ""));
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
+
+        // Non-admin owner user should not have access.
+        testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 2 + ", " + workflow.getId() + ")");
+        exception = assertThrows(ApiException.class, () -> otherWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L, ""));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
     }
 }

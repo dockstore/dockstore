@@ -96,7 +96,8 @@ import org.hibernate.annotations.UpdateTimestamp;
                 + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                 + "version.parent.id = :entryId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountVersionFrozenByEntryID", query = "SELECT sum (case when v.frozen = true then 1 else 0 end) FROM Version v WHERE v.parent.id = :id"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getPublicCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id and v.versionMetadata.hidden = false")
 })
 
 @FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = String.class), defaultCondition = "LOWER(:name) = LOWER(name)")

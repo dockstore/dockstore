@@ -69,7 +69,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @NotNull
-    @ValidDescriptorLanguage(entryType = EntryType.WORKFLOW, message = "must be a supported descriptor language (\"CWL\", \"WDL\", \"GALAXY\", or \"NFL\")")
+    @ValidDescriptorLanguage(entryType = EntryType.WORKFLOW, message = "must be a supported descriptor language (\"CWL\", \"WDL\", \"GALAXY\", \"SMK\", or \"NFL\")")
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();

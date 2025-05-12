@@ -23,6 +23,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Label;
@@ -86,7 +87,7 @@ public class ElasticListener implements StateListenerInterface {
     public static final String NOTEBOOKS_INDEX = "notebooks";
     public static final List<String> INDEXES = EntryTypeMetadata.values().stream().filter(EntryTypeMetadata::isEsSupported).map(EntryTypeMetadata::getEsIndex).toList();
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
-    private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class).addMixIn(SourceFile.class, SourceFile.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     protected static final String EXECUTION_PARTNERS = "execution_partners";
     protected static final String VALIDATION_PARTNERS = "validation_partners";
@@ -334,6 +335,7 @@ public class ElasticListener implements StateListenerInterface {
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
+        Doi selectedConceptDoi = entry.getDefaultConceptDoi();
         Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
@@ -349,6 +351,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
+        objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         return jsonNode;
     }
 
@@ -416,6 +419,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private static void copyEntryProperties(Entry detachedEntry, Entry entry) {
+        detachedEntry.setLastModified(entry.getLastModifiedDate());
         detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());

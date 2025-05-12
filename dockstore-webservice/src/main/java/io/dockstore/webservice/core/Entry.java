@@ -449,7 +449,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore // Don't surface this, just a helper method
     public Doi getDefaultConceptDoi() {
-        return getDoiBasedOnOrderOfPrecedence(conceptDois);
+        if (!this.conceptDois.isEmpty()) {
+            return this.conceptDois.getOrDefault(this.doiSelection, getDoiBasedOnOrderOfPrecedence(conceptDois));
+        }
+        return null;
     }
 
     public Map<String, Alias> getAliases() {

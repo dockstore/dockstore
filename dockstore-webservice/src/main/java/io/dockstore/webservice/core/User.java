@@ -168,6 +168,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Schema(description = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER)
     private Partner platformPartner;
 
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "Indicates whether this user is a robot that submits metrics")
+    private Partner metricsRobotPartner;
+
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
@@ -581,6 +585,18 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setPlatformPartner(Partner platformPartner) {
         this.platformPartner = platformPartner;
+    }
+
+    public boolean isMetricsRobot() {
+        return metricsRobotPartner != null;
+    }
+
+    public void setMetricsRobotPartner(Partner metricsRobotPartner) {
+        this.metricsRobotPartner = metricsRobotPartner;
+    }
+
+    public Partner getMetricsRobotPartner() {
+        return metricsRobotPartner;
     }
 
     /**

@@ -2181,8 +2181,6 @@ class WebhookIT extends BaseIT {
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
         final Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
 
-        // Should not be able to restub a .dockstore.yml-based workflow
-        assertThrowsApiException(() -> workflowsApi.restub(workflow.getId()), HttpStatus.SC_BAD_REQUEST);
     }
 
     @Test

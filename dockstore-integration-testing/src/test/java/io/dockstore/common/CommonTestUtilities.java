@@ -21,13 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
@@ -91,9 +84,9 @@ import org.slf4j.LoggerFactory;
 public final class CommonTestUtilities {
 
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
-    public static final String OLD_DOCKSTORE_VERSION = "1.13.0";
+    public static final String OLD_DOCKSTORE_VERSION = "1.15.1";
     public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
-            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0");
+            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstore.yml").orElse(null);
@@ -629,27 +622,10 @@ public final class CommonTestUtilities {
         assertTrue(log.toLowerCase().contains("git repo"));
     }
 
-    public static void restartElasticsearch() throws IOException {
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
-
-        try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
-                .sslConfig(config.getSSLConfig()).build(); DockerClient instance = DockerClientImpl.getInstance(config, httpClient)) {
-            List<Container> exec = instance.listContainersCmd().exec();
-            Optional<Container> elasticsearch = exec.stream().filter(container -> container.getImage().contains("elasticsearch"))
-                    .findFirst();
-            if (elasticsearch.isPresent()) {
-                Container container = elasticsearch.get();
-                try {
-                    instance.restartContainerCmd(container.getId());
-                    // Wait 25 seconds for elasticsearch to become ready
-                    // TODO: Replace with better wait
-                    Thread.sleep(25000);
-                } catch (Exception e) {
-                    System.err.println("Problems restarting Docker container");
-                }
-            }
-
-        }
+    public static void restartElasticsearch() {
+        // see https://ucsc-cgl.atlassian.net/browse/SEAB-6834
+        // revert associated commit to re-enable restarting of elasticsearch
+        // this should make elasticsearch tests more independent from one another
     }
 
     // These two functions are duplicated from SwaggerUtility in dockstore-client to prevent importing dockstore-client

@@ -20,6 +20,7 @@ import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -89,6 +90,22 @@ class OpenApiCRUDClientIT extends BaseIT {
         MetadataApi metadataApi = new MetadataApi(webClient);
         final List<SourceControlBean> sourceControlList = metadataApi.getSourceControlList();
         assertFalse(sourceControlList.isEmpty());
+    }
+
+    @Test
+    void testRunnerDependencies() {
+        ApiClient webClient = new ApiClient();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        MetadataApi metadataApi = new MetadataApi(webClient);
+        String runnerDependencies = metadataApi.getRunnerDependencies("1.15.0", "3", "cwltool", "text");
+        assertTrue(runnerDependencies.contains("cwltool"));
+        ApiException apiException = assertThrows(ApiException.class, () -> metadataApi.getRunnerDependencies("1.15.0", "10", "cwltool", "text"), "should have thrown exception");
+        assertEquals(HttpStatus.SC_NOT_FOUND, apiException.getCode());
+        // think this must be for future expansion
+        runnerDependencies = metadataApi.getRunnerDependencies("1.15.0", "3", "strange", "text");
+        assertNull(runnerDependencies);
     }
 
     @Test

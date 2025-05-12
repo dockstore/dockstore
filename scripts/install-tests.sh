@@ -11,7 +11,7 @@ if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automat
 fi
 
 if [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
-    pip3 install -r dockstore-webservice/src/main/resources/requirements/1.13.0/requirements3.txt
+    pip3 install -r dockstore-webservice/src/main/resources/requirements/1.15.0/requirements3.txt
 elif [ "${TESTING_PROFILE}" == "language-parsing-tests" ]; then
     # depending on https://github.com/dockstore/dockstore/pull/5958 we may want to match where we go with the cwltool install, for now apt seems to work well
     sudo apt-get update

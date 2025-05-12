@@ -160,6 +160,8 @@ class ToolsImplCommonTest {
         assertEquals(DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_CONFIG).get());
         assertEquals(DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_TEST_PARAMS).get());
         assertEquals(DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW).get());
+        assertEquals(DescriptorType.SMK, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.SMK_TEST_PARAMS).get());
+        assertEquals(DescriptorType.SMK, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_SMK).get());
     }
 
     @Test

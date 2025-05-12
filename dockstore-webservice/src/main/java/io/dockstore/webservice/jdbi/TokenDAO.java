@@ -16,9 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.security.SecureRandom;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -27,6 +31,8 @@ import org.hibernate.SessionFactory;
  * @author dyuen
  */
 public class TokenDAO extends AbstractDAO<Token> {
+    public static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     public TokenDAO(SessionFactory factory) {
         super(factory);
     }
@@ -111,5 +117,23 @@ public class TokenDAO extends AbstractDAO<Token> {
 
     public List<Token> findAllBitBucketTokens() {
         return list(namedTypedQuery("io.dockstore.webservice.core.Token.findAllBitbucketTokens"));
+    }
+
+    public Token createDockstoreToken(long userId, String username) {
+        Token dockstoreToken;
+        final int bufferLength = 1024;
+        final byte[] buffer = new byte[bufferLength];
+        SECURE_RANDOM.nextBytes(buffer);
+        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+        final String dockstoreAccessToken = Hashing.sha256().hashString(username + randomString, Charsets.UTF_8).toString();
+
+        dockstoreToken = new Token();
+        dockstoreToken.setTokenSource(TokenType.DOCKSTORE);
+        dockstoreToken.setContent(dockstoreAccessToken);
+        dockstoreToken.setUserId(userId);
+        dockstoreToken.setUsername(username);
+        long dockstoreTokenId = create(dockstoreToken);
+        dockstoreToken = findById(dockstoreTokenId);
+        return dockstoreToken;
     }
 }

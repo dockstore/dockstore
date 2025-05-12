@@ -87,9 +87,9 @@ import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.filters.AdminPrivilegesFilter;
 import io.dockstore.webservice.filters.AuthenticatedUserFilter;
+import io.dockstore.webservice.filters.DenyRobotFilter;
 import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
-import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.DiagnosticsHelper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EmailPropertyFilter;
@@ -99,7 +99,6 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.PublicUserFilter;
-import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -446,7 +445,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
-        environment.jersey().register(new ConstraintExceptionMapper());
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
@@ -645,7 +643,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));
         environment.jersey().register(new PersistenceExceptionMapper());
-        environment.jersey().register(new TransactionExceptionMapper());
         environment.jersey().register(new ToolsApiV1());
         environment.jersey().register(new MetadataApiV1());
         environment.jersey().register(new ToolClassesApiV1());
@@ -659,6 +656,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UsernameRenameRequiredFilter());
 
         environment.jersey().register(new AuthenticatedUserFilter());
+
+        environment.jersey().register(new DenyRobotFilter());
 
         // Swagger providers
         environment.jersey().register(SwaggerSerializers.class);

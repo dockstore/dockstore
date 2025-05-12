@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.16.0-SNAPSHOT
+  version: 1.17.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -6781,6 +6781,29 @@ paths:
       - BEARER: []
       tags:
       - users
+    post:
+      description: Create a Dockstore token for a metrics robot user.
+      operationId: createMetricsRobotToken
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: The new token.
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/workflows:
     get:
       description: List all workflows owned by the authenticated user.
@@ -6915,6 +6938,41 @@ paths:
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/github/infer/{owner}/{repo}/{ref}:
+    get:
+      deprecated: true
+      description: Infer the entries in the file tree of a GitHub repository reference.
+      operationId: inferEntries
+      parameters:
+      - description: repo owner
+        in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - description: repo name
+        in: path
+        name: repo
+        required: true
+        schema:
+          type: string
+      - description: "reference, could contain slashes which need to be urlencoded"
+        in: path
+        name: ref
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
       security:
       - BEARER: []
       tags:
@@ -7579,6 +7637,61 @@ paths:
           description: default response
       tags:
       - workflows
+  /workflows/published/{workflowId}/workflowVersions:
+    get:
+      description: Return paginated versions in an public entry
+      operationId: getPublicWorkflowVersions
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+          description: Get workflow versions in an entry. Default is 100 versions
+        "400":
+          description: Bad Request
+      tags:
+      - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     delete:
       description: Delete a stubbed workflow for a registry and repository path.
@@ -7683,6 +7796,13 @@ paths:
         name: filter
         schema:
           type: string
+      - description: Only check GitHub repos with releases over this number of days.
+          Don't set to check all repos
+        in: query
+        name: daysSinceLastRelease
+        schema:
+          type: integer
+          format: int32
       responses:
         default:
           content:
@@ -7714,6 +7834,33 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
+  /workflows/versionsNeedingRetroactiveDoi:
+    get:
+      description: Calculates a list of workflow versions that need a retroactive
+        DOI
+      operationId: getVersionsNeedingRetroactiveDoi
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 1000
+          minimum: 1
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowAndVersion'
           description: default response
       security:
       - BEARER: []
@@ -8201,6 +8348,41 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/requestAutomaticDOI/{workflowVersionId}:
+    put:
+      description: Request an automatic DOI for this version of a workflow.
+      operationId: requestAutomaticDOIForWorkflowVersion
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/requestDOI/{workflowVersionId}:
     put:
       description: Request a DOI for this version of a workflow.
@@ -8292,29 +8474,6 @@ paths:
           description: default response
       security:
       - BEARER: []
-      tags:
-      - workflows
-  /workflows/{workflowId}/restub:
-    get:
-      description: Restub a workflow
-      operationId: restub
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
-      security:
-      - BEARER: []
-      summary: Restub a workflow
       tags:
       - workflows
   /workflows/{workflowId}/secondaryDescriptors:
@@ -8563,16 +8722,48 @@ paths:
       - workflows
   /workflows/{workflowId}/workflowVersions:
     get:
-      description: Return first 200 versions in an entry
+      description: Return paginated versions in an entry. Max pagination is 100 versions.
       operationId: getWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
         schema:
           type: integer
           format: int64
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: "column used to sort versions. if omitted, the webservice determines\
+          \ the sort order, currently default version first"
+        in: query
+        name: sortCol
+        schema:
+          type: string
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -8581,7 +8772,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: Get list workflow versions in a workflow
+          description: Get workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
       security:
@@ -10110,6 +10301,15 @@ components:
         content:
           type: string
           description: The content of the file itself. One of url or content is required.
+        dockstore_absolute_path:
+          type: string
+          description: Absolute path of the file.  A descriptor's path can be used
+            with zip from toolsIdVersionsVersionIdTypeFilesGet when format=zip is
+            specified
+        dockstore_self_url:
+          type: string
+          description: Self URL to this file in the toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+            endpoint
         image_type:
           $ref: '#/components/schemas/OneOfFileWrapperImageType'
         url:
@@ -10775,6 +10975,23 @@ components:
           type: boolean
         curator:
           type: boolean
+        metricsRobotPartner:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - TOIL
+          - OTHER
+          - ALL
         platformPartner:
           type: string
           enum:
@@ -11524,6 +11741,11 @@ components:
       properties:
         checksum:
           $ref: '#/components/schemas/Checksum'
+        dockstore_absolute_path:
+          type: string
+          description: Absolute path of the file.  A descriptor's path can be used
+            with zip from toolsIdVersionsVersionIdTypeFilesGet when format=zip is
+            specified
         file_type:
           type: string
           enum:
@@ -11876,6 +12098,26 @@ components:
           type: boolean
           description: Indicates whether the user is an admin.  The value is always
             false unless requested for oneself or by an admin
+        metricsRobot:
+          type: boolean
+        metricsRobotPartner:
+          type: string
+          description: Indicates whether this user is a robot that submits metrics
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - TOIL
+          - OTHER
+          - ALL
         name:
           type: string
         orcid:
@@ -12560,6 +12802,13 @@ components:
           type: string
       required:
       - type
+    WorkflowAndVersion:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        workflow:
+          $ref: '#/components/schemas/Workflow'
     WorkflowSubClass:
       type: string
       enum:

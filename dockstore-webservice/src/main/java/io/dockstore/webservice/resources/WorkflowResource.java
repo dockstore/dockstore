@@ -24,6 +24,8 @@ import static io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISH
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
 import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
+import static io.dockstore.webservice.resources.LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
@@ -58,17 +60,22 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Version.ReferenceType;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
 import io.dockstore.webservice.core.webhook.WebhookRepository;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -79,6 +86,9 @@ import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
+import io.dockstore.webservice.helpers.infer.Inferrer;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -136,9 +146,11 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -146,6 +158,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -189,9 +202,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE;
-    public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
-    public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
-    public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
     public static final String YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION = "Your user does not have access to this organization.";
 
@@ -219,59 +229,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.permissionsInterface = permissionsInterface;
         dashboardPrefix = configuration.getDashboard();
         isProduction = configuration.getExternalConfig().computeIsProduction();
-    }
-
-    /**
-     * TODO: this should not be a GET either
-     *
-     * @param user
-     * @param workflowId
-     * @return
-     */
-    @GET
-    @Path("/{workflowId}/restub")
-    @Timed
-    @UnitOfWork
-    @Operation(operationId = "restub", summary = "Restub a workflow", description = "Restub a workflow", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Restub a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
-    public Workflow restub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkNotNullEntry(workflow);
-        // Check that workflow is valid to restub
-        if (workflow.getIsPublished()) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
-        }
-        if (workflow.isIsChecker()) {
-            throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
-        }
-        if (!workflow.getConceptDois().isEmpty() && isProduction) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
-        }
-        if (versionDAO.getVersionsFrozen(workflowId) > 0) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        checkCanWrite(user, workflow);
-        checkNotHosted(workflow);
-        checkNotDockstoreYml(workflow);
-
-        workflow.setMode(WorkflowMode.STUB);
-
-        // go through and delete versions for a stub
-        for (WorkflowVersion version : workflow.getWorkflowVersions()) {
-            workflowVersionDAO.delete(version);
-        }
-        workflow.setActualDefaultVersion(null);
-        workflow.getWorkflowVersions().clear();
-
-        // Do we maintain the checker workflow association? For now we won't
-        workflow.setCheckerWorkflow(null);
-
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        return workflow;
-
     }
 
     /**
@@ -437,22 +394,62 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @GET
     @Path("/{workflowId}/workflowVersions")
+    @Timed
     @UnitOfWork
-    @ApiOperation(nickname = "getWorkflowVersions", value = "Return first 200 versions in an entry", authorizations = {
+    @ApiOperation(nickname = "getWorkflowVersions", value = "Return paginated versions in an entry", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List")
-    @Operation(operationId = "getWorkflowVersions", description = "Return first 200 versions in an entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list workflow versions in a workflow", content = @Content(
+    @Operation(operationId = "getWorkflowVersions", description = "Return paginated versions in an entry. Max pagination is 100 versions.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get workflow versions in an entry. Default is 100 versions", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
-    public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
+    @SuppressWarnings("checkstyle:parameternumber")
+    public Set<WorkflowVersion> getWorkflowVersions(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(
+                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
+        @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
+        @Parameter(name = "sortCol", description = "column used to sort versions. if omitted, the webservice determines the sort order, currently default version first", required = false, in = ParameterIn.QUERY) @QueryParam("sortCol") String sortCol,
+        @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include,
+        @Context HttpServletResponse response) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanExamine(user, workflow);
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
-        return new TreeSet<>(versions);
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        versions.forEach(version -> initializeAdditionalFields(include, version));
+        return new LinkedHashSet<>(versions);
+    }
+
+    @GET
+    @Path("/published/{workflowId}/workflowVersions")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "getPublicWorkflowVersions", description = "Return paginated versions in an public entry")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get workflow versions in an entry. Default is 100 versions", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public Set<WorkflowVersion> getPublicWorkflowVersions(
+            @Parameter(
+                name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) Integer limit,
+        @QueryParam("offset") @Min(0) @DefaultValue("0") Integer offset,
+        @QueryParam("sortCol") String sortCol,
+        @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include,
+        @Context HttpServletResponse response) {
+        Workflow workflow = workflowDAO.findPublishedById(workflowId);
+        checkNotNullEntry(workflow);
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getPublicVersionsCount(workflowId)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
+
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        versions.forEach(version -> initializeAdditionalFields(include, version));
+        return new LinkedHashSet<>(versions);
     }
 
     @GET
@@ -627,7 +624,44 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
+    }
 
+    @PUT
+    @RolesAllowed({"curator", "admin"})
+    @Timed
+    @UnitOfWork
+    @Beta
+    @Path("/{workflowId}/requestAutomaticDOI/{workflowVersionId}")
+    @Operation(operationId = "requestAutomaticDOIForWorkflowVersion", description = "Request an automatic DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public WorkflowVersion requestAutomaticDOIForWorkflowVersion(@Parameter(hidden = true, name = "user") @Auth User user,
+        @PathParam("workflowId") Long workflowId,
+        @PathParam("workflowVersionId") Long workflowVersionId,
+        @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        checkNotNullWorkflowVersion(workflowVersion, workflow, user);
+
+        if (!ZenodoHelper.automaticallyRegisterDockstoreDOI(workflow, workflowVersion, Optional.of(user), this)) {
+            throw new CustomWebApplicationException("Could not register automatic DOI.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Workflow result = workflowDAO.findById(workflowId);
+        checkNotNullEntry(result);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+
+        WorkflowVersion resultVersion = workflowVersionDAO.findById(workflowVersionId);
+        checkNotNullWorkflowVersion(resultVersion, result, user);
+
+        return resultVersion;
+    }
+
+    private void checkNotNullWorkflowVersion(WorkflowVersion workflowVersion, Workflow workflow, User user) {
+        if (workflowVersion == null) {
+            LOG.error("{}: could not find version: {}", user.getUsername(), workflow.getWorkflowPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @POST
@@ -812,8 +846,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
-        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
-        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
         return workflows;
     }
 
@@ -869,10 +903,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
+        long representativeVersionId = EntryVersionHelper.determineRepresentativeVersionId(workflow);
         sessionFactory.getCurrentSession().detach(workflow);
 
         // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
-        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
+        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0, null, null, false, representativeVersionId);
         SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
         if (versionName != null && workflowVersions.stream().noneMatch(version -> version.getName().equals(versionName))) {
             WorkflowVersion workflowVersionByWorkflowIdAndVersionName = this.workflowVersionDAO
@@ -2104,6 +2139,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
+    @GET
+    @Path("/github/infer/{owner}/{repo}/{ref}")
+    @Timed
+    @UnitOfWork
+    @Operation(description = "Infer the entries in the file tree of a GitHub repository reference.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Deprecated
+    public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
+        @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
+        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+        // Get GitHub tokens.
+        List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
+        if (tokens.isEmpty()) {
+            throw new CustomWebApplicationException("Could not find GitHub token.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Create github source code repo.
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+
+        // Create FileTree.
+        String ownerAndRepo = owner + "/" + repo;
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+
+        // Infer entries.
+        InferrerHelper inferrerHelper = new InferrerHelper();
+        List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
+
+        // Create and return .dockstore.yml
+        return inferrerHelper.toDockstoreYaml(entries);
+    }
+
     /**
      * Handles GitHub push events. The path and initial method name incorrectly refer to it as handling release events, but it does not.
      * The method was renamed to indicate it handles push events, but the path and operationId use the old name to avoid breaking clients.
@@ -2302,12 +2368,94 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return orcidAuthorInfo;
     }
 
+    @GET
+    @RolesAllowed({"admin", "curator"})
+    @Path("/versionsNeedingRetroactiveDoi")
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "getVersionsNeedingRetroactiveDoi", description = "Calculates a list of workflow versions that need a retroactive DOI", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public List<WorkflowAndVersion> getVersionsNeedingRetroactiveDoi(@Parameter(hidden = true) @Auth User user,
+        @QueryParam("limit") @Min(1) @Max(1000) @DefaultValue("100") Integer limit) {
+        // Retrieve the information we'll use to select the workflows "most eligible" for a retroactive DOI.
+        Map<Long, Long> workflowIdToDoiCount = workflowDAO.getWorkflowIdsAndDoiCounts();
+        Set<Long> eligibleWorkflowIds = workflowDAO.getWorkflowIdsEligibleForRetroactiveDoi();
+        Set<Long> gitHubOrManualDoiWorkflowIds = workflowDAO.getWorkflowIdsWithGitHubOrManualDoi();
+
+        // Determine the workflows "most eligible" for a DOI, which are the workflows that don't have a GitHub or manual DOI
+        // and have the lowest DOI count, with ties won by the workflow most recently created (highest ID).
+        Comparator<Long> doiCountAscending = Comparator.comparing(workflowIdToDoiCount::get);
+        Comparator<Long> workflowIdDescending = Comparator.<Long>naturalOrder().reversed();
+        Comparator<Long> order = doiCountAscending.thenComparing(workflowIdDescending);
+        List<Long> mostEligibleWorkflowIds = eligibleWorkflowIds.stream()
+            .filter(Predicate.not(gitHubOrManualDoiWorkflowIds::contains))
+            .sorted(order)
+            .limit(limit)
+            .toList();
+        LOG.info("most eligible workflows for dois: {}", mostEligibleWorkflowIds);
+
+        // For each of the "most eligible" workflows, determine the version that gets a new retroactive DOI.
+        return mostEligibleWorkflowIds.stream()
+            .map(this::determineBestVersionForRetroactiveDoi)
+            .flatMap(Optional::stream)
+            .toList();
+    }
+
+    private Optional<WorkflowAndVersion> determineBestVersionForRetroactiveDoi(long workflowId) {
+        // Retrieve the workflow and its versions.
+        Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow == null) {
+            LOG.warn("could not find workflow {}", workflowId);
+            return Optional.empty();
+        }
+        List<WorkflowVersion> versions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId);
+
+        // Determine the version for which to generate a retroactive DOI, by filtering versions that already have
+        // a DOI or don't meet the requirements, and then select a remaining version using the following criteria:
+        // 1. Is default version
+        // 2. Has metrics
+        // 3. Most recently-modified
+        Comparator<WorkflowVersion> defaultVersionFirst = Comparator.comparing((WorkflowVersion version) -> version == workflow.getActualDefaultVersion()).reversed();
+        Comparator<WorkflowVersion> hasMetricsFirst = Comparator.comparing((WorkflowVersion version) -> version.getMetricsByPlatform().size() > 0).reversed();
+        Comparator<WorkflowVersion> recentlyModifiedFirst = Comparator.nullsLast(Comparator.comparing(WorkflowVersion::getLastModified).reversed());
+        Comparator<WorkflowVersion> order = defaultVersionFirst.thenComparing(hasMetricsFirst).thenComparing(recentlyModifiedFirst);
+        Optional<WorkflowVersion> version = versions.stream()
+            .filter(this::isVersionEligibleForRetroactiveDoi)
+            .sorted(order)
+            .findFirst();
+        if (!version.isPresent()) {
+            LOG.warn("could not find eligible version for doi in workflow {}", workflowId);
+        }
+
+        // Clear the session to avoid it filling with entities that we no longer need.
+        sessionFactory.getCurrentSession().clear();
+        // Return the workflow and version.
+        return version.map(v -> new WorkflowAndVersion(workflow, v));
+    }
+
+    private boolean isVersionEligibleForRetroactiveDoi(WorkflowVersion version) {
+        return version.getReferenceType() == ReferenceType.TAG
+            && version.isValid()
+            && !version.isHidden()
+            && version.getDois().size() == 0;
+    }
+
     /**
      * Scans Zenodo for DOIs issued against GitHub repos with registered workflows in Dockstore, updating the Dockstore workflows
      * with those DOIs.
      *
+     * <p>Dockstore stores the most recent release date on a GitHub repo when notified, see @code{handleGitHubTaggedRelease}. The Zenodo-
+     * GitHub integration, if any, may create a DOI at some point after the release. The <code>daysSinceLastRelease</code> query parameter
+     * specifies how long to keep looking for a Zenodo DOI that may have been created. For example, if a GitHub release for a repo  was
+     * done 3 days ago, and the <code>daysSinceLastRelease</code> is set to <code>2</code>, the endpoint will not check for a DOI for that
+     * repo.
+     *
+     * <p>This is to reduce the queries, e.g., if the last release was created a year ago, and there isn't a DOI for it yet, then it's
+     * unlikely there ever will be.
+     *
      * @param user
      * @param filter - optional filter to scope to a single GitHub repository in the format myorg/myrepo
+     * @param daysSinceLastRelease - how far back to check for DOIs
      * @return
      */
     @POST
@@ -2317,12 +2465,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @Operation(operationId = "updateDois", description = "Searches Zenodo for DOIs referencing GitHub repos, and updates Dockstore entries with them", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<Workflow> updateDois(@Parameter(hidden = true) @Auth User user,
-            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository") @QueryParam("filter") String filter) {
-        final List<Workflow> publishedWorkflows = getPublishedGitHubWorkflows(filter);
+            @Parameter(description = "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository") @QueryParam("filter") String filter,
+            @Parameter(description = "Only check GitHub repos with releases over this number of days. Don't set to check all repos") @QueryParam("daysSinceLastRelease") Integer daysSinceLastRelease) {
+        final List<Workflow> publishedWorkflows = getPublishedGitHubWorkflows(filter, daysSinceLastRelease);
+
 
         // Get a map of GitHub repos to Dockstore workflows
         final Map<String, List<Workflow>> repoToWorkflowsMap = publishedWorkflows.stream()
-                .filter(w -> w.getSourceControl() == SourceControl.GITHUB)
                 .collect(Collectors.groupingBy(w -> w.getOrganization() + '/' + w.getRepository()));
 
         // Query Zenodo for DOIs issued against the GitHub repositories
@@ -2434,10 +2583,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * Returns a list of published GitHub workflows. If <code>optionalFilter</code> is set, then only returns workflows for that GitHub
      * organization and repository. Throws a CustomWebApplicationException if <code>optionalFilter</code> is set, and its format is not
      * <code>[organization]/[repository]</code>.
-     * @param optionalFilter a filter in the format "organization/repository", or null/empty
+     *
+     * @param optionalFilter       a filter in the format "organization/repository", or null/empty
+     * @param daysSinceLastRelease if not null, filters by workflows with GitHub releases with this value's last number of days
      * @return
      */
-    private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter) {
+    private List<Workflow> getPublishedGitHubWorkflows(String optionalFilter, Integer daysSinceLastRelease) {
         if (StringUtils.isNotBlank(optionalFilter)) {
             final String[] split = optionalFilter.split("/");
             if (split.length != 2) {
@@ -2445,8 +2596,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
             final String org = split[0];
             final String repository = split[1];
-            return workflowDAO.findPublishedByOrganizationAndRepository(SourceControl.GITHUB, org, repository);
+            return  daysSinceLastRelease == null
+                ? workflowDAO.findPublishedBySourceOrgRepo(SourceControl.GITHUB, org, repository)
+                : workflowDAO.findPublishedBySourceOrgRepoLatestReleaseDate(SourceControl.GITHUB, org, repository, daysSinceLastRelease);
         }
-        return workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB);
+        return daysSinceLastRelease == null
+            ? workflowDAO.findPublishedBySourceControl(SourceControl.GITHUB)
+            : workflowDAO.findPublishedBySourceControlLatestReleaseDate(SourceControl.GITHUB, daysSinceLastRelease);
     }
 }

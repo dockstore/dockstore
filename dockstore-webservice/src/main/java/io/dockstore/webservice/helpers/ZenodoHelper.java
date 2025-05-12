@@ -25,6 +25,7 @@ import io.dockstore.webservice.resources.SourceControlResourceInterface;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.ApiException;
+import io.swagger.zenodo.client.ApiResponse;
 import io.swagger.zenodo.client.api.AccessLinksApi;
 import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
@@ -50,10 +51,12 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -64,9 +67,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +82,6 @@ public final class ZenodoHelper {
     // The max number of versions to process when automatically creating DOIs for a workflow
     public static final int AUTOMATIC_DOI_CREATION_VERSIONS_LIMIT = 10;
     public static final String NO_ZENODO_USER_TOKEN = "Could not get Zenodo token for user";
-    public static final String AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO = "At least one author is required to publish to Zenodo";
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String UNHIDDEN_VERSION_REQUIRED = "Unhidden version required to generate DOI";
     public static final String PUBLISHED_ENTRY_REQUIRED = "Published entry required to generate DOI";
@@ -84,6 +90,15 @@ public final class ZenodoHelper {
     public static final String ACCESS_LINK_DOESNT_EXIST = "The entry does not have an access link";
     public static final String ACCESS_LINK_ALREADY_EXISTS = "The entry already has an access link";
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
+    /**
+     * How long to wait for Zenodo rate limit to get reset. Normally it should get reset after 1 minute; add one more second to safe.
+     */
+    private static final Duration MAX_WAIT_FOR_ZENODO_RATE_RESET = Duration.ofSeconds(61);
+    /**
+     * How low the number for remaining rate-limited Zenodo requests should get before waiting for a rate limit reset. Normal rate limit
+     * is 133 requests per minute; 10 seems like a safe buffer.
+     */
+    private static final int ZENODO_REQUESTS_REMAINING_PADDING = 10;
     private static String dockstoreUrl; // URL for Dockstore (e.g. https://dockstore.org)
     private static String dockstoreGA4GHBaseUrl; // The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
     private static String dockstoreZenodoAccessToken;
@@ -134,26 +149,31 @@ public final class ZenodoHelper {
      * @param workflowVersion
      * @param workflowOwner
      * @param authenticatedResourceInterface
-     * @return
+     * @return true if the DOI was created, false otherwise
      */
-    public static void automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
+    public static boolean automaticallyRegisterDockstoreDOI(Workflow workflow, WorkflowVersion workflowVersion, Optional<User> workflowOwner, AuthenticatedResourceInterface authenticatedResourceInterface) {
         if (StringUtils.isEmpty(dockstoreZenodoAccessToken)) {
             LOG.error("Dockstore Zenodo access token not found for automatic DOI creation, skipping");
-            return;
+            return false;
         }
 
-        if (canAutomaticallyCreateDockstoreOwnedDoi(workflow, workflowVersion)) {
-            ApiClient zenodoClient = createDockstoreZenodoClient();
-            try {
-                // Perform some checks to increase the chance of a DOI being successfully created
-                checkCanRegisterDoi(workflow, workflowVersion, workflowOwner, DoiInitiator.DOCKSTORE);
-                LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
-                registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
-                        DoiInitiator.DOCKSTORE);
-            } catch (CustomWebApplicationException e) {
-                LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
-            }
+        if (!canAutomaticallyCreateDockstoreOwnedDoi(workflow, workflowVersion)) {
+            LOG.warn("Could not create automatic DOI because {} does not meet requirements", workflowNameAndVersion(workflow, workflowVersion));
+            return false;
         }
+
+        ApiClient zenodoClient = createDockstoreZenodoClient();
+        try {
+            // Perform some checks to increase the chance of a DOI being successfully created
+            checkCanRegisterDoi(workflow, workflowVersion, workflowOwner, DoiInitiator.DOCKSTORE);
+            LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
+            registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
+                    DoiInitiator.DOCKSTORE);
+        } catch (CustomWebApplicationException e) {
+            LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -387,17 +407,21 @@ public final class ZenodoHelper {
      * @return
      */
     public static List<GitHubRepoDois> findDoisForGitHubRepo(String gitHubRepo) {
+        LOG.info("Looking for DOIs for repo {}", gitHubRepo);
         final ApiClient zenodoClient = createDockstoreZenodoClient();
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
         final String query = "metadata.related_identifiers.identifier:/https:\\/\\/github.com\\/%s\\/tree\\/.+/".formatted(gitHubRepo.replace("/", "\\/"));
         final int pageSize = 1; // We can only handle 1 DOI for a GitHub initiator, so no point asking for more
         try {
-            final SearchResult records = previewApi.listRecords(query, "bestmatch", 1, pageSize);
+            final ApiResponse<SearchResult> response = previewApi.listRecordsWithHttpInfo(query, "bestmatch", 1, pageSize);
+            zenodoClientRateLimitHelper().checkRateLimit(response.getHeaders());
+            final SearchResult records = response.getData();
             final List<ConceptAndDoi> dois = findGitHubIntegrationDois(records.getHits().getHits(), gitHubRepo);
             return dois.stream()
                     .map(conceptAndDoi -> {
-                        final SearchResult recordVersions = getRecordVersions(zenodoClient, conceptAndDoi.doi());
-                        final List<TagAndDoi> taggedVersions = findTaggedVersions(recordVersions.getHits().getHits(), gitHubRepo);
+                        final ApiResponse<SearchResult> versionsResponse = getRecordVersions(zenodoClient, conceptAndDoi.doi());
+                        zenodoClientRateLimitHelper().checkRateLimit(versionsResponse.getHeaders());
+                        final List<TagAndDoi> taggedVersions = findTaggedVersions(versionsResponse.getData().getHits().getHits(), gitHubRepo);
                         return new GitHubRepoDois(gitHubRepo, conceptAndDoi.conceptDoi(), taggedVersions);
                     })
                     .toList();
@@ -405,6 +429,10 @@ public final class ZenodoHelper {
             LOG.error("Error discovering DOIs for GitHub repo %s".formatted(gitHubRepo), e);
             return List.of();
         }
+    }
+
+    private static ClientRateLimitHelper zenodoClientRateLimitHelper() {
+        return new ClientRateLimitHelper(MAX_WAIT_FOR_ZENODO_RATE_RESET, ZENODO_REQUESTS_REMAINING_PADDING);
     }
 
     /**
@@ -446,9 +474,9 @@ public final class ZenodoHelper {
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
-    static SearchResult getRecordVersions(ApiClient zenodoClient, String doi) {
+    static ApiResponse<SearchResult> getRecordVersions(ApiClient zenodoClient, String doi) {
         final PreviewApi previewApi = new PreviewApi(zenodoClient);
-        return previewApi.getRecordVersions(extractRecordIdFromDoi(doi));
+        return previewApi.getRecordVersionsWithHttpInfo(extractRecordIdFromDoi(doi));
     }
 
     /**
@@ -572,7 +600,9 @@ public final class ZenodoHelper {
         }
 
         if (setOfAuthors.isEmpty()) {
-            throw new CustomWebApplicationException(AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, HttpStatus.SC_BAD_REQUEST);
+            Author fillerAuthor = new Author();
+            fillerAuthor.setName(workflow.getOrganization());
+            setOfAuthors.add(fillerAuthor);
         }
 
         return setOfAuthors;
@@ -646,10 +676,21 @@ public final class ZenodoHelper {
         String description = workflow.getDescription();
         // The Zenodo API requires at description of at least three characters
         String descriptionStr = (description == null || description.isEmpty()) ? "No description specified" : workflow.getDescription();
+
+
+        // convert from Markdown to HTML (feels weird but plain text from (e.g.) WDL descriptors should remain unmolested even if not Markdown)
+        // most descriptions are just READMEs
+        Parser parser = Parser.builder().build();
+        Node document = parser.parse(descriptionStr);
+        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        descriptionStr = renderer.render(document);
+
         depositMetadata.setDescription(descriptionStr);
 
-        // We will set the Zenodo workflow version publication date to the date of the DOI issuance
-        depositMetadata.setPublicationDate(ZonedDateTime.now().toLocalDate().toString());
+        // Set the publication date to the GitHub tag creation date, which should be stored in version.lastModified.
+        // version.lastModified can be null, so use version.dbUpdateDate, which cannot be null, as a backup.
+        Date lastModifiedDate = ObjectUtils.firstNonNull(workflowVersion.getLastModified(), workflowVersion.getDbUpdateDate());
+        depositMetadata.setPublicationDate(formatDate(lastModifiedDate));
 
         depositMetadata.setVersion(workflowVersion.getName());
 
@@ -658,6 +699,14 @@ public final class ZenodoHelper {
         setMetadataCreator(depositMetadata, workflow, workflowVersion);
 
         setMetadataCommunities(depositMetadata);
+    }
+
+    /**
+     * Convert a Date into a String of the form 'YYYY-MM-DD'
+     * @param date date to convert
+     */
+    private static String formatDate(Date date) {
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString();
     }
 
     /**

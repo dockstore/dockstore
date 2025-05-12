@@ -77,7 +77,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
  * These tests are a bit weird because we're testing the webservice running with the Galaxy language plugin installed.
  *
  * @author dyuen
- * @since 1.9.0
+ * @since 1.17.0
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)

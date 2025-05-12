@@ -40,10 +40,10 @@ public enum DescriptorLanguage {
     // should be called 'Snakefile' (no suffix), the other descriptors should have the '.smk' suffix.
     // https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html
     SMK("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
-            Set.of("smk", ""), true, true, Set.of(WORKFLOW, APPTOOL, TOOL)) {
+            Set.of("Snakefile", "yaml", "yml"), true, true, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
+            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
         }
     },
     CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
@@ -245,7 +245,7 @@ public enum DescriptorLanguage {
     }
 
     /**
-     * Nextflow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
+     * Nextflow parameter files are described here <a href="https://github.com/nextflow-io/nextflow/issues/208">...</a>
      *
      */
     public enum FileType {
