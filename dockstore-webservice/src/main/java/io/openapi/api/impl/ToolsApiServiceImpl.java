@@ -920,8 +920,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), workflowVersion.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
-                } else {
-                    return Response.noContent().build();
                 }
             } else if (entry instanceof Tool tool) {
                 Set<Tag> versions = tool.getWorkflowVersions();
@@ -937,12 +935,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), tag.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
-                } else {
-                    return Response.noContent().build();
                 }
-            } else {
-                return Response.status(Status.NOT_FOUND).build();
             }
+            return Response.status(Status.NOT_FOUND).build();
         } finally {
             versionDAO.disableNameFilter();
         }
