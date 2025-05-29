@@ -45,8 +45,8 @@
         <openapi-annotations-version>2.2.9</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.4.4</postgresql.version>
-        <maven-surefire.version>3.4.0</maven-surefire.version>
-        <maven-failsafe.version>2.22.2</maven-failsafe.version>
+        <maven-surefire.version>3.5.3</maven-surefire.version>
+        <maven-failsafe.version>3.5.3</maven-failsafe.version>
         <maven-java.version>17</maven-java.version>
 
         <skipTests>false</skipTests>
@@ -173,7 +173,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.11</version>
+                    <version>0.8.13</version>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -327,6 +327,7 @@
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
                         <rerunFailingTestsCount>${rerunFailingTestsCount}</rerunFailingTestsCount>
+                        <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                     </configuration>
                 </plugin>
                 <plugin>
