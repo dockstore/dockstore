@@ -1,10 +1,10 @@
 io.swagger.core.v3:swagger-annotations:jar:2.1.7 			        = noSig
 
-com.fasterxml.jackson.datatype:jackson-datatype-joda:pom:2.18.3     = badSig
-com.fasterxml.jackson.core:jackson-databind:pom:2.18.3 			    = badSig
-com.fasterxml.jackson.core:jackson-annotations:pom:2.18.3	    = badSig
-com.fasterxml.jackson.core:jackson-core:pom:2.18.3			        = badSig
-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.18.3  = badSig
+com.fasterxml.jackson.datatype:jackson-datatype-joda:pom:2.19.0     = badSig
+com.fasterxml.jackson.core:jackson-databind:pom:2.19.0 			    = badSig
+com.fasterxml.jackson.core:jackson-annotations:pom:2.19.0	    = badSig
+com.fasterxml.jackson.core:jackson-core:pom:2.19.0			        = badSig
+com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.19.0  = badSig
 
 
 
@@ -57,9 +57,6 @@ org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:pom:5.0.2     = badSig
 org.javamoney:moneta:pom:1.4.2                                      = badSig
 org.javamoney.moneta:moneta-core:pom:1.4.2                          = badSig
 javax.money:money-api:pom:1.1                                       = badSig
-
-com.auth0:java-jwt:pom:3.8.1                                        = noKey
-com.auth0:java-jwt:jar:3.8.1                                        = noKey
 
 
 * 									                                = noSig
