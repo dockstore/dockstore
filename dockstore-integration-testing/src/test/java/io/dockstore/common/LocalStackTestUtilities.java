@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 public final class LocalStackTestUtilities {
-    public static final String IMAGE_TAG = "4.5.0";
+    public static final String IMAGE_TAG = "3.8.1";
     public static final String ENDPOINT_OVERRIDE = "https://s3.localhost.localstack.cloud:4566";
     public static final String AWS_REGION_ENV_VAR = "AWS_REGION";
 
