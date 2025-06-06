@@ -28,7 +28,6 @@ import cloud.localstack.ServiceName;
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import io.dockstore.common.LocalStackTest;
-import io.dockstore.common.LocalStackTestUtilities;
 import io.dockstore.common.S3ClientHelper;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -45,7 +44,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 @ExtendWith({ LocalstackDockerExtension.class, SystemStubsExtension.class })
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
+@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 class S3ClientHelperIT {
     @SystemStub
     private static EnvironmentVariables environmentVariables;

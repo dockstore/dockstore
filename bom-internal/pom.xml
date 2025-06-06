@@ -61,7 +61,7 @@ POM as their parent.
         <junit5-version>5.9.1</junit5-version>
         <hoverfly-version>0.14.0</hoverfly-version>
         <logback.version>1.5.18</logback.version>
-        <aws.version>2.28.7</aws.version>
+        <aws.version>2.31.56</aws.version>
         <powermock.version>2.0.9</powermock.version>
         <postgresql.version>42.7.2</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
@@ -73,7 +73,7 @@ POM as their parent.
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
         <jetty-servlet.version>11.0.25</jetty-servlet.version>
         <jersey.version>3.0.17</jersey.version>
-        <netty.version>4.1.112.Final</netty.version>
+        <netty.version>4.1.118.Final</netty.version>
         <scala.version>2.13.9</scala.version>
         <bytebuddy.version>1.17.5</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->

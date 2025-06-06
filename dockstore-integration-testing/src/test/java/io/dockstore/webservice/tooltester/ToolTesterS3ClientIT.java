@@ -47,7 +47,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @ExtendWith(LocalstackDockerExtension.class)
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
+@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 class ToolTesterS3ClientIT {
 
     public static final String BUCKET_NAME = "dockstore.tooltester.backup";
