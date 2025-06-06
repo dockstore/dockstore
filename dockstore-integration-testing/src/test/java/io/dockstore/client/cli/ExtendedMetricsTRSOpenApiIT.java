@@ -124,7 +124,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
  * Extra confidential integration tests, focuses on proposed metrics GA4GH extensions
  * {@link BaseIT}
  */
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
+@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 @ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class, LocalstackDockerExtension.class })
 @Tag(ConfidentialTest.NAME)
 @Tag(LocalStackTest.NAME)

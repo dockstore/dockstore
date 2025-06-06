@@ -17,7 +17,6 @@
 
 package io.dockstore.common;
 
-import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
 import java.util.List;
 import java.util.Map;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -66,14 +65,5 @@ public final class LocalStackTestUtilities {
                 .build();
         RequestBody requestBody = RequestBody.fromString(content);
         return s3Client.putObject(request, requestBody);
-    }
-
-    public static class LocalStackEnvironmentVariables implements IEnvironmentVariableProvider {
-        @Override
-        public Map<String, String> getEnvironmentVariables() {
-            // Need this so that S3 key encoding works. Remove when there's a new localstack release containing the fix
-            // https://github.com/localstack/localstack/issues/7374#issuecomment-1360950643
-            return Map.of("PROVIDER_OVERRIDE_S3", "asf");
-        }
     }
 }
