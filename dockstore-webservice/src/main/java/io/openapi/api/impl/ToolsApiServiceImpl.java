@@ -819,7 +819,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String url = ToolsImplCommon.getUrlFromId(config, entry);
         String[] splitPath = selfPath.split(URLEncoder.encode(entry, StandardCharsets.UTF_8));
         if (splitPath.length < 2) {
-            throw new CustomWebApplicationException("not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException("not found (the request may be encoded incorrectly)", HttpStatus.SC_NOT_FOUND);
         }
         return url + splitPath[1];
     }
