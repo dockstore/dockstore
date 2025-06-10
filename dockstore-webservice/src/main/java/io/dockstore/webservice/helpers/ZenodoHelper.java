@@ -609,7 +609,9 @@ public final class ZenodoHelper {
     }
 
     private static List<Author> getAuthors(Set<io.dockstore.webservice.core.Author> inputAuthors, Set<OrcidAuthor> inputOrcidAuthors) {
-        final Stream<Author> authors = inputAuthors.stream().map(ZenodoHelper::fromDockstoreAuthor);
+        final Stream<Author> authors = inputAuthors.stream()
+                .filter(author -> StringUtils.isNotEmpty(author.getName()))
+                .map(ZenodoHelper::fromDockstoreAuthor);
         final Stream<Author> orcidAuthors = inputOrcidAuthors.stream()
                 .map(OrcidAuthor::getOrcid)
                 .map(orcidId -> ORCIDHelper.getOrcidAuthorInformation(orcidId, null))
