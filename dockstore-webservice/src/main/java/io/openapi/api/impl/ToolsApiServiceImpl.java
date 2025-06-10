@@ -817,7 +817,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private static String computeURLFromEntryAndRequestURI(String entry, String selfPath) {
         String url = ToolsImplCommon.getUrlFromId(config, entry);
-        return url + selfPath.split(URLEncoder.encode(entry, StandardCharsets.UTF_8))[1];
+        String[] splitPath = selfPath.split(URLEncoder.encode(entry, StandardCharsets.UTF_8));
+        if (splitPath.length < 2) {
+            throw new CustomWebApplicationException("not found (the request may be encoded incorrectly)", HttpStatus.SC_NOT_FOUND);
+        }
+        return url + splitPath[1];
     }
 
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
