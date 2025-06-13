@@ -21,6 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
+import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
@@ -622,10 +629,26 @@ public final class CommonTestUtilities {
         assertTrue(log.toLowerCase().contains("git repo"));
     }
 
-    public static void restartElasticsearch() {
-        // see https://ucsc-cgl.atlassian.net/browse/SEAB-6834
-        // revert associated commit to re-enable restarting of elasticsearch
-        // this should make elasticsearch tests more independent from one another
+    public static void restartElasticsearch() throws IOException {
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+
+        try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
+                .sslConfig(config.getSSLConfig()).build(); DockerClient instance = DockerClientImpl.getInstance(config, httpClient)) {
+            List<Container> exec = instance.listContainersCmd().exec();
+            Optional<Container> elasticsearch = exec.stream().filter(container -> container.getImage().contains("elasticsearch"))
+                    .findFirst();
+            if (elasticsearch.isPresent()) {
+                Container container = elasticsearch.get();
+                try {
+                    instance.restartContainerCmd(container.getId());
+                    // Wait 25 seconds for elasticsearch to become ready
+                    // TODO: Replace with better wait
+                    Thread.sleep(25000);
+                } catch (Exception e) {
+                    System.err.println("Problems restarting Docker container");
+                }
+            }
+        }
     }
 
     // These two functions are duplicated from SwaggerUtility in dockstore-client to prevent importing dockstore-client
