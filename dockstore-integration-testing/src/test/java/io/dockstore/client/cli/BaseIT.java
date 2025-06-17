@@ -179,6 +179,26 @@ public class BaseIT {
         return workflow;
     }
 
+    static io.dockstore.openapi.client.model.Workflow manualRegisterAndPublish(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        // Manually register
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi
+            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
+                "/test.json");
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.STUB, workflow.getMode());
+
+        // Refresh
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Publish
+        if (toPublish) {
+            workflow = workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+            assertTrue(workflow.isIsPublished());
+        }
+        return workflow;
+    }
+
     /**
      * Manually register and publish a workflow with the given path and name
      *
