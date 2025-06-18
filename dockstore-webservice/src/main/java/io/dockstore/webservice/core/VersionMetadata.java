@@ -81,7 +81,8 @@ public class VersionMetadata {
     protected String doiURL;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = { @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"), @JoinColumn(name = "doiinitiator", referencedColumnName = "initiator") },
+        uniqueConstraints = @UniqueConstraint(name = "unique_version_doiinitiator", columnNames = { "versionmetadataid", "doiinitiator" }))
     @MapKey(name = "initiator")
     @MapKeyEnumerated(EnumType.STRING)
     @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)

@@ -55,4 +55,80 @@
             ALTER TABLE enduser ADD CONSTRAINT metrics_robot_cannot_have_other_privileges CHECK (NOT (metricsrobotpartner IS NOT NULL AND (isadmin OR curator OR platformpartner IS NOT NULL)));
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="onlyOneInitiatorDoiPerEntry">
+        <addColumn tableName="entry_concept_doi">
+            <column name="doiinitiator" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            with concept_doi_initiator as (
+              select entry_concept_doi.doiid as concept_doi_id, doi.initiator
+              from doi
+              inner join entry_concept_doi on doi.id = entry_concept_doi.doiid
+            )
+            update entry_concept_doi
+            set doiinitiator = concept_doi_initiator.initiator
+            from concept_doi_initiator
+            where concept_doi_id = doiid;
+        </sql>
+        <addNotNullConstraint tableName="entry_concept_doi" columnName="doiinitiator"/>
+        <sql dbms="postgresql">
+          ALTER TABLE entry_concept_doi DROP CONSTRAINT IF EXISTS fk_doiid_entry_concept_doi;
+          ALTER TABLE entry_concept_doi DROP CONSTRAINT IF EXISTS entry_concept_doi_pkey;
+        </sql>
+        <addPrimaryKey columnNames="entryid, doiid, doiinitiator" constraintName="entry_concept_doi_pkey" tableName="entry_concept_doi"/>
+        <addColumn tableName="version_metadata_doi">
+            <column name="doiinitiator" type="varchar(255 BYTE)">
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            with version_doi_initiator as (
+                select version_metadata_doi.doiid as version_doi_id, doi.initiator
+                from doi
+                inner join version_metadata_doi on doi.id = version_metadata_doi.doiid
+            )
+            update version_metadata_doi
+            set doiinitiator = version_doi_initiator.initiator
+            from version_doi_initiator
+            where version_doi_id = doiid;
+        </sql>
+        <addNotNullConstraint tableName="version_metadata_doi" columnName="doiinitiator"/>
+        <dropForeignKeyConstraint baseTableName="version_metadata_doi" constraintName="fk_doiid_version_metadata_doi"/>
+        <dropPrimaryKey tableName="version_metadata_doi"/>
+        <addPrimaryKey columnNames="versionmetadataid, doiid, doiinitiator" constraintName="version_metadata_doi_pkey" tableName="version_metadata_doi"/>
+        <sql dbms="postgresql">
+            CREATE TEMPORARY TABLE dois_to_delete AS
+            WITH multiple_dockstore_concept_doi_entries as (
+                SELECT entryid, doiinitiator, COUNT(doiid)
+                FROM entry_concept_doi
+                GROUP BY entryid, doiinitiator
+                HAVING COUNT(doiid) > 1
+            ),
+            concept_dois_to_delete as (
+                SELECT m.entryid, m.doiinitiator, e.doiid as doiidtodelete
+                FROM multiple_dockstore_concept_doi_entries m
+                INNER JOIN entry_concept_doi e
+                ON m.entryid = e.entryid AND m.doiinitiator = e.doiinitiator
+            ),
+            version_dois_to_delete as (
+                SELECT version_metadata_doi.versionmetadataid, version_metadata_doi.doiinitiator, version_metadata_doi.doiid as doiidtodelete
+                FROM concept_dois_to_delete
+                INNER JOIN workflowversion
+                ON entryid = workflowversion.parentid
+                INNER JOIN version_metadata_doi
+                ON workflowversion.id = versionmetadataid
+            )
+            SELECT doiidtodelete
+            FROM concept_dois_to_delete
+            UNION ALL
+            SELECT doiidtodelete
+            FROM version_dois_to_delete;
+
+            DELETE FROM version_metadata_doi WHERE doiid IN (SELECT * FROM dois_to_delete);
+            DELETE FROM entry_concept_doi WHERE doiid IN (SELECT * FROM dois_to_delete);
+            DELETE FROM doi WHERE id IN (SELECT * FROM dois_to_delete);
+        </sql>
+        <addUniqueConstraint columnNames="id, initiator" constraintName="unique_doi_id_initiatior" tableName="doi"/>
+        <addUniqueConstraint columnNames="entryid, doiinitiator" constraintName="unique_entry_doiinitiator" tableName="entry_concept_doi"/>
+        <addUniqueConstraint columnNames="versionmetadataid, doiinitiator" constraintName="unique_version_doiinitiator" tableName="version_metadata_doi"/>
+    </changeSet>
 </databaseChangeLog>

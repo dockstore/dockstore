@@ -266,7 +266,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String conceptDoi;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = { @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"), @JoinColumn(name = "doiinitiator", referencedColumnName = "initiator") },
+        uniqueConstraints = @UniqueConstraint(name = "unique_entry_doiinitiator", columnNames = { "entryid", "doiinitiator" }))
     @MapKey(name = "initiator")
     @MapKeyEnumerated(EnumType.STRING)
     @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
