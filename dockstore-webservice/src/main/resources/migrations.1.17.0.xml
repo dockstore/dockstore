@@ -115,7 +115,7 @@
                 INNER JOIN workflowversion
                 ON entryid = workflowversion.parentid
                 INNER JOIN version_metadata_doi
-                ON workflowversion.id = versionmetadataid
+                ON workflowversion.id = versionmetadataid and concept_dois_to_delete.doiinitiator = version_metadata_doi.doiinitiator
             )
             SELECT doiidtodelete
             FROM concept_dois_to_delete
