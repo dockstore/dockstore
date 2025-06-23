@@ -1157,6 +1157,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             getBranchesSucceeded = true;
         } catch (GHFileNotFoundException ex) {
             LOG.debug("No branches found for " + repo.getName(), ex);
+        } catch (org.kohsuke.github.HttpException ex) {
+            if (ex.getResponseCode() == HttpStatus.SC_CONFLICT) {
+                // it seems like this is what is returned if there are absolutely no branches or tags
+                return new GHRef[]{};
+            }
+            throw ex;
         }
 
         try {

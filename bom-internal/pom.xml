@@ -1335,7 +1335,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
-                <version>1.322</version>
+                <version>1.327</version>
             </dependency>
             <!-- used for github-api build-in handing of JWTtokens -->
             <dependency>
