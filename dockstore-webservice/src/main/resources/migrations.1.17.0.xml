@@ -60,15 +60,15 @@
             <column name="doiinitiator" type="varchar(255 BYTE)"/>
         </addColumn>
         <sql dbms="postgresql">
-            with concept_doi_initiator as (
-              select entry_concept_doi.doiid as concept_doi_id, doi.initiator
-              from doi
-              inner join entry_concept_doi on doi.id = entry_concept_doi.doiid
+            WITH concept_doi_initiator AS (
+              SELECT entry_concept_doi.doiid AS concept_doi_id, doi.initiator
+              FROM doi
+              INNER JOIN entry_concept_doi ON doi.id = entry_concept_doi.doiid
             )
-            update entry_concept_doi
-            set doiinitiator = concept_doi_initiator.initiator
-            from concept_doi_initiator
-            where concept_doi_id = doiid;
+            UPDATE entry_concept_doi
+            SET doiinitiator = concept_doi_initiator.initiator
+            FROM concept_doi_initiator
+            WHERE concept_doi_id = doiid;
         </sql>
         <addNotNullConstraint tableName="entry_concept_doi" columnName="doiinitiator"/>
         <sql dbms="postgresql">
@@ -81,15 +81,15 @@
             </column>
         </addColumn>
         <sql dbms="postgresql">
-            with version_doi_initiator as (
-                select version_metadata_doi.doiid as version_doi_id, doi.initiator
-                from doi
-                inner join version_metadata_doi on doi.id = version_metadata_doi.doiid
+            WITH version_doi_initiator AS (
+                SELECT version_metadata_doi.doiid AS version_doi_id, doi.initiator
+                FROM doi
+                INNER JOIN version_metadata_doi ON doi.id = version_metadata_doi.doiid
             )
-            update version_metadata_doi
-            set doiinitiator = version_doi_initiator.initiator
-            from version_doi_initiator
-            where version_doi_id = doiid;
+            UPDATE version_metadata_doi
+            SET doiinitiator = version_doi_initiator.initiator
+            FROM version_doi_initiator
+            WHERE version_doi_id = doiid;
         </sql>
         <addNotNullConstraint tableName="version_metadata_doi" columnName="doiinitiator"/>
         <dropForeignKeyConstraint baseTableName="version_metadata_doi" constraintName="fk_doiid_version_metadata_doi"/>
