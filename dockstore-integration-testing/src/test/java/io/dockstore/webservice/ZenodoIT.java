@@ -578,6 +578,7 @@ class ZenodoIT {
 
         // Hack to remove GITHUB initiator version DOIs; need to change name because of DB constraint that names must be unique
         testingPostgres.runUpdateStatement("update doi set name ='" + FAKE_VERSION_DOI + "', initiator = 'DOCKSTORE' where type = 'VERSION'");
+        testingPostgres.runUpdateStatement("update version_metadata_doi set doiinitiator = 'DOCKSTORE'");
         workflows = workflowsApi.updateDois(null, null);
         assertEquals(2, workflows.size(), "Concept DOI exists, but version DOIs are new");
         workflowsApi.getWorkflowVersions(workflows.get(0).getId(), null, null, null, null, null).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),

@@ -153,7 +153,7 @@ public class ORCIDIT extends BaseIT {
         final String conceptDoi = "https://doi.org/10.1038/s41586-020-1969-6";
         testingPostgres.runUpdateStatement(String.format("insert into doi(type, initiator, name) values ('CONCEPT', 'USER', '%s')", conceptDoi));
         final long conceptDoiId = testingPostgres.runSelectStatement(String.format("select id from doi where name = '%s'", conceptDoi), long.class);
-        testingPostgres.runUpdateStatement(String.format("insert into entry_concept_doi(entryid, doiid) values (%s, %s)", workflowId, conceptDoiId));
+        testingPostgres.runUpdateStatement(String.format("insert into entry_concept_doi(entryid, doiid, doiinitiator) values (%s, %s, 'USER')", workflowId, conceptDoiId));
 
         try {
             entriesApi.exportToORCID(workflowId, workflowVersionId);
@@ -268,14 +268,14 @@ public class ORCIDIT extends BaseIT {
         final String conceptDoi = "dummy";
         testingPostgres.runUpdateStatement(String.format("insert into doi(type, initiator, name) values ('CONCEPT', 'USER', '%s')", conceptDoi));
         final long conceptDoiId = testingPostgres.runSelectStatement(String.format("select id from doi where name = '%s'", conceptDoi), long.class);
-        testingPostgres.runUpdateStatement(String.format("insert into entry_concept_doi(entryid, doiid) values (%s, %s)", workflowId, conceptDoiId));
+        testingPostgres.runUpdateStatement(String.format("insert into entry_concept_doi(entryid, doiid, doiinitiator) values (%s, %s, 'USER')", workflowId, conceptDoiId));
 
         // Give the workflow version a DOI url
         testingPostgres.runUpdateStatement(String.format("update version_metadata set doistatus='%s' where id=%s", Version.DOIStatus.CREATED.name(), workflowVersionId));
         final String versionDoi = "10.foo/bar";
         testingPostgres.runUpdateStatement(String.format("insert into doi(type, initiator, name) values ('VERSION', 'USER', '%s')", versionDoi));
         final long versionDoiId = testingPostgres.runSelectStatement(String.format("select id from doi where name = '%s'", conceptDoi), long.class);
-        testingPostgres.runUpdateStatement(String.format("insert into version_metadata_doi(versionmetadataid, doiid) values (%s, %s)", workflowId, versionDoiId));
+        testingPostgres.runUpdateStatement(String.format("insert into version_metadata_doi(versionmetadataid, doiid, doiinitiator) values (%s, %s, 'USER')", workflowId, versionDoiId));
 
         // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
         try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
