@@ -11580,7 +11580,7 @@ components:
           description: Implementation specific ID for metrics in this webservice
         interval:
           type: string
-          description: Time between samples.
+          description: Time between samples
           enum:
           - SECOND
           - MINUTE
@@ -11596,11 +11596,11 @@ components:
             because they were invalid
         values:
           type: array
-          description: "Array of sample values, oldest values first."
+          description: "List of sample values, oldest values first"
           items:
             type: number
             format: double
-            description: "Array of sample values, oldest values first."
+            description: Sample value
       required:
       - begins
       - interval

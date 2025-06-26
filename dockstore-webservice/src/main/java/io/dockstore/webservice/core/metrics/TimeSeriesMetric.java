@@ -18,6 +18,7 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.Column;
@@ -26,6 +27,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
+import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -38,8 +40,8 @@ public class TimeSeriesMetric extends Metric {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false)
     @NotNull
-    @Schema(description = "Array of sample values, oldest values first.", requiredMode = RequiredMode.REQUIRED)
-    private Double[] values;
+    @ArraySchema(arraySchema = @Schema(description = "List of sample values, oldest values first"), schema = @Schema(description = "Sample value"))
+    private List<Double> values;
 
     @Column(nullable = false)
     @NotNull
@@ -48,7 +50,7 @@ public class TimeSeriesMetric extends Metric {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "Time between samples.", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Time between samples", requiredMode = RequiredMode.REQUIRED)
     private TimeSeriesMetricInterval interval;
 
     // database timestamps
@@ -81,11 +83,11 @@ public class TimeSeriesMetric extends Metric {
         this.dbUpdateDate = dbUpdateDate;
     }
 
-    public Double[] getValues() {
+    public List<Double> getValues() {
         return values;
     }
 
-    public void setValues(Double[] values) {
+    public void setValues(List<Double> values) {
         this.values = values;
     }
 
