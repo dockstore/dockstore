@@ -10735,6 +10735,8 @@ components:
           $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
+        dailyExecutionCounts:
+          $ref: '#/components/schemas/TimeSeriesMetric'
         executionStatusCount:
           type: integer
           format: int32
@@ -11563,6 +11565,46 @@ components:
       required:
       - dateExecuted
       - executionId
+    TimeSeriesMetric:
+      type: object
+      description: Describes a metric that consists of a series of data values sampled
+        at evenly-spaced points in time
+      properties:
+        begins:
+          type: string
+          format: date-time
+          description: Time that the first point was sampled at
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for metrics in this webservice
+        interval:
+          type: string
+          description: Time between samples.
+          enum:
+          - SECOND
+          - MINUTE
+          - HOUR
+          - DAY
+          - WEEK
+          - MONTH
+        numberOfSkippedExecutions:
+          type: integer
+          format: int32
+          default: 0
+          description: The number of executions that were skipped during aggregation
+            because they were invalid
+        values:
+          type: array
+          description: "Array of sample values, oldest values first."
+          items:
+            type: number
+            format: double
+            description: "Array of sample values, oldest values first."
+      required:
+      - begins
+      - interval
+      - values
     Token_Auth:
       type: object
       properties:

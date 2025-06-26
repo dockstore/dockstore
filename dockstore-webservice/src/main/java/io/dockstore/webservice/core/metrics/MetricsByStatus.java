@@ -71,9 +71,9 @@ public class MetricsByStatus {
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "dailyruncounttimeseriesid", referencedColumnName = "id")
-    @Schema(description = "daily run count time series for the status")
-    private TimeSeriesMetric dailyRunCountTimeSeries;
+    @JoinColumn(name = "dailyexecutioncountsid", referencedColumnName = "id")
+    @Schema(description = "daily execution count time series for the status")
+    private TimeSeriesMetric dailyExecutionCounts;
 
     public MetricsByStatus() {
 
@@ -131,11 +131,11 @@ public class MetricsByStatus {
         this.cost = cost;
     }
 
-    public TimeSeriesMetric getDailyRunCountTimeSeries() {
-        return dailyRunCountTimeSeries;
+    public TimeSeriesMetric getDailyExecutionCounts() {
+        return dailyExecutionCounts;
     }
 
-    public void setDailyRunCountTimeSeries(TimeSeriesMetric dailyRunCountTimeSeries) {
-        this.dailyRunCountTimeSeries = dailyRunCountTimeSeries;
+    public void setDailyExecutionCounts(TimeSeriesMetric dailyExecutionCounts) {
+        this.dailyExecutionCounts = dailyExecutionCounts;
     }
 }

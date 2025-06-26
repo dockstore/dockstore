@@ -37,7 +37,7 @@
         </createTable>
         <addForeignKeyConstraint baseColumnNames="id" baseTableName="timeseriesmetric" constraintName="fk_timeseriesmetric_metric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metric"/>
         <addColumn tableName="metrics_by_status">
-            <column name="dailyruncounttimeseriesid" type="BIGINT"/>
+            <column name="dailyexecutioncountsid" type="BIGINT"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>
