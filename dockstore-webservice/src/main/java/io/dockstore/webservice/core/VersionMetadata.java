@@ -33,7 +33,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.MapKey;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.MapsId;
@@ -81,9 +80,8 @@ public class VersionMetadata {
     protected String doiURL;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = { @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"), @JoinColumn(name = "doiinitiator", referencedColumnName = "initiator") },
-        uniqueConstraints = @UniqueConstraint(name = "unique_version_doiinitiator", columnNames = { "versionmetadataid", "doiinitiator" }))
-    @MapKey(name = "initiator")
+    @JoinTable(name = "version_metadata_doi", joinColumns = @JoinColumn(name = "versionmetadataid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKeyColumn(name = "doiinitiator", table = "doi")
     @MapKeyEnumerated(EnumType.STRING)
     @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
     @Schema(description = "The DOIs for the version of the entry")
