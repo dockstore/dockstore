@@ -576,9 +576,9 @@ class ZenodoIT {
         final String conceptDoiName = workflows.get(0).getConceptDois().get(DoiSelectionEnum.GITHUB.name()).getName();
         assertEquals(0, workflowsApi.updateDois(null, null).size(), "No workflows should be updated there are no new DOIs");
 
-        // Hack to remove GITHUB initiator version DOIs; need to change name because of DB constraint that names must be unique
-        testingPostgres.runUpdateStatement("update doi set name ='" + FAKE_VERSION_DOI + "', initiator = 'DOCKSTORE' where type = 'VERSION'");
-        testingPostgres.runUpdateStatement("update version_metadata_doi set doiinitiator = 'DOCKSTORE'");
+        // Hack to remove GITHUB initiator version DOIs
+        testingPostgres.runUpdateStatement("delete from version_metadata_doi where doiinitiator = 'GITHUB'");
+        testingPostgres.runUpdateStatement("delete from doi where type = 'VERSION' and initiator = 'GITHUB'");
         workflows = workflowsApi.updateDois(null, null);
         assertEquals(2, workflows.size(), "Concept DOI exists, but version DOIs are new");
         workflowsApi.getWorkflowVersions(workflows.get(0).getId(), null, null, null, null, null).forEach(wv -> assertEquals(VERSION_DOI, wv.getDois().get(DoiSelectionEnum.GITHUB.toString()).getName(),
