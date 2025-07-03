@@ -39,6 +39,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
  * @author gluu
@@ -70,11 +71,14 @@ public class ToolTesterResource {
             @QueryParam("filename") @Parameter(example = "1554477737092.log", required = true) String filename) {
         if (this.bucketName == null) {
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
-                    HttpStatus.SC_SERVICE_UNAVAILABLE);
+                HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
         ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
         try {
             return toolTesterS3Client.getToolTesterLog(toolId, toolVersionName, testFilename, runner, filename);
+        } catch (NoSuchKeyException e) {
+            LOG.error("The specified logs could not be found", e);
+            throw new CustomWebApplicationException("The specified logs could not be found", HttpStatus.SC_NOT_FOUND);
         } catch (AwsServiceException e) {
             LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
