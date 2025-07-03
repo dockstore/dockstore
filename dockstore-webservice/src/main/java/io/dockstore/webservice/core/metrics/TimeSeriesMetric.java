@@ -34,7 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Schema(name = "TimeSeriesMetric", description = "Describes a metric that consists of a series of data values sampled at evenly-spaced points in time")
+@Schema(name = "TimeSeriesMetric", description = "Describes a metric that consists of a series of data values sampled at evenly-spaced points in time", allOf = Metric.class)
 public class TimeSeriesMetric extends Metric {
 
     @JdbcTypeCode(SqlTypes.JSON)
