@@ -39,7 +39,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Schema(description = "A Digital Object Identifier (DOI)")
-@Table(name = "doi", uniqueConstraints = @UniqueConstraint(name = "unique_doi_name", columnNames = { "name" }))
+@Table(name = "doi", uniqueConstraints = { @UniqueConstraint(name = "unique_doi_name", columnNames = { "name" }), @UniqueConstraint(name = "unique_doi_initiator", columnNames = { "id", "initiator" }) })
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Doi.findByName", query = "SELECT d FROM Doi d WHERE :doiName = d.name")
 })
