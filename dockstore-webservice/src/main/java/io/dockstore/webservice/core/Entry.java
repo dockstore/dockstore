@@ -51,7 +51,6 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.MapKey;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.NamedNativeQueries;
@@ -267,7 +266,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_concept_doi", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "doiid", referencedColumnName = "id", columnDefinition = "bigint"))
-    @MapKey(name = "initiator")
+    @MapKeyColumn(name = "doiinitiator")
     @MapKeyEnumerated(EnumType.STRING)
     @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
     @Schema(description = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")

@@ -67,3 +67,7 @@ CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizati
 CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
 
 CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category' AND deleted = false;
+
+-- unable to convert these to JPA properly
+ALTER TABLE entry_concept_doi ADD CONSTRAINT entry_doi_initiator_fk FOREIGN KEY (doiid, doiinitiator) REFERENCES doi(id, initiator);
+ALTER TABLE version_metadata_doi ADD CONSTRAINT version_doi_initiator_fk FOREIGN KEY (doiid, doiinitiator) REFERENCES doi(id, initiator);
