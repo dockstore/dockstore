@@ -165,7 +165,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This is a link to a forum or discussion board")
     private String forumUrl;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @JsonAlias({ "tags", "workflowVersions"})
     @Cascade(CascadeType.DETACH)
