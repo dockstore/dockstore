@@ -127,6 +127,7 @@
         <addForeignKeyConstraint baseColumnNames="doiid,doiinitiator" baseTableName="version_metadata_doi" constraintName="version_doi_initiator_fk" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id,initiator" referencedTableName="doi"/>
     </changeSet>
     <changeSet author="dyuen (generated)" id="slightlyMoreGoogleToken">
-        <modifyDataType columnName="content" newDataType="varchar(256)" tableName="token"/>
+        <modifyDataType columnName="content" newDataType="varchar(4096)" tableName="token"/>
+        <modifyDataType columnName="refreshtoken" newDataType="varchar(4096)" tableName="token"/>
     </changeSet>
 </databaseChangeLog>
