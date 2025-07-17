@@ -43,6 +43,7 @@ import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -125,7 +126,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -911,8 +911,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @return a user's starredEntries for desired entryTypes
      */
     public Set<Entry> getStarredEntries(User user, Set<EntryType> desiredTypes) {
-        return user.getStarredEntries().stream().filter(entry -> desiredTypes.contains(entry.getEntryType()))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return userDAO.findStarredEntries(desiredTypes.stream().map(EntryTypeMetadata::entryType2class).collect(Collectors.toList()), user.getUsername());
     }
 
     @GET

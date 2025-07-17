@@ -16,9 +16,11 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.database.UserInfo;
 import java.util.List;
+import java.util.Set;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
@@ -68,6 +70,18 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return query.uniqueResult();
     }
 
+    /**
+     * Return starred entries for a particular end user
+     * @param entryTypes
+     * @param username
+     * @return
+     */
+    public Set<Entry> findStarredEntries(List<Class> entryTypes, String username) {
+        final Query query = namedTypedQuery("io.dockstore.webservice.core.User.findStarredEntries").setParameter("entryTypes", entryTypes).setParameter("username", username);
+        List<Entry> list = query.list();
+        return Set.copyOf(list);
+    }
+
     public User findByGoogleEmail(String email) {
         final Query<User> query = namedTypedQuery("io.dockstore.webservice.core.User.findByGoogleEmail")
             .setParameter("email", email);
@@ -86,10 +100,6 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
 
     public User findByGitHubUserId(String id) {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.User.findByGitHubUserId").setParameter("id", id));
-    }
-
-    public List<User> findAllGitHubUsers() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findAllGitHubUsers"));
     }
 
     public long findPublishedEntries(String username)  {
