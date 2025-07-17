@@ -155,10 +155,10 @@ public class EntryTypeMetadata {
      */
     public static Class<? extends Entry> entryType2class(EntryType entryType) {
         for (EntryTypeMetadata eTypeM : EntryTypeMetadata.values()) {
-            if (eTypeM.getTerm().equals(entryType.getTerm())) {
+            if (eTypeM.entryClass.getSimpleName().equalsIgnoreCase(entryType.name())) {
                 return eTypeM.entryClass;
             }
         }
-        throw new UnsupportedOperationException("Unknown language");
+        throw new UnsupportedOperationException("Unknown entryType");
     }
 }
