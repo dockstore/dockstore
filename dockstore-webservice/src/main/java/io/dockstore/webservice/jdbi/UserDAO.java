@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.database.UserInfo;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.hibernate.SessionFactory;
@@ -79,7 +80,7 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
     public Set<Entry> findStarredEntries(List<Class> entryTypes, String username) {
         final Query query = namedTypedQuery("io.dockstore.webservice.core.User.findStarredEntries").setParameter("entryTypes", entryTypes).setParameter("username", username);
         List<Entry> list = query.list();
-        return Set.copyOf(list);
+        return new LinkedHashSet(list);
     }
 
     public User findByGoogleEmail(String email) {
