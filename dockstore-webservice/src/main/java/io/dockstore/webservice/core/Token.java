@@ -98,7 +98,7 @@ public class Token implements Comparable<Token> {
     @JsonView(TokenViews.User.class)
     private TokenType tokenSource;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 4096)
     @ApiModelProperty(value = "Contents of the access token", position = 2)
     @JsonView(TokenViews.Auth.class)
     private String content;
@@ -112,7 +112,7 @@ public class Token implements Comparable<Token> {
     @JsonIgnore
     private String onlineProfileId;
 
-    @Column
+    @Column(length = 4096)
     @ApiModelProperty(position = 4)
     @JsonView(TokenViews.Auth.class)
     private String refreshToken;
