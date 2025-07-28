@@ -27,7 +27,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
-import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -857,7 +856,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.TOOL, EntryType.APPTOOL));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.TOOL, EntryTypeMetadata.APPTOOL));
     }
 
     @GET
@@ -871,7 +870,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.WORKFLOW));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.WORKFLOW));
     }
 
     @GET
@@ -886,7 +885,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.NOTEBOOK));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.NOTEBOOK));
     }
 
     @GET
@@ -900,7 +899,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.SERVICE));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.SERVICE));
     }
 
     /**
@@ -910,8 +909,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @param desiredTypes
      * @return a user's starredEntries for desired entryTypes
      */
-    public Set<Entry> getStarredEntries(User user, Set<EntryType> desiredTypes) {
-        return userDAO.findStarredEntries(desiredTypes.stream().map(EntryTypeMetadata::entryType2class).collect(Collectors.toList()), user.getUsername());
+    public Set<Entry> getStarredEntries(User user, Set<EntryTypeMetadata> desiredTypes) {
+        return userDAO.findStarredEntries(desiredTypes.stream().map(EntryTypeMetadata::getEntryClass).collect(Collectors.toList()), user.getUsername());
     }
 
     @GET

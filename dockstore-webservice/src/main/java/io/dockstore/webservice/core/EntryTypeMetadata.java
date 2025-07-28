@@ -147,18 +147,7 @@ public class EntryTypeMetadata {
         return List.of(TOOL, WORKFLOW, SERVICE, APPTOOL, NOTEBOOK);
     }
 
-    /**
-     * Map entryType to corresponding Java classes
-     *
-     * @param entryType
-     * @return
-     */
-    public static Class<? extends Entry> entryType2class(EntryType entryType) {
-        for (EntryTypeMetadata eTypeM : EntryTypeMetadata.values()) {
-            if (eTypeM.type == entryType) {
-                return eTypeM.entryClass;
-            }
-        }
-        throw new UnsupportedOperationException("Unknown entryType");
+    public Class<? extends Entry> getEntryClass() {
+        return entryClass;
     }
 }
