@@ -19,15 +19,15 @@ public class EntryTypeMetadata {
     private static final String NONE = "";
 
     public static final EntryTypeMetadata TOOL =
-        new EntryTypeMetadata(EntryType.TOOL, "tool", "tools", "containers", true, "", true, ElasticListener.TOOLS_INDEX, true, ElasticListener.TOOLS_INDEX);
+        new EntryTypeMetadata(EntryType.TOOL, "tool", "tools", "containers", true, "", true, ElasticListener.TOOLS_INDEX, true, ElasticListener.TOOLS_INDEX, Tool.class);
     public static final EntryTypeMetadata WORKFLOW =
-        new EntryTypeMetadata(EntryType.WORKFLOW, "workflow", "workflows", "workflows", true, ToolsImplCommon.WORKFLOW_PREFIX + "/", true, ElasticListener.WORKFLOWS_INDEX, true, ElasticListener.WORKFLOWS_INDEX);
+        new EntryTypeMetadata(EntryType.WORKFLOW, "workflow", "workflows", "workflows", true, ToolsImplCommon.WORKFLOW_PREFIX + "/", true, ElasticListener.WORKFLOWS_INDEX, true, ElasticListener.WORKFLOWS_INDEX, BioWorkflow.class);
     public static final EntryTypeMetadata SERVICE =
-        new EntryTypeMetadata(EntryType.SERVICE, "service", "services", "services", true, ToolsImplCommon.SERVICE_PREFIX + "/", false, NONE, false, NONE);
+        new EntryTypeMetadata(EntryType.SERVICE, "service", "services", "services", true, ToolsImplCommon.SERVICE_PREFIX + "/", false, NONE, false, NONE, Service.class);
     public static final EntryTypeMetadata APPTOOL =
-        new EntryTypeMetadata(EntryType.APPTOOL, "tool", "tools", "containers", true, "", true, ElasticListener.TOOLS_INDEX, true, ElasticListener.TOOLS_INDEX);
+        new EntryTypeMetadata(EntryType.APPTOOL, "tool", "tools", "containers", true, "", true, ElasticListener.TOOLS_INDEX, true, ElasticListener.TOOLS_INDEX, AppTool.class);
     public static final EntryTypeMetadata NOTEBOOK =
-        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/", true, ElasticListener.NOTEBOOKS_INDEX, true, ElasticListener.NOTEBOOKS_INDEX);
+        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/", true, ElasticListener.NOTEBOOKS_INDEX, true, ElasticListener.NOTEBOOKS_INDEX, Notebook.class);
 
     private final EntryType type;
     private final String term;
@@ -39,9 +39,10 @@ public class EntryTypeMetadata {
     private final String searchEntryType;
     private final boolean esSupported;
     private final String esIndex;
+    private final Class<? extends Entry> entryClass;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected EntryTypeMetadata(EntryType type, String term, String termPlural, String sitePath, boolean trsSupported, String trsPrefix, boolean searchSupported, String searchEntryType, boolean esSupported, String esIndex) {
+    protected EntryTypeMetadata(EntryType type, String term, String termPlural, String sitePath, boolean trsSupported, String trsPrefix, boolean searchSupported, String searchEntryType, boolean esSupported, String esIndex, Class<? extends Entry> entryClass) {
         this.type = type;
         this.term = term;
         this.termPlural = termPlural;
@@ -52,6 +53,7 @@ public class EntryTypeMetadata {
         this.searchEntryType = searchEntryType;
         this.esSupported = esSupported;
         this.esIndex = esIndex;
+        this.entryClass = entryClass;
     }
 
     /**
@@ -143,5 +145,9 @@ public class EntryTypeMetadata {
      */
     public static List<EntryTypeMetadata> values() {
         return List.of(TOOL, WORKFLOW, SERVICE, APPTOOL, NOTEBOOK);
+    }
+
+    public Class<? extends Entry> getEntryClass() {
+        return entryClass;
     }
 }

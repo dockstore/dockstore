@@ -27,7 +27,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
-import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -43,6 +42,7 @@ import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -125,7 +125,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -857,7 +856,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.TOOL, EntryType.APPTOOL));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.TOOL, EntryTypeMetadata.APPTOOL));
     }
 
     @GET
@@ -871,7 +870,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.WORKFLOW));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.WORKFLOW));
     }
 
     @GET
@@ -886,7 +885,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.NOTEBOOK));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.NOTEBOOK));
     }
 
     @GET
@@ -900,7 +899,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, Set.of(EntryType.SERVICE));
+        return this.getStarredEntries(u, Set.of(EntryTypeMetadata.SERVICE));
     }
 
     /**
@@ -910,9 +909,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @param desiredTypes
      * @return a user's starredEntries for desired entryTypes
      */
-    public Set<Entry> getStarredEntries(User user, Set<EntryType> desiredTypes) {
-        return user.getStarredEntries().stream().filter(entry -> desiredTypes.contains(entry.getEntryType()))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    public Set<Entry> getStarredEntries(User user, Set<EntryTypeMetadata> desiredTypes) {
+        return userDAO.findStarredEntries(desiredTypes.stream().map(EntryTypeMetadata::getEntryClass).collect(Collectors.toList()), user.getUsername());
     }
 
     @GET
