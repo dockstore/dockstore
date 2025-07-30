@@ -400,9 +400,9 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <id>artifactory.broadinstitute.org</id>
-      <name>artifactory.broadinstitute.org</name>
-      <url>https://broadinstitute.jfrog.io/artifactory/libs-release/</url>
+      <id>dsp-artifact-registry</id>
+      <name>dsp-artifact-registry/</name>
+      <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
     </repository>
   </repositories>
 </project>
