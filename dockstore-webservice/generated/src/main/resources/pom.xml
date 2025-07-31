@@ -1026,7 +1026,7 @@
       </snapshots>
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
-      <url>https://broadinstitute.jfrog.io/artifactory/libs-release/</url>
+      <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
     </repository>
   </repositories>
 </project>
