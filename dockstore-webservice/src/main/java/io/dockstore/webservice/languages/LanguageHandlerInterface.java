@@ -749,6 +749,14 @@ public interface LanguageHandlerInterface {
         return dockerHubImages;
     }
 
+    /**
+     * Get DockerHub images from a specific repo
+     * @param repo repository
+     * @param specifierType tag or digest
+     * @param specifierName branch or tag name
+     * @param dockerHubImages collection to add images to
+     * @param repoUrl docker hub url
+     */
     static void getImages(String repo, DockerSpecifier specifierType, String specifierName, Set<Image> dockerHubImages, String repoUrl) {
         Map<String, String> errorMap = new HashMap<>();
         Optional<String> response;
