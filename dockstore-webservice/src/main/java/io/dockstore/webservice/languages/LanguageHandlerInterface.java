@@ -703,109 +703,102 @@ public interface LanguageHandlerInterface {
 
     default Set<Image> getImagesFromDockerHub(final String repo, final DockerSpecifier specifierType, final String specifierName) {
         Set<Image> dockerHubImages = new HashSet<>();
-        Map<String, String> errorMap = new HashMap<>();
-        Optional<String> response;
-        boolean versionFound = false;
-        DockerHubTag dockerHubTag = new DockerHubTag();
-        String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
+        String repoUrl;
 
-        if (specifierType != DockerSpecifier.DIGEST) {
-            repoUrl += "?name=" + specifierName;
+        // now we need to convert a digest to a tag
+        if (specifierType == DockerSpecifier.DIGEST) {
+            repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags?page_size=100";
+            URL url = null;
+            DockerHubTag dockerHubTag;
+
+            try {
+                do {
+                    url = new URL(repoUrl);
+                    Optional<String> response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
+                    final String json = response.get();
+                    dockerHubTag = GSON.fromJson(json, DockerHubTag.class);
+                    Results[] results = dockerHubTag.getResults();
+                    for (Results r : results) {
+                        if (specifierName.equals(r.getDigest())) {
+                            return getImagesFromDockerHub(repo, DockerSpecifier.TAG, r.getName());
+                        }
+                    }
+                    repoUrl = dockerHubTag.getNext();
+                } while (dockerHubTag.getNext() != null);
+
+            } catch (IOException ex) {
+                LOG.error("Unable to get DockerHub response for digest listing" + repo, ex);
+                return new HashSet<>();
+            }
         }
 
-        do {
-            try {
-                URL url = new URL(repoUrl);
-                response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
-            } catch (IOException ex) {
-                LOG.error("Unable to get DockerHub response for " + repo, ex);
-                response = Optional.empty();
-            }
+        // then proceed with tags and retrieve only the specific deployer
+        if (specifierType == DockerSpecifier.TAG) {
+            repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags/" + specifierName;
+        } else {
+            LOG.error("Unknown specifier type {} in repo {}", specifierType, repo);
+            return new HashSet<>();
+        }
 
-            if (response.isPresent()) {
+        getImages(repo, specifierType, specifierName, dockerHubImages, repoUrl);
 
-                final String json = response.get();
-                errorMap = (Map<String, String>)GSON.fromJson(json, errorMap.getClass());
-                if (errorMap.get("message") != null) {
-                    LOG.error("Error response from DockerHub: " + errorMap.get("message"));
-                    return dockerHubImages;
-                }
-
-                // DockerHub seems to give empty results if something is not found, other fields are marked as null
-                dockerHubTag = GSON.fromJson(json, DockerHubTag.class);
-                List<Results> results = Arrays.asList(dockerHubTag.getResults());
-                if (results.isEmpty()) {
-                    LOG.error("Could not find any results for " + repo);
-                    break;
-                }
-
-                for (Results r : results) {
-                    if (specifierType == DockerSpecifier.DIGEST) {
-                        // Look through images and find the image with the specified digest
-                        List<DockerHubImage> images = Arrays.asList(r.getImages());
-
-                        // For every version, DockerHub can provide multiple images, one for each os/architecture
-                        images.stream().forEach(dockerHubImage -> {
-                            final String manifestDigest = dockerHubImage.getDigest();
-                            // Must perform null check for manifestDigest because there are Docker Hub images where the digest is null
-                            if (manifestDigest != null && manifestDigest.equals(specifierName)) {
-                                String tagName = r.getName(); // Tag that's associated with the image specified by digest
-                                Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
-                                List<Checksum> checksums = Collections.singletonList(checksum);
-                                // Docker Hub appears to return null for all the "last_pushed" properties of their images.
-                                // Using the result's "last_pushed" as a workaround
-                                Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB,
-                                        dockerHubImage.getSize(), r.getLastUpdated());
-
-                                String osInfo = formatImageInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
-                                String archInfo = formatImageInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
-                                archImage.setOs(osInfo);
-                                archImage.setArchitecture(archInfo);
-                                archImage.setSpecifier(specifierType);
-
-                                dockerHubImages.add(archImage);
-                            }
-                        });
-
-                        if (!dockerHubImages.isEmpty()) {
-                            versionFound = true;
-                            break;
-                        }
-                    } else if (r.getName().equals(specifierName)) { // match tag
-                        List<DockerHubImage> images = Arrays.asList(r.getImages());
-                        // For every version, DockerHub can provide multiple images, one for each os/architecture
-                        images.stream().forEach(dockerHubImage -> {
-                            final String manifestDigest = dockerHubImage.getDigest();
-                            Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
-                            List<Checksum> checksums = Collections.singletonList(checksum);
-                            // Docker Hub appears to return null for all the "last_pushed" properties of their images.
-                            // Using the result's "last_pushed" as a workaround
-                            Image archImage = new Image(checksums, repo, specifierName, r.getImageID(), Registry.DOCKER_HUB,
-                                    dockerHubImage.getSize(), r.getLastUpdated());
-
-                            String osInfo = formatImageInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
-                            String archInfo = formatImageInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
-                            archImage.setOs(osInfo);
-                            archImage.setArchitecture(archInfo);
-                            archImage.setSpecifier(specifierType);
-
-                            dockerHubImages.add(archImage);
-                        });
-                        versionFound = true;
-                        break;
-                    }
-                }
-                if (!versionFound) {
-                    repoUrl = dockerHubTag.getNext();
-                }
-            }
-        } while (response.isPresent() && !versionFound && dockerHubTag.getNext() != null);
-
-        if (!versionFound) {
+        if (dockerHubImages.isEmpty()) {
             LOG.error("Unable to find image with {}: {} from Docker Hub in repo {}", specifierType.name(), specifierName, repo);
         }
 
         return dockerHubImages;
+    }
+
+    static void getImages(String repo, DockerSpecifier specifierType, String specifierName, Set<Image> dockerHubImages, String repoUrl) {
+        Map<String, String> errorMap = new HashMap<>();
+        Optional<String> response;
+        try {
+            URL url = new URL(repoUrl);
+            response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
+        } catch (IOException ex) {
+            LOG.error("Unable to get DockerHub response for " + repo, ex);
+            response = Optional.empty();
+        }
+
+        if (response.isPresent()) {
+
+            final String json = response.get();
+            errorMap = (Map<String, String>) GSON.fromJson(json, errorMap.getClass());
+            if (errorMap.get("message") != null) {
+                LOG.error("Error response from DockerHub: " + errorMap.get("message"));
+                return;
+            }
+
+            // DockerHub seems to give empty results if something is not found, other fields are marked as null
+            Results dockerHubTag = GSON.fromJson(json, Results.class);
+
+            if (dockerHubTag == null) {
+                LOG.error("Could not find any results for " + repo);
+                return;
+            }
+
+            if (specifierName.equals(dockerHubTag.getName())) { // match tag
+                List<DockerHubImage> images = Arrays.asList(dockerHubTag.getImages());
+                // For every version, DockerHub can provide multiple images, one for each os/architecture
+                images.forEach(dockerHubImage -> {
+                    final String manifestDigest = dockerHubImage.getDigest();
+                    Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
+                    List<Checksum> checksums = Collections.singletonList(checksum);
+                    // Docker Hub appears to return null for all the "last_pushed" properties of their images.
+                    // Using the result's "last_pushed" as a workaround
+                    Image archImage = new Image(checksums, repo, specifierName, dockerHubTag.getImageID(), Registry.DOCKER_HUB,
+                        dockerHubImage.getSize(), dockerHubTag.getLastUpdated());
+
+                    String osInfo = formatImageInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
+                    String archInfo = formatImageInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
+                    archImage.setOs(osInfo);
+                    archImage.setArchitecture(archInfo);
+                    archImage.setSpecifier(specifierType);
+
+                    dockerHubImages.add(archImage);
+                });
+            }
+        }
     }
 
     static String formatImageInfo(String type, String version) {

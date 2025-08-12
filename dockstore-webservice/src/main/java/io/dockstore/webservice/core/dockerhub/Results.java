@@ -37,6 +37,8 @@ public class Results {
 
     private String repository;
 
+    private String digest;
+
     @SerializedName("image_id")
     private String imageID;
 
@@ -128,5 +130,13 @@ public class Results {
 
     public void setV2(String v2) {
         this.v2 = v2;
+    }
+
+    public String getDigest() {
+        return digest;
+    }
+
+    public void setDigest(String digest) {
+        this.digest = digest;
     }
 }
