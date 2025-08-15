@@ -53,6 +53,8 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
+          context:
+            - oicr-artifacts
       - full_build_check:
           <<: *common_filters
           requires:
@@ -61,35 +63,51 @@ workflows:
           <<: *common_filters
           requires:
             - build
+          context:
+            - oicr-artifacts
       - workflow-integration-tests:
           <<: *common_filters
           requires:
             - full_build_check
-          context: sonarcloud
+          context:
+            - oicr-artifacts
+            - sonarcloud
       - bitbucket-tests:
           <<: *common_filters
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - language-parsing-tests:
           <<: *common_filters
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - localstack-tests:
           <<: *common_filters
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - hoverfly-tests:
           <<: *common_filters
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - tool-integration-tests:
           <<: *common_filters
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - integration-tests:
           <<: *common_filters
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - regression-integration-tests:
           filters:
             branches:
@@ -99,6 +117,8 @@ workflows:
                 - /^hotfix.*$/
           requires:
             - full_build_check
+          context:
+            - oicr-artifacts
       - sonar-cloud:
           <<: *common_filters
           requires:
@@ -278,6 +298,9 @@ jobs:
           command: scripts/check_macos.sh
       - store_artifacts:
           path: temp/test-lists
+      - run:
+          name: Get access to OICR artifacts
+          run: mv .github/collab-mvn-settings.xml ~/.m2/settings.xml
       - run:
           name: build
           command: ./mvnw -B clean install -DskipTests

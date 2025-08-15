@@ -38,7 +38,9 @@ jobs:
           restore-keys: |
            ${{ runner.os }}-maven-
       - name: Build with mvnw
-        run: ./mvnw clean install
+        run: ./mvnw clean install -s .github/collab-mvn-settings.xml
+        env:
+          COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
 
       - name: Check license file
         uses: dockstore/workflow-actions/.github/actions/check-license@main
