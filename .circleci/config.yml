@@ -300,7 +300,7 @@ jobs:
           path: temp/test-lists
       - run:
           name: Get access to OICR artifacts
-          run: mv .github/collab-mvn-settings.xml ~/.m2/settings.xml
+          command: mv .github/collab-mvn-settings.xml ~/.m2/settings.xml
       - run:
           name: build
           command: ./mvnw -B clean install -DskipTests
