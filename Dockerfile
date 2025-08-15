@@ -21,11 +21,11 @@ RUN mkdir /dockstore_logs && chmod a+rx /dockstore_logs
 ARG galaxy_plugin_version=0.0.8
 RUN apt-get install -y wget
 RUN mkdir -p /root/.dockstore/language-plugins
-RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/${galaxy_plugin_version}/dockstore-galaxy-interface-${galaxy_plugin_version}.jar
+RUN wget --user=dockstore-bot --password=${env.COLLAB_DEPLOY_TOKEN} -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/${galaxy_plugin_version}/dockstore-galaxy-interface-${galaxy_plugin_version}.jar
 
 # Include snakemake language plugin
 ARG snakemake_plugin_version=0.0.5
-RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/snakemake-language-interface/${snakemake_plugin_version}/snakemake-language-interface-${snakemake_plugin_version}.jar
+RUN wget --user=dockstore-bot --password=${env.COLLAB_DEPLOY_TOKEN} -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/snakemake-language-interface/${snakemake_plugin_version}/snakemake-language-interface-${snakemake_plugin_version}.jar
 
 
 # Wipe them out, all of them, to reduce CVEs

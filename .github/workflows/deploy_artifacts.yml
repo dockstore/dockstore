@@ -14,7 +14,7 @@ on:
   
 jobs:
   deploy_artifacts:
-    uses: dockstore/workflow-actions/.github/workflows/deploy_artifacts.yaml@main
+    uses: dockstore/workflow-actions/.github/workflows/deploy_artifacts.yaml@oicr-artifacts
     with:
       createDockerImage: true
       quayRepository: dockstore-webservice
