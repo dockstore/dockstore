@@ -300,7 +300,7 @@ jobs:
           path: temp/test-lists
       - run:
           name: Get access to OICR artifacts
-          command: mv .github/collab-mvn-settings.xml ~/.m2/settings.xml
+          command: cp .github/collab-mvn-settings.xml ~/.m2/settings.xml
       - run:
           name: build
           command: ./mvnw -B clean install -DskipTests
@@ -610,7 +610,7 @@ commands:
             - dockstore-web-cache-
       - run:
           name: Get access to OICR artifacts
-          command: mv .github/collab-mvn-settings.xml ~/.m2/settings.xml
+          command: cp .github/collab-mvn-settings.xml ~/.m2/settings.xml
   setup_integration_test:
     parameters:
       use_hoverfly_cert:
