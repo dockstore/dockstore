@@ -608,6 +608,9 @@ commands:
             - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-
             - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-
             - dockstore-web-cache-
+      - run:
+          name: Get access to OICR artifacts
+          command: mv .github/collab-mvn-settings.xml ~/.m2/settings.xml
   setup_integration_test:
     parameters:
       use_hoverfly_cert:
