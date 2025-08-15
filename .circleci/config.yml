@@ -226,6 +226,9 @@ jobs:
           name: install pip dependencies
           command: scripts/install-tests.sh
       - run:
+          name: Get access to OICR artifacts
+          command: cp .github/collab-mvn-settings.xml ~/.m2/settings.xml
+      - run:
           name: build sam-cli
           command: |
             pip3 install aws-sam-cli==1.121.0
@@ -396,6 +399,9 @@ jobs:
             - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-
             - dockstore-web-cache-unit-test-
             - dockstore-web-cache-
+      - run:
+          name: Get access to OICR artifacts
+          command: cp .github/collab-mvn-settings.xml ~/.m2/settings.xml
       - run:
           name: run the actual tests
           command: |
