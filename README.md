@@ -56,6 +56,7 @@ and setup with the database user specified in [.circleci/config.yml](https://git
 
 ### Building
 
+
 As an alternative to the following commands, if you do not have Maven installed you can use the maven wrapper as a substitute. For example:
 
     ./mvnw clean install
