@@ -3357,6 +3357,36 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{entryId}/versions/{versionId}/generateCustomDoi:
+    post:
+      description: Generate a custom DOI for the specific version
+      operationId: generateCustomDoi
+      parameters:
+      - description: Entry to generate the DOI for
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Version to generate the DOI for
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doi'
+          description: Successfully created custom DOI
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{id}:
     delete:
       description: Completely remove an entry from Dockstore.
@@ -9646,6 +9676,7 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
+          - CUSTOM
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9804,6 +9835,7 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
+          - CUSTOM
           example: USER
         name:
           type: string
@@ -9874,6 +9906,7 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
+          - CUSTOM
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -12705,6 +12738,7 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
+          - CUSTOM
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
