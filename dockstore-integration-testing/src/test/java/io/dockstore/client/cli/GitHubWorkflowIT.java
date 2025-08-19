@@ -464,14 +464,13 @@ class GitHubWorkflowIT extends BaseIT {
         trsVersion.getImages().forEach(image -> assertEquals("library/ubuntu:16.04", image.getImageName()));
 
         // Workflow with Docker Hub image specified using a digest
-        String dockerHubDigestVersionName = "dockerHubDigestImage";
+        String dockerHubDigestVersionName = "DockerHubImageWithDigest224";
         snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubDigestVersionName);
-        assertEquals(1, snapshotVersion.getImages().size(), "Should only be one image in this workflow");
+        assertEquals(5, snapshotVersion.getImages().size(), "Should only be 12 images in this workflow");
         trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW, dockerHubDigestVersionName);
-        assertEquals(1, trsVersion.getImages().size(), "Should be one image in this TRS version");
-        // library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c refers to ubuntu version 16.04, amd64 os/arch
-        trsVersion.getImages().forEach(image ->
-            assertEquals("library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c", image.getImageName()));
+        assertEquals(5, trsVersion.getImages().size(), "Should be 12 images in this TRS version");
+        // library/ubuntu@sha256:3f85b7caad41a95462cf5b787d8a04604c8262cdcdf9a472b8c52ef83375fe15 refers to library/ubuntu:noble-20240429
+        assertTrue(trsVersion.getImages().stream().anyMatch(image -> "library/ubuntu:noble-20240429".equals(image.getImageName())));
     }
 
     @Test
