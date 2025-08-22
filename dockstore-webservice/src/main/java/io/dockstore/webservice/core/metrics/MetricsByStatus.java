@@ -75,6 +75,12 @@ public class MetricsByStatus {
     @Schema(description = "daily execution count time series for the status")
     private TimeSeriesMetric dailyExecutionCounts;
 
+    @Valid
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "weeklyexecutioncountsid", referencedColumnName = "id")
+    @Schema(description = "weekly execution count time series for the status")
+    private TimeSeriesMetric weeklyExecutionCounts;
+
     public MetricsByStatus() {
 
     }
@@ -137,5 +143,13 @@ public class MetricsByStatus {
 
     public void setDailyExecutionCounts(TimeSeriesMetric dailyExecutionCounts) {
         this.dailyExecutionCounts = dailyExecutionCounts;
+    }
+
+    public TimeSeriesMetric getWeeklyExecutionCounts() {
+        return weeklyExecutionCounts;
+    }
+
+    public void setWeeklyExecutionCounts(TimeSeriesMetric weeklyExecutionCounts) {
+        this.weeklyExecutionCounts = weeklyExecutionCounts;
     }
 }
