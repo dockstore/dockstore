@@ -27,17 +27,17 @@ actionOnlyInformation:
         runs-on: macos-latest
         steps:
           - name: Checkout dockstore/dockstore
-            uses: actions/checkout@v4
+            uses: actions/checkout@v5
             with:
               repository: dockstore/dockstore
               path: dockstore
           - name: Checkout dockstore/dockstore-ui2
-            uses: actions/checkout@v4
+            uses: actions/checkout@v5
             with:
               repository: dockstore/dockstore-ui2
               path: dockstore-ui2
           - name: Setup Java
-            uses: actions/setup-java@v4
+            uses: actions/setup-java@v5
             with:
               distribution: 'temurin'
               java-version: '17'

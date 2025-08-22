@@ -69,6 +69,12 @@ public class MetricsByStatus {
     @Schema(description = "Aggregated cost metrics in USD for the status")
     private CostStatisticMetric cost;
 
+    @Valid
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "dailyexecutioncountsid", referencedColumnName = "id")
+    @Schema(description = "daily execution count time series for the status")
+    private TimeSeriesMetric dailyExecutionCounts;
+
     public MetricsByStatus() {
 
     }
@@ -123,5 +129,13 @@ public class MetricsByStatus {
 
     public void setCost(CostStatisticMetric cost) {
         this.cost = cost;
+    }
+
+    public TimeSeriesMetric getDailyExecutionCounts() {
+        return dailyExecutionCounts;
+    }
+
+    public void setDailyExecutionCounts(TimeSeriesMetric dailyExecutionCounts) {
+        this.dailyExecutionCounts = dailyExecutionCounts;
     }
 }
