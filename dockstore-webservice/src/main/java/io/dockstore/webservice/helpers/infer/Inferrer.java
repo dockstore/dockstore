@@ -40,9 +40,17 @@ public interface Inferrer {
     List<Entry> infer(FileTree fileTree);
 
     /**
+     * Returns true if the file tree has a descriptor path. Used to quickly determine if the file tree potentially has entries
+     * without inferring the whole file tree.
+     * @param fileTree
+     * @return
+     */
+    boolean containsDescriptorPath(FileTree fileTree);
+
+    /**
      * Describes an inferred entry.
      */
-    public record Entry(EntryType type, DescriptorLanguage language, DescriptorLanguageSubclass subclass, Path path, String name) {
+    record Entry(EntryType type, DescriptorLanguage language, DescriptorLanguageSubclass subclass, Path path, String name) {
         public Entry changeName(String newName) {
             return new Entry(type, language, subclass, path, newName);
         }

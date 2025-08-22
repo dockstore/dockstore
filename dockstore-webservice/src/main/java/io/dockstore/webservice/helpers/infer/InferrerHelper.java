@@ -55,6 +55,15 @@ public class InferrerHelper {
     }
 
     /**
+     * Returns true if the file tree potentially contains any type of entry.
+     * @param fileTree
+     * @return
+     */
+    public boolean potentiallyContainsEntries(FileTree fileTree) {
+        return getInferrers().stream().anyMatch(inferrer -> inferrer.containsDescriptorPath(fileTree));
+    }
+
+    /**
      * Produces a "standard" list of inferrers.
      */
     public List<Inferrer> getInferrers() {

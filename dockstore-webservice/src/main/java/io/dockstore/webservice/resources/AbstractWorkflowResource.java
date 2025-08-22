@@ -3,6 +3,7 @@ package io.dockstore.webservice.resources;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import static io.dockstore.webservice.core.UserNotification.Action.INFER_DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
@@ -26,6 +27,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry.TopicSelection;
+import io.dockstore.webservice.core.GitHubAppNotification;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -41,10 +43,12 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ExceptionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -52,14 +56,18 @@ import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.RateLimitHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.helpers.ZipGitHubFileTree;
+import io.dockstore.webservice.helpers.infer.InferrerHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
+import io.dockstore.webservice.jdbi.GitHubAppNotificationDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.OrcidAuthorDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -118,6 +126,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final LambdaEventDAO lambdaEventDAO;
     protected final FileFormatDAO fileFormatDAO;
     protected final OrcidAuthorDAO orcidAuthorDAO;
+    protected final GitHubAppNotificationDAO gitHubAppNotificationDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -141,6 +150,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.orcidAuthorDAO = new OrcidAuthorDAO(sessionFactory);
+        this.gitHubAppNotificationDAO = new GitHubAppNotificationDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -412,22 +422,57 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
+    protected List<String> identifyImportantBranches(String repository, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+        try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
+            return gitHubSourceCodeRepo.listBranchesByImportance(repository);
+        }
+    }
+
     /**
      * Identify git references that may be worth trying to handle as a github apps release event
      * @param repository
      * @param installationId
      * @return
      */
-    protected Set<String> identifyGitReferencesToRelease(String repository, long installationId) {
+    protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> branches) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
-        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
+            List<String> references = branches.stream().map(branch -> "refs/heads/" + branch).toList();
+            return gitHubSourceCodeRepo.detectDockstoreYml(repository, references);
+        }
+    }
 
-        // see if there is a .dockstore.yml on any branch that was just added
-        Set<String> branchCandidates = new HashSet<>(gitHubSourceCodeRepo.detectDockstoreYml(repository));
+    protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<String> importantBranches) {
+        // Create the repo and file tree.
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+        String organization = repositoryId.split("/")[0];
+        String repository = repositoryId.split("/")[1];
 
-        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
-        return branchCandidates;
+        // If we've already inferred on this repo, don't try again.
+        if (gitHubAppNotificationDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository) != null) {
+            LOG.info("User notification already created for inferring repo {}", repositoryId);
+            return;
+        }
+
+        try {
+            InferrerHelper inferrerHelper = new InferrerHelper();
+            final boolean potentiallyContainsEntries = importantBranches.stream().anyMatch(branch -> {
+                FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, repositoryId, "refs/heads/" + branch));
+                return inferrerHelper.potentiallyContainsEntries(fileTree);
+            });
+            if (potentiallyContainsEntries) {
+                // Create notification
+                GitHubAppNotification gitHubAppNotification = new GitHubAppNotification();
+                gitHubAppNotification.setSourceControl(SourceControl.GITHUB);
+                gitHubAppNotification.setOrganization(organization);
+                gitHubAppNotification.setRepository(repository);
+                gitHubAppNotification.setAction(INFER_DOCKSTORE_YML);
+                user.ifPresent(gitHubAppNotification::setUser);
+                gitHubAppNotificationDAO.create(gitHubAppNotification);
+            }
+        } catch (RuntimeException e) {
+            LOG.error("Failed to infer repo", e);
+        }
     }
 
     /**
@@ -460,7 +505,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 return;
             }
 
-            SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
+            Optional<SourceFile> optionalDockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
+            if (optionalDockstoreYml.isEmpty()) {
+                // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
+                Optional<User> user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, sender);
+                notifyIfPotentiallyContainsEntries(user, repository, installationId, List.of(gitReference));
+                // TODO: https://github.com/dockstore/dockstore/issues/3239
+                throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+            }
+            SourceFile dockstoreYml = optionalDockstoreYml.get();
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());

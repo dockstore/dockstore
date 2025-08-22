@@ -86,6 +86,11 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
         return List.of();
     }
 
+    @Override
+    public boolean containsDescriptorPath(FileTree fileTree) {
+        return fileTree.listPaths().stream().anyMatch(this::isDescriptorPath);
+    }
+
     protected final boolean isDescriptorPath(Path path) {
         return isDescriptorPath(path.toString());
     }

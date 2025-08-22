@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core.webhook;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
@@ -26,7 +27,7 @@ import java.util.List;
  * A subset of fields available in a GitHub webhook installation_repositories payload. The fields in this class are fields that the webservice uses.
  * Add more fields as we need them. Fields are from https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#installation_repositories
  */
-@Schema(description = "A model for a GitHub webhook installation event", allOf = Payload.class, example = InstallationRepositoriesPayload.EXAMPLE)
+@Schema(description = "A model for a GitHub webhook installation event", allOf = Payload.class, exampleClasses = InstallationRepositoriesPayload.class)
 public class InstallationRepositoriesPayload extends Payload {
     // Example excluding the 'repository' property because it's not needed for this payload
     static final String EXAMPLE = """
@@ -49,7 +50,7 @@ public class InstallationRepositoriesPayload extends Payload {
                 """;
 
     @JsonProperty
-    @Schema(name = "action", description = "The action which the event describes", requiredMode = RequiredMode.REQUIRED)
+    @Schema(name = "action", description = "The action which the event describes", requiredMode = RequiredMode.REQUIRED, example = "added")
     private String action;
 
     @JsonProperty("repositories_added")
@@ -86,6 +87,13 @@ public class InstallationRepositoriesPayload extends Payload {
 
     public void setRepositoriesRemoved(List<WebhookRepository> repositoriesRemoved) {
         this.repositoriesRemoved = repositoriesRemoved;
+    }
+
+    @Override
+    @JsonIgnore
+    @Schema(hidden = true) // excluding the 'repository' property because it's not needed for this payload
+    public WebhookRepository getRepository() {
+        return super.getRepository();
     }
 
     /**

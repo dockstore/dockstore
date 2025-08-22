@@ -1084,7 +1084,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @return dockstore YML file
      */
-    public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
+    public Optional<SourceFile> getDockstoreYml(String repositoryId, String gitReference) {
         GHRepository repository;
         try {
             repository = getRepository(repositoryId);
@@ -1096,11 +1096,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
             if (dockstoreYmlContent != null) {
                 // Create file for .dockstore.yml
-                return SourceFile.limitedBuilder().type(DescriptorLanguage.FileType.DOCKSTORE_YML).content(dockstoreYmlContent).paths(dockstoreYmlPath).build();
+                return Optional.of(SourceFile.limitedBuilder().type(DescriptorLanguage.FileType.DOCKSTORE_YML).content(dockstoreYmlContent).paths(dockstoreYmlPath).build());
             }
         }
-        // TODO: https://github.com/dockstore/dockstore/issues/3239
-        throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+        return Optional.empty();
     }
 
     public void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
@@ -1232,40 +1231,55 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Detect branches that include a .dockstore.yml using a variety of heuristics.
-     * Heuristics include the default branch, branches that are likely active or important, and branches with recent pushes.
-     * Tries to avoid an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
+     * Detect references that include a .dockstore.yml.
      */
-    public Set<String> detectDockstoreYml(String repositoryId) {
-        final int maxResults = 5;
-        final Set<String> likelies = Set.of("master", "main", "develop");
-
+    public List<String> detectDockstoreYml(String repositoryId, List<String> references) {
         try {
             if (repositoryId == null) {
-                return Set.of();
+                return List.of();
+            }
+            // Get repository.
+            GHRepository repository = getRepository(repositoryId);
+            // For a subset of references, return the corresponding refs that contain a .dockstore.yml.
+            return references.stream()
+                .filter(ref -> hasDockstoreYml(repository, ref))
+                .toList();
+
+        } catch (GHException e) {
+            LOG.error("Unable to check for .dockstore.ymls for repository " + repositoryId, e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Lists the branches in the given repository in descending order of "importance".
+     * Heuristics include the default branch, branches that have names corresponding to development or main branches, and branches with recent pushes.
+     * Tries to avoid an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
+     */
+    public List<String> listBranchesByImportance(String repositoryId) {
+        final Set<String> likelies = Set.of("master", "main", "develop");
+        try {
+            if (repositoryId == null) {
+                return List.of();
             }
             // Get repository and default branch.
             GHRepository repository = getRepository(repositoryId);
             String defaultBranch = repository.getDefaultBranch();
 
             // Get the branch names, ordered so that branches with recent pushes are first.
-            List<String> branches = getBranchesWithRecentPushesFirst(repository);
+            List<String> branches = listBranchesWithRecentPushesFirst(repository);
 
             // Reorder the branch names so the default branch comes first, followed by any "likely" branches, then the rest.
             // Do so by first moving the likelies to the front, and then moving the default branch to the front.
             branches = listTrueFirst(branches, likelies::contains);
             branches = listTrueFirst(branches, branch -> Objects.equals(defaultBranch, branch));
 
-            // For a subset of branches at the front of the list, return a set of the corresponding refs that contain a .dockstore.yml.
-            return branches.stream()
-                .limit(maxResults)
-                .map(branch -> REFS_HEADS + branch)
-                .filter(ref -> hasDockstoreYml(repository, ref))
-                .collect(Collectors.toSet());
+            // Eliminate duplicates and return.
+            return branches.stream().distinct().toList();
 
         } catch (IOException | GHException e) {
             LOG.error("Unable to retrieve/analyze branch candidates for repository " + repositoryId, e);
-            return Set.of();
+            return List.of();
         }
     }
 
@@ -1275,7 +1289,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * This method caps the number of refs and events retrieved, so that we don't chew up our rate limit on
      * a repo with a large number of either.
      */
-    private List<String> getBranchesWithRecentPushesFirst(GHRepository repository) throws IOException {
+    private List<String> listBranchesWithRecentPushesFirst(GHRepository repository) throws IOException {
         final int maxRefs = 120;
         final int maxEvents = 30;
 
@@ -1300,13 +1314,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         // Add the rest of the branch names to the "end" of the linked set.
-        branches.addAll(getBranches(repository, maxRefs));
+        branches.addAll(listBranches(repository, maxRefs));
 
         // Convert to a list and return.
         return new ArrayList<>(branches);
     }
 
-    private List<String> getBranches(GHRepository repository, int maxRefs) throws IOException {
+    private List<String> listBranches(GHRepository repository, int maxRefs) throws IOException {
         return streamIterable(repository.listRefs())
             .limit(maxRefs)
             .map(GHRef::getRef)
