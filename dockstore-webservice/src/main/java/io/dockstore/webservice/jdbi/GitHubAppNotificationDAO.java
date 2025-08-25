@@ -54,7 +54,7 @@ public class GitHubAppNotificationDAO extends AbstractDAO<GitHubAppNotification>
         Root<GitHubAppNotification> userNotificationRoot = query.from(GitHubAppNotification.class);
         query.select(userNotificationRoot)
             .where(cb.equal(userNotificationRoot.get("user"), user))
-            .orderBy(cb.asc(userNotificationRoot.get("dbCreateDate")));
+            .orderBy(cb.desc(userNotificationRoot.get("dbCreateDate")));
         return currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit).getResultList();
     }
 
