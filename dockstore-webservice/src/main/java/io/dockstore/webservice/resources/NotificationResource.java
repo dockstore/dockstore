@@ -1,6 +1,12 @@
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.resources.LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AbstractNotification;
@@ -22,14 +28,20 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import org.apache.http.HttpStatus;
@@ -127,8 +139,12 @@ public class NotificationResource {
     @Path("/notifications/user")
     @UnitOfWork
     @Operation(operationId = "getUserNotifications", description = "Return all notifications for a user", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<UserNotification> getUserNotifications(@Auth User user) {
-        return userNotificationDAO.findByUser(user);
+    public List<UserNotification> getUserNotifications(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") @Min(0) int offset,
+        @Parameter(description = PAGINATION_LIMIT_TEXT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) int limit,
+        @Context HttpServletResponse response) {
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(userNotificationDAO.getCountByUser(user)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
+        return userNotificationDAO.findByUser(user, offset, limit);
     }
 
     // delete a notification by its id
@@ -136,7 +152,7 @@ public class NotificationResource {
     @Path("/notifications/user/{id}")
     @UnitOfWork
     @Operation(operationId = "deleteUserNotification", description = "Delete a user notification", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public void deleteUserNotification(@Parameter(description = "Notification to delete", required = true) @PathParam("id") Long id, @Auth User user) {
+    public void deleteUserNotification(@Parameter(description = "Notification to delete", required = true) @PathParam("id") Long id, @Parameter(hidden = true, name = "user") @Auth User user) {
         UserNotification notification = userNotificationDAO.findById(id);
         throwErrorIfNull(notification);
 
@@ -150,8 +166,12 @@ public class NotificationResource {
     @Path("/notifications/user/githubapp")
     @UnitOfWork
     @Operation(operationId = "getGitHubAppNotifications", description = "Return all GitHub App notifications for a user", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<GitHubAppNotification> getUserGitHubAppNotifications(@Auth User user) {
-        return gitHubAppNotificationDAO.findByUser(user);
+    public List<GitHubAppNotification> getUserGitHubAppNotifications(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") @Min(0) int offset,
+        @Parameter(description = PAGINATION_LIMIT_TEXT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) int limit,
+        @Context HttpServletResponse response) {
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(gitHubAppNotificationDAO.getCountByUser(user)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
+        return gitHubAppNotificationDAO.findByUser(user, offset, limit);
     }
 
     private void throwErrorIfNull(AbstractNotification notification) {

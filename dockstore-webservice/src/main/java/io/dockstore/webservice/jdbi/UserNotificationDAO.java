@@ -3,6 +3,9 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.UserNotification;
 import io.dropwizard.hibernate.AbstractDAO;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -38,5 +41,21 @@ public class UserNotificationDAO extends AbstractDAO<UserNotification> {
         Query<UserNotification> query = namedTypedQuery("io.dockstore.webservice.core.UserNotification.findByUser")
             .setParameter("user", user);
         return list(query);
+    }
+
+    public List<UserNotification> findByUser(User user, Integer offset, Integer limit) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<UserNotification> query = cb.createQuery(UserNotification.class);
+        Root<UserNotification> userNotificationRoot = query.from(UserNotification.class);
+        query.select(userNotificationRoot)
+            .where(cb.equal(userNotificationRoot.get("user"), user))
+            .orderBy(cb.asc(userNotificationRoot.get("dbCreateDate")));
+        return currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit).getResultList();
+    }
+
+    public long getCountByUser(User user) {
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.UserNotification.getCountByUser", Long.class)
+            .setParameter("user", user)
+            .getSingleResult();
     }
 }
