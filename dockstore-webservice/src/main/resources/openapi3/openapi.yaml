@@ -10883,6 +10883,8 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+        weeklyExecutionCounts:
+          $ref: '#/components/schemas/TimeSeriesMetric'
       required:
       - executionStatusCount
     Notebook:

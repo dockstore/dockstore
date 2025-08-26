@@ -41,6 +41,12 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="dailyexecutioncountsid" baseTableName="metrics_by_status" constraintName="fk_metrics_by_status_dailyexecutioncountsid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="timeseriesmetric"/>
     </changeSet>
+    <changeSet author="svonworl" id="addWeeklyTimeSeries">
+        <addColumn tableName="metrics_by_status">
+            <column name="weeklyexecutioncountsid" type="BIGINT"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="weeklyexecutioncountsid" baseTableName="metrics_by_status" constraintName="fk_metrics_by_status_weeklyexecutioncountsid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="timeseriesmetric"/>
+    </changeSet>
     <changeSet author="ktran (generated)" id="createNotificationsForDockstoreYmlInference">
         <createTable tableName="github_app_notification">
             <column autoIncrement="true" name="id" type="BIGINT">
