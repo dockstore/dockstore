@@ -34,5 +34,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "*"
+    exclude-paths:
+      - "dockstore-webservice/src/main/resources/requirements/**"
