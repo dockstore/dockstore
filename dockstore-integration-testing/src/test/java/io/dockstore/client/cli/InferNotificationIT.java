@@ -5,6 +5,8 @@ import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstal
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -13,6 +15,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.CurationApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.GitHubAppNotification;
@@ -60,7 +63,9 @@ class InferNotificationIT extends BaseIT {
         );
 
         // Track release event that creates notification
-        handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, rootTest, USER_2_USERNAME);
+        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, rootTest, USER_2_USERNAME)
+        );
+        assertTrue(exception.getMessage().contains("Could not retrieve .dockstore.yml."));
         // after a release, inference now generates one github app notification
         List<GitHubAppNotification> gitHubAppNotifications = curationApi.getGitHubAppNotifications(0, 100);
         assertEquals(1, gitHubAppNotifications.size());
