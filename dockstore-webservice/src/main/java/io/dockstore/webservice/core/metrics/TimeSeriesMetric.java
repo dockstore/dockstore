@@ -30,6 +30,8 @@ import java.sql.Timestamp;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
@@ -43,6 +45,7 @@ public class TimeSeriesMetric extends Metric {
     @ArraySchema(arraySchema = @Schema(description = "List of sample values, oldest values first"), schema = @Schema(description = "Sample value"))
     private List<Double> values;
 
+    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE_UTC)
     @Column(nullable = false)
     @NotNull
     @Schema(description = "Time that the first point was sampled at", requiredMode = RequiredMode.REQUIRED)
