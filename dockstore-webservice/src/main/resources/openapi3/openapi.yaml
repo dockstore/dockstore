@@ -11576,7 +11576,8 @@ components:
           begins:
             type: string
             format: date-time
-            description: Time that the first point was sampled at
+            description: Time of the midpoint of the bin corresponding to the oldest
+              sample value
           id:
             type: integer
             format: int64

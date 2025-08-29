@@ -27,11 +27,10 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
@@ -45,11 +44,10 @@ public class TimeSeriesMetric extends Metric {
     @ArraySchema(arraySchema = @Schema(description = "List of sample values, oldest values first"), schema = @Schema(description = "Sample value"))
     private List<Double> values;
 
-    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE_UTC)
     @Column(nullable = false)
     @NotNull
-    @Schema(description = "Time that the first point was sampled at", requiredMode = RequiredMode.REQUIRED)
-    private Timestamp begins;
+    @Schema(description = "Time of the midpoint of the bin corresponding to the oldest sample value", requiredMode = RequiredMode.REQUIRED)
+    private Instant begins;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -94,11 +92,11 @@ public class TimeSeriesMetric extends Metric {
         this.values = values;
     }
 
-    public Timestamp getBegins() {
+    public Instant getBegins() {
         return begins;
     }
 
-    public void setBegins(Timestamp begins) {
+    public void setBegins(Instant begins) {
         this.begins = begins;
     }
 
