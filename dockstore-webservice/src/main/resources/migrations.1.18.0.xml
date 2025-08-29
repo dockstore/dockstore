@@ -47,4 +47,7 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="weeklyexecutioncountsid" baseTableName="metrics_by_status" constraintName="fk_metrics_by_status_weeklyexecutioncountsid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="timeseriesmetric"/>
     </changeSet>
+    <changeSet author="svonworl" id="changeTimeSeriesToUtc">
+        <modifyDataType tableName="timeseriesmetric" columnName="begins" newDataType="TIMESTAMP WITH TIME ZONE"/>
+    </changeSet>
 </databaseChangeLog>
