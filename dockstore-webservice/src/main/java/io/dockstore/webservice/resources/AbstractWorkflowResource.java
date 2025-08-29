@@ -114,6 +114,7 @@ import org.slf4j.LoggerFactory;
 @Api("workflows")
 public abstract class AbstractWorkflowResource<T extends Workflow> implements SourceControlResourceInterface, AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowResource.class);
+    public static final String COULD_NOT_RETRIEVE_DOCKSTORE_YML = "Could not retrieve .dockstore.yml.";
 
     protected final HttpClient client;
     protected final TokenDAO tokenDAO;
@@ -511,7 +512,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 Optional<User> user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, sender);
                 notifyIfPotentiallyContainsEntries(user, repository, installationId, List.of(gitReference));
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
-                throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+                throw new CustomWebApplicationException(COULD_NOT_RETRIEVE_DOCKSTORE_YML + " Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
             }
             SourceFile dockstoreYml = optionalDockstoreYml.get();
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
