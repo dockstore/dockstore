@@ -3027,7 +3027,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notification'
+                  $ref: '#/components/schemas/PublicNotification'
           description: default response
       tags:
       - curation
@@ -3038,7 +3038,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/PublicNotification'
         description: Notification to create
         required: true
       responses:
@@ -3046,7 +3046,104 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Notification'
+                $ref: '#/components/schemas/PublicNotification'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - curation
+  /curation/notifications/user:
+    get:
+      description: Return all notifications for a user
+      operationId: getUserNotifications
+      parameters:
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserNotification'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - curation
+  /curation/notifications/user/githubapp:
+    get:
+      description: Return all GitHub App notifications for a user
+      operationId: getGitHubAppNotifications
+      parameters:
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GitHubAppNotification'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - curation
+  /curation/notifications/user/{id}:
+    delete:
+      description: Delete a user notification
+      operationId: deleteUserNotification
+      parameters:
+      - description: Notification to delete
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json: {}
           description: default response
       security:
       - BEARER: []
@@ -3087,7 +3184,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Notification'
+                $ref: '#/components/schemas/PublicNotification'
           description: default response
       tags:
       - curation
@@ -3105,13 +3202,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/PublicNotification'
       responses:
         default:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Notification'
+                $ref: '#/components/schemas/PublicNotification'
           description: default response
       security:
       - BEARER: []
@@ -6942,37 +7039,35 @@ paths:
       - BEARER: []
       tags:
       - workflows
-  /workflows/github/infer/{owner}/{repo}/{ref}:
+  /workflows/github/infer/organizations/{organization}/repositories/{repository}:
     get:
-      deprecated: true
       description: Infer the entries in the file tree of a GitHub repository reference.
       operationId: inferEntries
       parameters:
-      - description: repo owner
+      - description: GitHub organization
         in: path
-        name: owner
+        name: organization
         required: true
         schema:
           type: string
-      - description: repo name
+      - description: GitHub repository
         in: path
-        name: repo
+        name: repository
         required: true
         schema:
           type: string
       - description: "reference, could contain slashes which need to be urlencoded"
-        in: path
+        in: query
         name: ref
-        required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                type: string
-          description: default response
+                $ref: '#/components/schemas/InferredDockstoreYml'
+          description: Information about the inferred .dockstore.yml
       security:
       - BEARER: []
       tags:
@@ -10337,6 +10432,48 @@ components:
           $ref: '#/components/schemas/GitHubUser'
         committer:
           $ref: '#/components/schemas/GitHubUser'
+    GitHubAppNotification:
+      type: object
+      description: Notifications for a GitHub App repository
+      properties:
+        action:
+          type: string
+          description: The recommended action for the repository
+          enum:
+          - INFER_DOCKSTORE_YML
+        dbCreateDate:
+          type: integer
+          format: int64
+          description: Timestamp at which the notification was created
+        dbUpdateDate:
+          type: integer
+          format: int64
+          description: Timestamp at which the notification was last updated
+        id:
+          type: integer
+          format: int64
+          description: ID for the notification
+        organization:
+          type: string
+          description: The git organization name
+        repository:
+          type: string
+          description: The git repository name
+        sourceControl:
+          type: string
+          description: The source control provider
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - action
+      - organization
+      - repository
+      - sourceControl
     GitHubUser:
       type: object
       properties:
@@ -10434,6 +10571,19 @@ components:
         updated:
           type: string
           description: Last time the container was updated.
+    InferredDockstoreYml:
+      type: object
+      description: Response for an inferred .dockstore.yml
+      properties:
+        dockstoreYml:
+          type: string
+          description: The inferred .dockstore.yml
+        gitReference:
+          type: string
+          description: The GitHub branch reference used for the inference
+      required:
+      - dockstoreYml
+      - gitReference
     Installation:
       type: object
       description: The GitHub App installation
@@ -10453,6 +10603,7 @@ components:
           action:
             type: string
             description: The action which the event describes
+            example: added
           repositories_added:
             type: array
             description: "An array of repository objects, which were added to the\
@@ -10466,23 +10617,6 @@ components:
             items:
               $ref: '#/components/schemas/WebhookRepository'
       description: A model for a GitHub webhook installation event
-      example: |
-        {
-          "sender": {
-            "login": "string"
-          },
-          "action": "added",
-          "installation": {
-            "id": 0
-          },
-          "repositories_added": [
-            {
-              "full_name": "dockstore/dockstore-ui2"
-            }
-          ]
-          "repositories_removed": [
-          ]
-        }
       required:
       - action
       - installation
@@ -10759,36 +10893,6 @@ components:
       - $ref: '#/components/schemas/Workflow'
       description: This describes one notebook in the dockstore as a special degenerate
         case of a workflow
-    Notification:
-      type: object
-      properties:
-        dbCreateDate:
-          type: integer
-          format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        expiration:
-          type: integer
-          format: int64
-        id:
-          type: integer
-          format: int64
-        message:
-          type: string
-          maxLength: 1024
-          minLength: 0
-        priority:
-          type: string
-          enum:
-          - LOW
-          - MEDIUM
-          - CRITICAL
-        type:
-          type: string
-          enum:
-          - SITEWIDE
-          - NEWSBODY
     OneOfFileWrapperImageType:
       type: object
       description: Optionally return additional information on the type of file this
@@ -11030,6 +11134,41 @@ components:
           type: string
         username:
           type: string
+    PublicNotification:
+      type: object
+      properties:
+        dbCreateDate:
+          type: integer
+          format: int64
+          description: Timestamp at which the notification was created
+        dbUpdateDate:
+          type: integer
+          format: int64
+          description: Timestamp at which the notification was last updated
+        expiration:
+          type: integer
+          format: int64
+        id:
+          type: integer
+          format: int64
+          description: ID for the notification
+        message:
+          type: string
+          maxLength: 1024
+          minLength: 0
+        priority:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - CRITICAL
+        type:
+          type: string
+          description: Type of notification
+          enum:
+          - SITEWIDE
+          - NEWSBODY
+          example: SITEWIDE
     PublishRequest:
       type: object
       properties:
@@ -12231,6 +12370,31 @@ components:
           type: string
         tokenType:
           type: string
+    UserNotification:
+      type: object
+      description: Notifications for a user
+      properties:
+        action:
+          type: string
+          description: The recommended action for the repository
+          enum:
+          - INFER_DOCKSTORE_YML
+        dbCreateDate:
+          type: integer
+          format: int64
+          description: Timestamp at which the notification was created
+        dbUpdateDate:
+          type: integer
+          format: int64
+          description: Timestamp at which the notification was last updated
+        id:
+          type: integer
+          format: int64
+          description: ID for the notification
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - action
     Validation:
       type: object
       properties:

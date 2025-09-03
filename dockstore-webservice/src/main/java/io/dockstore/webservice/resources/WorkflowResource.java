@@ -42,6 +42,7 @@ import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.AutoDoiRequest;
+import io.dockstore.webservice.api.InferredDockstoreYml;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -2140,15 +2141,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @GET
-    @Path("/github/infer/{owner}/{repo}/{ref}")
+    @Path("/github/infer/organizations/{organization}/repositories/{repository}")
     @Timed
     @UnitOfWork
     @Operation(description = "Infer the entries in the file tree of a GitHub repository reference.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @Deprecated
-    public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
-        @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
-        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Information about the inferred .dockstore.yml",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InferredDockstoreYml.class)))
+    public InferredDockstoreYml inferEntries(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "organization", description = "GitHub organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
+        @Parameter(name = "repository", description = "GitHub repository", required = true, in = ParameterIn.PATH) @PathParam("repository") String repository,
+        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", in = ParameterIn.QUERY) @QueryParam("ref") String gitReference) {
         // Get GitHub tokens.
         List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
         if (tokens.isEmpty()) {
@@ -2158,16 +2160,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Create github source code repo.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
 
+        String ref = gitReference;
+        if (StringUtils.isBlank(gitReference)) {
+            List<String> importantBranches = identifyImportantBranches(organization + "/" + repository, gitHubSourceCodeRepo);
+            if (importantBranches.isEmpty()) {
+                throw new CustomWebApplicationException("Could not determine GitHub branch to use for inference", HttpStatus.SC_BAD_REQUEST);
+            }
+            ref = importantBranches.get(0);
+        }
+
         // Create FileTree.
-        String ownerAndRepo = owner + "/" + repo;
-        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+        String ownerAndRepo = organization + "/" + repository;
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, ref));
 
         // Infer entries.
         InferrerHelper inferrerHelper = new InferrerHelper();
         List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
 
         // Create and return .dockstore.yml
-        return inferrerHelper.toDockstoreYaml(entries);
+        return new InferredDockstoreYml(ref, inferrerHelper.toDockstoreYaml(entries));
     }
 
     /**
@@ -2242,6 +2253,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // record installation event as lambda event
+        // TODO do this in transaction
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
@@ -2256,20 +2268,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
 
         if (added) {
-            // make some educated guesses whether we should try to retrospectively release some old versions
+            // for each added repository, try to retrospectively release some old versions.
+            // if we inspected all of the branches and didn't find any that were releasable,
+            // attempt to infer/deliver a .dockstore.yml on the "most important" branch.
             // note that for large organizations, this loop could be quite large if many repositories are added at the same time
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
             for (String repository: repositories) {
-                final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
-                for (String gitReference: strings) {
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                            Utilities.cleanForLogging(username)));
+                final int maximumBranchCount = 5;
+                final List<String> importantBranches = identifyImportantBranches(repository, gitHubSourceCodeRepo);
+                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
+                if (releasableReferences.isEmpty()) {
+                    boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;
+                    if (inspectedAllBranches) {
+                        // Create recommended action
+                        notifyIfPotentiallyContainsEntries(Optional.of(user), repository, installationId, importantBranches);
                     }
-                    githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                } else {
+                    for (String gitReference: releasableReferences) {
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                                Utilities.cleanForLogging(username)));
+                        }
+                        githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                    }
                 }
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
+    }
+
+    private List<String> subList(List<String> values, int count) {
+        return values.stream().limit(count).toList();
     }
 
     @DELETE
