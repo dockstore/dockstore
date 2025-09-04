@@ -8318,13 +8318,21 @@ paths:
       - workflows
   /workflows/{workflowId}/maxWeeklyExecutionCountForAnyVersion:
     post:
-      description: Determine the maximum number of weekly executions for any workflow
-        version.
+      description: Determine the maximum weekly execution count for all workflow versions
+        over the specified time range.
       operationId: getMaxWeeklyExecutionCountForAnyVersion
       parameters:
       - description: id of the workflow
         in: path
         name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "include counts on or after this time, expressed in UTC Java\
+          \ epoch seconds"
+        in: query
+        name: onOrAfterEpochSecond
         required: true
         schema:
           type: integer

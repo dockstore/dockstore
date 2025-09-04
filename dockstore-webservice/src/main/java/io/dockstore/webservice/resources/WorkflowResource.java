@@ -145,6 +145,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2369,21 +2370,30 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum number of weekly executions for any workflow version.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Long getMaxWeeklyExecutionCountForAnyVersion(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "onOrAfterEpochSecond", description = "include counts on or after this time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) Long onOrAfterEpochSecond) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
 
         List<TimeSeriesMetric> listOfTimeSeries = workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+        Instant onOrAfter = Instant.ofEpochSecond(onOrAfterEpochSecond);
+        final long secondsPerWeek = 7 * 24 * 60 * 60L;  // Days * hours * minutes * seconds
 
+        // For each time series bin, if the bin end time >= the specified "onOrAfter" date, include the bin value in the maximum.
         double max = 0;
         for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
-            LOG.error("TIMESERIES {}", timeSeries.getValues());
-            for (double value: timeSeries.getValues()) {
-                max = Math.max(value, max);
+            List<Double> values = timeSeries.getValues();
+            Instant oldestBinStart = timeSeries.getBegins().toInstant().minusSeconds(secondsPerWeek / 2);
+            for (int i = 0, n = values.size(); i < n; i++) {
+                Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
+                Instant binEnd = binStart.plusSeconds(secondsPerWeek);
+                if (binEnd.compareTo(onOrAfter) >= 0) {
+                    max = Math.max(values.get(i), max);
+                }
             }
         }
         return (long)max;
