@@ -35,4 +35,4 @@ updates:
     schedule:
       interval: "weekly"
     exclude-paths:
-      - "dockstore-webservice/src/main/resources/requirements/**"
+      - "requirements3.txt"
