@@ -2371,10 +2371,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public Long getMaxWeeklyExecutionCountForAnyVersion(
+    public long getMaxWeeklyExecutionCountForAnyVersion(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-        @Parameter(name = "onOrAfterEpochSecond", description = "include counts on or after this time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) Long onOrAfterEpochSecond) {
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
+        @Parameter(name = "onOrAfterEpochSecond", description = "include counts on or after this time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) long onOrAfterEpochSecond) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
