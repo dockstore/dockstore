@@ -68,6 +68,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
@@ -2361,6 +2362,31 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.info("Ignoring action in release event: {}", actionString);
         }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    @POST
+    @Path("/{workflowId}/maxWeeklyExecutionCountForAnyVersion")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum number of weekly executions for any workflow version.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Long getMaxWeeklyExecutionCountForAnyVersion(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
+
+        List<TimeSeriesMetric> listOfTimeSeries = workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+
+        double max = 0;
+        for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
+            LOG.error("TIMESERIES {}", timeSeries.getValues());
+            for (double value: timeSeries.getValues()) {
+                max = Math.max(value, max);
+            }
+        }
+        return (long)max;
     }
 
     @GET

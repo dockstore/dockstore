@@ -8316,6 +8316,31 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/maxWeeklyExecutionCountForAnyVersion:
+    post:
+      description: Determine the maximum number of weekly executions for any workflow
+        version.
+      operationId: getMaxWeeklyExecutionCountForAnyVersion
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/primaryDescriptor:
     get:
       description: Get the primary descriptor file.
