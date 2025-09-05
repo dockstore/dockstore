@@ -8329,14 +8329,15 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "include counts on or after this time, expressed in UTC Java\
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              format: int64
+        description: "include counts on or after this time, expressed in UTC Java\
           \ epoch seconds"
-        in: query
-        name: onOrAfterEpochSecond
         required: true
-        schema:
-          type: integer
-          format: int64
       responses:
         default:
           content:
