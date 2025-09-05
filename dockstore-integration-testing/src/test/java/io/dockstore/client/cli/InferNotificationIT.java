@@ -87,8 +87,8 @@ class InferNotificationIT extends BaseIT {
             && rootTest.equals(inferredDockstoreYml.getGitReference())
         );
 
-        // Track release event that creates notification
-        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, rootTest, USER_2_USERNAME)
+        // Track release event that creates notification, dockstore-bot as sender but committer is the test user to mimic prod
+        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, rootTest, "dockstore-bot", null, List.of(DOCKSTORE_TEST_USER_2))
         );
         assertTrue(exception.getMessage().contains(COULD_NOT_RETRIEVE_DOCKSTORE_YML));
         // after a release, inference now generates one GitHub app notification

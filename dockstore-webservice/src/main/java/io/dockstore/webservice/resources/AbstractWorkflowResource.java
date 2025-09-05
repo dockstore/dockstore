@@ -449,9 +449,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         String organization = repositoryId.split("/")[0];
         String repository = repositoryId.split("/")[1];
 
-        // If we've already inferred on this repo, don't try again.
-        if (gitHubAppNotificationDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository) != null) {
-            LOG.info("User notification already created for inferring repo {}", repositoryId);
+        // If we've already inferred on this repo and this user, don't try again.
+        GitHubAppNotification latestByRepository = gitHubAppNotificationDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository);
+        if (latestByRepository != null && user.isPresent() && latestByRepository.getUser().getId() == user.get().getId()) {
+            LOG.info("User {} notification already created for inferring repo {}", user.get().getUsername(), repositoryId);
             return;
         }
 
@@ -508,9 +509,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             Optional<SourceFile> optionalDockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             if (optionalDockstoreYml.isEmpty()) {
-                // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                Optional<User> user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, sender);
-                notifyIfPotentiallyContainsEntries(user, repository, installationId, List.of(gitReference));
+                // sender will be dockstore-bot, so try other users if present (push events)
+                if (!gitHubUsernames.otherUsers.isEmpty()) {
+                    for (String otherUser : gitHubUsernames.otherUsers()) {
+                        notifyIfPotentiallyContainsEntries(Optional.of(userDAO.findByGitHubUsername(otherUser)), repository, installationId, List.of(gitReference));
+                    }
+                }
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
                 throw new CustomWebApplicationException(COULD_NOT_RETRIEVE_DOCKSTORE_YML + " Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
             }
@@ -910,7 +914,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Convert the specified workflow information into an identifying string that can be shown to the end user (in the app logs, exception messages, etc).
      * @param workflowType type of the workflow
-     * @param workflowish description of the workflow
+     * @param workflow description of the workflow
      * @return string describing the workflow
      */
     private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {

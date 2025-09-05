@@ -58,6 +58,7 @@ public final class GitHubAppHelper {
             final GitCommit gitCommit = new GitCommit();
             gitCommit.setAuthor(gitHubUser);
             gitCommit.setCommitter(gitHubUser);
+            pushPayload.setHeadCommit(gitCommit);
             return gitCommit;
         }).toList();
         pushPayload.setCommits(gitCommits);
