@@ -52,6 +52,7 @@ import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo.BranchesWithUsers;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -423,7 +424,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    protected List<String> identifyImportantBranches(String repository, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    protected List<BranchesWithUsers> identifyImportantBranches(String repository, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
             return gitHubSourceCodeRepo.listBranchesByImportance(repository);
         }
@@ -435,7 +436,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId
      * @return
      */
-    protected List<String> identifyGitReferencesToRelease(String repository, long installationId, List<String> branches) {
+    protected List<BranchesWithUsers> identifyGitReferencesToRelease(String repository, long installationId, List<BranchesWithUsers> branches) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
             List<String> references = branches.stream().map(branch -> "refs/heads/" + branch).toList();
@@ -443,7 +444,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<String> importantBranches) {
+    protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<BranchesWithUsers> importantBranches) {
         // Create the repo and file tree.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         String organization = repositoryId.split("/")[0];
@@ -468,8 +469,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 gitHubAppNotification.setOrganization(organization);
                 gitHubAppNotification.setRepository(repository);
                 gitHubAppNotification.setAction(INFER_DOCKSTORE_YML);
-                user.ifPresent(gitHubAppNotification::setUser);
-                gitHubAppNotificationDAO.create(gitHubAppNotification);
+                // user is dockstore-bot if just using `user`
+                for (BranchesWithUsers branchesWithUsers : importantBranches) {
+                    if (!branchesWithUsers.gitHubUsername().isEmpty()) {
+                        User byGitHubUsername = userDAO.findByGitHubUsername(branchesWithUsers.gitHubUsername());
+                        gitHubAppNotification.setUser(byGitHubUsername);
+                        gitHubAppNotificationDAO.create(gitHubAppNotification);
+                    }
+                }
             }
         } catch (RuntimeException e) {
             LOG.error("Failed to infer repo", e);
@@ -508,9 +515,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             Optional<SourceFile> optionalDockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             if (optionalDockstoreYml.isEmpty()) {
-                // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                Optional<User> user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, sender);
-                notifyIfPotentiallyContainsEntries(user, repository, installationId, List.of(gitReference));
+                // in this case, the user who triggered the call or the `sender` is dockstore-bot, which is not useful to notify
+                for (String otherUser : gitHubUsernames.otherUsers) {
+                    // cycle through other users and notify
+                    Optional<User> user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, otherUser);
+                    if (user.isPresent()) {
+                        notifyIfPotentiallyContainsEntries(user, repository, installationId, List.of(gitReference));
+                    }
+
+                }
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
                 throw new CustomWebApplicationException(COULD_NOT_RETRIEVE_DOCKSTORE_YML + " Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
             }
@@ -910,7 +923,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Convert the specified workflow information into an identifying string that can be shown to the end user (in the app logs, exception messages, etc).
      * @param workflowType type of the workflow
-     * @param workflowish description of the workflow
+     * @param workflow description of the workflow
      * @return string describing the workflow
      */
     private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {
@@ -1384,7 +1397,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Returns all the GitHub usernames from a push payload. There are several usernames in the payload, which may all be the same, or
-     * might be different. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+     * might be different. See <a href="https://docs.github.com/en/webhooks/webhook-events-and-payloads#push">link</a>
      *
      * <ol>
      *     <li>sender.login - the user who triggered the event, e.g., I think, they created a new branch and pushed it</li>

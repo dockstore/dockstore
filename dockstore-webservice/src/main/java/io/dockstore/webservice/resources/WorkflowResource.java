@@ -78,6 +78,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo.BranchesWithUsers;
 import io.dockstore.webservice.helpers.LimitHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -2162,9 +2163,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Create github source code repo.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
 
-        String ref = gitReference;
+        BranchesWithUsers ref;
         if (StringUtils.isBlank(gitReference)) {
-            List<String> importantBranches = identifyImportantBranches(organization + "/" + repository, gitHubSourceCodeRepo);
+            List<BranchesWithUsers> importantBranches = identifyImportantBranches(organization + "/" + repository, gitHubSourceCodeRepo);
             if (importantBranches.isEmpty()) {
                 throw new CustomWebApplicationException("Could not determine GitHub branch to use for inference", HttpStatus.SC_BAD_REQUEST);
             }
@@ -2180,7 +2181,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
 
         // Create and return .dockstore.yml
-        return new InferredDockstoreYml(ref, inferrerHelper.toDockstoreYaml(entries));
+        return new InferredDockstoreYml(ref.refName(), inferrerHelper.toDockstoreYaml(entries));
     }
 
     /**
@@ -2277,8 +2278,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
             for (String repository: repositories) {
                 final int maximumBranchCount = 5;
-                final List<String> importantBranches = identifyImportantBranches(repository, gitHubSourceCodeRepo);
-                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
+                final List<BranchesWithUsers> importantBranches = identifyImportantBranches(repository, gitHubSourceCodeRepo);
+                final List<BranchesWithUsers> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
                 if (releasableReferences.isEmpty()) {
                     boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;
                     if (inspectedAllBranches) {
@@ -2286,12 +2287,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         notifyIfPotentiallyContainsEntries(Optional.of(user), repository, installationId, importantBranches);
                     }
                 } else {
-                    for (String gitReference: releasableReferences) {
+                    for (BranchesWithUsers gitReference: releasableReferences) {
                         if (LOG.isInfoEnabled()) {
-                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference.refName()), Utilities.cleanForLogging(repository),
                                 Utilities.cleanForLogging(username)));
                         }
-                        githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                        // need to look at the branches and guess at some useful users to notify
+                        githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference.refName(), installationId, deliveryId, null, false);
                     }
                 }
             }
@@ -2299,7 +2301,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return Response.status(HttpStatus.SC_OK).build();
     }
 
-    private List<String> subList(List<String> values, int count) {
+    private List<BranchesWithUsers> subList(List<BranchesWithUsers> values, int count) {
         return values.stream().limit(count).toList();
     }
 

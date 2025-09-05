@@ -1256,7 +1256,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Heuristics include the default branch, branches that have names corresponding to development or main branches, and branches with recent pushes.
      * Tries to avoid an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
      */
-    public List<String> listBranchesByImportance(String repositoryId) {
+    public List<BranchesWithUsers> listBranchesByImportance(String repositoryId) {
         final Set<String> likelies = Set.of("master", "main", "develop");
         try {
             if (repositoryId == null) {
@@ -1267,12 +1267,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             String defaultBranch = repository.getDefaultBranch();
 
             // Get the branch names, ordered so that branches with recent pushes are first.
-            List<String> branches = listBranchesWithRecentPushesFirst(repository);
+            List<BranchesWithUsers> branches = listBranchesWithRecentPushesFirst(repository);
 
             // Reorder the branch names so the default branch comes first, followed by any "likely" branches, then the rest.
             // Do so by first moving the likelies to the front, and then moving the default branch to the front.
-            branches = listTrueFirst(branches, likelies::contains);
-            branches = listTrueFirst(branches, branch -> Objects.equals(defaultBranch, branch));
+            branches = listTrueFirst(branches, branch -> likelies.contains(branch.refName()));
+            branches = listTrueFirst(branches, branch -> Objects.equals(defaultBranch, branch.refName()));
 
             // Eliminate duplicates and return.
             return branches.stream().distinct().toList();
@@ -1289,13 +1289,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * This method caps the number of refs and events retrieved, so that we don't chew up our rate limit on
      * a repo with a large number of either.
      */
-    private List<String> listBranchesWithRecentPushesFirst(GHRepository repository) throws IOException {
+    private List<BranchesWithUsers> listBranchesWithRecentPushesFirst(GHRepository repository) throws IOException {
         final int maxRefs = 120;
         final int maxEvents = 30;
 
         // Create a linked set to store the results.
         // It's important that we use a Linked set, because it preserves the order in which elements are added.
-        Set<String> branches = new LinkedHashSet<>();
+        Set<BranchesWithUsers> branches = new LinkedHashSet<>();
 
         // Get a list of the most recent pushes, which should be ordered by increasing age.
         List<GHEventInfo> pushes = streamIterable(repository.listEvents())
@@ -1309,7 +1309,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Get the ref of the pushed-to branch, typically a value like 'refs/heads/master'
             String ref = push.getPayload(GHEventPayload.Push.class).getRef();
             if (ref.startsWith(REFS_HEADS)) {
-                branches.add(ref.substring(REFS_HEADS.length()));
+                branches.add(new BranchesWithUsers(ref.substring(REFS_HEADS.length()), push.getActorLogin()));
             }
         }
 
@@ -1320,12 +1320,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return new ArrayList<>(branches);
     }
 
-    private List<String> listBranches(GHRepository repository, int maxRefs) throws IOException {
+    private List<BranchesWithUsers> listBranches(GHRepository repository, int maxRefs) throws IOException {
         return streamIterable(repository.listRefs())
             .limit(maxRefs)
             .map(GHRef::getRef)
             .filter(ref -> ref.startsWith(REFS_HEADS))
-            .map(ref -> ref.substring(REFS_HEADS.length()))
+            // TODO: figure out users for these "extra" branches
+            .map(ref -> new BranchesWithUsers(ref.substring(REFS_HEADS.length()), ""))
             .toList();
     }
 
@@ -1604,5 +1605,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    public record BranchesWithUsers (String refName, String gitHubUsername) {}
     private record GitReferenceInfo (String refName, Date branchDate, String sha) {}
 }
