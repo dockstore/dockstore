@@ -2283,7 +2283,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;
                     if (inspectedAllBranches) {
                         // Create recommended action
-                        notifyIfPotentiallyContainsEntries(Optional.of(user), repository, installationId, importantBranches);
+                        notifyIfPotentiallyContainsEntries(triggerUser, repository, installationId, importantBranches);
                     }
                 } else {
                     for (String gitReference: releasableReferences) {
