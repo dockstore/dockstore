@@ -34,7 +34,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
-import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.core.gitlab.GitLabContainerRegistry;
@@ -47,6 +46,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -408,16 +408,11 @@ public abstract class AbstractImageRegistry {
                     final Tag tag = new Tag();
                     tag.setName(r.getName());
 
-                    DockerHubImage[] dockerHubImages = r.getImages();
-                    List<Checksum> checksums = new ArrayList<>();
-                    // For every version, DockerHub can provide multiple images, one for each architecture
-                    for (DockerHubImage i : dockerHubImages) {
-                        final String manifestDigest = i.getDigest();
-                        checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                        Image image = new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB, i.getSize(), i.getLastPushed());
-                        image.setArchitecture(i.getArchitecture());
-                        tag.getImages().add(image);
-                    }
+                    // need to get each one tag individually here to get images, can simplify from LanguageHandlerInterface
+                    Set<Image> dockerHubImages = new HashSet<>();
+                    String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags/" + r.getName();
+                    LanguageHandlerInterface.getImages(repo, DockerSpecifier.TAG, r.getName(), dockerHubImages, repoUrl);
+                    tag.getImages().addAll(dockerHubImages.stream().toList());
                     tags.add(tag);
                 }
 

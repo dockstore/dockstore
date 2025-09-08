@@ -55,6 +55,15 @@ public class InferrerHelper {
     }
 
     /**
+     * Returns true if the file tree potentially contains any type of entry.
+     * @param fileTree
+     * @return
+     */
+    public boolean potentiallyContainsEntries(FileTree fileTree) {
+        return getInferrers().stream().anyMatch(inferrer -> inferrer.containsDescriptorPath(fileTree));
+    }
+
+    /**
      * Produces a "standard" list of inferrers.
      */
     public List<Inferrer> getInferrers() {
@@ -266,6 +275,9 @@ public class InferrerHelper {
      */
     @SuppressWarnings("checkstyle:magicnumber")
     public String toDockstoreYaml(List<Inferrer.Entry> entries) {
+        if (entries.isEmpty()) {
+            throw new CustomWebApplicationException("Could not create a .dockstore.yml because no entries were found in the repository", HttpStatus.SC_BAD_REQUEST);
+        }
         // "Refine" the entries to fix issues like missing, duplicate, or illegal names.
         entries = refine(entries);
         // Construct map that contains an abstract representation of the .dockstore.yml.
@@ -322,7 +334,7 @@ public class InferrerHelper {
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYaml, true);
         } catch (Exception e) {
-            String message = "error creating .dockstore.yml";
+            String message = "Error creating .dockstore.yml: " + e.getMessage();
             LOG.error(message, e);
             throw new CustomWebApplicationException(message, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }

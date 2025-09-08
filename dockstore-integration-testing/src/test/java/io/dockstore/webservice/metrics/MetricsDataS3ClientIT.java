@@ -20,7 +20,6 @@ package io.dockstore.webservice.metrics;
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
-import static io.dockstore.common.LocalStackTestUtilities.LocalStackEnvironmentVariables;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +28,6 @@ import cloud.localstack.ServiceName;
 import cloud.localstack.awssdkv2.TestUtils;
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
-import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LocalStackTest;
@@ -64,14 +62,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @ExtendWith(LocalstackDockerExtension.class)
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackEnvironmentVariables.class)
+@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 public class MetricsDataS3ClientIT {
-    private static final Gson GSON = new Gson();
+
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     private static TestingPostgres testingPostgres;
     private static String bucketName;
-    private static String s3EndpointOverride;
     private static S3Client s3Client;
     private static MetricsDataS3Client metricsDataClient;
 
@@ -82,7 +79,7 @@ public class MetricsDataS3ClientIT {
         testingPostgres = new TestingPostgres(SUPPORT);
 
         bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
-        s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
+        String s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
         metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
 
         // Create a bucket to be used for tests

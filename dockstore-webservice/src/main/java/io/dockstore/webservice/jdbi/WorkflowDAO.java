@@ -24,6 +24,7 @@ import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.WorkflowIdToCount;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -360,6 +361,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             LOG.error("Could get workflow based on workflow version id " + workflowVersionId + ". Error is " + nre.getMessage(), nre);
             return Optional.empty();
         }
+    }
+
+    public List<TimeSeriesMetric> getWeeklyExecutionCountsForAllVersions(long workflowId) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWeeklyExecutionCountsForAllVersions").setParameter("id", workflowId).list();
     }
 
     public Map<Long, Long> getWorkflowIdsAndDoiCounts() {

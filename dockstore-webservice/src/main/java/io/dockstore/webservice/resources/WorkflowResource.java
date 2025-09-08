@@ -42,6 +42,7 @@ import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.AutoDoiRequest;
+import io.dockstore.webservice.api.InferredDockstoreYml;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -67,6 +68,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
@@ -143,6 +145,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2140,15 +2143,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @GET
-    @Path("/github/infer/{owner}/{repo}/{ref}")
+    @Path("/github/infer/organizations/{organization}/repositories/{repository}")
     @Timed
     @UnitOfWork
     @Operation(description = "Infer the entries in the file tree of a GitHub repository reference.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @Deprecated
-    public String inferEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "owner", description = "repo owner", required = true, in = ParameterIn.PATH) @PathParam("owner") String owner,
-        @Parameter(name = "repo", description = "repo name", required = true, in = ParameterIn.PATH) @PathParam("repo") String repo,
-        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", required = true, in = ParameterIn.PATH) @PathParam("ref") String gitReference) {
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Information about the inferred .dockstore.yml",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InferredDockstoreYml.class)))
+    public InferredDockstoreYml inferEntries(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "organization", description = "GitHub organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
+        @Parameter(name = "repository", description = "GitHub repository", required = true, in = ParameterIn.PATH) @PathParam("repository") String repository,
+        @Parameter(name = "ref", description = "reference, could contain slashes which need to be urlencoded", in = ParameterIn.QUERY) @QueryParam("ref") String gitReference) {
         // Get GitHub tokens.
         List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
         if (tokens.isEmpty()) {
@@ -2158,16 +2162,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Create github source code repo.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
 
+        String ref = gitReference;
+        if (StringUtils.isBlank(gitReference)) {
+            List<String> importantBranches = identifyImportantBranches(organization + "/" + repository, gitHubSourceCodeRepo);
+            if (importantBranches.isEmpty()) {
+                throw new CustomWebApplicationException("Could not determine GitHub branch to use for inference", HttpStatus.SC_BAD_REQUEST);
+            }
+            ref = importantBranches.get(0);
+        }
+
         // Create FileTree.
-        String ownerAndRepo = owner + "/" + repo;
-        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, gitReference));
+        String ownerAndRepo = organization + "/" + repository;
+        FileTree fileTree = new CachingFileTree(new ZipGitHubFileTree(gitHubSourceCodeRepo, ownerAndRepo, ref));
 
         // Infer entries.
         InferrerHelper inferrerHelper = new InferrerHelper();
         List<Inferrer.Entry> entries = inferrerHelper.infer(fileTree);
 
         // Create and return .dockstore.yml
-        return inferrerHelper.toDockstoreYaml(entries);
+        return new InferredDockstoreYml(ref, inferrerHelper.toDockstoreYaml(entries));
     }
 
     /**
@@ -2242,6 +2255,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // record installation event as lambda event
+        // TODO do this in transaction
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
@@ -2256,20 +2270,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
 
         if (added) {
-            // make some educated guesses whether we should try to retrospectively release some old versions
+            // for each added repository, try to retrospectively release some old versions.
+            // if we inspected all of the branches and didn't find any that were releasable,
+            // attempt to infer/deliver a .dockstore.yml on the "most important" branch.
             // note that for large organizations, this loop could be quite large if many repositories are added at the same time
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
             for (String repository: repositories) {
-                final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
-                for (String gitReference: strings) {
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                            Utilities.cleanForLogging(username)));
+                final int maximumBranchCount = 5;
+                final List<String> importantBranches = identifyImportantBranches(repository, gitHubSourceCodeRepo);
+                final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
+                if (releasableReferences.isEmpty()) {
+                    boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;
+                    if (inspectedAllBranches) {
+                        // Create recommended action
+                        notifyIfPotentiallyContainsEntries(triggerUser, repository, installationId, importantBranches);
                     }
-                    githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                } else {
+                    for (String gitReference: releasableReferences) {
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                                Utilities.cleanForLogging(username)));
+                        }
+                        githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
+                    }
                 }
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
+    }
+
+    private List<String> subList(List<String> values, int count) {
+        return values.stream().limit(count).toList();
     }
 
     @DELETE
@@ -2332,6 +2363,40 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.info("Ignoring action in release event: {}", actionString);
         }
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    @POST
+    @Path("/{workflowId}/maxWeeklyExecutionCountForAnyVersion")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public long getMaxWeeklyExecutionCountForAnyVersion(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
+        @Parameter(name = "onOrAfterEpochSecond", description = "include counts on or after this time, expressed in UTC Java epoch seconds", required = true) long onOrAfterEpochSecond) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
+
+        List<TimeSeriesMetric> listOfTimeSeries = workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+        Instant onOrAfter = Instant.ofEpochSecond(onOrAfterEpochSecond);
+        final long secondsPerWeek = 7 * 24 * 60 * 60L;  // Days * hours * minutes * seconds
+
+        // For each time series bin, if the bin end time >= the specified "onOrAfter" date, include the bin value in the maximum.
+        double max = 0;
+        for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
+            List<Double> values = timeSeries.getValues();
+            Instant oldestBinStart = timeSeries.getBegins().toInstant().minusSeconds(secondsPerWeek / 2);
+            for (int i = 0, n = values.size(); i < n; i++) {
+                Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
+                Instant binEnd = binStart.plusSeconds(secondsPerWeek);
+                if (binEnd.compareTo(onOrAfter) >= 0) {
+                    max = Math.max(values.get(i), max);
+                }
+            }
+        }
+        return (long)max;
     }
 
     @GET

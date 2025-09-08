@@ -111,20 +111,20 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 public class WorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+        SourceControl.GITHUB + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
+        SourceControl.GITHUB + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
+        SourceControl.GITHUB + "/DockstoreTestUser2/dockstore-whalesay-imports";
     private static final String DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/gdc-dnaseq-cwl";
+        SourceControl.GITHUB + "/DockstoreTestUser2/gdc-dnaseq-cwl";
     // workflow with external library in lib directory
-    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
+    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB + "/DockstoreTestUser2/rnatoy";
     // workflow that uses containers
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/galaxy-workflows";
+        SourceControl.GITHUB + "/DockstoreTestUser2/galaxy-workflows";
     // workflow with includeConfig in config file directory
-    private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/vipr";
+    private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB + "/DockstoreTestUser2/vipr";
     private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
 
     @SystemStub

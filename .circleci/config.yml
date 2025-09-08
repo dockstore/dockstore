@@ -2,10 +2,10 @@ version: 2.1
 parameters:
   java-tag:
     type: string
-    default: "21.0.2"
+    default: "21.0.6"
   postgres-tag:
     type: string
-    default: "16.4"
+    default: "16.9"
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -33,7 +33,7 @@ executors:
     resource_class: medium+
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM
-      image: ubuntu-2204:2024.04.4
+      image: ubuntu-2204:2024.11.1
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -727,6 +727,6 @@ commands:
             sudo apt install -y xmlstarlet
             for file in ~/test-results/**/*
             do
-              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file || true
             done
           when: always

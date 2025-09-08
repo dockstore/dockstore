@@ -92,6 +92,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com' AND p.onlineProfileId = :id)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUsers", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUserIds", query = "SELECT t.id FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findStarredEntries", query = "SELECT se FROM User u JOIN u.starredEntries se where TYPE(se) IN :entryTypes and u.username = :username  order by se.id asc"),
     @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGoogleUserInfo", query =
         "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
             + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'google.com' )"),

@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.17</revision>
+        <revision>1.18</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <!--
@@ -45,8 +45,8 @@
         <openapi-annotations-version>2.2.9</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.4.4</postgresql.version>
-        <maven-surefire.version>3.4.0</maven-surefire.version>
-        <maven-failsafe.version>2.22.2</maven-failsafe.version>
+        <maven-surefire.version>3.5.3</maven-surefire.version>
+        <maven-failsafe.version>3.5.3</maven-failsafe.version>
         <maven-java.version>17</maven-java.version>
 
         <skipTests>false</skipTests>
@@ -90,7 +90,7 @@
         <repository>
             <id>artifactory.broadinstitute.org</id>
             <name>artifactory.broadinstitute.org</name>
-            <url>https://broadinstitute.jfrog.io/artifactory/libs-release/</url>
+            <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -173,7 +173,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.11</version>
+                    <version>0.8.13</version>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -327,6 +327,7 @@
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
                         <rerunFailingTestsCount>${rerunFailingTestsCount}</rerunFailingTestsCount>
+                        <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                     </configuration>
                 </plugin>
                 <plugin>

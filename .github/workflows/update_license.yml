@@ -14,10 +14,10 @@ jobs:
   update_license_file:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version:  '21.0.2+13.0.LTS'
           distribution: 'adopt'
