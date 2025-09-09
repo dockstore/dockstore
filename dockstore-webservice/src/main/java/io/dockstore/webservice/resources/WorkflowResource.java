@@ -2168,7 +2168,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             if (importantBranches.isEmpty()) {
                 throw new CustomWebApplicationException("Could not determine GitHub branch to use for inference", HttpStatus.SC_BAD_REQUEST);
             }
-            ref = "refs/heads/" + importantBranches.get(0);
+            ref = importantBranches.get(0);
         }
 
         // Create FileTree.
