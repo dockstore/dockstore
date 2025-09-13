@@ -450,7 +450,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         String repository = repositoryId.split("/")[1];
 
         // If we've already inferred on this repo, don't try again.
-        if (gitHubAppNotificationDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository) != null) {
+        if (gitHubAppNotificationDAO.findLatestByRepositoryIncludingHidden(SourceControl.GITHUB, organization, repository) != null) {
             LOG.info("User notification already created for inferring repo {}", repositoryId);
             return;
         }
@@ -473,6 +473,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         } catch (RuntimeException e) {
             LOG.error("Failed to infer repo", e);
+        }
+    }
+
+    protected void hideNotification(String repositoryId) {
+        String organization = repositoryId.split("/")[0];
+        String repository = repositoryId.split("/")[1];
+        GitHubAppNotification gitHubAppNotification = gitHubAppNotificationDAO.findLatestByRepositoryIncludingHidden(SourceControl.GITHUB, organization, repository);
+        if (gitHubAppNotification != null) {
+            gitHubAppNotification.setHidden(true);
         }
     }
 
@@ -514,8 +523,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
                 throw new CustomWebApplicationException(COULD_NOT_RETRIEVE_DOCKSTORE_YML + " Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
             }
+            // The user has created a .dockstore.yml, so hide any notification regarding the need to do so.
+            hideNotification(repository);
+
             SourceFile dockstoreYml = optionalDockstoreYml.get();
-            // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
+            // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one entry.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 

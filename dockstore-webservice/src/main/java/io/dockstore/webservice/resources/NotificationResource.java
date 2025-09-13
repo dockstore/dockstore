@@ -35,6 +35,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -160,6 +161,21 @@ public class NotificationResource {
             throw new CustomWebApplicationException("User is not authorized to delete this notification", HttpStatus.SC_FORBIDDEN);
         }
         userNotificationDAO.delete(notification);
+    }
+
+    // hide a notification by its id
+    @PATCH
+    @Path("/notifications/user/{id}/hide")
+    @UnitOfWork
+    @Operation(operationId = "hideUserNotification",  description = "Hide a user notification", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public void hideUserNotification(@Parameter(description = "Notification to hide", required = true) @PathParam("id") Long id, @Parameter(hidden = true, name = "user") @Auth User user) {
+        UserNotification notification = userNotificationDAO.findById(id);
+        throwErrorIfNull(notification);
+
+        if (notification.getUser().getId() != user.getId()) {
+            throw new CustomWebApplicationException("User is not authorized to hide this notification", HttpStatus.SC_FORBIDDEN);
+        }
+        notification.setHidden(true);
     }
 
     @GET
