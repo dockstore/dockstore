@@ -15,8 +15,6 @@ import jakarta.persistence.NamedQuery;
 @Schema(description = "Notifications for a user")
 @Entity
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.UserNotification.findByUser",
-        query = "SELECT u FROM UserNotification u WHERE u.user = :user AND NOT hidden ORDER BY u.dbCreateDate DESC"),
     @NamedQuery(name = "io.dockstore.webservice.core.UserNotification.getCountByUser", query = "SELECT COUNT(u) FROM UserNotification u WHERE u.user = :user AND NOT hidden"),
 })
 public abstract class UserNotification extends AbstractNotification {

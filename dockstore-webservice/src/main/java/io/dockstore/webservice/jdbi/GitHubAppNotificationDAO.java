@@ -10,7 +10,6 @@ import jakarta.persistence.criteria.Root;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
 
 public class GitHubAppNotificationDAO extends AbstractDAO<GitHubAppNotification> {
     public GitHubAppNotificationDAO(SessionFactory factory) {
@@ -40,12 +39,6 @@ public class GitHubAppNotificationDAO extends AbstractDAO<GitHubAppNotification>
 
     public GitHubAppNotification findLatestByRepositoryIncludingHidden(SourceControl sourceControl, String organization, String repository) {
         return currentSession().createNamedQuery("io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryIncludingHidden", GitHubAppNotification.class).setParameter("sourcecontrol", sourceControl).setParameter("organization", organization).setParameter("repository", repository).setMaxResults(1).getResultStream().findFirst().orElse(null);
-    }
-
-    public List<GitHubAppNotification> findByUser(User user) {
-        Query<GitHubAppNotification> query = namedTypedQuery("io.dockstore.webservice.core.GitHubAppNotification.findByUser")
-            .setParameter("user", user);
-        return list(query);
     }
 
     public List<GitHubAppNotification> findByUser(User user, Integer offset, Integer limit) {

@@ -9,7 +9,6 @@ import jakarta.persistence.criteria.Root;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
 
 public class UserNotificationDAO extends AbstractDAO<UserNotification> {
     public UserNotificationDAO(SessionFactory factory) {
@@ -35,12 +34,6 @@ public class UserNotificationDAO extends AbstractDAO<UserNotification> {
 
     public UserNotification findById(long id) {
         return get(id);
-    }
-
-    public List<UserNotification> findByUser(User user) {
-        Query<UserNotification> query = namedTypedQuery("io.dockstore.webservice.core.UserNotification.findByUser")
-            .setParameter("user", user);
-        return list(query);
     }
 
     public List<UserNotification> findByUser(User user, Integer offset, Integer limit) {
