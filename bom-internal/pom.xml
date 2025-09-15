@@ -73,7 +73,7 @@ POM as their parent.
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
         <jetty-servlet.version>11.0.25</jetty-servlet.version>
         <jersey.version>3.0.18</jersey.version>
-        <netty.version>4.1.118.Final</netty.version>
+        <netty.version>4.2.5.Final</netty.version>
         <scala.version>2.13.9</scala.version>
         <bytebuddy.version>1.17.6</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
@@ -1173,6 +1173,11 @@ POM as their parent.
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-common</artifactId>
                 <version>1.6.20</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>26.0.2</version>
             </dependency>
 
 
