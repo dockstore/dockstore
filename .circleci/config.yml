@@ -2,7 +2,7 @@ version: 2.1
 parameters:
   java-tag:
     type: string
-    default: "21.0.6"
+    default: "21.0.8"
   postgres-tag:
     type: string
     default: "16.9"
