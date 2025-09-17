@@ -17,6 +17,7 @@ package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguageSubclass;
 import jakarta.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,6 +30,8 @@ public class Service12 extends AbstractYamlService implements Workflowish {
     public static final String MISSING_SUBCLASS = "Missing property \"subclass\"";
 
     private DescriptorLanguageSubclass subclass;
+
+    private List<String> otherFiles = new ArrayList<>();
 
     @NotNull
     public DescriptorLanguageSubclass getSubclass() {
@@ -54,5 +57,22 @@ public class Service12 extends AbstractYamlService implements Workflowish {
 
     public String getTopic() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Get the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
+    @NotNull
+    public List<String> getOtherFiles() {
+        return otherFiles;
+    }
+
+    /**
+     * Set the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
+    public void setOtherFiles(List<String> otherFiles) {
+        this.otherFiles = otherFiles;
     }
 }

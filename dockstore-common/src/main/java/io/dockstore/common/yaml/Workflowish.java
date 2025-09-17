@@ -26,4 +26,16 @@ public interface Workflowish {
     String getReadMePath();
 
     String getTopic();
+
+    /**
+     * Get the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
+    List<String> getOtherFiles();
+
+    /**
+     * Set the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
+    void setOtherFiles(List<String> otherFiles);
 }
