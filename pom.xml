@@ -33,7 +33,7 @@
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
         <revision>1.18</revision>
-        <changelist>.0-SNAPSHOT</changelist>
+        <changelist>.1-SNAPSHOT</changelist>
 
         <!--
         The following properties are mostly used in the plugins section
