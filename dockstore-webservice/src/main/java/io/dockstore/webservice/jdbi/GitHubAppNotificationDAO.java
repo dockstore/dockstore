@@ -41,12 +41,16 @@ public class GitHubAppNotificationDAO extends AbstractDAO<GitHubAppNotification>
         return currentSession().createNamedQuery("io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryIncludingHidden", GitHubAppNotification.class).setParameter("sourcecontrol", sourceControl).setParameter("organization", organization).setParameter("repository", repository).setMaxResults(1).getResultStream().findFirst().orElse(null);
     }
 
+    public List<GitHubAppNotification> findByUser(User user) {
+        return findByUser(user, 0, Integer.MAX_VALUE);
+    }
+
     public List<GitHubAppNotification> findByUser(User user, Integer offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<GitHubAppNotification> query = cb.createQuery(GitHubAppNotification.class);
         Root<GitHubAppNotification> userNotificationRoot = query.from(GitHubAppNotification.class);
         query.select(userNotificationRoot)
-            .where(cb.equal(userNotificationRoot.get("user"), user))
+            .where(cb.and(cb.equal(userNotificationRoot.get("user"), user), cb.isFalse(userNotificationRoot.get("hidden"))))
             .orderBy(cb.desc(userNotificationRoot.get("dbCreateDate")));
         return currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit).getResultList();
     }

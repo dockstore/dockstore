@@ -36,12 +36,16 @@ public class UserNotificationDAO extends AbstractDAO<UserNotification> {
         return get(id);
     }
 
+    public List<UserNotification> findByUser(User user) {
+        return findByUser(user, 0, Integer.MAX_VALUE);
+    }
+
     public List<UserNotification> findByUser(User user, Integer offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<UserNotification> query = cb.createQuery(UserNotification.class);
         Root<UserNotification> userNotificationRoot = query.from(UserNotification.class);
         query.select(userNotificationRoot)
-            .where(cb.equal(userNotificationRoot.get("user"), user))
+            .where(cb.and(cb.equal(userNotificationRoot.get("user"), user), cb.isFalse(userNotificationRoot.get("hidden"))))
             .orderBy(cb.desc(userNotificationRoot.get("dbCreateDate")));
         return currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit).getResultList();
     }
