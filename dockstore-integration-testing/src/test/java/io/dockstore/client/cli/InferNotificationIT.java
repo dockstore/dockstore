@@ -141,7 +141,18 @@ class InferNotificationIT extends BaseIT {
 
     @Test
     void testDoNotNotifyWhenTheRepoHasAnEntry() {
-        // TODO
+        final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        UsersApi usersApi = new UsersApi(openApiClient);
+        User user = userDAO.findById(usersApi.getUser().getId());
+        // Release a branch that has a .dockstore.yml
+        // An entry should be created
+        handleGitHubRelease(workflowsApi, "dockstore-testing/simple-notebook", "main", USER_2_USERNAME);
+        assertEquals(0, userNotificationDAO.getCountByUser(user));
+        // Release a branch that doesn't have a .dockstore.yml
+        // No "needs a .dockstore.yml" notification should be created, because an entry already exists for this repo
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, "dockstore-testing/simple-notebook", "no-dockstoreyml", USER_2_USERNAME));
+        assertEquals(0, userNotificationDAO.getCountByUser(user));
     }
 
     @Test

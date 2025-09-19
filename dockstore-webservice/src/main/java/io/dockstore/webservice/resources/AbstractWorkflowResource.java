@@ -455,6 +455,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return;
         }
 
+        // If there's a dockstore.yml-based entry registered for this repo already, don't notify again.
+        if (hasDockstoreYmlBasedEntry(SourceControl.GITHUB, organization, repository)) {
+            LOG.info("Repo {} already has a .dockstore.yml-based entry", repositoryId);
+            return;
+        }
+
         try {
             InferrerHelper inferrerHelper = new InferrerHelper();
             final boolean potentiallyContainsEntries = importantBranches.stream().anyMatch(branch -> {
@@ -474,6 +480,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (RuntimeException e) {
             LOG.error("Failed to infer repo", e);
         }
+    }
+
+    private boolean hasDockstoreYmlBasedEntry(SourceControl sourceControl, String organization, String repository) {
+        List<Workflow> workflows = workflowDAO.findByPath(sourceControl, organization, repository);
+        for (Workflow workflow: workflows) {
+            if (workflow.getMode() == DOCKSTORE_YML) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected void hideNotification(String repositoryId) {
