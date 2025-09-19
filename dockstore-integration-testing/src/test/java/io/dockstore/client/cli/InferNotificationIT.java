@@ -46,6 +46,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 @Tag(WorkflowTest.NAME)
 class InferNotificationIT extends BaseIT {
 
+    private static final String ROOTTEST = "rootTest";
     private UserNotificationDAO userNotificationDAO;
     private Session session;
     private UserDAO userDAO;
@@ -75,20 +76,19 @@ class InferNotificationIT extends BaseIT {
 
         // Track install event
         handleGitHubInstallation(workflowsApi, List.of(DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV), USER_2_USERNAME);
-        String rootTest = "rootTest";
         assertEquals(0, curationApi.getGitHubAppNotifications(0, 100).size());
 
         // infer directly
-        InferredDockstoreYml inferredDockstoreYml = workflowsApi.inferEntries(DOCKSTORE_TEST_USER_2, "dockstore_workflow_cnv", rootTest);
+        InferredDockstoreYml inferredDockstoreYml = workflowsApi.inferEntries(DOCKSTORE_TEST_USER_2, "dockstore_workflow_cnv", ROOTTEST);
         assertFalse(inferredDockstoreYml.getDockstoreYml().isEmpty()
             && inferredDockstoreYml.getDockstoreYml().contains("workflows:")
             && inferredDockstoreYml.getDockstoreYml().contains("tools:")
             && inferredDockstoreYml.getDockstoreYml().contains("primaryDescriptorPath:")
-            && rootTest.equals(inferredDockstoreYml.getGitReference())
+            && ROOTTEST.equals(inferredDockstoreYml.getGitReference())
         );
 
         // Track release event that creates notification
-        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, rootTest, USER_2_USERNAME)
+        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, ROOTTEST, USER_2_USERNAME)
         );
         assertTrue(exception.getMessage().contains(COULD_NOT_RETRIEVE_DOCKSTORE_YML));
         // after a release, inference now generates one GitHub app notification
@@ -107,6 +107,41 @@ class InferNotificationIT extends BaseIT {
         assertEquals(notificationsByUser.get(0), notificationsByUserPaged.get(0));
         long countByUser = userNotificationDAO.getCountByUser(user);
         assertEquals(1, countByUser);
+
+        // Release another branch from the same repository that contains a .dockstore.yml
+        // During push processing, the previous notification should be hidden.
+        String branchWithDockstoreYml = "master";
+        handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "develop", USER_2_USERNAME);
+        assertEquals(0, userNotificationDAO.getCountByUser(user));
+    }
+
+    @Test
+    void testNotifyOnceOnly() {
+        final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        CurationApi curationApi = new CurationApi(openApiClient);
+        UsersApi usersApi = new UsersApi(openApiClient);
+        User user = userDAO.findById(usersApi.getUser().getId());
+
+        // create a github app notification
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, ROOTTEST, USER_2_USERNAME));
+        assertEquals(1, userNotificationDAO.getCountByUser(user));
+
+        // hide the notification
+        List<io.dockstore.webservice.core.UserNotification> notificationsByUser = userNotificationDAO.findByUser(user);
+        assertEquals(1, notificationsByUser.size());
+        curationApi.hideUserNotification(notificationsByUser.get(0).getId());
+        assertEquals(0, userNotificationDAO.getCountByUser(user));
+
+        // Release a different .dockstore.yml-less branch.
+        // no notification should be created, because another notification for this repo was created earlier
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "master", USER_2_USERNAME));
+        assertEquals(0, userNotificationDAO.getCountByUser(user));
+    }
+
+    @Test
+    void testDoNotNotifyWhenTheRepoHasAnEntry() {
+        // TODO
     }
 
     @Test
