@@ -69,14 +69,9 @@ class InferNotificationIT extends BaseIT {
     }
 
     @Test
-    void testInferEntriesWithNotifications() {
+    void testDockstoreYmlInference() {
         final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
-        CurationApi curationApi = new CurationApi(openApiClient);
-
-        // Track install event
-        handleGitHubInstallation(workflowsApi, List.of(DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV), USER_2_USERNAME);
-        assertEquals(0, curationApi.getGitHubAppNotifications(0, 100).size());
 
         // infer directly
         InferredDockstoreYml inferredDockstoreYml = workflowsApi.inferEntries(DOCKSTORE_TEST_USER_2, "dockstore_workflow_cnv", ROOTTEST);
@@ -86,6 +81,30 @@ class InferNotificationIT extends BaseIT {
             && inferredDockstoreYml.getDockstoreYml().contains("primaryDescriptorPath:")
             && ROOTTEST.equals(inferredDockstoreYml.getGitReference())
         );
+    }
+
+    @Test
+    void testNotificationsOnInstall() {
+        final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        CurationApi curationApi = new CurationApi(openApiClient);
+
+        // Simulate an install on a repo that contains a .dockstore.yml
+        // No notification should be created
+        handleGitHubInstallation(workflowsApi, List.of(DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV), USER_2_USERNAME);
+        assertEquals(0, curationApi.getGitHubAppNotifications(0, 100).size());
+
+        // Simulate an install on a repo that does not contain a .dockstore.yml
+        // A notification should be created
+        handleGitHubInstallation(workflowsApi, List.of("dockstore-testing/hello-wdl-workflow"), USER_2_USERNAME);
+        assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
+    }
+
+    @Test
+    void testNotificationsOnRelease() {
+        final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        CurationApi curationApi = new CurationApi(openApiClient);
 
         // Track release event that creates notification
         ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, ROOTTEST, USER_2_USERNAME)
