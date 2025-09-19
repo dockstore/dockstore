@@ -111,7 +111,7 @@ class InferNotificationIT extends BaseIT {
         // Release another branch from the same repository that contains a .dockstore.yml
         // During push processing, the previous notification should be hidden.
         String branchWithDockstoreYml = "master";
-        handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "develop", USER_2_USERNAME);
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "develop", USER_2_USERNAME));
         assertEquals(0, userNotificationDAO.getCountByUser(user));
     }
 
@@ -130,7 +130,7 @@ class InferNotificationIT extends BaseIT {
         // hide the notification
         List<io.dockstore.webservice.core.UserNotification> notificationsByUser = userNotificationDAO.findByUser(user);
         assertEquals(1, notificationsByUser.size());
-        curationApi.hideUserNotification(notificationsByUser.get(0).getId());
+        curationApi.hideUserNotification(notificationsByUser.get(0).getId(), "");
         assertEquals(0, userNotificationDAO.getCountByUser(user));
 
         // Release a different .dockstore.yml-less branch.

@@ -2,6 +2,7 @@ package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.resources.LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
@@ -168,7 +169,10 @@ public class NotificationResource {
     @Path("/notifications/user/{id}/hide")
     @UnitOfWork
     @Operation(operationId = "hideUserNotification",  description = "Hide a user notification", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public void hideUserNotification(@Parameter(description = "Notification to hide", required = true) @PathParam("id") Long id, @Parameter(hidden = true, name = "user") @Auth User user) {
+    public void hideUserNotification(
+        @Parameter(description = "Notification to hide", required = true) @PathParam("id") Long id,
+        @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         UserNotification notification = userNotificationDAO.findById(id);
         throwErrorIfNull(notification);
 
