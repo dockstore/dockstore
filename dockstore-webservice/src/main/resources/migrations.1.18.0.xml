@@ -74,7 +74,9 @@
     </changeSet>
     <changeSet author="svonworl" id="addHiddenPropertyToNotifications">
         <addColumn tableName="github_app_notification">
-            <column defaultValue="false" name="hidden" type="BOOLEAN"/>
+            <column name="hidden" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
     </changeSet>
 </databaseChangeLog>
