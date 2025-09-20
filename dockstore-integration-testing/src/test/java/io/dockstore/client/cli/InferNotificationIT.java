@@ -94,9 +94,9 @@ class InferNotificationIT extends BaseIT {
         handleGitHubInstallation(workflowsApi, List.of(DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV), USER_2_USERNAME);
         assertEquals(0, curationApi.getGitHubAppNotifications(0, 100).size());
 
-        // Simulate an install on a repo that does not contain a .dockstore.yml
+        // Simulate an install on a repo that does not contain a .dockstore.yml and has a small number of branches
         // A notification should be created
-        handleGitHubInstallation(workflowsApi, List.of("dockstore-testing/hello-wdl-workflow"), USER_2_USERNAME);
+        handleGitHubInstallation(workflowsApi, List.of("dockstore-testing/testWorkflow"), USER_2_USERNAME);
         assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
     }
 
@@ -107,7 +107,7 @@ class InferNotificationIT extends BaseIT {
         CurationApi curationApi = new CurationApi(openApiClient);
 
         // Track release event that creates notification
-        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, ROOTTEST, USER_2_USERNAME)
+        ApiException exception = assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/" + ROOTTEST, USER_2_USERNAME)
         );
         assertTrue(exception.getMessage().contains(COULD_NOT_RETRIEVE_DOCKSTORE_YML));
         // after a release, inference now generates one GitHub app notification
@@ -130,7 +130,7 @@ class InferNotificationIT extends BaseIT {
         // Release another branch from the same repository that contains a .dockstore.yml
         // During push processing, the previous notification should be hidden.
         String branchWithDockstoreYml = "master";
-        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "develop", USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/develop", USER_2_USERNAME));
         assertEquals(0, userNotificationDAO.getCountByUser(user));
     }
 
@@ -143,7 +143,7 @@ class InferNotificationIT extends BaseIT {
         User user = userDAO.findById(usersApi.getUser().getId());
 
         // create a github app notification
-        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, ROOTTEST, USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/" + ROOTTEST, USER_2_USERNAME));
         assertEquals(1, userNotificationDAO.getCountByUser(user));
 
         // hide the notification
@@ -154,7 +154,7 @@ class InferNotificationIT extends BaseIT {
 
         // Release a different .dockstore.yml-less branch.
         // no notification should be created, because another notification for this repo was created earlier
-        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "master", USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/master", USER_2_USERNAME));
         assertEquals(0, userNotificationDAO.getCountByUser(user));
     }
 
@@ -166,11 +166,11 @@ class InferNotificationIT extends BaseIT {
         User user = userDAO.findById(usersApi.getUser().getId());
         // Release a branch that has a .dockstore.yml
         // An entry should be created
-        handleGitHubRelease(workflowsApi, "dockstore-testing/simple-notebook", "main", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, "dockstore-testing/simple-notebook", "refs/heads/main", USER_2_USERNAME);
         assertEquals(0, userNotificationDAO.getCountByUser(user));
         // Release a branch that doesn't have a .dockstore.yml
         // No "needs a .dockstore.yml" notification should be created, because an entry already exists for this repo
-        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, "dockstore-testing/simple-notebook", "no-dockstoreyml", USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, "dockstore-testing/simple-notebook", "refs/heads/no-dockstoreyml", USER_2_USERNAME));
         assertEquals(0, userNotificationDAO.getCountByUser(user));
     }
 
