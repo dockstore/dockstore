@@ -177,13 +177,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
     @BatchSize(size = 25)
     private SortedSet<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @BatchSize(size = 25)
