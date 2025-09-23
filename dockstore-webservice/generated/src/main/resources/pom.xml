@@ -854,7 +854,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>github-api</artifactId>
-      <version>1.327</version>
+      <version>1.330</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
