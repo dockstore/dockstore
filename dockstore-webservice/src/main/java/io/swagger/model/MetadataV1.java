@@ -15,7 +15,7 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import java.lang.reflect.InvocationTargetException;
@@ -24,7 +24,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+@JsonNaming(KebabCaseStrategy.class)
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
 public class MetadataV1 {
     private static final Logger LOG = LoggerFactory.getLogger(MetadataV1.class);
