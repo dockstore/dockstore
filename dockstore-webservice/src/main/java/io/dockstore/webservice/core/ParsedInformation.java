@@ -19,7 +19,10 @@ import java.sql.Timestamp;
 public class ParsedInformation {
     @Enumerated(EnumType.STRING)
     private DescriptorLanguage descriptorLanguage;
+
+    @Column(nullable = false)
     private boolean hasHTTPImports = false;
+    @Column(nullable = false)
     private boolean hasLocalImports = false;
 
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
