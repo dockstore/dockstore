@@ -1177,7 +1177,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.33.0</version>
+                <version>4.30.0</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>
@@ -1191,6 +1191,9 @@
                     <logging>info</logging>
                     <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
                     <diffExcludeObjects>column:sha256</diffExcludeObjects>
+                    <!-- something weird is going on, remove next line after issues at https://github.com/dockstore/dockstore/pull/6167#issuecomment-3330713937 are resolved
+                     see also https://docs.liquibase.com/oss/integration-guide/diff -->
+                    <diffTypes>Tables, views, columns, foreignkeys</diffTypes>
                 </configuration>
                 <dependencies>
                     <dependency>
