@@ -50,4 +50,5 @@
     <include file="migrations.1.16.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.17.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.18.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.1.19.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

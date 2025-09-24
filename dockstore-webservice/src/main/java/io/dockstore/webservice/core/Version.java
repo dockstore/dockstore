@@ -178,7 +178,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private VersionMetadata versionMetadata = new VersionMetadata();
 
     @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 9)
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "versioneditor_id", referencedColumnName = "id", columnDefinition = "bigint")
     private User versionEditor;
 
