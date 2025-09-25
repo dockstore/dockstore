@@ -728,5 +728,6 @@ commands:
             for file in ~/test-results/**/*
             do
               xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file || true
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunError' $file || true
             done
           when: always

@@ -43,7 +43,7 @@ server:
   applicationConnectors:
     - type: http
       port: 8080
-      uriCompliance: LEGACY
+      uriCompliance: UNSAFE
   adminConnectors:
     - type: http
       port: 8001
