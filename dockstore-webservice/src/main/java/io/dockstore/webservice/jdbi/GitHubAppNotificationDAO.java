@@ -37,8 +37,12 @@ public class GitHubAppNotificationDAO extends AbstractDAO<GitHubAppNotification>
         return get(id);
     }
 
-    public GitHubAppNotification findLatestByRepositoryIncludingHidden(SourceControl sourceControl, String organization, String repository) {
-        return currentSession().createNamedQuery("io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryIncludingHidden", GitHubAppNotification.class).setParameter("sourcecontrol", sourceControl).setParameter("organization", organization).setParameter("repository", repository).setMaxResults(1).getResultStream().findFirst().orElse(null);
+    public GitHubAppNotification findLatestByRepositoryAndUserIncludingHidden(SourceControl sourceControl, String organization, String repository, User user) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryAndUserIncludingHidden", GitHubAppNotification.class).setParameter("sourcecontrol", sourceControl).setParameter("organization", organization).setParameter("repository", repository).setParameter("user", user).setMaxResults(1).getResultStream().findFirst().orElse(null);
+    }
+
+    public List<GitHubAppNotification> findByRepository(SourceControl sourceControl, String organization, String repository) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepository", GitHubAppNotification.class).setParameter("sourcecontrol", sourceControl).setParameter("organization", organization).setParameter("repository", repository).getResultList();
     }
 
     public List<GitHubAppNotification> findByUser(User user) {

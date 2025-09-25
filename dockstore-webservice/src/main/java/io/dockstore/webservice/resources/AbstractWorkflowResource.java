@@ -444,18 +444,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<String> importantBranches) {
+        // If there's no user for which to create a notification, abort.
+        if (!user.isPresent()) {
+            return;
+        }
+
         // Create the repo and file tree.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         String organization = repositoryId.split("/")[0];
         String repository = repositoryId.split("/")[1];
 
-        // If we've already inferred on this repo, don't try again.
-        if (gitHubAppNotificationDAO.findLatestByRepositoryIncludingHidden(SourceControl.GITHUB, organization, repository) != null) {
-            LOG.info("User notification already created for inferring repo {}", repositoryId);
+        // If we've already created a notification for this repository and user, don't notify again.
+        if (gitHubAppNotificationDAO.findLatestByRepositoryAndUserIncludingHidden(SourceControl.GITHUB, organization, repository, user.get()) != null) {
+            LOG.info("User notification already created for inferring repo {} and user {}", repositoryId, user.get().getUsername());
             return;
         }
 
-        // If there's a dockstore.yml-based entry registered for this repo already, don't notify again.
+        // If there's a dockstore.yml-based entry registered for this repo already, don't notify.
         if (hasDockstoreYmlBasedEntry(SourceControl.GITHUB, organization, repository)) {
             LOG.info("Repo {} already has a .dockstore.yml-based entry", repositoryId);
             return;
@@ -474,7 +479,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 gitHubAppNotification.setOrganization(organization);
                 gitHubAppNotification.setRepository(repository);
                 gitHubAppNotification.setAction(INFER_DOCKSTORE_YML);
-                user.ifPresent(gitHubAppNotification::setUser);
+                gitHubAppNotification.setUser(user.get());
                 gitHubAppNotificationDAO.create(gitHubAppNotification);
             }
         } catch (RuntimeException e) {
@@ -492,13 +497,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return false;
     }
 
-    protected void hideNotification(String repositoryId) {
+    private void hideNotifications(String repositoryId) {
         String organization = repositoryId.split("/")[0];
         String repository = repositoryId.split("/")[1];
-        GitHubAppNotification gitHubAppNotification = gitHubAppNotificationDAO.findLatestByRepositoryIncludingHidden(SourceControl.GITHUB, organization, repository);
-        if (gitHubAppNotification != null) {
-            gitHubAppNotification.setHidden(true);
-        }
+        List<GitHubAppNotification> notifications = gitHubAppNotificationDAO.findByRepository(SourceControl.GITHUB, organization, repository);
+        notifications.forEach(notification -> notification.setHidden(true));
     }
 
     /**
@@ -539,8 +542,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
                 throw new CustomWebApplicationException(COULD_NOT_RETRIEVE_DOCKSTORE_YML + " Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
             }
-            // The user has created a .dockstore.yml, so hide any notification regarding the need to do so.
-            hideNotification(repository);
+            // A .dockstore.yml exists in the repository, so hide any existing notification regarding the need to create one.
+            hideNotifications(repository);
 
             SourceFile dockstoreYml = optionalDockstoreYml.get();
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one entry.

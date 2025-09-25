@@ -14,8 +14,12 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "github_app_notification")
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryIncludingHidden",
-        query = "SELECT u from GitHubAppNotification u WHERE u.sourceControl = :sourcecontrol AND u.organization = :organization AND u.repository = :repository ORDER BY u.dbCreateDate DESC"),
+    @NamedQuery(
+        name = "io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryAndUserIncludingHidden",
+        query = "SELECT u from GitHubAppNotification u WHERE u.sourceControl = :sourcecontrol AND u.organization = :organization AND u.repository = :repository AND u.user = :user ORDER BY u.dbCreateDate DESC"),
+    @NamedQuery(
+        name = "io.dockstore.webservice.core.GitHubAppNotification.getByRepository",
+        query = "SELECT u from GitHubAppNotification u WHERE u.sourceControl = :sourcecontrol AND u.organization = :organization AND u.repository = :repository AND NOT hidden ORDER BY u.dbCreateDate DESC"),
     @NamedQuery(name = "io.dockstore.webservice.core.GitHubAppNotification.getCountByUser", query = "SELECT COUNT(u) FROM GitHubAppNotification u WHERE u.user = :user AND NOT hidden")
 })
 public class GitHubAppNotification extends UserNotification {
