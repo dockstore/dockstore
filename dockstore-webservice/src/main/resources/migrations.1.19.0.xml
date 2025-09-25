@@ -1,0 +1,37 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2025 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.19.0">
+    <changeSet author="dyuen (generated)" id="dropwizard_5_migration">
+        <!-- change due to https://docs.jboss.org/hibernate/orm/6.2/migration-guide/migration-guide.html#logical-1-1-unique -->
+        <addUniqueConstraint columnNames="costid" constraintName="metrics_by_status_costid_key" tableName="metrics_by_status"/>
+        <addUniqueConstraint columnNames="cpuid" constraintName="metrics_by_status_cpuid_key" tableName="metrics_by_status"/>
+        <addUniqueConstraint columnNames="dailyexecutioncountsid" constraintName="metrics_by_status_dailyexecutioncountsid_key" tableName="metrics_by_status"/>
+        <addUniqueConstraint columnNames="executiontimeid" constraintName="metrics_by_status_executiontimeid_key" tableName="metrics_by_status"/>
+        <addUniqueConstraint columnNames="memoryid" constraintName="metrics_by_status_memoryid_key" tableName="metrics_by_status"/>
+        <addUniqueConstraint columnNames="weeklyexecutioncountsid" constraintName="metrics_by_status_weeklyexecutioncountsid_key" tableName="metrics_by_status"/>
+        <addUniqueConstraint columnNames="executionstatuscount" constraintName="metrics_executionstatuscount_key" tableName="metrics"/>
+        <addUniqueConstraint columnNames="validationstatus" constraintName="metrics_validationstatus_key" tableName="metrics"/>
+        <createIndex indexName="version_output_fileformat_pkey" tableName="version_output_fileformat" unique="true">
+            <column name="fileformatid"/>
+            <column name="versionid"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
