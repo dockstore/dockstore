@@ -18,7 +18,7 @@ import jakarta.persistence.Table;
         name = "io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryAndUserIncludingHidden",
         query = "SELECT u from GitHubAppNotification u WHERE u.sourceControl = :sourcecontrol AND u.organization = :organization AND u.repository = :repository AND u.user = :user ORDER BY u.dbCreateDate DESC"),
     @NamedQuery(
-        name = "io.dockstore.webservice.core.GitHubAppNotification.getByRepository",
+        name = "io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepository",
         query = "SELECT u from GitHubAppNotification u WHERE u.sourceControl = :sourcecontrol AND u.organization = :organization AND u.repository = :repository AND NOT hidden ORDER BY u.dbCreateDate DESC"),
     @NamedQuery(name = "io.dockstore.webservice.core.GitHubAppNotification.getCountByUser", query = "SELECT COUNT(u) FROM GitHubAppNotification u WHERE u.user = :user AND NOT hidden")
 })
