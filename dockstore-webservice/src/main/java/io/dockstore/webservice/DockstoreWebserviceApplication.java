@@ -193,6 +193,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
 import org.eclipse.jetty.ee10.servlet.FilterHolder;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -402,6 +403,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
+
+        // a painful one liner to find, turns out jetty required this in addition to uricompliance as in jetty 11, see https://github.com/jetty/jetty.project/issues/11890
+        environment.getApplicationContext().getServletHandler().setDecodeAmbiguousURIs(true);
 
         restrictSourceFiles(configuration);
 
