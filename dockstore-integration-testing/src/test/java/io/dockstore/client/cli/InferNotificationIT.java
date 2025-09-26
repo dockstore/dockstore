@@ -159,7 +159,7 @@ class InferNotificationIT extends BaseIT {
 
     @Test
     void testNotifyEachUser() {
-        for (String username: List.of(USER_2_USERNAME, USER_4_USERNAME)) {
+        for (String username: List.of(USER_2_USERNAME, ADMIN_USERNAME)) {
             ApiClient openApiClient = getOpenAPIWebClient(username, testingPostgres);
             WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
             UsersApi usersApi = new UsersApi(openApiClient);
