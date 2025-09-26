@@ -6,6 +6,14 @@ template: Hello, %s!
 
 gitHubAppPrivateKeyFile: /usr/local/ci/dstesting_pcks8.pem
 
+server:
+  applicationConnectors:
+    - type: http
+      port: 8080
+      uriCompliance: LEGACY
+  adminConnectors:
+    - type: http
+      port: 8001
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
