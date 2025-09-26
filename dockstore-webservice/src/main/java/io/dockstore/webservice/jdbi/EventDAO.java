@@ -101,7 +101,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     private PredicateBuilder organizationPredicateBuilder(Set<Long> organizationIds) {
-        return (cb, event) -> event.get("organization").in(organizationIds);
+        return (cb, event) -> event.get("organization").get("id").in(organizationIds);
     }
 
     private PredicateBuilder entryPredicateBuilder(Set<Long> entryIds) {
@@ -118,7 +118,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     private PredicateBuilder initiatorPredicateBuilder(long initiatorUserId) {
-        return (cb, event) -> event.get("initiatorUser").in(initiatorUserId);
+        return (cb, event) -> event.get("initiatorUser").get("id").in(initiatorUserId);
     }
 
     private PredicateBuilder accessPredicateBuilder(User loggedInUser) {
@@ -161,8 +161,8 @@ public class EventDAO extends AbstractDAO<Event> {
             if (loggedInUser != null) {
                 // The logged-in user can also access events that they initiated or were the subject of.
                 return cb.or(
-                    event.get("initiatorUser").in(loggedInUser.getId()),
-                    event.get("user").in(loggedInUser.getId()),
+                    event.get("initiatorUser").get("id").in(loggedInUser.getId()),
+                    event.get("user").get("id").in(loggedInUser.getId()),
                     publicPredicate
                 );
             } else {
