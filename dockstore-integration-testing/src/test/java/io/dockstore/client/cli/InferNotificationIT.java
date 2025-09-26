@@ -129,13 +129,12 @@ class InferNotificationIT extends BaseIT {
 
         // Release another branch from the same repository that contains a .dockstore.yml
         // During push processing, the previous notification should be hidden.
-        String branchWithDockstoreYml = "master";
         handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/develop", USER_2_USERNAME);
         assertEquals(0, userNotificationDAO.getCountByUser(user));
     }
 
     @Test
-    void testNotifyOnceOnly() {
+    void testNotifyOnceOnlyPerUser() {
         final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         CurationApi curationApi = new CurationApi(openApiClient);
@@ -156,6 +155,19 @@ class InferNotificationIT extends BaseIT {
         // no notification should be created, because another notification for this repo was created earlier
         assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/master", USER_2_USERNAME));
         assertEquals(0, userNotificationDAO.getCountByUser(user));
+    }
+
+    @Test
+    void testNotifyEachUser() {
+        for (String username: List.of(USER_2_USERNAME, USER_4_USERNAME)) {
+            ApiClient openApiClient = getOpenAPIWebClient(username, testingPostgres);
+            WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+            UsersApi usersApi = new UsersApi(openApiClient);
+            User user = userDAO.findById(usersApi.getUser().getId());
+            assertEquals(0, userNotificationDAO.getCountByUser(user));
+            assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTestUser2.DOCKSTORE_WORKFLOW_CNV, "refs/heads/" + ROOTTEST, username));
+            assertEquals(1, userNotificationDAO.getCountByUser(user));
+        }
     }
 
     @Test
