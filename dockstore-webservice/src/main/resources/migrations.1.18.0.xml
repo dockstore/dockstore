@@ -72,4 +72,11 @@
         <addUniqueConstraint columnNames="id" constraintName="uk_github_app_notification_id" tableName="github_app_notification"/>
         <addForeignKeyConstraint baseColumnNames="userid" baseTableName="github_app_notification" constraintName="fk_github_app_notification_enduser_id" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
+    <changeSet author="svonworl" id="addHiddenPropertyToNotifications">
+        <addColumn tableName="github_app_notification">
+            <column name="hidden" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

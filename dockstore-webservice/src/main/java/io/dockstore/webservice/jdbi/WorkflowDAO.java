@@ -192,6 +192,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
     }
 
+    public List<Workflow> findByPath(SourceControl sourceControl, String organization, String repository) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByPath")
+            .setParameter("sourcecontrol", sourceControl)
+            .setParameter("organization", organization)
+            .setParameter("repository", repository));
+    }
+
     /**
      * Find if a path already exists in the BioWorkflow, Apptool, or Notebook tables, since we do not want duplicate names between them.
      * @param path
