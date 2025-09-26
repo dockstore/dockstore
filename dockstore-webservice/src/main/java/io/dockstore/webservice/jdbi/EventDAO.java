@@ -106,11 +106,11 @@ public class EventDAO extends AbstractDAO<Event> {
 
     private PredicateBuilder entryPredicateBuilder(Set<Long> entryIds) {
         return (cb, event) -> cb.or(
-            event.get("tool").in(entryIds),
-            event.get("workflow").in(entryIds),
-            event.get("apptool").in(entryIds),
-            event.get("service").in(entryIds),
-            event.get("notebook").in(entryIds));
+            event.get("tool").get("id").in(entryIds),
+            event.get("workflow").get("id").in(entryIds),
+            event.get("apptool").get("id").in(entryIds),
+            event.get("service").get("id").in(entryIds),
+            event.get("notebook").get("id").in(entryIds));
     }
 
     private PredicateBuilder orPredicateBuilder(PredicateBuilder a, PredicateBuilder b) {
