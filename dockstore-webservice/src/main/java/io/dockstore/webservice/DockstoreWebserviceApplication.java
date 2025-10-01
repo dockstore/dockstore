@@ -17,11 +17,6 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory.getToolsExtendedApi;
-import static jakarta.servlet.DispatcherType.REQUEST;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Gauge;
@@ -180,7 +175,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -192,8 +186,9 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.eclipse.jetty.ee10.servlet.FilterHolder;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.eclipse.jetty.http.pathmap.PathSpec;
+import org.eclipse.jetty.server.handler.CrossOriginHandler;
+import org.eclipse.jetty.server.handler.PathMappingsHandler;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.server.model.Resource;
@@ -536,15 +531,18 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Enable CORS headers
         // final FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
         final String methods = "GET,HEAD,POST,DELETE,PUT,OPTIONS,PATCH";
-        CORS_ENDPOINTS.stream().forEach(urlContext -> {
-            FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, urlContext, EnumSet.of(REQUEST));
+        CrossOriginHandler permissiveHandler = new CrossOriginHandler();
+        permissiveHandler.setAllowedMethods(Set.of(methods));
+        permissiveHandler.setAllowedOriginPatterns(Set.of("*"));
+        permissiveHandler.setAllowedHeaders(Set.of("Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control"));
+        permissiveHandler.setAllowCredentials(true);
+        CrossOriginHandler restrictiveHandler = new CrossOriginHandler();
 
-            filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, methods);
-            filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
-            filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, methods);
-            filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
-                    "Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
-        });
+        PathMappingsHandler pathMappingsHandler = new PathMappingsHandler();
+        CORS_ENDPOINTS.forEach(urlContext -> pathMappingsHandler.addMapping(PathSpec.from(urlContext), permissiveHandler));
+        pathMappingsHandler.addMapping(PathSpec.from("/"), restrictiveHandler);
+
+        environment.getApplicationContext().setHandler(pathMappingsHandler);
 
 
         // Log information about privileged endpoints.

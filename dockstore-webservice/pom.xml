@@ -287,15 +287,6 @@
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
 
-
-        <!-- these are old for supporting CrossOriginFilter deprecation https://github.com/wiremock/wiremock/issues/3018 -->
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlets</artifactId>
-            <version>11.0.25</version>
-        </dependency>
-
-
         <dependency>
             <groupId>org.checkerframework</groupId>
             <artifactId>checker-qual</artifactId>

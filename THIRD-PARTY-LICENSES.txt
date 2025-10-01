@@ -1,5 +1,5 @@
 
-Lists of 348 third-party dependencies.
+Lists of 347 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -239,7 +239,6 @@ Lists of 348 third-party dependencies.
      (Apache License, 2.0) (BSD 2-Clause) (EDL 1.0) (EPL 2.0) (GPL2 w/ CPE) (MIT license) (Modified BSD) (Public Domain) (W3C license) (jQuery license) jersey-media-multipart (org.glassfish.jersey.media:jersey-media-multipart:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-media-multipart)
      (The Apache Software License, Version 2.0) JetBrains Java Annotations (org.jetbrains:annotations:26.0.2 - https://github.com/JetBrains/java-annotations)
      (Apache Software License - Version 2.0) (Eclipse Public License - Version 2.0) Jetty :: SetUID JNA (org.eclipse.jetty.toolchain.setuid:jetty-setuid-jna:2.0.3 - https://eclipse.org/jetty/jetty-setuid-jna)
-     (Apache Software License - Version 2.0) (Eclipse Public License - Version 2.0) Jetty :: Utility Servlets and Filters (org.eclipse.jetty:jetty-servlets:11.0.25 - https://jetty.org/jetty-servlets)
      (Apache License, Version 2.0) JJWT :: API (io.jsonwebtoken:jjwt-api:0.11.5 - https://github.com/jwtk/jjwt/jjwt-api)
      (Apache License, Version 2.0) JJWT :: Extensions :: Jackson (io.jsonwebtoken:jjwt-jackson:0.11.5 - https://github.com/jwtk/jjwt/jjwt-jackson)
      (Apache License, Version 2.0) JJWT :: Impl (io.jsonwebtoken:jjwt-impl:0.11.5 - https://github.com/jwtk/jjwt/jjwt-impl)
