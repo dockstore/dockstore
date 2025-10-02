@@ -400,6 +400,7 @@ public final class ZenodoHelper {
         try {
             // https://developers.zenodo.org/#discard
             actionsApi.discardDeposit(depositId);
+            LOG.info("Successfully discarded previous deposit");
         } catch (ApiException e) {
             LOG.info("Exception attempting to discard previous deposit", e);
         }
