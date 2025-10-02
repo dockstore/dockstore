@@ -7962,6 +7962,33 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/versionsMissingAutomaticDoi:
+    get:
+      description: Calculates a list of workflow versions that are missing an automatic
+        DOI
+      operationId: getVersionsMissingAutomaticDoi
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 1000
+          minimum: 1
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowAndVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/versionsNeedingRetroactiveDoi:
     get:
       description: Calculates a list of workflow versions that need a retroactive
