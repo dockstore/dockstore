@@ -313,6 +313,11 @@ public final class ZenodoHelper {
             String depositIdStr = extractRecordIdFromDoi(existingWorkflowVersionDOIURL.get());
             int depositId = Integer.parseInt(depositIdStr);
             try {
+                // Occasionally, the Zenodo API has been observed to fail when adding files to a draft deposit, leaving
+                // a modified, unpublished deposit that causes the subsequent newDepositVersion() call to fail:
+                // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
+                // So, we attempt to discard any existing deposit here.
+                discardExistingUnpublishedDeposit(actionsApi, depositId);
                 // A DOI was previously assigned to a workflow version so we will
                 // use the ID associated with the workflow version DOI
                 // to create a new workflow version DOI
@@ -389,6 +394,15 @@ public final class ZenodoHelper {
             return doiDAO.findById(doiId);
         }
         return doi;
+    }
+
+    private static void discardExistingUnpublishedDeposit(ActionsApi actionsApi, int depositId) {
+        try {
+            // https://developers.zenodo.org/#discard
+            actionsApi.discardDeposit(depositId);
+        } catch (ApiException e) {
+            LOG.info("Exception attempting to discard previous deposit", e);
+        }
     }
 
     /**
