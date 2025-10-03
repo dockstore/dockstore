@@ -100,7 +100,7 @@ class GalaxyPluginIT {
             final Path temporaryTestingPlugins = Files.createTempDirectory("temporaryTestingPlugins");
             final Path path = Paths.get(temporaryTestingPlugins.toString(), GALAXY_PLUGIN_FILENAME);
             FileUtils.copyURLToFile(new URL(GALAXY_PLUGIN_LOCATION), path.toFile());
-            System.out.println("copied Galaxy plugin to: " + path.toString());
+            System.out.println("copied Galaxy plugin to: " + path);
             final String absolutePath = temporaryTestingPlugins.toFile().getAbsolutePath();
             System.out.println("path for support: " + absolutePath);
             SUPPORT = new DropwizardTestSupport<>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH,

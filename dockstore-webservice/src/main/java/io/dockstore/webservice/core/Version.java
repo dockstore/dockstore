@@ -55,6 +55,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.UniqueConstraint;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -178,7 +179,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private VersionMetadata versionMetadata = new VersionMetadata();
 
     @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 9)
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "versioneditor_id", referencedColumnName = "id", columnDefinition = "bigint")
     private User versionEditor;
 
@@ -203,7 +204,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"fileformatid", "versionid"}))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
