@@ -31,4 +31,4 @@ setuptools==72.1.0
 shellescape==3.8.1
 six==1.16.0
 spython==0.3.13
-urllib3==2.2.2
+urllib3==2.5.0
