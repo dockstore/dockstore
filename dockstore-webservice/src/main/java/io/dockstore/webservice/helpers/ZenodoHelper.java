@@ -169,6 +169,7 @@ public final class ZenodoHelper {
             LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
             registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
                     DoiInitiator.DOCKSTORE);
+            LOG.info("Successfully automatically registered DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
         } catch (CustomWebApplicationException e) {
             LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
             return false;
@@ -313,7 +314,7 @@ public final class ZenodoHelper {
             String depositIdStr = extractRecordIdFromDoi(existingWorkflowVersionDOIURL.get());
             int depositId = Integer.parseInt(depositIdStr);
             try {
-                // Occasionally, the Zenodo API has been observed to fail when adding files to a draft deposit, leaving
+                // Occasionally, the Zenodo API has been observed to fail when manipulating a draft deposit, leaving
                 // a modified, unpublished deposit that causes the subsequent newDepositVersion() call to fail:
                 // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
                 // So, we attempt to discard any existing deposit here.
