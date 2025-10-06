@@ -318,7 +318,7 @@ public final class ZenodoHelper {
                 // a modified, unpublished deposit that causes the subsequent newDepositVersion() call to fail:
                 // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
                 // So, we attempt to discard any existing deposit here.
-                discardExistingUnpublishedDeposit(actionsApi, depositId);
+                discardExistingUnpublishedDeposit(depositApi, actionsApi, depositId);
                 // A DOI was previously assigned to a workflow version so we will
                 // use the ID associated with the workflow version DOI
                 // to create a new workflow version DOI
@@ -397,13 +397,21 @@ public final class ZenodoHelper {
         return doi;
     }
 
-    private static void discardExistingUnpublishedDeposit(ActionsApi actionsApi, int depositId) {
-        try {
-            // https://developers.zenodo.org/#discard
-            actionsApi.discardDeposit(depositId);
-            LOG.info("Successfully discarded previous deposit");
-        } catch (ApiException e) {
-            LOG.info("Exception attempting to discard previous deposit", e);
+    private static void discardExistingUnpublishedDeposit(DepositsApi depositsApi, ActionsApi actionsApi, int depositId) {
+        Deposit deposit = depositsApi.getDeposit(depositId);
+        String draftDepositURL = deposit.getLinks().get("latest_draft");
+        if (draftDepositURL != null) {
+            String draftDepositIDStr = draftDepositURL.substring(draftDepositURL.lastIndexOf("/") + 1).trim();
+            // Get the deposit object for the new workflow version DOI
+            int draftDepositID = Integer.parseInt(draftDepositIDStr);
+            try {
+                LOG.info("Discarding previous deposit {}", draftDepositID);
+                // https://developers.zenodo.org/#discard
+                actionsApi.discardDeposit(draftDepositID);
+                LOG.info("Successfully discarded previous deposit");
+            } catch (ApiException e) {
+                LOG.info("Exception attempting to discard previous deposit", e);
+            }
         }
     }
 
