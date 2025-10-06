@@ -2514,7 +2514,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @SuppressWarnings("checkstyle:MagicNumber")
     public List<WorkflowAndVersion> getVersionsMissingAutomaticDoi(@Parameter(hidden = true) @Auth User user,
         @QueryParam("limit") @Min(1) @Max(1000) @DefaultValue("100") Integer limit) {
-
         Set<Long> versionIds = workflowDAO.getVersionIdsMissingAutomaticDoi();
         return versionIds.stream()
             .limit(limit)
