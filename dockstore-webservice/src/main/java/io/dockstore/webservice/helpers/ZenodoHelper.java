@@ -289,24 +289,8 @@ public final class ZenodoHelper {
         checkForExistingDOIForWorkflowVersion(workflowVersion, doiInitiator);
         Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow, doiInitiator);
 
-        final String recordId = "345150";
-        String query = "(conceptrecid:\"" + recordId + "\")"; // AND (submitted:\"false\")";
-        List<Deposit> deposits = depositApi.listDeposits(query, "draft", "mostrecent", 1, Integer.MAX_VALUE);
-        for (Deposit d: deposits) {
-            LOG.error("draft deposit {}", d);
-            try {
-                depositApi.deleteDeposit(d.getId());
-            } catch (RuntimeException e) {
-                LOG.error("failed to delete");
-            }
-        }
-        final PreviewApi previewApi = new PreviewApi(zenodoClient);
-        LOG.error("deposits {}", deposits);
-        LOG.error("records {}", previewApi.getRecordVersions("345151"));
-        // final String recordId = extractRecordIdFromDoi(existingWorkflowVersionDOIURL.get());
-        // LOG.error("recordId {}", recordId);
-        // LOG.error("records {} ", previewApi.getRecordVersions(recordId));
-        String doiAlias;
+        int depositionID;
+        DepositMetadata depositMetadata;
         if (existingWorkflowVersionDOIURL.isEmpty()) {
             try {
                 // No DOI has been assigned to any version of the workflow yet
@@ -318,6 +302,8 @@ public final class ZenodoHelper {
                 // Zenodo again  in the call to putDepositionOnZenodo) so it contains the workflow version alias
                 // constructed with the DOI
                 returnDeposit = depositApi.createDeposit(deposit);
+                depositionID = returnDeposit.getId();
+                depositMetadata = returnDeposit.getMetadata();
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is {}", e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
@@ -327,10 +313,25 @@ public final class ZenodoHelper {
             String depositIdStr = extractRecordIdFromDoi(existingWorkflowVersionDOIURL.get());
             int depositId = Integer.parseInt(depositIdStr);
             try {
+                // The Zenodo API sometimes spuriously fails midway through the process of creating a DOI,
+                // leaving behind a draft deposit that causes the next newDepositVersion() call to fail.
+                // Attempt to find any draft deposit(s) and remove them.
+                int conceptDoiId = getConceptDoiId(depositApi, depositId);
+                List<Deposit> draftDeposits = findDraftDeposits(depositApi, conceptDoiId);
+                draftDeposits.forEach(draftDeposit -> deleteDeposit(depositApi, draftDeposit.getId()));
                 // A DOI was previously assigned to a workflow version so we will
                 // use the ID associated with the workflow version DOI
                 // to create a new workflow version DOI
-                returnDeposit = createDraftDeposit(depositApi, actionsApi, depositId);
+                returnDeposit = actionsApi.newDepositVersion(depositId);
+                // The response body of this action is NOT the new version deposit,
+                // but the original resource. The new version deposition can be
+                // accessed through the "latest_draft" under "links" in the response body.
+                String depositURL = returnDeposit.getLinks().get("latest_draft");
+                String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
+                // Get the deposit object for the new workflow version DOI
+                depositionID = Integer.parseInt(depositionIDStr);
+                returnDeposit = depositApi.getDeposit(depositionID);
+                depositMetadata = returnDeposit.getMetadata();
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is {}", e.getMessage(), e);
                 if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
@@ -351,23 +352,27 @@ public final class ZenodoHelper {
             }
         }
 
-        int depositionID = returnDeposit.getId();
-        DepositMetadata depositMetadata = returnDeposit.getMetadata();
-        LOG.info("submitted {}", returnDeposit.isSubmitted());
+        Deposit publishedDeposit;
+        String doiAlias;
 
-        // Retrieve the DOI so we can use it to create a Dockstore alias
-        // to the workflow; we will add that alias as a Zenodo related identifier
-        String doi = depositMetadata.getPrereserveDoi().getDoi();
-        doiAlias = createAliasUsingDoi(doi);
-        setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
-        fillInMetadata(depositMetadata, workflow, workflowVersion);
+        try {
+            // Retrieve the DOI so we can use it to create a Dockstore alias
+            // to the workflow; we will add that alias as a Zenodo related identifier
+            String doi = depositMetadata.getPrereserveDoi().getDoi();
+            doiAlias = createAliasUsingDoi(doi);
+            setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
+            fillInMetadata(depositMetadata, workflow, workflowVersion);
 
-        provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
-                workflow, workflowVersion);
+            provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
+                    workflow, workflowVersion);
 
-        putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
+            putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
 
-        Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
+            publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
+        } catch (RuntimeException e) {
+            deleteDeposit(depositApi, depositionID);
+            throw e;
+        }
 
         String conceptDoi = publishedDeposit.getConceptdoi();
 
@@ -400,55 +405,25 @@ public final class ZenodoHelper {
         return doi;
     }
 
-    private static Deposit createDraftDeposit(DepositsApi depositsApi, ActionsApi actionsApi, int depositId) {
-        /*
-        LOG.info("deposit id {}", depositId);
-        Deposit deposit = depositsApi.getDeposit(depositId);
-        LOG.info("deposit {}", deposit);
-        String draftDepositURL = deposit.getLinks().get("latest_draft");
-        if (draftDepositURL == null) {
-            LOG.info("no draft deposit found");
-            deposit = actionsApi.newDepositVersion(depositId);
-            draftDepositURL = deposit.getLinks().get("latest_draft");
-        }
-        String draftDepositIDStr = draftDepositURL.substring(draftDepositURL.lastIndexOf("/") + 1).trim();
-        int draftDepositID = Integer.parseInt(draftDepositIDStr);
-        Deposit draftDeposit = depositsApi.getDeposit(draftDepositID);
-        LOG.info("draft deposit {}", draftDeposit);
-        return draftDeposit;
-        */
-        LOG.info("ID {}", depositId);
-        Deposit aDeposit = depositsApi.getDeposit(depositId);
-        LOG.info("DEPOSIT {} " , aDeposit);
-        Deposit deposit = actionsApi.newDepositVersion(depositId);
-        LOG.info("HERE deposit {}", deposit);
-        String draftDepositURL = deposit.getLinks().get("latest_draft");
-        String draftDepositIDStr = draftDepositURL.substring(draftDepositURL.lastIndexOf("/") + 1).trim();
-        int draftDepositID = Integer.parseInt(draftDepositIDStr);
-        Deposit draftDeposit = depositsApi.getDeposit(draftDepositID);
-        LOG.info("THERE deposit {}", draftDeposit);
-        return draftDeposit;
+    private static int getConceptDoiId(DepositsApi depositsApi, int versionDoiId) {
+        return depositsApi.getDeposit(versionDoiId).getConceptrecid();
     }
 
-    /*
-    private static void discardExistingUnpublishedDeposit(DepositsApi depositsApi, ActionsApi actionsApi, int depositId) {
-        Deposit deposit = depositsApi.getDeposit(depositId);
-        String draftDepositURL = deposit.getLinks().get("latest_draft");
-        if (draftDepositURL != null) {
-            String draftDepositIDStr = draftDepositURL.substring(draftDepositURL.lastIndexOf("/") + 1).trim();
-            // Get the deposit object for the new workflow version DOI
-            int draftDepositID = Integer.parseInt(draftDepositIDStr);
-            try {
-                LOG.info("Discarding previous deposit {}", draftDepositID);
-                // https://developers.zenodo.org/#discard
-                actionsApi.discardDeposit(draftDepositID);
-                LOG.info("Successfully discarded previous deposit");
-            } catch (ApiException e) {
-                LOG.info("Exception attempting to discard previous deposit", e);
-            }
+    private static List<Deposit> findDraftDeposits(DepositsApi depositsApi, int conceptDoiId) {
+        // TODO document
+        String query = "(conceptrecid:\"%d\") AND (submitted:\"false\")".formatted(conceptDoiId);
+        LOG.info("Searching for draft deposits using query '{}'", query);
+        return depositsApi.listDeposits(query, "draft", "mostrecent", 1, Integer.MAX_VALUE);
+    }
+
+    private static void deleteDeposit(DepositsApi depositsApi, int depositId) {
+        try {
+            depositsApi.deleteDeposit(depositId);
+            LOG.info("Deleted deposit {}", depositId);
+        } catch (ApiException e) {
+            LOG.info("Exception deleting deposit {}", depositId, e);
         }
     }
-    */
 
     /**
      * Searches for Zenodo DOIs issued against the GitHub repository <code>gitHubRepo</code>.
@@ -786,20 +761,8 @@ public final class ZenodoHelper {
         FilesApi filesApi = new FilesApi(zendoClient);
 
         returnDeposit.getFiles().forEach(file -> {
-            String fileIdStr = file.getId(); 
-            LOG.info("attempting to delete file {}", file);
-            for (int i = 0; i < 10; i++) {
-                try {
-                    filesApi.deleteFile(depositionID, fileIdStr);
-                    LOG.error("deleteFile succeeded");
-                    break;
-                } catch (RuntimeException e) {
-                    LOG.error("deleteFile failed");
-                    if (i + 1 == 10) {
-                        throw e;
-                    }
-                }
-            }
+            String fileIdStr = file.getId();
+            deleteFile(filesApi, depositionID, fileIdStr);
         });
 
         // Add workflow version source files as a zip to the DOI upload deposit
@@ -836,18 +799,7 @@ public final class ZenodoHelper {
         File zipFile = new File(zipFilePathName);
 
         try {
-            for (int i = 0; i < 10; i++) {
-                try {
-                    filesApi.createFile(depositionID, zipFile, fileName);
-                    LOG.error("createFile succeeded");
-                    break;
-                } catch (RuntimeException e) {
-                    LOG.error("createFile failed");
-                    if (i + 1 == 10) {
-                        throw e;
-                    }
-                }
-            }
+            createFile(filesApi, depositionID, zipFile, fileName);
         } catch (ApiException e) {
             LOG.error("Could not create files for new version on Zenodo. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
@@ -857,6 +809,34 @@ public final class ZenodoHelper {
             FileUtils.deleteQuietly(zipFile);
             // Delete the temporary directory
             FileUtils.deleteQuietly(tempDirPath.toFile());
+        }
+    }
+
+    private static void createFile(FilesApi filesApi, int depositionId, File file, String fileName) {
+        callApiWithRetries(() -> filesApi.createFile(depositionId, file, fileName), "createFile", 5, Duration.ofSeconds(1));
+    }
+
+    private static void deleteFile(FilesApi filesApi, int depositionId, String fileIdStr) {
+        callApiWithRetries(() -> filesApi.deleteFile(depositionId, fileIdStr), "deleteFile", 5, Duration.ofSeconds(1));
+    }
+
+    // TODO document
+    private static void callApiWithRetries(Runnable call, String callName, int count, Duration delay) {
+        for (int i = 0; i < count; i++) {
+            try {
+                call.run();
+                return;
+            } catch (ApiException e) {
+                LOG.info("{} failed", callName, e);
+                if (i + 1 == count) {
+                    throw e;
+                }
+                try {
+                    Thread.sleep(delay.toMillis());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
 
