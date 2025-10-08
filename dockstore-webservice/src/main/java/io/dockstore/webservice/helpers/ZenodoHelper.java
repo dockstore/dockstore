@@ -813,11 +813,13 @@ public final class ZenodoHelper {
     }
 
     private static void createFile(FilesApi filesApi, int depositionId, File file, String fileName) {
-        callApiWithRetries(() -> filesApi.createFile(depositionId, file, fileName), "createFile", 5, Duration.ofSeconds(1));
+        final int count = 5;
+        callApiWithRetries(() -> filesApi.createFile(depositionId, file, fileName), "createFile", count, Duration.ofSeconds(1));
     }
 
     private static void deleteFile(FilesApi filesApi, int depositionId, String fileIdStr) {
-        callApiWithRetries(() -> filesApi.deleteFile(depositionId, fileIdStr), "deleteFile", 5, Duration.ofSeconds(1));
+        final int count = 5;
+        callApiWithRetries(() -> filesApi.deleteFile(depositionId, fileIdStr), "deleteFile", count, Duration.ofSeconds(1));
     }
 
     // TODO document
