@@ -313,9 +313,10 @@ public final class ZenodoHelper {
             String depositIdStr = extractRecordIdFromDoi(existingWorkflowVersionDOIURL.get());
             int depositId = Integer.parseInt(depositIdStr);
             try {
-                // The Zenodo API sometimes spuriously fails midway through the process of creating a DOI,
-                // leaving behind a draft deposit that causes the next newDepositVersion() call to fail.
-                // Attempt to find any draft deposit(s) and remove them.
+                // The Zenodo API sometimes spuriously fails (API calls respond with 403 or 503) during the
+                // process of creating a DOI, leaving behind a draft deposit that causes the next
+                // newDepositVersion() call to fail. https://ucsc-cgl.atlassian.net/browse/SEAB-7226
+                // Attempt to find any draft deposit(s), and remove any that we find.
                 int conceptDoiId = getConceptDoiId(depositApi, depositId);
                 List<Deposit> draftDeposits = findDraftDeposits(depositApi, conceptDoiId);
                 draftDeposits.forEach(draftDeposit -> deleteDeposit(depositApi, draftDeposit.getId()));
