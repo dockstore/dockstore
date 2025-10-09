@@ -315,7 +315,8 @@ public final class ZenodoHelper {
             try {
                 // The Zenodo API sometimes spuriously fails (API calls respond with 403 or 503) during the
                 // process of creating a DOI, leaving behind a draft deposit that causes the next
-                // newDepositVersion() call to fail. https://ucsc-cgl.atlassian.net/browse/SEAB-7226
+                // newDepositVersion() call to fail.
+                // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
                 // Attempt to find any draft deposit(s), and remove any that we find.
                 int conceptDoiId = getConceptDoiId(depositApi, depositId);
                 List<Deposit> draftDeposits = findDraftDeposits(depositApi, conceptDoiId);
@@ -371,6 +372,8 @@ public final class ZenodoHelper {
 
             publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
         } catch (RuntimeException e) {
+            // If we fail to configure and publish the deposit, attempt to delete the draft, which may "gum up the works" if it lingers in the system.
+            // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
             deleteDeposit(depositApi, depositionID);
             throw e;
         }
@@ -411,9 +414,12 @@ public final class ZenodoHelper {
     }
 
     private static List<Deposit> findDraftDeposits(DepositsApi depositsApi, int conceptDoiId) {
-        // TODO document
+        // Create a Lucene query that finds drafts corresponding to the specified concept DOI.
+        // Apparently, this endpoint pulls information from ElasticSearch, so the view may be stale.
+        // Drafts may take a while to appear, or seem to persist after they are deleted.
         String query = "(conceptrecid:\"%d\") AND (submitted:\"false\")".formatted(conceptDoiId);
         LOG.info("Searching for draft deposits using query '{}'", query);
+        // In the Zenodo API, page numbers start at 1 (!)
         return depositsApi.listDeposits(query, "draft", "mostrecent", 1, Integer.MAX_VALUE);
     }
 
