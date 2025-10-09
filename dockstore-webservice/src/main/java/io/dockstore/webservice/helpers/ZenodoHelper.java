@@ -761,8 +761,7 @@ public final class ZenodoHelper {
         FilesApi filesApi = new FilesApi(zendoClient);
 
         returnDeposit.getFiles().forEach(file -> {
-            String fileIdStr = file.getId();
-            deleteFile(filesApi, depositionID, fileIdStr);
+            deleteFile(filesApi, depositionID, file.getId());
         });
 
         // Add workflow version source files as a zip to the DOI upload deposit
@@ -817,12 +816,22 @@ public final class ZenodoHelper {
         callApiWithRetries(() -> filesApi.createFile(depositionId, file, fileName), "createFile", count, Duration.ofSeconds(1));
     }
 
-    private static void deleteFile(FilesApi filesApi, int depositionId, String fileIdStr) {
+    private static void deleteFile(FilesApi filesApi, int depositionId, String fileId) {
         final int count = 5;
-        callApiWithRetries(() -> filesApi.deleteFile(depositionId, fileIdStr), "deleteFile", count, Duration.ofSeconds(1));
+        callApiWithRetries(() -> filesApi.deleteFile(depositionId, fileId), "deleteFile", count, Duration.ofSeconds(1));
     }
 
-    // TODO document
+    /**
+     * Invoke the specified runnable, which typically will include a Zenodo API call, repeatedly until it succeeds
+     * (where "success" is defined as the runnable not throwing).  If the runnable throws an ApiException, it is
+     * invoked again, unless a user-specified maximum invocation count has been reached, after sleeping for a
+     * user-specified amount of time.  If the final invocation of the runnable throws, this function rethrows the
+     * exception.
+     * @param call the runnable to be invoked
+     * @param callName the name of the runnable to be invoked
+     * @param count the maximum number of times that the runnable should be invoked
+     * @param delay the amount of time to sleep between invocations
+     */
     private static void callApiWithRetries(Runnable call, String callName, int count, Duration delay) {
         for (int i = 0; i < count; i++) {
             try {
