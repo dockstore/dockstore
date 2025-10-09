@@ -649,7 +649,7 @@ class ZenodoIT {
     void testGetVersionsMissingAutomaticDoi() {
         WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres));
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", ADMIN_USERNAME);
-        testingPostgres.runUpdateStatement("update workflow set ispublished = true");
+        testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true");
         assertEquals(0, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
         testingPostgres.runUpdateStatement("delete from version_metadata_doi");
         testingPostgres.runUpdateStatement("delete from entry_concept_doi");
