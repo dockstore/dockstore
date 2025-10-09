@@ -644,4 +644,15 @@ class ZenodoIT {
         exception = assertThrows(ApiException.class, () -> otherWorkflowsApi.requestAutomaticDOIForWorkflowVersion(1L, 2L, ""));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode());
     }
+
+    @Test
+    void testGetVersionsMissingAutomaticDoi() {
+        WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres));
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", ADMIN_USERNAME);
+        assertEquals(0, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
+        testingPostgres.runUpdateStatement("delete from version_metadata_doi");
+        testingPostgres.runUpdateStatement("delete from entry_concept_doi");
+        testingPostgres.runUpdateStatement("delete from doi");
+        assertEquals(1, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
+    }
 }
