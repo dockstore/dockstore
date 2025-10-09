@@ -648,12 +648,15 @@ class ZenodoIT {
     @Test
     void testGetVersionsMissingAutomaticDoi() {
         WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres));
+        // Push a tag, publish, and push the tag again, creating two workflows, each of which has a tagged version with an automatic DOI.
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", ADMIN_USERNAME);
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true");
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", ADMIN_USERNAME);
         assertEquals(0, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
+        // Delete the DOIs, causing them to be missing from the two tagged versions.
         testingPostgres.runUpdateStatement("delete from version_metadata_doi");
         testingPostgres.runUpdateStatement("delete from entry_concept_doi");
         testingPostgres.runUpdateStatement("delete from doi");
-        assertEquals(1, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
+        assertEquals(2, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
     }
 }
