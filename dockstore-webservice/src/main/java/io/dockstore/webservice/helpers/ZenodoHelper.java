@@ -416,11 +416,14 @@ public final class ZenodoHelper {
     private static List<Deposit> findDraftDeposits(DepositsApi depositsApi, int conceptDoiId) {
         // Create a Lucene query that finds drafts corresponding to the specified concept DOI.
         // Apparently, this endpoint pulls information from ElasticSearch, so the view may be stale.
-        // Drafts may take a while to appear, or seem to persist after they are deleted.
-        String query = "(conceptrecid:\"%d\") AND (submitted:\"false\")".formatted(conceptDoiId);
+        // Drafts may not appear immediately, or seem to persist after they are deleted.
+        String query = "conceptrecid:\"%d\"".formatted(conceptDoiId);
         LOG.info("Searching for draft deposits using query '{}'", query);
+        final int maxResults = 10;
         // In the Zenodo API, page numbers start at 1 (!)
-        return depositsApi.listDeposits(query, "draft", "mostrecent", 1, Integer.MAX_VALUE);
+        return depositsApi.listDeposits(query, "draft", "mostrecent", 1, maxResults).stream()
+            .filter(deposit -> !deposit.isSubmitted())
+            .toList();
     }
 
     private static void deleteDeposit(DepositsApi depositsApi, int depositId) {
