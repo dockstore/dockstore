@@ -646,9 +646,13 @@ class ZenodoIT {
     }
 
     @Test
-    void testGetVersionsMissingAutomaticDoi() {
-        WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres));
-        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", ADMIN_USERNAME);
+    void testGetVersionsMissingAutomaticDoi(Hoverfly hoverfly) {
+        hoverfly.simulate(ZENODO_SIMULATION_SOURCE);
+        WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres));
+        // Add a fake Zenodo token
+        testingPostgres.runUpdateStatement(String.format("insert into token (id, dbcreatedate, dbupdatedate, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fakeToken', 'fakeRefreshToken', 'zenodo.org', 1, '%s', '%s')", USER_2_USERNAME, TokenScope.AUTHENTICATE.name()));
+        handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         assertEquals(0, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true");
         assertEquals(2, workflowsApi.getVersionsMissingAutomaticDoi(1000).size());
