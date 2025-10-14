@@ -2523,7 +2523,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     private WorkflowAndVersion retrieveWorkflowAndVersion(long versionId) {
         WorkflowVersion version = workflowVersionDAO.findById(versionId);
-        Workflow workflow = workflowDAO.getWorkflowByWorkflowVersionId(versionId).get();
+        Workflow workflow = workflowDAO.getWorkflowByWorkflowVersionId(versionId).orElseThrow(() -> new CustomWebApplicationException("Could not find workflow for version", HttpStatus.SC_INTERNAL_SERVER_ERROR));
         return new WorkflowAndVersion(workflow, version);
     }
 
