@@ -40,7 +40,6 @@ import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
-import io.swagger.zenodo.client.model.Records;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
 import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
