@@ -40,6 +40,7 @@ import io.swagger.zenodo.client.model.Hit;
 import io.swagger.zenodo.client.model.LinkPermissionSettings;
 import io.swagger.zenodo.client.model.LinkPermissionSettings.PermissionEnum;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
+import io.swagger.zenodo.client.model.Records;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
 import io.swagger.zenodo.client.model.SearchResult;
 import java.io.File;
@@ -284,6 +285,7 @@ public final class ZenodoHelper {
 
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
+        PreviewApi previewApi = new PreviewApi(zenodoClient);
         Deposit deposit = new Deposit();
         Deposit returnDeposit;
         checkForExistingDOIForWorkflowVersion(workflowVersion, doiInitiator);
@@ -319,8 +321,8 @@ public final class ZenodoHelper {
                 // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
                 // Attempt to find any draft deposit(s), and remove any that we find.
                 int conceptDoiId = getConceptDoiId(depositApi, depositId);
-                List<Deposit> draftDeposits = findDraftDeposits(depositApi, conceptDoiId);
-                draftDeposits.forEach(draftDeposit -> deleteDeposit(depositApi, draftDeposit.getId()));
+                List<Integer> draftDepositIds = findDraftDeposits(previewApi, conceptDoiId);
+                draftDepositIds.forEach(id -> deleteDraftDeposit(previewApi, id));
                 // A DOI was previously assigned to a workflow version so we will
                 // use the ID associated with the workflow version DOI
                 // to create a new workflow version DOI
@@ -328,7 +330,7 @@ public final class ZenodoHelper {
                 // The response body of this action is NOT the new version deposit,
                 // but the original resource. The new version deposition can be
                 // accessed through the "latest_draft" under "links" in the response body.
-                String depositURL = returnDeposit.getLinks().get("latest_draft");
+                String depositURL = returnDeposit.getLinks().getLatestDraft();
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
                 // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
@@ -374,7 +376,7 @@ public final class ZenodoHelper {
         } catch (RuntimeException e) {
             // If we fail to configure and publish the deposit, attempt to delete the draft, which may "gum up the works" if it lingers in the system.
             // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
-            deleteDeposit(depositApi, depositionID);
+            deleteDraftDeposit(previewApi, depositionID);
             throw e;
         }
 
@@ -413,7 +415,7 @@ public final class ZenodoHelper {
         return depositsApi.getDeposit(versionDoiId).getConceptrecid();
     }
 
-    private static List<Deposit> findDraftDeposits(DepositsApi depositsApi, int conceptDoiId) {
+    private static List<Integer> findDraftDeposits(PreviewApi previewApi, int conceptDoiId) {
         // Create a Lucene query that finds drafts corresponding to the specified concept DOI.
         // Apparently, this endpoint pulls information from ElasticSearch, so the view may be stale.
         // Drafts may not appear immediately, or seem to persist after they are deleted.
@@ -421,14 +423,15 @@ public final class ZenodoHelper {
         LOG.info("Searching for draft deposits using query '{}'", query);
         final int maxResults = 10;
         // In the Zenodo API, page numbers start at 1 (!)
-        return depositsApi.listDeposits(query, "draft", "mostrecent", 1, maxResults).stream()
-            .filter(deposit -> !deposit.isSubmitted())
+        return previewApi.listUserRecords(query, "newest", maxResults, 1, true, false).getHits().getHits().stream()
+            .filter(hit -> !hit.isSubmitted())
+            .map(Hit::getId)
             .toList();
     }
 
-    private static void deleteDeposit(DepositsApi depositsApi, int depositId) {
+    private static void deleteDraftDeposit(PreviewApi previewApi, int depositId) {
         try {
-            depositsApi.deleteDeposit(depositId);
+            previewApi.deleteDraftRecord(depositId);
             LOG.info("Deleted deposit {}", depositId);
         } catch (ApiException e) {
             LOG.info("Exception deleting deposit {}", depositId, e);
