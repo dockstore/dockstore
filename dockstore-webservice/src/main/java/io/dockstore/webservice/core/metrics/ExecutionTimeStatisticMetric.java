@@ -64,25 +64,16 @@ public class ExecutionTimeStatisticMetric extends StatisticMetric {
 
     @JsonCreator
     public ExecutionTimeStatisticMetric(
-            @JsonProperty("minimum") double minimum,
-            @JsonProperty("maximum") double maximum,
-            @JsonProperty("average") double average,
-            @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
-        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
-    }
-
-    @JsonCreator
-    public ExecutionTimeStatisticMetric(
         @JsonProperty("minimum") double minimum,
-        @JsonProperty("maximum") double maximum,
+        @JsonProperty("percentile05th") double percentile05th,
+        @JsonProperty("median") double median,
         @JsonProperty("average") double average,
-        @JsonProperty("average") double median,
-        @JsonProperty("average") double percentile5th,
-        @JsonProperty("average") double percentile95th,
+        @JsonProperty("percentile95th") double percentile95th,
+        @JsonProperty("maximum") double maximum,
         @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
         super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
         this.setMedian(median);
-        this.setPercentile05th(percentile5th);
+        this.setPercentile05th(percentile05th);
         this.setPercentile95th(percentile95th);
     }
 
