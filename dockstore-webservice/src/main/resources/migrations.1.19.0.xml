@@ -34,4 +34,21 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="dyuen (generated)" id="median_percentile">
+        <addColumn tableName="execution_time_metric">
+            <column name="median" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="percentile05th" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="percentile95th" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
