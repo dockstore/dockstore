@@ -556,6 +556,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 .minimum(min)
                 .maximum(max)
                 .average(average)
+                .median(median)
                 .percentile05th(percentile05th)
                 .percentile95th(percentile95th)
                 .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
