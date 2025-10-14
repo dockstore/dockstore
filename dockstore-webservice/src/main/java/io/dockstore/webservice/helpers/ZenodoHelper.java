@@ -320,7 +320,7 @@ public final class ZenodoHelper {
                 // The response body of this action is NOT the new version deposit,
                 // but the original resource. The new version deposition can be
                 // accessed through the "latest_draft" under "links" in the response body.
-                String depositURL = returnDeposit.getLinks().get("latest_draft");
+                String depositURL = returnDeposit.getLinks().getLatestDraft();
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
                 // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
