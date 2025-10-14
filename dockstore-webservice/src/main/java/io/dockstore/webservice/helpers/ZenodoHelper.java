@@ -421,6 +421,9 @@ public final class ZenodoHelper {
         // Drafts may not appear immediately, or seem to persist after they are deleted.
         String query = "conceptrecid:\"%d\"".formatted(conceptDoiId);
         LOG.info("Searching for draft deposits using query '{}'", query);
+        // If a draft exists, it should be the newest record, and should be the first in the list of hits.
+        // Retrieve a few extra records, so that this method will still work, even if the endpoint decides
+        // to mix a few published records into the response, or doesn't list the draft first.
         final int maxResults = 10;
         // In the Zenodo API, page numbers start at 1 (!)
         return previewApi.listUserRecords(query, "newest", maxResults, 1, true, false).getHits().getHits().stream()
