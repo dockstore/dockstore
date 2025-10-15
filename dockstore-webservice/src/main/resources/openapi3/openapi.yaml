@@ -2756,6 +2756,7 @@ paths:
             - CWL_TEST_JSON
             - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKSTORE_WORKFLOW_OTHER
             - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
@@ -3431,6 +3432,7 @@ paths:
                   - CWL_TEST_JSON
                   - DOCKSTORE_WDL
                   - WDL_TEST_JSON
+                  - DOCKSTORE_WORKFLOW_OTHER
                   - DOCKERFILE
                   - NEXTFLOW
                   - NEXTFLOW_CONFIG
@@ -9112,6 +9114,7 @@ paths:
             - CWL_TEST_JSON
             - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKSTORE_WORKFLOW_OTHER
             - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
@@ -11444,6 +11447,7 @@ components:
           - CWL_TEST_JSON
           - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKSTORE_WORKFLOW_OTHER
           - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
@@ -12446,6 +12450,7 @@ components:
           - CWL_TEST_JSON
           - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKSTORE_WORKFLOW_OTHER
           - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
