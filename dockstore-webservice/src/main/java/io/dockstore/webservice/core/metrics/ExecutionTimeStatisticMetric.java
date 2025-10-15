@@ -20,13 +20,9 @@ package io.dockstore.webservice.core.metrics;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 
 /**
  * Note that execution time is stored in seconds
@@ -38,26 +34,6 @@ import jakarta.validation.constraints.NotNull;
 public class ExecutionTimeStatisticMetric extends StatisticMetric {
     public static final String UNIT = "s"; // Store in seconds
 
-
-    //TODO: could consider moving these down the hierarchy for cost, cpu, memory if those become well-populated
-    //TODO: could also consider storing these as an array/record
-    @Column(nullable = false)
-    @NotNull
-    @ApiModelProperty(value = "The 50th percentile value from the data points", required = true)
-    @Schema(description = "The 50th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
-    private double median;
-
-    @Column(nullable = false)
-    @NotNull
-    @ApiModelProperty(value = "The 05th percentile value from the data points", required = true)
-    @Schema(description = "The 05th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
-    private double percentile05th;
-
-    @Column(nullable = false)
-    @NotNull
-    @ApiModelProperty(value = "The 95th percentile value from the data points", required = true)
-    @Schema(description = "The 95th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
-    private double percentile95th;
 
     public ExecutionTimeStatisticMetric() {
     }
@@ -83,27 +59,4 @@ public class ExecutionTimeStatisticMetric extends StatisticMetric {
         return super.getUnit();
     }
 
-    public double getMedian() {
-        return median;
-    }
-
-    public void setMedian(double median) {
-        this.median = median;
-    }
-
-    public double getPercentile05th() {
-        return percentile05th;
-    }
-
-    public void setPercentile05th(double percentile5th) {
-        this.percentile05th = percentile5th;
-    }
-
-    public double getPercentile95th() {
-        return percentile95th;
-    }
-
-    public void setPercentile95th(double percentile95th) {
-        this.percentile95th = percentile95th;
-    }
 }

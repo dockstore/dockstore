@@ -74,6 +74,23 @@ public abstract class StatisticMetric extends Metric {
     @JsonIgnore
     private Timestamp dbUpdateDate;
 
+    //TODO: could also consider storing these as an array/record or a map
+    @Column(columnDefinition = "FLOAT8 default 'NaN'")
+    @NotNull
+    @ApiModelProperty(value = "The 50th percentile value from the data points", required = true)
+    @Schema(description = "The 50th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double median;
+    @Column(columnDefinition = "FLOAT8 default 'NaN'")
+    @NotNull
+    @ApiModelProperty(value = "The 05th percentile value from the data points", required = true)
+    @Schema(description = "The 05th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double percentile05th;
+    @Column(columnDefinition = "FLOAT8 default 'NaN'")
+    @NotNull
+    @ApiModelProperty(value = "The 95th percentile value from the data points", required = true)
+    @Schema(description = "The 95th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double percentile95th;
+
     protected StatisticMetric() {
     }
 
@@ -143,5 +160,29 @@ public abstract class StatisticMetric extends Metric {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public double getMedian() {
+        return median;
+    }
+
+    public void setMedian(double median) {
+        this.median = median;
+    }
+
+    public double getPercentile05th() {
+        return percentile05th;
+    }
+
+    public void setPercentile05th(double percentile5th) {
+        this.percentile05th = percentile5th;
+    }
+
+    public double getPercentile95th() {
+        return percentile95th;
+    }
+
+    public void setPercentile95th(double percentile95th) {
+        this.percentile95th = percentile95th;
     }
 }

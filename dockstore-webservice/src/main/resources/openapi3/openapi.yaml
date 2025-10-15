@@ -9629,6 +9629,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -9637,6 +9641,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             default: USD
@@ -9647,8 +9659,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     CpuMetric:
       type: object
       allOf:
@@ -9663,6 +9678,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -9671,6 +9690,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             description: The unit of the data points
@@ -9679,8 +9706,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     DescriptionMetrics:
       type: object
       properties:
@@ -10848,6 +10878,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -10856,6 +10890,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             default: GB
@@ -10866,8 +10908,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     MetadataV20beta:
       type: object
       properties:
