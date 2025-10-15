@@ -60,7 +60,6 @@ public class Service12 extends AbstractYamlService implements Workflowish {
      * Get the list of user-specified "other" files that should be
      * read and included with the notebook.
      */
-    @NotNull
     public List<String> getOtherFiles() {
         throw new UnsupportedOperationException();
     }
