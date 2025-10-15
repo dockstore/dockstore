@@ -3,9 +3,10 @@ package io.dockstore.common.yaml;
 import java.util.List;
 
 /**
- * Defines a common interface, implemented by the Service12 and
- * YamlWorkflow classes, that allows us to gracefully process instances
- * of them with the same code.
+ * Defines a common interface, implemented by the YamlWorkflow, YamlNotebook,
+ * YamlTool, and Service12 classes, providing access to the properties that
+ * are shared between different entry types, allowing the same code to be
+ * used to process/register all of them, without conditionals or similar.
  */
 public interface Workflowish {
 
@@ -29,13 +30,7 @@ public interface Workflowish {
 
     /**
      * Get the list of user-specified "other" files that should be
-     * read and included with the notebook.
+     * read and included with the entry.
      */
     List<String> getOtherFiles();
-
-    /**
-     * Set the list of user-specified "other" files that should be
-     * read and included with the notebook.
-     */
-    void setOtherFiles(List<String> otherFiles);
 }
