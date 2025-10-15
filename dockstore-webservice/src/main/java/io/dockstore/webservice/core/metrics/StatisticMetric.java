@@ -75,17 +75,17 @@ public abstract class StatisticMetric extends Metric {
     private Timestamp dbUpdateDate;
 
     //TODO: could also consider storing these as an array/record or a map
-    @Column(columnDefinition = "FLOAT8 default 'NaN'")
+    @Column(nullable = false, columnDefinition = "FLOAT8 default 'NaN'")
     @NotNull
     @ApiModelProperty(value = "The 50th percentile value from the data points", required = true)
     @Schema(description = "The 50th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
     private double median;
-    @Column(columnDefinition = "FLOAT8 default 'NaN'")
+    @Column(nullable = false, columnDefinition = "FLOAT8 default 'NaN'")
     @NotNull
     @ApiModelProperty(value = "The 05th percentile value from the data points", required = true)
     @Schema(description = "The 05th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
     private double percentile05th;
-    @Column(columnDefinition = "FLOAT8 default 'NaN'")
+    @Column(nullable = false, columnDefinition = "FLOAT8 default 'NaN'")
     @NotNull
     @ApiModelProperty(value = "The 95th percentile value from the data points", required = true)
     @Schema(description = "The 95th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
