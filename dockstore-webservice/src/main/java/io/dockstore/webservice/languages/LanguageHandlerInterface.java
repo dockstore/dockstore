@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -154,11 +155,8 @@ public interface LanguageHandlerInterface {
      * @return map of file paths to user-specified SourceFile objects
      */
     default Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
-        if (paths != null && !paths.isEmpty()) {
-            LOG.error("This language does not support user-specified files");
-            throw new CustomWebApplicationException("This language does not support user-specified files", HttpStatus.SC_BAD_REQUEST);
-        }
-        return Map.of();
+        return sourceCodeRepoInterface.readPaths(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_WORKFLOW_OTHER, excludePaths, paths).stream()
+            .collect(Collectors.toMap(SourceFile::getAbsolutePath, Function.identity()));
     }
 
     /**
