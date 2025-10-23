@@ -95,15 +95,23 @@ public abstract class StatisticMetric extends Metric {
     }
 
     protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage) {
-        this(minimum, maximum, average, numberOfDataPointsForAverage, null);
+        this(minimum, maximum, average, numberOfDataPointsForAverage, null, Double.NaN, Double.NaN, Double.NaN);
     }
 
     protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage, String unit) {
+        this(minimum, maximum, average, numberOfDataPointsForAverage, unit, Double.NaN, Double.NaN, Double.NaN);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage, String unit, double median, double percentile05th, double percentile95th) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;
         this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
         this.unit = unit;
+        this.median = median;
+        this.percentile05th = percentile05th;
+        this.percentile95th = percentile95th;
     }
 
     public double getMinimum() {

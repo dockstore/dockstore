@@ -47,10 +47,7 @@ public class ExecutionTimeStatisticMetric extends StatisticMetric {
         @JsonProperty("percentile95th") double percentile95th,
         @JsonProperty("maximum") double maximum,
         @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
-        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
-        this.setMedian(median);
-        this.setPercentile05th(percentile05th);
-        this.setPercentile95th(percentile95th);
+        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT, median, percentile05th, percentile95th);
     }
 
     @Override
