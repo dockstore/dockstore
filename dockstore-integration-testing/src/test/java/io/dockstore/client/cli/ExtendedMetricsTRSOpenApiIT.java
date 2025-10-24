@@ -547,11 +547,18 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
-        final int numberOfDataPointsForAverage = 3;
+        final double median = 2.1;
+        final double percentile05th = 1.05;
+        final double percentile95th = 2.9;
+        final int numberOfDataPointsForAverage = 5;
+
         ExecutionTimeMetric executionTimeMetric = new ExecutionTimeMetric()
                 .minimum(min)
                 .maximum(max)
                 .average(average)
+                .median(median)
+                .percentile05th(percentile05th)
+                .percentile95th(percentile95th)
                 .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
         executionStatusMetric.getCount().get(SUCCESSFUL.name()).setExecutionTime(executionTimeMetric);
         CpuMetric cpuMetric = new CpuMetric()
@@ -589,6 +596,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(min, platform1SuccessfulMetrics.getExecutionTime().getMinimum());
         assertEquals(max, platform1SuccessfulMetrics.getExecutionTime().getMaximum());
         assertEquals(average, platform1SuccessfulMetrics.getExecutionTime().getAverage());
+        assertEquals(percentile05th, platform1SuccessfulMetrics.getExecutionTime().getPercentile05th());
+        assertEquals(percentile95th, platform1SuccessfulMetrics.getExecutionTime().getPercentile95th());
+        assertEquals(median, platform1SuccessfulMetrics.getExecutionTime().getMedian());
         assertEquals(numberOfDataPointsForAverage, platform1SuccessfulMetrics.getExecutionTime().getNumberOfDataPointsForAverage());
         assertEquals(ExecutionTimeStatisticMetric.UNIT, platform1SuccessfulMetrics.getExecutionTime().getUnit());
         // Verify CPU
