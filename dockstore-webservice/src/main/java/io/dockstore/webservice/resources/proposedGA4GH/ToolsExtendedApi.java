@@ -292,6 +292,28 @@ public class ToolsExtendedApi {
         return delegate.setAggregatedMetrics(id, versionId, aggregatedMetrics);
     }
 
+    @PUT
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin"})
+    @Path("/{id}/aggregatedMetrics")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "aggregatedMetricsPutEntry", summary = AggregatedMetricsPut.SUMMARY, description = AggregatedMetricsPut.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                + "", description = AggregatedMetricsPut.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = AggregatedMetricsPut.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = AggregatedMetricsPut.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    public Response aggregatedMetricsPut(
+        @Parameter(hidden = true) @Auth User user,
+        @Parameter(description = AggregatedMetricsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @NotEmpty Map<Partner, @Valid @HasMetrics Metrics> aggregatedMetrics,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.setAggregatedMetrics(id, aggregatedMetrics);
+    }
+
     @GET
     @UnitOfWork(readOnly = true)
     @Path("/{id}/versions/{version_id}/aggregatedMetrics")
@@ -310,6 +332,18 @@ public class ToolsExtendedApi {
                 description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
         return delegate.getAggregatedMetrics(id, versionId, user);
+    }
+
+    @GET
+    @UnitOfWork
+    @Path("/{id}/aggregatedMetrics")
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "aggregatedMetricsGetEntry", description = AggregatedMetricsGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    public Map<Partner, Metrics> aggregatedMetricsGet(
+        @Parameter(hidden = true) @Auth Optional<User> user,
+        @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.getAggregatedMetrics(id, user);
     }
 
     @GET

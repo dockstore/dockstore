@@ -200,6 +200,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String AUTHORS = "authors";
     private static final String ORCID_PUT_CODES = "orcidputcodes";
     private static final String METRICS = "metrics";
+    private static final String ENTRY_METRICS = "entrymetrics";
     private static final String VERSION_INCLUDE = VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + AUTHORS + ", " + METRICS;
     private static final List<String> VERSION_INCLUDE_LIST = List.of(VERSION_INCLUDE.split(", "));
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
@@ -1923,6 +1924,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, ORCID_PUT_CODES)) {
             Hibernate.initialize(workflow.getUserIdToOrcidPutCode());
+        }
+        if (checkIncludes(include, ENTRY_METRICS)) {
+            Hibernate.initialize(workflow.getMetricsByPlatform());
         }
     }
 
