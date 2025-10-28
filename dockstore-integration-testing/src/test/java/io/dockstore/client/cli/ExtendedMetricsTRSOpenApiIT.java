@@ -809,7 +809,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final String allPlatforms = Partner.ALL.name();
         platformToMetrics.put(allPlatforms, metrics);
         extendedGa4GhApi.aggregatedMetricsPutEntry(platformToMetrics, workflowId);
-        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entry_metrics");
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entrymetrics");
         Metrics allPlatformsMetrics = workflow.getMetricsByPlatform().get(allPlatforms);
 
         Map<String, Metrics> metricsGet = extendedGa4GhApi.aggregatedMetricsGetEntry(workflowId);
