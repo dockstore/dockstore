@@ -787,7 +787,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         metrics = new Metrics().validationStatus(validationStatusMetric);
         platformToMetrics.put(platform2, metrics);
         extendedGa4GhApi.aggregatedMetricsPutEntry(platformToMetrics, workflowId);
-        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entry_metrics");
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entrymetrics");
 
         assertNotNull(workflow.getMetricsByPlatform().get(platform1));
         assertNotNull(workflow.getMetricsByPlatform().get(platform2));
