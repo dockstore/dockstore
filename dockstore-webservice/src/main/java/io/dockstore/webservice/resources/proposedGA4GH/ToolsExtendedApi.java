@@ -298,7 +298,7 @@ public class ToolsExtendedApi {
     @Path("/{id}/aggregatedMetrics")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "aggregatedMetricsPutEntry", summary = AggregatedMetricsPut.SUMMARY, description = AggregatedMetricsPut.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+    @Operation(operationId = "aggregatedMetricsPutEntry", summary = AggregatedMetricsPut.SUMMARY, description = AggregatedMetricsPut.DESCRIPTION, security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
                 + "", description = AggregatedMetricsPut.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
@@ -338,7 +338,7 @@ public class ToolsExtendedApi {
     @UnitOfWork
     @Path("/{id}/aggregatedMetrics")
     @Produces({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "aggregatedMetricsGetEntry", description = AggregatedMetricsGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "aggregatedMetricsGetEntry", description = AggregatedMetricsGet.DESCRIPTION, security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Map<Partner, Metrics> aggregatedMetricsGet(
         @Parameter(hidden = true) @Auth Optional<User> user,
         @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
