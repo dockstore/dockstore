@@ -574,6 +574,23 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
+    public Response setAggregatedMetrics(String id, Map<Partner, Metrics> aggregatedMetrics) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+        checkEntryNotNull(entry);
+
+        entry.getMetricsByPlatform().clear();
+        entry.getMetricsByPlatform().putAll(aggregatedMetrics);
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+        return Response.ok().entity(entry.getMetricsByPlatform()).build();
+    }
+
+    @Override
     public Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) {
         Entry<?, ?> entry;
         try {
@@ -589,6 +606,19 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
 
         return version.getMetricsByPlatform();
+    }
+
+    @Override
+    public Map<Partner, Metrics> getAggregatedMetrics(String id, Optional<User> user) {
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, user);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
+        }
+        checkEntryNotNull(entry);
+
+        return entry.getMetricsByPlatform();
     }
 
     @Override

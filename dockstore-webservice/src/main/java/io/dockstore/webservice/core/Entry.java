@@ -32,9 +32,11 @@ import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -57,6 +59,7 @@ import jakarta.persistence.NamedNativeQueries;
 import jakarta.persistence.NamedNativeQuery;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
@@ -67,6 +70,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -355,6 +359,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = true, columnDefinition = "varchar(32)")
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
+
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "entry_metrics", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "metricsid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKeyColumn(name = "platform")
+    @MapKeyEnumerated(EnumType.STRING)
+    @ApiModelProperty(value = "The aggregated metrics for executions of this entry, grouped by platform", position = 26)
+    private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
     public enum GitVisibility {
         /**
@@ -965,6 +976,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setGitVisibility(final GitVisibility gitVisibility) {
         this.gitVisibility = gitVisibility;
+    }
+
+    public Map<Partner, Metrics> getMetricsByPlatform() {
+        return metricsByPlatform;
+    }
+
+    public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
+        this.metricsByPlatform = metricsByPlatform;
     }
 
     @JsonProperty

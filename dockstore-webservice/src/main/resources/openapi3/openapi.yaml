@@ -617,6 +617,79 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/aggregatedMetrics:
+    get:
+      description: This endpoint retrieves aggregated metrics for a tool from all
+        platforms
+      operationId: aggregatedMetricsGetEntry
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Metrics'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
+    put:
+      description: This endpoint adds aggregated metrics for a workflow that was executed
+        on a platform
+      operationId: aggregatedMetricsPutEntry
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Metrics'
+        description: A map of aggregated metrics for platforms to set as the version's
+          metrics
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Aggregated metrics added successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to add aggregated metrics.
+      security:
+      - BEARER: []
+      summary: Add aggregated execution metrics for a workflow that was executed on
+        a platform.
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/aiTopicCandidate:
     get:
       description: Get a tool's AI topic candidate version for consideration
@@ -9853,6 +9926,10 @@ components:
           $ref: '#/components/schemas/DockstoreTool'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         mode:
           type: string
           enum:
@@ -10074,6 +10151,10 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         orcidAuthors:
           type: array
           description: "ORCID authors for the entry, retrieved from the default version"
@@ -13021,6 +13102,10 @@ components:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         mode:
           type: string
           enum:
