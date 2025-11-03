@@ -921,7 +921,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         workflow.setWorkflowVersionsOverride(workflowVersions);
-        initializeAdditionalFields(include, workflow);
+        workflowVersions.forEach(version -> initializeAdditionalFields(include, version));
         ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
     }
 
@@ -1119,6 +1119,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
 
         Hibernate.initialize(workflow.getAliases());
+        initializeAdditionalFields(include, workflow, false);
         setWorkflowVersionSubset(workflow, include, versionName);
         filterContainersForHiddenTags(workflow);
         return workflow;
@@ -1914,8 +1915,26 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param workflow
      */
     private void initializeAdditionalFields(String include, Workflow workflow) {
+        initializeAdditionalFields(include, workflow, true);
+    }
+
+    /**
+     * Initialize some of the lazy fields of the specified workflow and its versions.
+     * If include contains versions field, initialize the versions for the workflow.
+     * If include contains validations field, initialize the workflows validations for all of its workflow versions.
+     * If include contains aliases field, initialize the aliases for all of its workflow versions.
+     * If include contains images field, initialize the images for all of its workflow versions.
+     * If include contains authors field, initialize the authors for all of its workflow versions.
+     * If include contains orcid_put_codes field, initialize the authors for all of its workflow versions.
+     * Do not initialize any workflow versions if initializeVersions is false.
+     *
+     * @param include
+     * @param workflow
+     * @param initializeVersions
+     */
+    private void initializeAdditionalFields(String include, Workflow workflow, boolean initializeVersions) {
         final boolean containsVersionIncludes = VERSION_INCLUDE_LIST.stream().anyMatch(versionInclude -> checkIncludes(include, versionInclude));
-        if (containsVersionIncludes) {
+        if (containsVersionIncludes && initializeVersions) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> initializeAdditionalFields(include, workflowVersion));
         }
 
