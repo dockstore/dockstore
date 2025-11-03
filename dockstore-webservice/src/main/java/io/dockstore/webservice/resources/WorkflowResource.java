@@ -23,7 +23,6 @@ import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
-import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
 import static io.dockstore.webservice.resources.LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
