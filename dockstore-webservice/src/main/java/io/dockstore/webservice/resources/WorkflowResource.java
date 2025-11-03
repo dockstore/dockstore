@@ -1919,10 +1919,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * If include contains validations field, initialize the workflows validations for all of its workflow versions If include contains aliases field, initialize the aliases for all of its workflow
-     * versions If include contains images field, initialize the images for all of its workflow versions If include contains versions field, initialize the versions for the workflow If include
-     * contains authors field, initialize the authors for all of its workflow versions If include contains orcid_put_codes field, initialize the authors for all of its workflow versions
-     * Does not initialize the fields of any workflow versions if initializeVersions is false
+     * Initialize some of the lazy fields of the specified workflow and its versions.
+     * If include contains versions field, initialize the versions for the workflow.
+     * If include contains validations field, initialize the workflows validations for all of its workflow versions.
+     * If include contains aliases field, initialize the aliases for all of its workflow versions.
+     * If include contains images field, initialize the images for all of its workflow versions.
+     * If include contains authors field, initialize the authors for all of its workflow versions.
+     * If include contains orcid_put_codes field, initialize the authors for all of its workflow versions.
+     * Do not initialize any workflow versions if initializeVersions is false.
      *
      * @param include
      * @param workflow
