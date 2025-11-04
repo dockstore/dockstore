@@ -17,7 +17,7 @@ elif [ "${TESTING_PROFILE}" == "language-parsing-tests" ]; then
     sudo apt-get update
     # https://stackoverflow.com/questions/44331836/apt-get-install-tzdata-noninteractive needed by cwltool
     DEBIAN_FRONTEND=noninteractive sudo apt-get -qq --yes --force-yes install tzdata
-    sudo apt-get -qq --yes --force-yes install cwltool=3.1.20220224085855-1
+    sudo apt-get -qq --yes --force-yes install cwltool=3.1.20250110105449-3
 else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.14.0/requirements3.txt
 fi
