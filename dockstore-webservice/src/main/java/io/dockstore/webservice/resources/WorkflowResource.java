@@ -921,8 +921,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         workflow.setWorkflowVersionsOverride(workflowVersions);
-        workflowVersions.forEach(version -> initializeAdditionalFields(include, version));
-        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
+        workflow.getWorkflowVersions().forEach(version -> initializeAdditionalFields(include, version));
+        workflow.getWorkflowVersions().forEach(version -> sessionFactory.getCurrentSession().detach(version));
     }
 
     /**
@@ -1938,7 +1938,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             workflow.getWorkflowVersions().forEach(workflowVersion -> initializeAdditionalFields(include, workflowVersion));
         }
 
-        if (checkIncludes(include, VERSIONS)) {
+        if (checkIncludes(include, VERSIONS) && initializeVersions) {
             Hibernate.initialize(workflow.getWorkflowVersions());
         }
         if (checkIncludes(include, ORCID_PUT_CODES)) {
