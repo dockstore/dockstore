@@ -922,7 +922,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         workflow.setWorkflowVersionsOverride(workflowVersions);
         workflowVersions.forEach(version -> initializeAdditionalFields(include, version));
-        workflowVersions.forEach(version -> sessionFactory.getCurrentSession().detach(version.getId()));
+        workflowVersions.forEach(version -> sessionFactory.getCurrentSession().detach(version));
     }
 
     /**
