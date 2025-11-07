@@ -336,6 +336,7 @@ public class ElasticListener implements StateListenerInterface {
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
         Doi selectedConceptDoi = entry.getDefaultConceptDoi();
+        // TODO retrieve monthlyExecutionCounts and executionCountTotal here.
         Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
@@ -352,6 +353,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
+        // TODO set monthlyExecutionCounts and executionCountTotal here.
         return jsonNode;
     }
 
