@@ -67,5 +67,12 @@
         <addUniqueConstraint columnNames="metricsid" constraintName="uk_metricsid_entry_metrics" tableName="entry_metrics"/>
         <addForeignKeyConstraint baseColumnNames="metricsid" baseTableName="entry_metrics" constraintName="fk_metricsid_entry_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics"/>
     </changeSet>
+    <changeSet author="svonworl" id="addMonthlyTimeSeries">
+        <addColumn tableName="metrics_by_status">
+            <column name="monthlyexecutioncountsid" type="BIGINT"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="monthlyexecutioncountsid" baseTableName="metrics_by_status" constraintName="fk_metrics_by_status_monthlyexecutioncountsid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="timeseriesmetric"/>
+        <addUniqueConstraint columnNames="monthlyexecutioncountsid" constraintName="metrics_by_status_monthlyexecutioncountsid_key" tableName="metrics_by_status"/>
+    </changeSet>
 
 </databaseChangeLog>
