@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.18.0-SNAPSHOT
+  version: 1.18.1-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -3140,6 +3140,34 @@ paths:
         schema:
           type: integer
           format: int64
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - curation
+  /curation/notifications/user/{id}/hide:
+    patch:
+      description: Hide a user notification
+      operationId: hideUserNotification
+      parameters:
+      - description: Notification to hide
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PATCH methods to\
+          \ have a body, even if it is empty. Please leave it empty."
       responses:
         default:
           content:
@@ -7934,6 +7962,33 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/versionsMissingAutomaticDoi:
+    get:
+      description: Calculates a list of workflow versions that are missing an automatic
+        DOI
+      operationId: getVersionsMissingAutomaticDoi
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 1000
+          minimum: 1
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowAndVersion'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/versionsNeedingRetroactiveDoi:
     get:
       description: Calculates a list of workflow versions that need a retroactive
@@ -10483,6 +10538,9 @@ components:
           type: integer
           format: int64
           description: Timestamp at which the notification was last updated
+        hidden:
+          type: boolean
+          description: Is the notification hidden?
         id:
           type: integer
           format: int64
@@ -10505,6 +10563,7 @@ components:
           $ref: '#/components/schemas/User'
       required:
       - action
+      - hidden
       - organization
       - repository
       - sourceControl
@@ -12421,6 +12480,9 @@ components:
           type: integer
           format: int64
           description: Timestamp at which the notification was last updated
+        hidden:
+          type: boolean
+          description: Is the notification hidden?
         id:
           type: integer
           format: int64
@@ -12429,6 +12491,7 @@ components:
           $ref: '#/components/schemas/User'
       required:
       - action
+      - hidden
     Validation:
       type: object
       properties:
