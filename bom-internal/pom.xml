@@ -49,7 +49,7 @@ POM as their parent.
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
         <revision>1.18</revision>
-        <changelist>.1-SNAPSHOT</changelist>
+        <changelist>.2-SNAPSHOT</changelist>
 
         <dropwizard.version>4.0.15</dropwizard.version>
         <dropwizard-annotations.version>4.2.33</dropwizard-annotations.version>
