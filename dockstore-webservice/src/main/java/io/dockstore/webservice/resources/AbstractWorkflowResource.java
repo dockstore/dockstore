@@ -444,14 +444,25 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<String> importantBranches) {
+        // If there's no user for which to create a notification, abort.
+        if (!user.isPresent()) {
+            return;
+        }
+
         // Create the repo and file tree.
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         String organization = repositoryId.split("/")[0];
         String repository = repositoryId.split("/")[1];
 
-        // If we've already inferred on this repo, don't try again.
-        if (gitHubAppNotificationDAO.findLatestByRepository(SourceControl.GITHUB, organization, repository) != null) {
-            LOG.info("User notification already created for inferring repo {}", repositoryId);
+        // If we've already created a notification for this repository and user, don't notify again.
+        if (gitHubAppNotificationDAO.findLatestByRepositoryAndUserIncludingHidden(SourceControl.GITHUB, organization, repository, user.get()) != null) {
+            LOG.info("User notification already created for inferring repo {} and user {}", repositoryId, user.get().getUsername());
+            return;
+        }
+
+        // If there's a dockstore.yml-based entry registered for this repo already, don't notify.
+        if (hasDockstoreYmlBasedEntry(SourceControl.GITHUB, organization, repository)) {
+            LOG.info("Repo {} already has a .dockstore.yml-based entry", repositoryId);
             return;
         }
 
@@ -468,12 +479,29 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 gitHubAppNotification.setOrganization(organization);
                 gitHubAppNotification.setRepository(repository);
                 gitHubAppNotification.setAction(INFER_DOCKSTORE_YML);
-                user.ifPresent(gitHubAppNotification::setUser);
+                gitHubAppNotification.setUser(user.get());
                 gitHubAppNotificationDAO.create(gitHubAppNotification);
             }
         } catch (RuntimeException e) {
             LOG.error("Failed to infer repo", e);
         }
+    }
+
+    private boolean hasDockstoreYmlBasedEntry(SourceControl sourceControl, String organization, String repository) {
+        List<Workflow> workflows = workflowDAO.findByPath(sourceControl, organization, repository);
+        for (Workflow workflow: workflows) {
+            if (workflow.getMode() == DOCKSTORE_YML) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void hideNotifications(String repositoryId) {
+        String organization = repositoryId.split("/")[0];
+        String repository = repositoryId.split("/")[1];
+        List<GitHubAppNotification> notifications = gitHubAppNotificationDAO.findByRepository(SourceControl.GITHUB, organization, repository);
+        notifications.forEach(notification -> notification.setHidden(true));
     }
 
     /**
@@ -514,8 +542,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
                 throw new CustomWebApplicationException(COULD_NOT_RETRIEVE_DOCKSTORE_YML + " Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
             }
+            // A .dockstore.yml exists in the repository, so hide any existing notification regarding the need to create one.
+            hideNotifications(repository);
+
             SourceFile dockstoreYml = optionalDockstoreYml.get();
-            // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
+            // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one entry.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 

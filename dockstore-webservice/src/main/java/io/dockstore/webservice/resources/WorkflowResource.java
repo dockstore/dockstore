@@ -2527,6 +2527,28 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             && version.getDois().size() == 0;
     }
 
+    @GET
+    @RolesAllowed({"admin", "curator"})
+    @Path("/versionsMissingAutomaticDoi")
+    @UnitOfWork
+    @Timed
+    @Operation(operationId = "getVersionsMissingAutomaticDoi", description = "Calculates a list of workflow versions that are missing an automatic DOI", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public List<WorkflowAndVersion> getVersionsMissingAutomaticDoi(@Parameter(hidden = true) @Auth User user,
+        @QueryParam("limit") @Min(1) @Max(1000) @DefaultValue("100") Integer limit) {
+        Set<Long> versionIds = workflowDAO.getVersionIdsMissingAutomaticDoi();
+        return versionIds.stream()
+            .limit(limit)
+            .map(this::retrieveWorkflowAndVersion)
+            .toList();
+    }
+
+    private WorkflowAndVersion retrieveWorkflowAndVersion(long versionId) {
+        WorkflowVersion version = workflowVersionDAO.findById(versionId);
+        Workflow workflow = workflowDAO.getWorkflowByWorkflowVersionId(versionId).orElseThrow(() -> new CustomWebApplicationException("Could not find workflow for version", HttpStatus.SC_INTERNAL_SERVER_ERROR));
+        return new WorkflowAndVersion(workflow, version);
+    }
+
     /**
      * Scans Zenodo for DOIs issued against GitHub repos with registered workflows in Dockstore, updating the Dockstore workflows
      * with those DOIs.
