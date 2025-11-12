@@ -74,5 +74,17 @@
         <addForeignKeyConstraint baseColumnNames="monthlyexecutioncountsid" baseTableName="metrics_by_status" constraintName="fk_metrics_by_status_monthlyexecutioncountsid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="timeseriesmetric"/>
         <addUniqueConstraint columnNames="monthlyexecutioncountsid" constraintName="metrics_by_status_monthlyexecutioncountsid_key" tableName="metrics_by_status"/>
     </changeSet>
-
+    <changeSet author="svonworl" id="addEndDateToTimeSeries">
+        <addColumn tableName="timeseriesmetric">
+            <column name="ends" type="TIMESTAMP WITHOUT TIME ZONE" valueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql>
+            UPDATE timeseriesmetric SET begins = begins + INTERVAL '-0.5 DAYS' WHERE interval = 'DAY';
+            UPDATE timeseriesmetric SET begins = begins + INTERVAL '-0.5 WEEKS' WHERE interval = 'WEEK';
+            UPDATE timeseriesmetric SET ends = begins + MAKE_INTERVAL(DAYS => JSONB_ARRAY_LENGTH(values)) WHERE interval = 'DAY';
+            UPDATE timeseriesmetric SET ends = begins + MAKE_INTERVAL(WEEKS => JSONB_ARRAY_LENGTH(values)) WHERE interval = 'WEEK';
+        </sql>
+    </changeSet>
 </databaseChangeLog>

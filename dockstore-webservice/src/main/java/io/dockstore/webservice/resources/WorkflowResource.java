@@ -2409,6 +2409,42 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         double max = 0;
         for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
             List<Double> values = timeSeries.getValues();
+            Instant oldestBinStart = timeSeries.getBegins().toInstant();
+            for (int i = 0, n = values.size(); i < n; i++) {
+                Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
+                Instant binEnd = binStart.plusSeconds(secondsPerWeek);
+                if (binEnd.compareTo(onOrAfter) >= 0) {
+                    max = Math.max(values.get(i), max);
+                }
+            }
+        }
+        return (long)max;
+    }
+
+    /*
+    TODO
+    @POST
+    @Path("/{workflowId}/maxMonthlyExecutionCountForAnyVersion")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public long getMaxWeeklyExecutionCountForAnyVersion(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
+        @Parameter(name = "onOrAfterEpochSecond", description = "include counts on or after this time, expressed in UTC Java epoch seconds", required = true) long onOrAfterEpochSecond) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
+
+        List<TimeSeriesMetric> listOfTimeSeries = workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+        Instant onOrAfter = Instant.ofEpochSecond(onOrAfterEpochSecond);
+        final long secondsPerWeek = 7 * 24 * 60 * 60L;  // Days * hours * minutes * seconds
+
+        // For each time series bin, if the bin end time >= the specified "onOrAfter" date, include the bin value in the maximum.
+        double max = 0;
+        for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
+            List<Double> values = timeSeries.getValues();
             Instant oldestBinStart = timeSeries.getBegins().toInstant().minusSeconds(secondsPerWeek / 2);
             for (int i = 0, n = values.size(); i < n; i++) {
                 Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
@@ -2420,6 +2456,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         return (long)max;
     }
+    */
 
     @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")
