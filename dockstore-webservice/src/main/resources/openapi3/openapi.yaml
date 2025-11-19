@@ -11915,6 +11915,7 @@ components:
             - DAY
             - WEEK
             - MONTH
+            - YEAR
           numberOfSkippedExecutions:
             type: integer
             format: int32

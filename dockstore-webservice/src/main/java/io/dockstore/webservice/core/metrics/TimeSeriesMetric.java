@@ -27,6 +27,11 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -121,11 +126,40 @@ public class TimeSeriesMetric extends Metric {
     }
 
     public enum TimeSeriesMetricInterval {
-        SECOND,
-        MINUTE,
-        HOUR,
-        DAY,
-        WEEK,
-        MONTH
+        SECOND(ChronoUnit.SECONDS),
+        MINUTE(ChronoUnit.MINUTES),
+        HOUR(ChronoUnit.HOURS),
+        DAY(ChronoUnit.DAYS),
+        WEEK(ChronoUnit.WEEKS),
+        MONTH(ChronoUnit.MONTHS),
+        YEAR(ChronoUnit.YEARS);
+
+        private final TemporalUnit temporalUnit;
+
+        TimeSeriesMetricInterval(TemporalUnit temporalUnit) {
+            this.temporalUnit = temporalUnit;
+        }
+
+        public long countIntervals(Instant from, Instant to) {
+            if (from.compareTo(to) >= 0) {
+                return 0;
+            }
+            ZonedDateTime fromTime = toTime(from);
+            ZonedDateTime toTime = toTime(to);
+            return fromTime.until(toTime, temporalUnit) + 1;
+        }
+
+        public Instant addIntervals(Instant from, long intervalCount) {
+            ZonedDateTime fromTime = toTime(from);
+            return toInstant(fromTime.plus(intervalCount, temporalUnit));
+        }
+
+        private Instant toInstant(ZonedDateTime time) {
+            return time.toInstant();
+        }
+
+        private ZonedDateTime toTime(Instant instant) {
+            return ZonedDateTime.ofInstant(instant, ZoneOffset.UTC);
+        }
     }
 }
