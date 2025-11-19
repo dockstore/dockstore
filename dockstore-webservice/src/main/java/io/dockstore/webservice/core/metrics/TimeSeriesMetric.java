@@ -34,7 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Schema(name = "TimeSeriesMetric", description = "Describes a metric that consists of a series of data values sampled at different points in time", allOf = Metric.class)
+@Schema(name = "TimeSeriesMetric", description = "Describes a metric that consists of a series of data values sampled at evenly-spaced intervals in time", allOf = Metric.class)
 public class TimeSeriesMetric extends Metric {
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -102,6 +102,14 @@ public class TimeSeriesMetric extends Metric {
 
     public void setBegins(Timestamp begins) {
         this.begins = begins;
+    }
+
+    public Timestamp getEnds() {
+        return ends;
+    }
+
+    public void setEnds(Timestamp ends) {
+        this.ends = ends;
     }
 
     public TimeSeriesMetricInterval getInterval() {

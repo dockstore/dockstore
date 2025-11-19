@@ -11897,6 +11897,10 @@ components:
             type: string
             format: date-time
             description: Earliest time represented by this time series
+          ends:
+            type: string
+            format: date-time
+            description: Latest time represented by this time series
           id:
             type: integer
             format: int64
@@ -11925,9 +11929,10 @@ components:
               format: double
               description: Sample value
       description: Describes a metric that consists of a series of data values sampled
-        at different points in time
+        at evenly-spaced intervals in time
       required:
       - begins
+      - ends
       - interval
       - values
     Token_Auth:
