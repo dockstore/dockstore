@@ -2441,14 +2441,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkCanRead(user, workflow);
 
         List<TimeSeriesMetric> listOfTimeSeries = switch (interval) {
-	    case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
-            case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId()); // CHANGE TO MONTHLY TODO
-            default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
+        case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+        case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId()); // CHANGE TO MONTHLY TODO
+        default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
         };
 
         // For each time series: pad to the current client time, compute the maximum of the most-recent values of the padded time series, and combine into a global maximum.
         Instant nowInstant = Instant.ofEpochSecond(now);
-	return listOfTimeSeries.stream()
+        return listOfTimeSeries.stream()
             .map(timeSeries -> TimeSeriesMetricHelper.pad(timeSeries, nowInstant))
             .map(timeSeries -> TimeSeriesMetricHelper.max(timeSeries, valueCount))
             .map(Number::longValue)

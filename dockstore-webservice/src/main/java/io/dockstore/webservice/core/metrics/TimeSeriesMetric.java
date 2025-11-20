@@ -32,6 +32,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -123,6 +124,57 @@ public class TimeSeriesMetric extends Metric {
 
     public void setInterval(TimeSeriesMetricInterval interval) {
         this.interval = interval;
+    }
+
+    /**
+     * Calculate a time series that is shifted forward in time by the smallest number of intervals necessary to make its
+     * "ends" time later than the specified "now" time.
+     *
+     * The resulting time series is shifted by adding new values to the recent "end" of the time series, and dropping the same
+     * number of values from the beginning of the time series.  The resulting time series will have the same number of values
+     * as this time series, and time series "bins" that are retained have the same time alignment and values.
+     * If the resulting time series is shifted, its "begins" and "ends" times are adjusted to be consistent.
+     * If no shifting was necessary, this method may return this time series.  However, it will never modify this time series.
+     */
+    public TimeSeriesMetric advance(Instant now) {
+        // Calculate the whole number of intervals by which we'd need to increase the "ends" time to make it later than "now".
+        // This number is the same as the number of values we need to add to the end of the time series.
+        long intervalCount = interval.count(ends.toInstant(), now);
+        // If we don't need to add any intervals/values, return this time series as-is.
+        if (intervalCount <= 0) {
+            return this;
+        }
+        // Create a new time series that is shifted forward by the calculated number of intervals/values.
+        TimeSeriesMetric advancedTimeSeries = new TimeSeriesMetric();
+        advancedTimeSeries.setBegins(Timestamp.from(interval.add(begins.toInstant(), intervalCount)));
+        advancedTimeSeries.setEnds(Timestamp.from(interval.add(ends.toInstant(), intervalCount)));
+        advancedTimeSeries.setInterval(interval);
+        advancedTimeSeries.setValues(advanceValues(values, intervalCount));
+        return advancedTimeSeries;
+    }
+
+    private static List<Double> advanceValues(List<Double> values, long intervalCount) {
+        int size = values.size();
+        intervalCount = Math.min(intervalCount, size);
+        intervalCount = Math.max(intervalCount, 0);
+        List<Double> advancedValues = new ArrayList<>(size);
+        for (int i = (int)intervalCount; i < size; i++) {
+            advancedValues.add(values.get(i));
+        }
+        for (int i = 0; i < intervalCount; i++) {
+            advancedValues.add(0.);
+        }
+        assert values.size() == advancedValues.size();
+        return advancedValues;
+    }
+
+    public double max(int valueCount) {
+        int size = values.size();
+        double max = Double.MIN_VALUE;
+        for (int i = Math.max(0, size - valueCount); i < size; i++) {
+            max = Math.max(max, values.get(i));
+        }
+        return max;
     }
 
     public enum TimeSeriesMetricInterval {

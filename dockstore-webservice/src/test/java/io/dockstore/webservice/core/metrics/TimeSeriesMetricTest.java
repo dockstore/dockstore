@@ -1,9 +1,8 @@
-package io.dockstore.webservice.helpers;
+package io.dockstore.webservice.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -13,58 +12,58 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
-public class TimeSeriesMetricHelperTest {
+public class TimeSeriesMetricTest {
 
     @Test
-    public void testPadIntervals() {
+    public void testAdvanceIntervals() {
 
         for (TimeSeriesMetricInterval interval: TimeSeriesMetricInterval.values()) {
 
             TimeSeriesMetric timeSeries = makeTimeSeries(40, interval, Instant.now());
 
             Instant now = timeSeries.getEnds().toInstant();
-            TimeSeriesMetric paddedTimeSeries = TimeSeriesMetricHelper.pad(timeSeries, now);
-            assertEquals(timeSeries.getBegins(), paddedTimeSeries.getBegins());
-            assertEquals(timeSeries.getEnds(), paddedTimeSeries.getEnds());
-            checkValues(paddedTimeSeries, 0);
+            TimeSeriesMetric advancedTimeSeries = timeSeries.advance(now);
+            assertEquals(timeSeries.getBegins(), advancedTimeSeries.getBegins());
+            assertEquals(timeSeries.getEnds(), advancedTimeSeries.getEnds());
+            checkValues(advancedTimeSeries, 0);
 
             now = timeSeries.getEnds().toInstant().plus(1, ChronoUnit.NANOS);
-            paddedTimeSeries = TimeSeriesMetricHelper.pad(timeSeries, now);
-            assertTrue(timeSeries.getBegins().compareTo(paddedTimeSeries.getBegins()) < 0);
-            assertTrue(timeSeries.getEnds().compareTo(paddedTimeSeries.getEnds()) < 0);
-            checkValues(paddedTimeSeries, 1);
+            advancedTimeSeries = timeSeries.advance(now);
+            assertTrue(timeSeries.getBegins().compareTo(advancedTimeSeries.getBegins()) < 0);
+            assertTrue(timeSeries.getEnds().compareTo(advancedTimeSeries.getEnds()) < 0);
+            checkValues(advancedTimeSeries, 1);
 
             now = interval.add(now, 1);
-            paddedTimeSeries = TimeSeriesMetricHelper.pad(timeSeries, now);
-            assertTrue(timeSeries.getBegins().compareTo(paddedTimeSeries.getBegins()) < 0);
-            assertTrue(timeSeries.getEnds().compareTo(paddedTimeSeries.getEnds()) < 0);
-            checkValues(paddedTimeSeries, 2);
+            advancedTimeSeries = timeSeries.advance(now);
+            assertTrue(timeSeries.getBegins().compareTo(advancedTimeSeries.getBegins()) < 0);
+            assertTrue(timeSeries.getEnds().compareTo(advancedTimeSeries.getEnds()) < 0);
+            checkValues(advancedTimeSeries, 2);
         }
     }
 
     @Test
-    public void testPadMonthlyInterval() {
+    public void testAdvanceMonthlyInterval() {
         Instant january1Midnight = Instant.parse("2025-01-01T00:00:00Z");
         TimeSeriesMetric timeSeries = makeTimeSeries(36, TimeSeriesMetricInterval.MONTH, january1Midnight);
 
         Instant february1Minus1Minute = Instant.parse("2025-01-31T23:59:59Z");
-        TimeSeriesMetric paddedTimeSeries = TimeSeriesMetricHelper.pad(timeSeries, february1Minus1Minute);
-        assertEquals(seconds(timeSeries), seconds(paddedTimeSeries), ChronoUnit.DAYS.getDuration().toSeconds() * 2);
-        assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaBegins(timeSeries, paddedTimeSeries));
-        assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaEnds(timeSeries, paddedTimeSeries));
-        assertEquals(timeSeries.getValues().size(), paddedTimeSeries.getValues().size());
-        checkValues(paddedTimeSeries, 1);
+        TimeSeriesMetric advancedTimeSeries = timeSeries.advance(february1Minus1Minute);
+        assertEquals(seconds(timeSeries), seconds(advancedTimeSeries), ChronoUnit.DAYS.getDuration().toSeconds() * 2);
+        assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaBegins(timeSeries, advancedTimeSeries));
+        assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaEnds(timeSeries, advancedTimeSeries));
+        assertEquals(timeSeries.getValues().size(), advancedTimeSeries.getValues().size());
+        checkValues(advancedTimeSeries, 1);
     }
 
     @Test
     public void testMax() {
         TimeSeriesMetric timeSeries = makeTimeSeries(List.of(4., 2., 3., 1.), TimeSeriesMetricInterval.DAY, Instant.now());
-        assertEquals(Double.MIN_VALUE, TimeSeriesMetricHelper.max(timeSeries, 0));
-        assertEquals(1, TimeSeriesMetricHelper.max(timeSeries, 1));
-        assertEquals(3, TimeSeriesMetricHelper.max(timeSeries, 2));
-        assertEquals(3, TimeSeriesMetricHelper.max(timeSeries, 3));
-        assertEquals(4, TimeSeriesMetricHelper.max(timeSeries, 4));
-        assertEquals(4, TimeSeriesMetricHelper.max(timeSeries, 5));
+        assertEquals(Double.MIN_VALUE, timeSeries.max(0));
+        assertEquals(1, timeSeries.max(1));
+        assertEquals(3, timeSeries.max(2));
+        assertEquals(3, timeSeries.max(3));
+        assertEquals(4, timeSeries.max(4));
+        assertEquals(4, timeSeries.max(5));
     }
 
     private void checkValues(TimeSeriesMetric timeSeries, int zeroCount) {
