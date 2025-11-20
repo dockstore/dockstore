@@ -85,7 +85,6 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
-import io.dockstore.webservice.helpers.TimeSeriesMetricHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
@@ -2425,7 +2424,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @POST
-    @Path("/{workflowId}/maxExecutionCountForAnyVersion")
+    @Path("/{workflowId}/maxExecutionCountForAllVersions")
     @Timed
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
@@ -2440,17 +2439,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
 
+        // Retrieve the execution count time series for the specified workflow and interval.
         List<TimeSeriesMetric> listOfTimeSeries = switch (interval) {
         case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
         case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId()); // CHANGE TO MONTHLY TODO
         default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
         };
 
-        // For each time series: pad to the current client time, compute the maximum of the most-recent values of the padded time series, and combine into a global maximum.
+        // Advance each retrieved time series to the current client time, compute the maximum of its most-recent values, and combine into a global maximum.
         Instant nowInstant = Instant.ofEpochSecond(now);
         return listOfTimeSeries.stream()
-            .map(timeSeries -> TimeSeriesMetricHelper.pad(timeSeries, nowInstant))
-            .map(timeSeries -> TimeSeriesMetricHelper.max(timeSeries, valueCount))
+            .map(timeSeries -> timeSeries.advance(nowInstant))
+            .map(timeSeries -> timeSeries.max(valueCount))
             .map(Number::longValue)
             .max(Comparator.naturalOrder())
             .orElse(0L);

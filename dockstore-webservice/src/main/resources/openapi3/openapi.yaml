@@ -8446,7 +8446,7 @@ paths:
       - BEARER: []
       tags:
       - workflows
-  /workflows/{workflowId}/maxExecutionCountForAnyVersion:
+  /workflows/{workflowId}/maxExecutionCountForAllVersions:
     post:
       description: Determine the maximum execution count for all workflow versions.
       operationId: getMaxExecutionCountForAllVersions
