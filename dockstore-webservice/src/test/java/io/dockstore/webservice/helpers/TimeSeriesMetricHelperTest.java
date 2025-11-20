@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 public class TimeSeriesMetricHelperTest {
 
     @Test
-    public void testIntervals() {
+    public void testPadIntervals() {
 
         for (TimeSeriesMetricInterval interval: TimeSeriesMetricInterval.values()) {
 
@@ -43,7 +43,7 @@ public class TimeSeriesMetricHelperTest {
     }
 
     @Test
-    public void testMonthlyInterval() {
+    public void testPadMonthlyInterval() {
         Instant january1Midnight = Instant.parse("2025-01-01T00:00:00Z");
         TimeSeriesMetric timeSeries = makeTimeSeries(36, TimeSeriesMetricInterval.MONTH, january1Midnight);
 
@@ -54,6 +54,17 @@ public class TimeSeriesMetricHelperTest {
         assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaEnds(timeSeries, paddedTimeSeries));
         assertEquals(timeSeries.getValues().size(), paddedTimeSeries.getValues().size());
         checkValues(paddedTimeSeries, 1);
+    }
+
+    @Test
+    public void testMax() {
+        TimeSeriesMetric timeSeries = makeTimeSeries(List.of(4., 2., 3., 1.), TimeSeriesMetricInterval.DAY, Instant.now());
+        assertEquals(0, TimeSeriesMetricHelper.max(timeSeries, 0));
+        assertEquals(1, TimeSeriesMetricHelper.max(timeSeries, 1));
+        assertEquals(3, TimeSeriesMetricHelper.max(timeSeries, 2));
+        assertEquals(3, TimeSeriesMetricHelper.max(timeSeries, 3));
+        assertEquals(4, TimeSeriesMetricHelper.max(timeSeries, 4));
+        assertEquals(4, TimeSeriesMetricHelper.max(timeSeries, 5));
     }
 
     private void checkValues(TimeSeriesMetric timeSeries, int zeroCount) {
@@ -70,11 +81,15 @@ public class TimeSeriesMetricHelperTest {
     }
 
     private TimeSeriesMetric makeTimeSeries(int binCount, TimeSeriesMetricInterval interval, Instant ends) {
+        return makeTimeSeries(numbers(binCount), interval, ends);
+    }
+
+    private TimeSeriesMetric makeTimeSeries(List<Double> values, TimeSeriesMetricInterval interval, Instant ends) {
         TimeSeriesMetric timeSeries = new TimeSeriesMetric();
-        timeSeries.setBegins(Timestamp.from(interval.add(ends, -binCount)));
-        timeSeries.setEnds(Timestamp.from(ends));
+        timeSeries.setValues(values);
         timeSeries.setInterval(interval);
-        timeSeries.setValues(numbers(binCount));
+        timeSeries.setBegins(Timestamp.from(interval.add(ends, -values.size())));
+        timeSeries.setEnds(Timestamp.from(ends));
         return timeSeries;
     }
 
