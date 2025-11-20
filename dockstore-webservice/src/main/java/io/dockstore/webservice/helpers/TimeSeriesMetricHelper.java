@@ -18,7 +18,7 @@ public final class TimeSeriesMetricHelper {
         Instant begins = timeSeries.getBegins().toInstant();
         Instant ends = timeSeries.getEnds().toInstant();
         TimeSeriesMetricInterval interval = timeSeries.getInterval();
-        // Calculate the number of intervals that we'd need to pad the "ends" date to be after now.
+        // Calculate the number of intervals that we'd need to add to the "ends" date to be later than "now".
         long padCount = interval.count(ends, now);
         // If we don't need to pad, return the original time series.
         if (padCount <= 0) {
@@ -55,7 +55,7 @@ public final class TimeSeriesMetricHelper {
     public static double max(TimeSeriesMetric timeSeries, int valueCount) {
         List<Double> values = timeSeries.getValues();
         int size = values.size();
-        double max = 0;
+        double max = Double.MIN_VALUE;
         for (int i = Math.max(0, size - valueCount); i < size; i++) {
             max = Math.max(max, values.get(i));
         }

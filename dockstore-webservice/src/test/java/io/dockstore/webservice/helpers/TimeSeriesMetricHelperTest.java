@@ -59,7 +59,7 @@ public class TimeSeriesMetricHelperTest {
     @Test
     public void testMax() {
         TimeSeriesMetric timeSeries = makeTimeSeries(List.of(4., 2., 3., 1.), TimeSeriesMetricInterval.DAY, Instant.now());
-        assertEquals(0, TimeSeriesMetricHelper.max(timeSeries, 0));
+        assertEquals(Double.MIN_VALUE, TimeSeriesMetricHelper.max(timeSeries, 0));
         assertEquals(1, TimeSeriesMetricHelper.max(timeSeries, 1));
         assertEquals(3, TimeSeriesMetricHelper.max(timeSeries, 2));
         assertEquals(3, TimeSeriesMetricHelper.max(timeSeries, 3));
