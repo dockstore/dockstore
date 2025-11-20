@@ -8446,8 +8446,61 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/maxExecutionCountForAnyVersion:
+    post:
+      description: Determine the maximum execution count for all workflow versions.
+      operationId: getMaxExecutionCountForAllVersions
+      parameters:
+      - description: ID of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Type of time series to include
+        in: query
+        name: interval
+        required: true
+        schema:
+          type: string
+          enum:
+          - SECOND
+          - MINUTE
+          - HOUR
+          - DAY
+          - WEEK
+          - MONTH
+          - YEAR
+      - description: Number of most recent values to include
+        in: query
+        name: valueCount
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - description: "Current time on client, expressed in UTC Java epoch seconds"
+        in: query
+        name: now
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/maxWeeklyExecutionCountForAnyVersion:
     post:
+      deprecated: true
       description: Determine the maximum weekly execution count for all workflow versions
         over the specified time range.
       operationId: getMaxWeeklyExecutionCountForAnyVersion
@@ -11966,7 +12019,7 @@ components:
             description: Implementation specific ID for metrics in this webservice
           interval:
             type: string
-            description: The interval between samples
+            description: Time between samples
             enum:
             - SECOND
             - MINUTE
@@ -11989,7 +12042,7 @@ components:
               format: double
               description: Sample value
       description: Describes a metric that consists of a series of data values sampled
-        at evenly-spaced intervals in time
+        at evenly-spaced points in time
       required:
       - begins
       - ends

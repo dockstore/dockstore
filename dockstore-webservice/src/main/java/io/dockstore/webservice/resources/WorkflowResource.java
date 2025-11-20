@@ -68,6 +68,7 @@ import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
@@ -84,6 +85,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.webservice.helpers.TimeSeriesMetricHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper.GitHubRepoDois;
 import io.dockstore.webservice.helpers.ZenodoHelper.TagAndDoi;
@@ -2392,6 +2394,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
+    @Deprecated(since = "1.19.0")
     @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public long getMaxWeeklyExecutionCountForAnyVersion(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -2421,42 +2424,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return (long)max;
     }
 
-    /*
-    TODO
     @POST
-    @Path("/{workflowId}/maxMonthlyExecutionCountForAnyVersion")
+    @Path("/{workflowId}/maxExecutionCountForAnyVersion")
     @Timed
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getMaxExecutionCountForAllVersions", description = "Determine the maximum execution count for all workflow versions.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public long getMaxWeeklyExecutionCountForAnyVersion(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
-        @Parameter(name = "onOrAfterEpochSecond", description = "include counts on or after this time, expressed in UTC Java epoch seconds", required = true) long onOrAfterEpochSecond) {
+        @Parameter(name = "workflowId", description = "ID of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
+        @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) TimeSeriesMetricInterval interval,
+        @Parameter(name = "valueCount", description = "Number of most recent values to include", required = true, in = ParameterIn.QUERY) int valueCount,
+        @Parameter(name = "now", description = "Current time on client, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) long now) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
 
-        List<TimeSeriesMetric> listOfTimeSeries = workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
-        Instant onOrAfter = Instant.ofEpochSecond(onOrAfterEpochSecond);
-        final long secondsPerWeek = 7 * 24 * 60 * 60L;  // Days * hours * minutes * seconds
+        List<TimeSeriesMetric> listOfTimeSeries = switch (interval) {
+	    case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+            case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId()); // CHANGE TO MONTHLY TODO
+            default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
+        };
 
-        // For each time series bin, if the bin end time >= the specified "onOrAfter" date, include the bin value in the maximum.
-        double max = 0;
-        for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
-            List<Double> values = timeSeries.getValues();
-            Instant oldestBinStart = timeSeries.getBegins().toInstant().minusSeconds(secondsPerWeek / 2);
-            for (int i = 0, n = values.size(); i < n; i++) {
-                Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
-                Instant binEnd = binStart.plusSeconds(secondsPerWeek);
-                if (binEnd.compareTo(onOrAfter) >= 0) {
-                    max = Math.max(values.get(i), max);
-                }
-            }
-        }
-        return (long)max;
+        // For each time series: pad to the current client time, compute the maximum of the most-recent values of the padded time series, and combine into a global maximum.
+        Instant nowInstant = Instant.ofEpochSecond(now);
+	return listOfTimeSeries.stream()
+            .map(timeSeries -> TimeSeriesMetricHelper.pad(timeSeries, nowInstant))
+            .map(timeSeries -> TimeSeriesMetricHelper.max(timeSeries, valueCount))
+            .map(Number::longValue)
+            .max(Comparator.naturalOrder())
+            .orElse(0L);
     }
-    */
 
     @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")

@@ -33,7 +33,7 @@ public final class TimeSeriesMetricHelper {
         return paddedTimeSeries;
     }
 
-    static List<Double> padValues(List<Double> values, long padCount) {
+    private static List<Double> padValues(List<Double> values, long padCount) {
         int size = values.size();
         padCount = Math.min(padCount, size);
         padCount = Math.max(padCount, 0);
@@ -50,5 +50,15 @@ public final class TimeSeriesMetricHelper {
 
     private static Timestamp timestamp(Instant instant) {
         return Timestamp.from(instant);
+    }
+
+    public static double max(TimeSeriesMetric timeSeries, int valueCount) {
+        List<Double> values = timeSeries.getValues();
+        int size = values.size();
+        double max = 0;
+        for (int i = Math.max(0, size - valueCount); i < size; i++) {
+            max = Math.max(max, values.get(i));
+        }
+        return max;
     }
 }
