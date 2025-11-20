@@ -17,8 +17,8 @@ public class TimeSeriesMetricHelperTest {
 
     @Test
     public void testIntervals() {
-       
-        for (TimeSeriesMetricInterval interval: TimeSeriesMetricInterval.values()) { 
+
+        for (TimeSeriesMetricInterval interval: TimeSeriesMetricInterval.values()) {
 
             TimeSeriesMetric timeSeries = makeTimeSeries(40, interval, Instant.now());
 

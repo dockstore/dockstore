@@ -39,7 +39,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Schema(name = "TimeSeriesMetric", description = "Describes a metric that consists of a series of data values sampled at evenly-spaced intervals in time", allOf = Metric.class)
+@Schema(name = "TimeSeriesMetric", description = "Describes a metric that consists of a series of data values sampled at evenly-spaced points in time", allOf = Metric.class)
 public class TimeSeriesMetric extends Metric {
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -60,7 +60,7 @@ public class TimeSeriesMetric extends Metric {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "The interval between samples", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Time between samples", requiredMode = RequiredMode.REQUIRED)
     private TimeSeriesMetricInterval interval;
 
     // database timestamps
