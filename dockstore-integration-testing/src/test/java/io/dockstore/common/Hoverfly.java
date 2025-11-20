@@ -201,6 +201,8 @@ public final class Hoverfly {
             .put(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/putDepositResponse.json"), MediaType.APPLICATION_JSON))
             // getDeposit
             .get(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/getDepositResponse.json"), MediaType.APPLICATION_JSON))
+            // getDeposits
+            .get(RequestFieldMatcher.newExactMatcher("/api/user/records")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/noHits.json"), MediaType.APPLICATION_JSON))
             // newDepositVersion
             .post(RequestFieldMatcher.newRegexMatcher("/api/deposit/depositions/([0-9]+)/actions/newversion")).anyBody().anyQueryParams().willReturn(success(fixture("fixtures/newDepositVersionResponse.json"), MediaType.APPLICATION_JSON))
             // createFile
