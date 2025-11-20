@@ -150,19 +150,24 @@ public class TimeSeriesMetric extends Metric {
         advancedTimeSeries.setBegins(Timestamp.from(interval.add(begins.toInstant(), intervalCount)));
         advancedTimeSeries.setEnds(Timestamp.from(interval.add(ends.toInstant(), intervalCount)));
         advancedTimeSeries.setInterval(interval);
-        advancedTimeSeries.setValues(advanceValues(values, intervalCount));
+        advancedTimeSeries.setValues(shiftLeft(values, intervalCount, 0.));
         return advancedTimeSeries;
     }
 
-    private static List<Double> advanceValues(List<Double> values, long advanceCount) {
-        int size = values.size();
-        advanceCount = Math.min(advanceCount, size);
-        advanceCount = Math.max(advanceCount, 0);
-        List<Double> advancedValues = new ArrayList<>(size);
-        advancedValues.addAll(values.subList((int)advanceCount, size));
-        advancedValues.addAll(Collections.nCopies((int)advanceCount, 0.));
-        assert values.size() == advancedValues.size();
-        return advancedValues;
+    /**
+     * Calculate a new list that contains the elements of the specified list,
+     * shifted to the "left", towards the beginning of the list, by the specified number of elements.
+     * Use the specified value for new elements on the "right" side of the list.
+     */
+    private static List<Double> shiftLeft(List<Double> list, long shiftCount, double newValue) {
+        int size = list.size();
+        shiftCount = Math.min(shiftCount, size);
+        shiftCount = Math.max(shiftCount, 0);
+        List<Double> newList = new ArrayList<>(size);
+        newList.addAll(list.subList((int)shiftCount, size));
+        newList.addAll(Collections.nCopies((int)shiftCount, newValue));
+        assert list.size() == newList.size();
+        return newList;
     }
 
     /**
