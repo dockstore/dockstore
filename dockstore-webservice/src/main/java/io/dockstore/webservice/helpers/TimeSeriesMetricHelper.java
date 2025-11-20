@@ -2,34 +2,32 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval.DAY;
-import static io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval.MONTH;
-import static io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval.WEEK;
-
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-class TimeSeriesMetricHelper {
+public final class TimeSeriesMetricHelper {
+
+    private TimeSeriesMetricHelper() {
+    }
 
     public static TimeSeriesMetric pad(TimeSeriesMetric timeSeries, Instant now) {
         Instant begins = timeSeries.getBegins().toInstant();
         Instant ends = timeSeries.getEnds().toInstant();
         TimeSeriesMetricInterval interval = timeSeries.getInterval();
         // Calculate the number of intervals that we'd need to pad the "ends" date to be after now.
-        long padCount = interval.countIntervals(ends, now);
-        // If the "ends" date is already later than now, we don't need to pad, so return the original time series.
+        long padCount = interval.count(ends, now);
+        // If we don't need to pad, return the original time series.
         if (padCount <= 0) {
             return timeSeries;
         }
         // Create a new time series and populate it with values that are padded by the calculated number of intervals.
         TimeSeriesMetric paddedTimeSeries = new TimeSeriesMetric();
-        paddedTimeSeries.setBegins(Timestamp.from(interval.addIntervals(begins, padCount)));
-        paddedTimeSeries.setEnds(Timestamp.from(interval.addIntervals(ends, padCount)));
+        paddedTimeSeries.setBegins(timestamp(interval.add(begins, padCount)));
+        paddedTimeSeries.setEnds(timestamp(interval.add(ends, padCount)));
         paddedTimeSeries.setInterval(interval);
         paddedTimeSeries.setValues(padValues(timeSeries.getValues(), padCount));
         return paddedTimeSeries;
@@ -48,5 +46,9 @@ class TimeSeriesMetricHelper {
         }
         assert values.size() == paddedValues.size();
         return paddedValues;
+    }
+
+    private static Timestamp timestamp(Instant instant) {
+        return Timestamp.from(instant);
     }
 }

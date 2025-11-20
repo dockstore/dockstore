@@ -140,25 +140,18 @@ public class TimeSeriesMetric extends Metric {
             this.temporalUnit = temporalUnit;
         }
 
-        public long countIntervals(Instant from, Instant to) {
+        public long count(Instant from, Instant to) {
             if (from.compareTo(to) >= 0) {
                 return 0;
             }
-            ZonedDateTime fromTime = toTime(from);
-            ZonedDateTime toTime = toTime(to);
-            return fromTime.until(toTime, temporalUnit) + 1;
+            return temporalUnit.between(time(from), time(to)) + 1;
         }
 
-        public Instant addIntervals(Instant from, long intervalCount) {
-            ZonedDateTime fromTime = toTime(from);
-            return toInstant(fromTime.plus(intervalCount, temporalUnit));
+        public Instant add(Instant from, long intervalCount) {
+            return time(from).plus(intervalCount, temporalUnit).toInstant();
         }
 
-        private Instant toInstant(ZonedDateTime time) {
-            return time.toInstant();
-        }
-
-        private ZonedDateTime toTime(Instant instant) {
+        private ZonedDateTime time(Instant instant) {
             return ZonedDateTime.ofInstant(instant, ZoneOffset.UTC);
         }
     }
