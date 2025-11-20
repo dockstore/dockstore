@@ -2423,7 +2423,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return (long)max;
     }
 
-    @POST
+    @GET
     @Path("/{workflowId}/maxExecutionCountForAllVersions")
     @Timed
     @UnitOfWork
@@ -2451,8 +2451,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Advance each retrieved time series to the current client time, compute the maximum of its most-recent values, and combine into a global maximum.
         Instant nowInstant = Instant.ofEpochSecond(now);
         return listOfTimeSeries.stream()
-            .map(timeSeries -> timeSeries.advance(nowInstant))
-            .map(timeSeries -> timeSeries.max(valueCount))
+            .map(timeSeries -> timeSeries.advanceTo(nowInstant))
+            .map(timeSeries -> timeSeries.maxOfMostRecentValues(valueCount))
             .map(Number::longValue)
             .max(Comparator.naturalOrder())
             .orElse(0L);

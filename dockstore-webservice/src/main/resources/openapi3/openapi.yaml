@@ -8447,7 +8447,7 @@ paths:
       tags:
       - workflows
   /workflows/{workflowId}/maxExecutionCountForAllVersions:
-    post:
+    get:
       description: Determine the maximum execution count for all workflow versions.
       operationId: getMaxExecutionCountForAllVersions
       parameters:

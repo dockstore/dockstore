@@ -33,6 +33,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -136,7 +137,7 @@ public class TimeSeriesMetric extends Metric {
      * If the resulting time series is shifted, its "begins" and "ends" times are adjusted to be consistent.
      * If no shifting was necessary, this method may return this time series.  However, it will never modify this time series.
      */
-    public TimeSeriesMetric advance(Instant now) {
+    public TimeSeriesMetric advanceTo(Instant now) {
         // Calculate the whole number of intervals by which we'd need to increase the "ends" time to make it later than "now".
         // This number is the same as the number of values we need to add to the end of the time series.
         long intervalCount = interval.count(ends.toInstant(), now);
@@ -153,17 +154,13 @@ public class TimeSeriesMetric extends Metric {
         return advancedTimeSeries;
     }
 
-    private static List<Double> advanceValues(List<Double> values, long intervalCount) {
+    private static List<Double> advanceValues(List<Double> values, long advanceCount) {
         int size = values.size();
-        intervalCount = Math.min(intervalCount, size);
-        intervalCount = Math.max(intervalCount, 0);
+        advanceCount = Math.min(advanceCount, size);
+        advanceCount = Math.max(advanceCount, 0);
         List<Double> advancedValues = new ArrayList<>(size);
-        for (int i = (int)intervalCount; i < size; i++) {
-            advancedValues.add(values.get(i));
-        }
-        for (int i = 0; i < intervalCount; i++) {
-            advancedValues.add(0.);
-        }
+        advancedValues.addAll(values.subList((int)advanceCount, size));
+        advancedValues.addAll(Collections.nCopies((int)advanceCount, 0.));
         assert values.size() == advancedValues.size();
         return advancedValues;
     }
@@ -171,13 +168,13 @@ public class TimeSeriesMetric extends Metric {
     /**
      * Calculate the maximum value of the specified number of most recent values in this time series.
      */
-    public double max(int valueCount) {
-        int size = values.size();
-        double max = Double.MIN_VALUE;
-        for (int i = Math.max(0, size - valueCount); i < size; i++) {
-            max = Math.max(max, values.get(i));
+    public double maxOfMostRecentValues(int valueCount) {
+        if (valueCount <= 0) {
+            return Double.MIN_VALUE;
         }
-        return max;
+        int size = values.size();
+        valueCount = Math.min(valueCount, size);
+        return Collections.max(values.subList(size - valueCount, size));
     }
 
     public enum TimeSeriesMetricInterval {
@@ -196,7 +193,7 @@ public class TimeSeriesMetric extends Metric {
         }
 
         /**
-         * Calculate the minumum whole number of intervals that would need to be added to the specified "from" time to
+         * Calculate the minimum whole number of intervals that would need to be added to the specified "from" time to
          * make it later than the specified "to" time.  If the "from" time is later than the "to" time, return zero.
          */
         public long count(Instant from, Instant to) {

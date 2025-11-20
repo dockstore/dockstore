@@ -22,19 +22,19 @@ public class TimeSeriesMetricTest {
             TimeSeriesMetric timeSeries = makeTimeSeries(40, interval, Instant.now());
 
             Instant now = timeSeries.getEnds().toInstant();
-            TimeSeriesMetric advancedTimeSeries = timeSeries.advance(now);
+            TimeSeriesMetric advancedTimeSeries = timeSeries.advanceTo(now);
             assertEquals(timeSeries.getBegins(), advancedTimeSeries.getBegins());
             assertEquals(timeSeries.getEnds(), advancedTimeSeries.getEnds());
             checkValues(advancedTimeSeries, 0);
 
             now = timeSeries.getEnds().toInstant().plus(1, ChronoUnit.NANOS);
-            advancedTimeSeries = timeSeries.advance(now);
+            advancedTimeSeries = timeSeries.advanceTo(now);
             assertTrue(timeSeries.getBegins().compareTo(advancedTimeSeries.getBegins()) < 0);
             assertTrue(timeSeries.getEnds().compareTo(advancedTimeSeries.getEnds()) < 0);
             checkValues(advancedTimeSeries, 1);
 
             now = interval.add(now, 1);
-            advancedTimeSeries = timeSeries.advance(now);
+            advancedTimeSeries = timeSeries.advanceTo(now);
             assertTrue(timeSeries.getBegins().compareTo(advancedTimeSeries.getBegins()) < 0);
             assertTrue(timeSeries.getEnds().compareTo(advancedTimeSeries.getEnds()) < 0);
             checkValues(advancedTimeSeries, 2);
@@ -47,7 +47,7 @@ public class TimeSeriesMetricTest {
         TimeSeriesMetric timeSeries = makeTimeSeries(36, TimeSeriesMetricInterval.MONTH, january1Midnight);
 
         Instant february1Minus1Minute = Instant.parse("2025-01-31T23:59:59Z");
-        TimeSeriesMetric advancedTimeSeries = timeSeries.advance(february1Minus1Minute);
+        TimeSeriesMetric advancedTimeSeries = timeSeries.advanceTo(february1Minus1Minute);
         assertEquals(seconds(timeSeries), seconds(advancedTimeSeries), ChronoUnit.DAYS.getDuration().toSeconds() * 2);
         assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaBegins(timeSeries, advancedTimeSeries));
         assertEquals(Duration.of(31, ChronoUnit.DAYS), deltaEnds(timeSeries, advancedTimeSeries));
@@ -58,12 +58,12 @@ public class TimeSeriesMetricTest {
     @Test
     public void testMax() {
         TimeSeriesMetric timeSeries = makeTimeSeries(List.of(4., 2., 3., 1.), TimeSeriesMetricInterval.DAY, Instant.now());
-        assertEquals(Double.MIN_VALUE, timeSeries.max(0));
-        assertEquals(1, timeSeries.max(1));
-        assertEquals(3, timeSeries.max(2));
-        assertEquals(3, timeSeries.max(3));
-        assertEquals(4, timeSeries.max(4));
-        assertEquals(4, timeSeries.max(5));
+        assertEquals(Double.MIN_VALUE, timeSeries.maxOfMostRecentValues(0));
+        assertEquals(1, timeSeries.maxOfMostRecentValues(1));
+        assertEquals(3, timeSeries.maxOfMostRecentValues(2));
+        assertEquals(3, timeSeries.maxOfMostRecentValues(3));
+        assertEquals(4, timeSeries.maxOfMostRecentValues(4));
+        assertEquals(4, timeSeries.maxOfMostRecentValues(5));
     }
 
     private void checkValues(TimeSeriesMetric timeSeries, int zeroCount) {
