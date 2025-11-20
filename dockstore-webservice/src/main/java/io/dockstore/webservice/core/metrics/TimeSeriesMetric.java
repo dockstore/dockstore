@@ -168,6 +168,9 @@ public class TimeSeriesMetric extends Metric {
         return advancedValues;
     }
 
+    /**
+     * Calculate the maximum value of the specified number of most recent values in this time series.
+     */
     public double max(int valueCount) {
         int size = values.size();
         double max = Double.MIN_VALUE;
@@ -192,6 +195,10 @@ public class TimeSeriesMetric extends Metric {
             this.temporalUnit = temporalUnit;
         }
 
+        /**
+         * Calculate the minumum whole number of intervals that would need to be added to the specified "from" time to
+         * make it later than the specified "to" time.  If the "from" time is later than the "to" time, return zero.
+         */
         public long count(Instant from, Instant to) {
             if (from.compareTo(to) >= 0) {
                 return 0;
@@ -199,6 +206,9 @@ public class TimeSeriesMetric extends Metric {
             return temporalUnit.between(time(from), time(to)) + 1;
         }
 
+        /**
+         * Add the specified number of intervals to the specified "from" time.
+         */
         public Instant add(Instant from, long intervalCount) {
             return time(from).plus(intervalCount, temporalUnit).toInstant();
         }

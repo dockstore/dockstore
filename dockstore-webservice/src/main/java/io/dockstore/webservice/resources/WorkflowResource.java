@@ -2429,7 +2429,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getMaxExecutionCountForAllVersions", description = "Determine the maximum execution count for all workflow versions.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public long getMaxWeeklyExecutionCountForAnyVersion(
+    public long getMaxExecutionCountForAllVersions(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @Parameter(name = "workflowId", description = "ID of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
         @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) TimeSeriesMetricInterval interval,
@@ -2442,7 +2442,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Retrieve the execution count time series for the specified workflow and interval.
         List<TimeSeriesMetric> listOfTimeSeries = switch (interval) {
         case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
-        case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId()); // CHANGE TO MONTHLY TODO
+        case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId());
         default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
         };
 
