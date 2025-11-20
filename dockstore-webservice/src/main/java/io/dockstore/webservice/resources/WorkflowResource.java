@@ -2435,7 +2435,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", description = "ID of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
         @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) TimeSeriesMetricInterval interval,
         @Parameter(name = "valueCount", description = "Number of most recent values to include", required = true, in = ParameterIn.QUERY) int valueCount,
-        @Parameter(name = "now", description = "Current time on client, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) long now) {
+        @Parameter(name = "now", description = "Current client time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) long now) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);

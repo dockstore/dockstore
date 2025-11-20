@@ -8479,7 +8479,7 @@ paths:
         schema:
           type: integer
           format: int32
-      - description: "Current time on client, expressed in UTC Java epoch seconds"
+      - description: "Current client time, expressed in UTC Java epoch seconds"
         in: query
         name: now
         required: true
