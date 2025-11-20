@@ -2432,9 +2432,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public long getMaxExecutionCountForAllVersions(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @Parameter(name = "workflowId", description = "ID of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
-        @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) TimeSeriesMetricInterval interval,
-        @Parameter(name = "valueCount", description = "Number of most recent values to include", required = true, in = ParameterIn.QUERY) int valueCount,
-        @Parameter(name = "now", description = "Current client time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) long now) {
+        @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) @QueryParam("interval") TimeSeriesMetricInterval interval,
+        @Parameter(name = "valueCount", description = "Number of most recent values to include", required = true, in = ParameterIn.QUERY) @QueryParam("valueCount") int valueCount,
+        @Parameter(name = "now", description = "Current client time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) @QueryParam("now") long now) {
+        checkNotNull(interval, "Interval must be set");
+
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
