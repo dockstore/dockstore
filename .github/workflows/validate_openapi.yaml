@@ -10,7 +10,7 @@ jobs:
 
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Validate OpenAPI definition
         uses: swaggerexpert/swagger-editor-validate@v1
         with:
