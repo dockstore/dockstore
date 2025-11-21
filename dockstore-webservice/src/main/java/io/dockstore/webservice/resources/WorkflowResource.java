@@ -68,6 +68,7 @@ import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
@@ -2392,6 +2393,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
+    @Deprecated(since = "1.19.0")
     @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public long getMaxWeeklyExecutionCountForAnyVersion(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -2409,7 +2411,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         double max = 0;
         for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
             List<Double> values = timeSeries.getValues();
-            Instant oldestBinStart = timeSeries.getBegins().toInstant().minusSeconds(secondsPerWeek / 2);
+            Instant oldestBinStart = timeSeries.getBegins().toInstant();
             for (int i = 0, n = values.size(); i < n; i++) {
                 Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
                 Instant binEnd = binStart.plusSeconds(secondsPerWeek);
@@ -2419,6 +2421,41 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         return (long)max;
+    }
+
+    @GET
+    @Path("/{workflowId}/maxExecutionCountForAllVersions")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getMaxExecutionCountForAllVersions", description = "Determine the maximum execution count for all workflow versions.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public long getMaxExecutionCountForAllVersions(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "ID of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
+        @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) @QueryParam("interval") TimeSeriesMetricInterval interval,
+        @Parameter(name = "valueCount", description = "Number of most recent values to include", required = true, in = ParameterIn.QUERY) @QueryParam("valueCount") int valueCount,
+        @Parameter(name = "now", description = "Current client time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) @QueryParam("now") long now) {
+        checkNotNull(interval, "Interval must be set");
+
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
+
+        // Retrieve the execution count time series for the specified workflow and interval.
+        List<TimeSeriesMetric> listOfTimeSeries = switch (interval) {
+        case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+        case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId());
+        default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
+        };
+
+        // Advance each retrieved time series to the current client time, compute the maximum of its most-recent values, and combine into a global maximum.
+        Instant nowInstant = Instant.ofEpochSecond(now);
+        return listOfTimeSeries.stream()
+            .map(timeSeries -> timeSeries.advanceTo(nowInstant))
+            .map(timeSeries -> timeSeries.maxOfMostRecentValues(valueCount))
+            .map(Number::longValue)
+            .max(Comparator.naturalOrder())
+            .orElse(0L);
     }
 
     @GET

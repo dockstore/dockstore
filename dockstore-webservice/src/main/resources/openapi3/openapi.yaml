@@ -8446,8 +8446,61 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/maxExecutionCountForAllVersions:
+    get:
+      description: Determine the maximum execution count for all workflow versions.
+      operationId: getMaxExecutionCountForAllVersions
+      parameters:
+      - description: ID of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Type of time series to include
+        in: query
+        name: interval
+        required: true
+        schema:
+          type: string
+          enum:
+          - SECOND
+          - MINUTE
+          - HOUR
+          - DAY
+          - WEEK
+          - MONTH
+          - YEAR
+      - description: Number of most recent values to include
+        in: query
+        name: valueCount
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - description: "Current client time, expressed in UTC Java epoch seconds"
+        in: query
+        name: now
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/maxWeeklyExecutionCountForAnyVersion:
     post:
+      deprecated: true
       description: Determine the maximum weekly execution count for all workflow versions
         over the specified time range.
       operationId: getMaxWeeklyExecutionCountForAnyVersion
@@ -11955,7 +12008,11 @@ components:
           begins:
             type: string
             format: date-time
-            description: Time that the first point was sampled at
+            description: Earliest time represented by this time series
+          ends:
+            type: string
+            format: date-time
+            description: Latest time represented by this time series
           id:
             type: integer
             format: int64
@@ -11970,6 +12027,7 @@ components:
             - DAY
             - WEEK
             - MONTH
+            - YEAR
           numberOfSkippedExecutions:
             type: integer
             format: int32
@@ -11987,6 +12045,7 @@ components:
         at evenly-spaced points in time
       required:
       - begins
+      - ends
       - interval
       - values
     Token_Auth:
