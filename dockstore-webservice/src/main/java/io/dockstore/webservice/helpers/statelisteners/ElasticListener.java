@@ -104,6 +104,7 @@ public class ElasticListener implements StateListenerInterface {
      */
     private void eagerLoadEntry(Entry entry) {
         Hibernate.initialize(entry.getAliases());
+        Hibernate.initialize(entry.metricsByPlatform());
     }
 
     private String determineIndex(Entry entry) {
