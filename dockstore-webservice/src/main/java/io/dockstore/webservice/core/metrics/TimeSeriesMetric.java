@@ -157,15 +157,15 @@ public class TimeSeriesMetric extends Metric {
     /**
      * Calculate a new list that contains the elements of the specified list,
      * shifted to the "left", towards the beginning of the list, by the specified number of elements.
+     * The new list will have the same number of elements as the specified list.
      * Use the specified value for new elements on the "right" side of the list.
      */
     private static List<Double> shiftLeft(List<Double> list, long shiftCount, double newValue) {
         int size = list.size();
-        shiftCount = Math.min(shiftCount, size);
-        shiftCount = Math.max(shiftCount, 0);
+        int clampedShiftCount = (int)Math.max(Math.min(shiftCount, size), 0);
         List<Double> newList = new ArrayList<>(size);
-        newList.addAll(list.subList((int)shiftCount, size));
-        newList.addAll(Collections.nCopies((int)shiftCount, newValue));
+        newList.addAll(list.subList(clampedShiftCount, size));
+        newList.addAll(Collections.nCopies(clampedShiftCount, newValue));
         assert list.size() == newList.size();
         return newList;
     }
@@ -178,8 +178,7 @@ public class TimeSeriesMetric extends Metric {
             return Double.MIN_VALUE;
         }
         int size = values.size();
-        valueCount = Math.min(valueCount, size);
-        return Collections.max(values.subList(size - valueCount, size));
+        return Collections.max(values.subList(Math.max(size - valueCount, 0), size));
     }
 
     public enum TimeSeriesMetricInterval {
