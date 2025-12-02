@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
+import io.dockstore.common.metrics.ExecutionStatus;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
@@ -34,6 +36,11 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
+import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
+import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.MetricsByStatus;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -104,7 +111,7 @@ public class ElasticListener implements StateListenerInterface {
      */
     private void eagerLoadEntry(Entry entry) {
         Hibernate.initialize(entry.getAliases());
-        Hibernate.initialize(entry.metricsByPlatform());
+        Hibernate.initialize(entry.getMetricsByPlatform());
     }
 
     private String determineIndex(Entry entry) {
@@ -337,7 +344,6 @@ public class ElasticListener implements StateListenerInterface {
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
         Doi selectedConceptDoi = entry.getDefaultConceptDoi();
-        // TODO retrieve monthlyExecutionCounts and executionCountTotal here.
         Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
@@ -354,7 +360,8 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
-        // TODO set monthlyExecutionCounts and executionCountTotal here.
+        objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
+        objectNode.set("monthlyExecutionCounts", MAPPER.valueToTree(getMonthlyExecutionCounts(entry)));
         return jsonNode;
     }
 
@@ -371,6 +378,38 @@ public class ElasticListener implements StateListenerInterface {
                 return map;
             }
         ).toList();
+    }
+
+    private static MetricsByStatus getMetricsForAll(Entry<?, ?> entry) {
+        Map<Partner, Metrics> metricsByPlatform = entry.getMetricsByPlatform();
+        if (metricsByPlatform == null || metricsByPlatform.isEmpty()) {
+            return null;
+        }
+        Metrics metrics = metricsByPlatform.get(Partner.ALL);
+        if (metrics == null) {
+            return null;
+        }
+        ExecutionStatusCountMetric executionStatusCountMetric = metrics.getExecutionStatusCount();
+        if (executionStatusCountMetric == null) {
+            return null;
+        }
+        return executionStatusCountMetric.getMetricsByStatus(ExecutionStatus.ALL);
+    }
+
+    private static long getExecutionCount(Entry<?, ?> entry) {
+        MetricsByStatus metricsForAll = getMetricsForAll(entry);
+        if (metricsForAll == null) {
+            return 0L;
+        }
+        return metricsForAll.getExecutionStatusCount();
+    }
+
+    private static TimeSeriesMetric getMonthlyExecutionCounts(Entry<?, ?> entry) {
+        MetricsByStatus metricsForAll = getMetricsForAll(entry);
+        if (metricsForAll == null) {
+            return null;
+        }
+        return metricsForAll.getMonthlyExecutionCounts();
     }
 
     /**
@@ -434,6 +473,7 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setApprovedAITopic(entry.isApprovedAITopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
+        detachedEntry.setMetricsByPlatform(entry.getMetricsByPlatform());
 
         // Add the detached versions
         Version defaultVersion = EntryVersionHelper.determineRepresentativeVersion(entry).orElse(null);

@@ -129,6 +129,9 @@
       "email": {
         "type": "text"
       },
+      "executionCount": {
+        "type": "long"
+      }
       "gitUrl": {
         "type": "text"
       },
@@ -141,6 +144,9 @@
       "lastUpdated": {
         "format": "epoch_millis",
         "type": "date"
+      },
+      "monthlyExecutionCounts": {
+        "enabled": false
       },
       "mode": {
         "type": "text"
