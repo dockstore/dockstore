@@ -131,7 +131,7 @@
       },
       "executionCount": {
         "type": "long"
-      }
+      },
       "gitUrl": {
         "type": "text"
       },
@@ -145,11 +145,11 @@
         "format": "epoch_millis",
         "type": "date"
       },
-      "monthlyExecutionCounts": {
-        "enabled": false
-      },
       "mode": {
         "type": "text"
+      },
+      "monthlyExecutionCounts": {
+        "enabled": false
       },
       "organization": {
         "type": "keyword"
@@ -159,6 +159,9 @@
       },
       "repository": {
         "type": "keyword"
+      },
+      "weeklyExecutionCounts": {
+        "enabled": false
       },
       "workflowName": {
         "type": "keyword"

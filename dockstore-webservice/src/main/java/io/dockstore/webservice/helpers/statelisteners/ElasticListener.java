@@ -36,8 +36,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
-import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsByStatus;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
@@ -380,44 +378,29 @@ public class ElasticListener implements StateListenerInterface {
         ).toList();
     }
 
-    private static MetricsByStatus getMetricsForAll(Entry<?, ?> entry) {
-        Map<Partner, Metrics> metricsByPlatform = entry.getMetricsByPlatform();
-        if (metricsByPlatform == null || metricsByPlatform.isEmpty()) {
-            return null;
-        }
-        Metrics metrics = metricsByPlatform.get(Partner.ALL);
-        if (metrics == null) {
-            return null;
-        }
-        ExecutionStatusCountMetric executionStatusCountMetric = metrics.getExecutionStatusCount();
-        if (executionStatusCountMetric == null) {
-            return null;
-        }
-        return executionStatusCountMetric.getMetricsByStatus(ExecutionStatus.ALL);
+    private static Optional<MetricsByStatus> getMetricsForAll(Entry<?, ?> entry) {
+        return Optional.ofNullable(entry.getMetricsByPlatform())
+            .map(metricsByPlatform -> metricsByPlatform.get(Partner.ALL))
+            .map(metrics -> metrics.getExecutionStatusCount())
+            .map(executionStatusCountMetric -> executionStatusCountMetric.getMetricsByStatus(ExecutionStatus.ALL));
     }
 
     private static long getExecutionCount(Entry<?, ?> entry) {
-        MetricsByStatus metricsForAll = getMetricsForAll(entry);
-        if (metricsForAll == null) {
-            return 0L;
-        }
-        return metricsForAll.getExecutionStatusCount();
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> (long)metricsForAll.getExecutionStatusCount())
+            .orElse(0L);
     }
 
     private static TimeSeriesMetric getMonthlyExecutionCounts(Entry<?, ?> entry) {
-        MetricsByStatus metricsForAll = getMetricsForAll(entry);
-        if (metricsForAll == null) {
-            return null;
-        }
-        return metricsForAll.getMonthlyExecutionCounts();
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> metricsForAll.getMonthlyExecutionCounts())
+            .orElse(null);
     }
 
     private static TimeSeriesMetric getWeeklyExecutionCounts(Entry<?, ?> entry) {
-        MetricsByStatus metricsForAll = getMetricsForAll(entry);
-        if (metricsForAll == null) {
-            return null;
-        }
-        return metricsForAll.getWeeklyExecutionCounts();
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> metricsForAll.getWeeklyExecutionCounts())
+            .orElse(null);
     }
 
     /**
