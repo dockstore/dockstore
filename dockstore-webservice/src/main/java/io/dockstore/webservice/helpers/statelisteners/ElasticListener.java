@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
-import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsByStatus;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
@@ -362,6 +361,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
         objectNode.set("monthlyExecutionCounts", MAPPER.valueToTree(getMonthlyExecutionCounts(entry)));
+        objectNode.set("weeklyExecutionCounts", MAPPER.valueToTree(getWeeklyExecutionCounts(entry)));
         return jsonNode;
     }
 
@@ -410,6 +410,14 @@ public class ElasticListener implements StateListenerInterface {
             return null;
         }
         return metricsForAll.getMonthlyExecutionCounts();
+    }
+
+    private static TimeSeriesMetric getWeeklyExecutionCounts(Entry<?, ?> entry) {
+        MetricsByStatus metricsForAll = getMetricsForAll(entry);
+        if (metricsForAll == null) {
+            return null;
+        }
+        return metricsForAll.getWeeklyExecutionCounts();
     }
 
     /**
