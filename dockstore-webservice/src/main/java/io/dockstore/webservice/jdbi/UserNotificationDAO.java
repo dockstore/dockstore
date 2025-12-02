@@ -9,7 +9,6 @@ import jakarta.persistence.criteria.Root;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
 
 public class UserNotificationDAO extends AbstractDAO<UserNotification> {
     public UserNotificationDAO(SessionFactory factory) {
@@ -38,9 +37,7 @@ public class UserNotificationDAO extends AbstractDAO<UserNotification> {
     }
 
     public List<UserNotification> findByUser(User user) {
-        Query<UserNotification> query = namedTypedQuery("io.dockstore.webservice.core.UserNotification.findByUser")
-            .setParameter("user", user);
-        return list(query);
+        return findByUser(user, 0, Integer.MAX_VALUE);
     }
 
     public List<UserNotification> findByUser(User user, Integer offset, Integer limit) {
@@ -48,7 +45,7 @@ public class UserNotificationDAO extends AbstractDAO<UserNotification> {
         CriteriaQuery<UserNotification> query = cb.createQuery(UserNotification.class);
         Root<UserNotification> userNotificationRoot = query.from(UserNotification.class);
         query.select(userNotificationRoot)
-            .where(cb.equal(userNotificationRoot.get("user"), user))
+            .where(cb.equal(userNotificationRoot.get("user"), user), cb.isFalse(userNotificationRoot.get("hidden")))
             .orderBy(cb.desc(userNotificationRoot.get("dbCreateDate")));
         return currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit).getResultList();
     }
