@@ -464,7 +464,6 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setApprovedAITopic(entry.isApprovedAITopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
-        detachedEntry.setMetricsByPlatform(entry.getMetricsByPlatform());
 
         // Add the detached versions
         Version defaultVersion = EntryVersionHelper.determineRepresentativeVersion(entry).orElse(null);
