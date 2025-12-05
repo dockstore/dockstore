@@ -755,10 +755,11 @@
                     </execution>
                 </executions>
             </plugin>
+	    <!-- https://mvnrepository.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.9.1.2184</version>
+                <version>5.4.0.6343</version>
             </plugin>
         </plugins>
     </build>
