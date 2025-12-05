@@ -49,10 +49,8 @@ import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.testing.ResourceHelpers;
 import io.openapi.model.DescriptorType;
-import io.openapi.model.DescriptorTypeWithPlain;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.ApiResponse;
 import io.swagger.client.api.AliasesApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.UsersApi;
@@ -71,8 +69,6 @@ import jakarta.ws.rs.core.GenericType;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -758,33 +754,6 @@ public class WorkflowIT extends BaseIT {
         assertTrue(map.get("nodes").size() >= 11 && map.get("edges").size() >= 13, "workflow dag is not as large as expected");
     }
 
-    @Test
-    void testGalaxyWorkflow() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        // unintuitively, this repo has workflows in both nextflow and galaxy
-        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/galaxy-workflows", "", "galaxy", SourceControl.GITHUB,
-            "/base_search_v0.1.json", true);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
-
-        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.PLAIN_GALAXY
-                + "/descriptor/base_search_v0.1.json", new GenericType<>() {
-                }, webClient, "text/plain");
-        String content1 = new String(response.getData());
-        // looks like a workflow file from galaxy
-        assertTrue(content1.contains("toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_head_tool/1.1.0"));
-        ApiResponse<byte[]> response2 = CommonTestUtilities.invokeAPI(
-            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
-                + "/" + DescriptorTypeWithPlain.PLAIN_GXFORMAT2
-                + "/descriptor/base_search_v0.1.json", new GenericType<>() {
-                }, webClient, "text/plain");
-        String content2 = new String(response2.getData());
-        // check that both approaches result in the same content
-        assertEquals(content1, content2);
-    }
 
     /**
      * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.

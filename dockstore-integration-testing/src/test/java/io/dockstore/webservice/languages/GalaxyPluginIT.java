@@ -44,14 +44,19 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.openapi.model.DescriptorTypeWithPlain;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DescriptorLanguageBean;
 import io.swagger.client.model.Workflow;
+import jakarta.ws.rs.core.GenericType;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -188,6 +193,34 @@ class GalaxyPluginIT {
         assertEquals(1, allStuffGalaxy.size());
         assertEquals(1, allStuffWdl.size());
         assertTrue(allStuffCWL.isEmpty());
+    }
+
+    @Test
+    void testGalaxyWorkflow() {
+        final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        // unintuitively, this repo has workflows in both nextflow and galaxy
+        Workflow workflowByPathGithub = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/galaxy-workflows", "/base_search_v0.1.json", "",
+            "galaxy", "");
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+
+        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
+            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
+                + "/" + DescriptorTypeWithPlain.PLAIN_GALAXY
+                + "/descriptor/base_search_v0.1.json", new GenericType<>() {
+                }, webClient, "text/plain");
+        String content1 = new String(response.getData());
+        // looks like a workflow file from galaxy
+        assertTrue(content1.contains("toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_head_tool/1.1.0"));
+        ApiResponse<byte[]> response2 = CommonTestUtilities.invokeAPI(
+            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
+                + "/" + DescriptorTypeWithPlain.PLAIN_GXFORMAT2
+                + "/descriptor/base_search_v0.1.json", new GenericType<>() {
+                }, webClient, "text/plain");
+        String content2 = new String(response2.getData());
+        // check that both approaches result in the same content
+        assertEquals(content1, content2);
     }
 
     @Test
