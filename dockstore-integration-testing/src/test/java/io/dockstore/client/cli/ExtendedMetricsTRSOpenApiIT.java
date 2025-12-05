@@ -78,6 +78,7 @@ import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.ExecutionsResponseBody;
+import io.dockstore.openapi.client.model.HistogramMetric;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.MetricsByStatus;
@@ -86,6 +87,8 @@ import io.dockstore.openapi.client.model.PrivilegeRequest.PlatformPartnerEnum;
 import io.dockstore.openapi.client.model.RunExecution;
 import io.dockstore.openapi.client.model.RunExecution.ExecutionStatusEnum;
 import io.dockstore.openapi.client.model.TaskExecutions;
+import io.dockstore.openapi.client.model.TimeSeriesMetric;
+import io.dockstore.openapi.client.model.TimeSeriesMetric.IntervalEnum;
 import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.ValidatorInfo;
@@ -99,7 +102,9 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,7 +134,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class, LocalstackDockerExtension.class })
 @Tag(ConfidentialTest.NAME)
 @Tag(LocalStackTest.NAME)
-class ExtendedMetricsTRSOpenApiIT extends BaseIT {
+final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
     public static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
@@ -542,9 +547,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
-                .count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1),
-                        FAILED_SEMANTIC_INVALID.name(), new MetricsByStatus().executionStatusCount(1),
-                        ABORTED.name(), new MetricsByStatus().executionStatusCount(2)));
+                .count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1),
+                        FAILED_SEMANTIC_INVALID.name(), createMetricsByStatus(1),
+                        ABORTED.name(), createMetricsByStatus(2)));
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
@@ -727,9 +732,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
     private Metrics createExecutionMetrics() {
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
-                .count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1),
-                        FAILED_SEMANTIC_INVALID.name(), new MetricsByStatus().executionStatusCount(1),
-                        ABORTED.name(), new MetricsByStatus().executionStatusCount(2)));
+                .count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1),
+                        FAILED_SEMANTIC_INVALID.name(), createMetricsByStatus(1),
+                        ABORTED.name(), createMetricsByStatus(2)));
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
@@ -828,7 +833,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
@@ -885,7 +890,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         String versionId = "master";
         String platform = Partner.TERRA.name();
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
         Map<String, Metrics> platformToMetrics = Map.of(platform, metrics);
         // Test malformed ID
@@ -1056,7 +1061,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, masterWorkflowVersion);
 
         // Post aggregated metrics for one of the workflow versions. Note: these aggregated metrics are dummy metrics
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
         Map<String, Metrics> platformToMetrics = Map.of(platform1, metrics);
         extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, masterWorkflowVersion);
@@ -1250,5 +1255,23 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         execution.setDateExecuted(Instant.now().toString());
         execution.setAdditionalProperties(map);
         return execution;
+    }
+
+    private MetricsByStatus createMetricsByStatus(int executionStatusCount) {
+        MetricsByStatus metricsByStatus = new MetricsByStatus().executionStatusCount(executionStatusCount);
+        // Add a TimeSeriesMetric.
+        Instant now = Instant.now();
+        TimeSeriesMetric timeSeries = new TimeSeriesMetric();
+        timeSeries.setValues(List.of(1., 2.));
+        timeSeries.setBegins(Date.from(now));
+        timeSeries.setEnds(Date.from(now.plus(2, ChronoUnit.DAYS)));
+        timeSeries.setInterval(IntervalEnum.DAY);
+        metricsByStatus.setDailyExecutionCounts(timeSeries);
+        // Add a HistogramsMetric.
+        HistogramMetric histogram = new HistogramMetric();
+        histogram.setFrequencies(List.of(3., 4.));
+        histogram.setEdges(List.of(5., 6., 7.));
+        metricsByStatus.setExecutionTimeHistogram(histogram);
+        return metricsByStatus;
     }
 }
