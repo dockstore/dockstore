@@ -55,7 +55,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.ApiResponse;
 import io.swagger.client.api.AliasesApi;
 import io.swagger.client.api.EntriesApi;
-import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.ParsedInformation;
@@ -769,7 +768,6 @@ public class WorkflowIT extends BaseIT {
             "/base_search_v0.1.json", true);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
         ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.PLAIN_GALAXY
