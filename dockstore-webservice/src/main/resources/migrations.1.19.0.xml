@@ -87,4 +87,24 @@
             UPDATE timeseriesmetric SET ends = begins + MAKE_INTERVAL(WEEKS => JSONB_ARRAY_LENGTH(values)) WHERE interval = 'WEEK';
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="addHistogramMetric">
+         <createTable tableName="histogrammetric">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="histogrammetric_pkey"/>
+            </column>
+            <column name="frequencies" type="JSONB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="edges" type="JSONB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="histogrammetric" constraintName="fk_histogrammetric_metric" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metric"/>
+        <addColumn tableName="metrics_by_status">
+            <column name="executiontimehistogramid" type="BIGINT"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="executiontimehistogramid" baseTableName="metrics_by_status" constraintName="fk_metrics_by_status_executiontimehistogramid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="histogrammetric"/>
+    </changeSet>
 </databaseChangeLog>
