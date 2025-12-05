@@ -796,7 +796,7 @@ final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         // Don't check the "id" and "numberOf.*Executions" fields, which are set by the webservice at submission time.
         assertThat(submitted)
             .usingRecursiveComparison()
-            .ignoringFieldsMatchingRegexes("id", ".*\\.id", ".*\\.numberOf.*Executions")
+            .ignoringFieldsMatchingRegexes("id", ".*\\.id", ".*\\Id", ".*\\.numberOf.*Executions")
             .ignoringAllOverriddenEquals()
             .isEqualTo(retrieved);
         // For each platform that has execution metrics, check that the "numberOf.*Executions" field values in the retrieved metrics are consistent with the source data.
