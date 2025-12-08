@@ -171,8 +171,13 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
         List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
-        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
+        // bin, templates, and lib from https://training.nextflow.io/2.1/advanced/structure/#templates
         handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "templates");
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
+        // from nf-core https://nf-co.re/docs/contributing/pipelines/pipeline_file_structure
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "assets");
+        // follow-up with well-known individual files like ro-crate-metadata.json, nextflow_schema.json, etc.
         return imports;
     }
 
