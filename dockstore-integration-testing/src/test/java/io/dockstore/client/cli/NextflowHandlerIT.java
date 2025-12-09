@@ -75,7 +75,7 @@ class NextflowHandlerIT extends BaseIT {
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
-        List<String> knownFileNames = Arrays.asList("main.nf", "/modules/index.nf", "/modules/multiqc.nf", "/modules/quant.nf", "/modules/fastqc.nf", "/modules/rnaseq.nf");
+        List<String> knownFileNames = Arrays.asList("main.nf", "/modules/index.nf", "/modules/multiqc.nf", "/modules/quant.nf", "/modules/fastqc.nf", "/modules/rnaseq.nf", "LICENSE");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
         assertEquals(size, stringSourceFileMap.size());
@@ -133,7 +133,7 @@ class NextflowHandlerIT extends BaseIT {
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
-        List<String> knownFileNames = Arrays.asList("main.nf", "bin/gghist.R", "/modules.nf");
+        List<String> knownFileNames = Arrays.asList("main.nf", "bin/gghist.R", "/modules.nf", "LICENSE");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
         assertEquals(size, stringSourceFileMap.size());
@@ -169,7 +169,7 @@ class NextflowHandlerIT extends BaseIT {
     }
 
     private void checkSourceFile(SourceFile sourceFile) {
-        checkSourceFile(sourceFile, EnumSet.of(FileType.NEXTFLOW));
+        checkSourceFile(sourceFile, EnumSet.of(FileType.NEXTFLOW, FileType.DOCKSTORE_WORKFLOW_OTHER));
     }
 
     private void checkSourceFile(SourceFile sourceFile, EnumSet<FileType> fileTypeSet) {
