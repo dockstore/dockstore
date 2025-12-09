@@ -132,6 +132,9 @@
       "email": {
         "type": "text"
       },
+      "executionCount": {
+        "type": "long"
+      },
       "gitUrl": {
         "type": "text"
       },
@@ -151,6 +154,9 @@
       },
       "mode": {
         "type": "text"
+      },
+      "monthlyExecutionCounts": {
+        "enabled": false
       },
       "name": {
         "type": "text"
@@ -262,6 +268,9 @@
       },
       "repository": {
         "type": "keyword"
+      },
+      "weeklyExecutionCounts": {
+        "enabled": false
       },
       "workflowName": {
         "type": "keyword"

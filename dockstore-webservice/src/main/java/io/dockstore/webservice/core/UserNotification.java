@@ -15,9 +15,7 @@ import jakarta.persistence.NamedQuery;
 @Schema(description = "Notifications for a user")
 @Entity
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.UserNotification.findByUser",
-        query = "SELECT u FROM UserNotification u WHERE u.user = :user ORDER BY u.dbCreateDate DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.UserNotification.getCountByUser", query = "SELECT COUNT(u) FROM UserNotification u WHERE u.user = :user"),
+    @NamedQuery(name = "io.dockstore.webservice.core.UserNotification.getCountByUser", query = "SELECT COUNT(u) FROM UserNotification u WHERE u.user = :user AND NOT hidden"),
 })
 public abstract class UserNotification extends AbstractNotification {
 
@@ -30,6 +28,10 @@ public abstract class UserNotification extends AbstractNotification {
     @Enumerated(EnumType.STRING)
     @Schema(description = "The recommended action for the repository", requiredMode = RequiredMode.REQUIRED)
     private Action action;
+
+    @Column(nullable = false)
+    @Schema(description = "Is the notification hidden?", requiredMode = RequiredMode.REQUIRED)
+    private boolean hidden = false;
 
     public UserNotification() {
     }
@@ -48,6 +50,14 @@ public abstract class UserNotification extends AbstractNotification {
 
     public void setAction(Action action) {
         this.action = action;
+    }
+
+    public boolean getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 
     public enum Action {

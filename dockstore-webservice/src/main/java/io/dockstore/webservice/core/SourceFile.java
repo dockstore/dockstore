@@ -379,6 +379,8 @@ public class SourceFile implements Comparable<SourceFile> {
      */
     @Embeddable
     public static class VerificationInformation {
+
+        @Column(nullable = false)
         public boolean verified = false;
         @Column(columnDefinition = "text")
         public String metadata = "";

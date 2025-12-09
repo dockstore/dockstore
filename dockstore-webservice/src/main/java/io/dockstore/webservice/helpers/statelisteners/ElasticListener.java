@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
+import io.dockstore.common.metrics.ExecutionStatus;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
@@ -34,6 +36,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.metrics.MetricsByStatus;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -104,6 +108,7 @@ public class ElasticListener implements StateListenerInterface {
      */
     private void eagerLoadEntry(Entry entry) {
         Hibernate.initialize(entry.getAliases());
+        Hibernate.initialize(entry.getMetricsByPlatform());
     }
 
     private String determineIndex(Entry entry) {
@@ -352,6 +357,9 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
+        objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
+        objectNode.set("monthlyExecutionCounts", MAPPER.valueToTree(getMonthlyExecutionCounts(entry)));
+        objectNode.set("weeklyExecutionCounts", MAPPER.valueToTree(getWeeklyExecutionCounts(entry)));
         return jsonNode;
     }
 
@@ -368,6 +376,31 @@ public class ElasticListener implements StateListenerInterface {
                 return map;
             }
         ).toList();
+    }
+
+    private static Optional<MetricsByStatus> getMetricsForAll(Entry<?, ?> entry) {
+        return Optional.ofNullable(entry.getMetricsByPlatform())
+            .map(metricsByPlatform -> metricsByPlatform.get(Partner.ALL))
+            .map(metrics -> metrics.getExecutionStatusCount())
+            .map(executionStatusCountMetric -> executionStatusCountMetric.getMetricsByStatus(ExecutionStatus.ALL));
+    }
+
+    private static long getExecutionCount(Entry<?, ?> entry) {
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> (long)metricsForAll.getExecutionStatusCount())
+            .orElse(0L);
+    }
+
+    private static TimeSeriesMetric getMonthlyExecutionCounts(Entry<?, ?> entry) {
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> metricsForAll.getMonthlyExecutionCounts())
+            .orElse(null);
+    }
+
+    private static TimeSeriesMetric getWeeklyExecutionCounts(Entry<?, ?> entry) {
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> metricsForAll.getWeeklyExecutionCounts())
+            .orElse(null);
     }
 
     /**

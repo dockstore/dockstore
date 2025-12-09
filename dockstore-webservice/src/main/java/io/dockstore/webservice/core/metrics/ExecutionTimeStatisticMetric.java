@@ -34,16 +34,20 @@ import jakarta.persistence.Table;
 public class ExecutionTimeStatisticMetric extends StatisticMetric {
     public static final String UNIT = "s"; // Store in seconds
 
+
     public ExecutionTimeStatisticMetric() {
     }
 
     @JsonCreator
     public ExecutionTimeStatisticMetric(
-            @JsonProperty("minimum") double minimum,
-            @JsonProperty("maximum") double maximum,
-            @JsonProperty("average") double average,
-            @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
-        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
+        @JsonProperty("minimum") double minimum,
+        @JsonProperty("percentile05th") double percentile05th,
+        @JsonProperty("median") double median,
+        @JsonProperty("average") double average,
+        @JsonProperty("percentile95th") double percentile95th,
+        @JsonProperty("maximum") double maximum,
+        @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
+        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT, median, percentile05th, percentile95th);
     }
 
     @Override
@@ -51,4 +55,5 @@ public class ExecutionTimeStatisticMetric extends StatisticMetric {
     public String getUnit() {
         return super.getUnit();
     }
+
 }

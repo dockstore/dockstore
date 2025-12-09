@@ -151,8 +151,12 @@ public abstract class DescriptorLanguageInferrer implements Inferrer {
     }
 
     private Optional<Path> toAbsolutePath(Path currentPath, String relativeOrAbsolutePath) {
+        Path parentPath = currentPath.getParent();
+        if (parentPath == null) {
+            parentPath = currentPath.getRoot();
+        }
         try {
-            return Optional.of(currentPath.resolve(relativeOrAbsolutePath).normalize());
+            return Optional.of(parentPath.resolve(relativeOrAbsolutePath).normalize());
         } catch (InvalidPathException e) {
             // If either path was invalid, ignore and continue.
             return Optional.empty();

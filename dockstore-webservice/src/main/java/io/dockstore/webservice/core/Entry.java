@@ -32,9 +32,11 @@ import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Doi.DoiInitiator;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -57,6 +59,7 @@ import jakarta.persistence.NamedNativeQueries;
 import jakarta.persistence.NamedNativeQuery;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
@@ -67,6 +70,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -128,9 +132,9 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
     @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
-            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount is not null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
     @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
-            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus is not null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
     @NamedQuery(name = Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
     @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL")
 })
@@ -177,13 +181,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
     @BatchSize(size = 25)
     private SortedSet<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @BatchSize(size = 25)
@@ -355,6 +359,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = true, columnDefinition = "varchar(32)")
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
+
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "entry_metrics", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "metricsid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKeyColumn(name = "platform")
+    @MapKeyEnumerated(EnumType.STRING)
+    @ApiModelProperty(value = "The aggregated metrics for executions of this entry, grouped by platform", position = 26)
+    private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
     public enum GitVisibility {
         /**
@@ -965,6 +976,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setGitVisibility(final GitVisibility gitVisibility) {
         this.gitVisibility = gitVisibility;
+    }
+
+    public Map<Partner, Metrics> getMetricsByPlatform() {
+        return metricsByPlatform;
+    }
+
+    public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
+        this.metricsByPlatform = metricsByPlatform;
     }
 
     @JsonProperty

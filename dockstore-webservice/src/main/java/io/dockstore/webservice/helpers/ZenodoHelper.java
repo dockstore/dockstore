@@ -169,6 +169,7 @@ public final class ZenodoHelper {
             LOG.info("Automatically registering Dockstore owned Zenodo DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
             registerZenodoDOI(zenodoClient, workflow, workflowVersion, workflowOwner, authenticatedResourceInterface,
                     DoiInitiator.DOCKSTORE);
+            LOG.info("Successfully automatically registered DOI for {}", workflowNameAndVersion(workflow, workflowVersion));
         } catch (CustomWebApplicationException e) {
             LOG.error("Could not automatically register DOI for {}", workflowNameAndVersion(workflow, workflowVersion), e);
             return false;
@@ -283,6 +284,7 @@ public final class ZenodoHelper {
 
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
+        PreviewApi previewApi = new PreviewApi(zenodoClient);
         Deposit deposit = new Deposit();
         Deposit returnDeposit;
         checkForExistingDOIForWorkflowVersion(workflowVersion, doiInitiator);
@@ -290,7 +292,6 @@ public final class ZenodoHelper {
 
         int depositionID;
         DepositMetadata depositMetadata;
-        String doiAlias;
         if (existingWorkflowVersionDOIURL.isEmpty()) {
             try {
                 // No DOI has been assigned to any version of the workflow yet
@@ -313,6 +314,14 @@ public final class ZenodoHelper {
             String depositIdStr = extractRecordIdFromDoi(existingWorkflowVersionDOIURL.get());
             int depositId = Integer.parseInt(depositIdStr);
             try {
+                // The Zenodo API sometimes spuriously fails (API calls respond with 403 or 503) during the
+                // process of creating a DOI, leaving behind a draft deposit that causes the next
+                // newDepositVersion() call to fail.
+                // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
+                // Attempt to find any draft deposit(s), and remove any that we find.
+                int conceptDoiId = getConceptDoiId(depositApi, depositId);
+                List<Integer> draftDepositIds = findDraftDeposits(previewApi, conceptDoiId);
+                draftDepositIds.forEach(id -> deleteDraftDeposit(previewApi, id));
                 // A DOI was previously assigned to a workflow version so we will
                 // use the ID associated with the workflow version DOI
                 // to create a new workflow version DOI
@@ -320,7 +329,7 @@ public final class ZenodoHelper {
                 // The response body of this action is NOT the new version deposit,
                 // but the original resource. The new version deposition can be
                 // accessed through the "latest_draft" under "links" in the response body.
-                String depositURL = returnDeposit.getLinks().get("latest_draft");
+                String depositURL = returnDeposit.getLinks().getLatestDraft();
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
                 // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
@@ -346,19 +355,29 @@ public final class ZenodoHelper {
             }
         }
 
-        // Retrieve the DOI so we can use it to create a Dockstore alias
-        // to the workflow; we will add that alias as a Zenodo related identifier
-        String doi = depositMetadata.getPrereserveDoi().getDoi();
-        doiAlias = createAliasUsingDoi(doi);
-        setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
-        fillInMetadata(depositMetadata, workflow, workflowVersion);
+        Deposit publishedDeposit;
+        String doiAlias;
 
-        provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
-                workflow, workflowVersion);
+        try {
+            // Retrieve the DOI so we can use it to create a Dockstore alias
+            // to the workflow; we will add that alias as a Zenodo related identifier
+            String doi = depositMetadata.getPrereserveDoi().getDoi();
+            doiAlias = createAliasUsingDoi(doi);
+            setMetadataRelatedIdentifiers(depositMetadata, workflowUrl, workflow, workflowVersion, doiAlias);
+            fillInMetadata(depositMetadata, workflow, workflowVersion);
 
-        putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
+            provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
+                    workflow, workflowVersion);
 
-        Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
+            putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
+
+            publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
+        } catch (RuntimeException e) {
+            // If we fail to configure and publish the deposit, attempt to delete the draft, which may "gum up the works" if it lingers in the system.
+            // https://ucsc-cgl.atlassian.net/browse/SEAB-7226
+            deleteDraftDeposit(previewApi, depositionID);
+            throw e;
+        }
 
         String conceptDoi = publishedDeposit.getConceptdoi();
 
@@ -389,6 +408,36 @@ public final class ZenodoHelper {
             return doiDAO.findById(doiId);
         }
         return doi;
+    }
+
+    private static int getConceptDoiId(DepositsApi depositsApi, int versionDoiId) {
+        return depositsApi.getDeposit(versionDoiId).getConceptrecid();
+    }
+
+    private static List<Integer> findDraftDeposits(PreviewApi previewApi, int conceptDoiId) {
+        // Create a Lucene query that finds drafts corresponding to the specified concept DOI.
+        // Apparently, this endpoint pulls information from ElasticSearch, so the view may be stale.
+        // Drafts may not appear immediately, or seem to persist after they are deleted.
+        String query = "conceptrecid:\"%d\"".formatted(conceptDoiId);
+        LOG.info("Searching for draft deposits using query '{}'", query);
+        // If a draft exists, it should be the newest record, and should be the first in the list of hits.
+        // Retrieve a few extra records, so that this method will still work, even if the endpoint decides
+        // to mix a few published records into the response, or doesn't list the draft first.
+        final int maxResults = 10;
+        // In the Zenodo API, page numbers start at 1 (!)
+        return previewApi.listUserRecords(query, "newest", maxResults, 1, true, false).getHits().getHits().stream()
+            .filter(hit -> !hit.isSubmitted())
+            .map(Hit::getId)
+            .toList();
+    }
+
+    private static void deleteDraftDeposit(PreviewApi previewApi, int depositId) {
+        try {
+            previewApi.deleteDraftRecord(depositId);
+            LOG.info("Deleted deposit {}", depositId);
+        } catch (ApiException e) {
+            LOG.info("Exception deleting deposit {}", depositId, e);
+        }
     }
 
     /**
@@ -727,8 +776,7 @@ public final class ZenodoHelper {
         FilesApi filesApi = new FilesApi(zendoClient);
 
         returnDeposit.getFiles().forEach(file -> {
-            String fileIdStr = file.getId();
-            filesApi.deleteFile(depositionID, fileIdStr);
+            deleteFile(filesApi, depositionID, file.getId());
         });
 
         // Add workflow version source files as a zip to the DOI upload deposit
@@ -765,7 +813,7 @@ public final class ZenodoHelper {
         File zipFile = new File(zipFilePathName);
 
         try {
-            filesApi.createFile(depositionID, zipFile, fileName);
+            createFile(filesApi, depositionID, zipFile, fileName);
         } catch (ApiException e) {
             LOG.error("Could not create files for new version on Zenodo. Error is {}", e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
@@ -775,6 +823,46 @@ public final class ZenodoHelper {
             FileUtils.deleteQuietly(zipFile);
             // Delete the temporary directory
             FileUtils.deleteQuietly(tempDirPath.toFile());
+        }
+    }
+
+    private static void createFile(FilesApi filesApi, int depositionId, File file, String fileName) {
+        final int count = 5;
+        callApiWithRetries(() -> filesApi.createFile(depositionId, file, fileName), "createFile", count, Duration.ofSeconds(1));
+    }
+
+    private static void deleteFile(FilesApi filesApi, int depositionId, String fileId) {
+        final int count = 5;
+        callApiWithRetries(() -> filesApi.deleteFile(depositionId, fileId), "deleteFile", count, Duration.ofSeconds(1));
+    }
+
+    /**
+     * Invoke the specified runnable, which typically will include a Zenodo API call, repeatedly until it succeeds
+     * (where "success" is defined as the runnable not throwing).  If the runnable throws an ApiException, it is
+     * invoked again, unless a user-specified maximum invocation count has been reached, after sleeping for a
+     * user-specified amount of time.  If the final invocation of the runnable throws, this function rethrows the
+     * exception.
+     * @param call the runnable to be invoked
+     * @param callName the name of the runnable to be invoked
+     * @param count the maximum number of times that the runnable should be invoked
+     * @param delay the amount of time to sleep between invocations
+     */
+    private static void callApiWithRetries(Runnable call, String callName, int count, Duration delay) {
+        for (int i = 0; i < count; i++) {
+            try {
+                call.run();
+                return;
+            } catch (ApiException e) {
+                LOG.info("{} failed", callName, e);
+                if (i + 1 == count) {
+                    throw e;
+                }
+                try {
+                    Thread.sleep(delay.toMillis());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
 

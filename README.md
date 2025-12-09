@@ -10,7 +10,7 @@
 
 # Dockstore
 
-Dockstore provides a place for users to share tools encapsulated in Docker and described with the Common 
+Dockstore provides a place for users to share tools and workflows encapsulated in Docker and described with the Common 
 Workflow Language (CWL), WDL (Workflow Description Language), Nextflow, or Galaxy. This enables scientists to share analytical 
 workflows so that they are  machine readable as well as runnable in a variety of environments. While the 
 Dockstore is focused on serving researchers in the biosciences, the combination of Docker + workflow languages can be used by 

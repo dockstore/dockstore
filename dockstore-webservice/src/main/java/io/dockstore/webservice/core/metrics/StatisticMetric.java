@@ -74,19 +74,44 @@ public abstract class StatisticMetric extends Metric {
     @JsonIgnore
     private Timestamp dbUpdateDate;
 
+    //TODO: could also consider storing these as an array/record or a map
+    @Column(nullable = false, columnDefinition = "FLOAT8 default 'NaN'")
+    @NotNull
+    @ApiModelProperty(value = "The 50th percentile value from the data points", required = true)
+    @Schema(description = "The 50th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double median;
+    @Column(nullable = false, columnDefinition = "FLOAT8 default 'NaN'")
+    @NotNull
+    @ApiModelProperty(value = "The 05th percentile value from the data points", required = true)
+    @Schema(description = "The 05th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double percentile05th;
+    @Column(nullable = false, columnDefinition = "FLOAT8 default 'NaN'")
+    @NotNull
+    @ApiModelProperty(value = "The 95th percentile value from the data points", required = true)
+    @Schema(description = "The 95th percentile value from the data points", requiredMode = RequiredMode.REQUIRED)
+    private double percentile95th;
+
     protected StatisticMetric() {
     }
 
     protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage) {
-        this(minimum, maximum, average, numberOfDataPointsForAverage, null);
+        this(minimum, maximum, average, numberOfDataPointsForAverage, null, Double.NaN, Double.NaN, Double.NaN);
     }
 
     protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage, String unit) {
+        this(minimum, maximum, average, numberOfDataPointsForAverage, unit, Double.NaN, Double.NaN, Double.NaN);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage, String unit, double median, double percentile05th, double percentile95th) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;
         this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
         this.unit = unit;
+        this.median = median;
+        this.percentile05th = percentile05th;
+        this.percentile95th = percentile95th;
     }
 
     public double getMinimum() {
@@ -143,5 +168,29 @@ public abstract class StatisticMetric extends Metric {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public double getMedian() {
+        return median;
+    }
+
+    public void setMedian(double median) {
+        this.median = median;
+    }
+
+    public double getPercentile05th() {
+        return percentile05th;
+    }
+
+    public void setPercentile05th(double percentile5th) {
+        this.percentile05th = percentile5th;
+    }
+
+    public double getPercentile95th() {
+        return percentile95th;
+    }
+
+    public void setPercentile95th(double percentile95th) {
+        this.percentile95th = percentile95th;
     }
 }

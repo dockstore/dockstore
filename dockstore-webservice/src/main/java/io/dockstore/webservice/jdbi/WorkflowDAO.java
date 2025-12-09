@@ -24,6 +24,7 @@ import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.WorkflowIdToCount;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -189,6 +190,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
+    }
+
+    public List<Workflow> findByPath(SourceControl sourceControl, String organization, String repository) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByPath")
+            .setParameter("sourcecontrol", sourceControl)
+            .setParameter("organization", organization)
+            .setParameter("repository", repository));
     }
 
     /**
@@ -362,6 +370,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
     }
 
+    public List<TimeSeriesMetric> getWeeklyExecutionCountsForAllVersions(long workflowId) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWeeklyExecutionCountsForAllVersions").setParameter("id", workflowId).list();
+    }
+
+    public List<TimeSeriesMetric> getMonthlyExecutionCountsForAllVersions(long workflowId) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getMonthlyExecutionCountsForAllVersions").setParameter("id", workflowId).list();
+    }
+
     public Map<Long, Long> getWorkflowIdsAndDoiCounts() {
         Query<WorkflowIdToCount> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsAndDoiCounts");
         return query.getResultList().stream()
@@ -375,6 +391,11 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public Set<Long> getWorkflowIdsWithGitHubOrManualDoi() {
         Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsWithGitHubOrManualDoi");
+        return new LinkedHashSet<>(query.getResultList());
+    }
+
+    public Set<Long> getVersionIdsMissingAutomaticDoi() {
+        Query<Long> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getVersionIdsMissingAutomaticDoi");
         return new LinkedHashSet<>(query.getResultList());
     }
 }

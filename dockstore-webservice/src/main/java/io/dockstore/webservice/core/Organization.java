@@ -116,8 +116,8 @@ public class Organization implements Serializable, Aliasable {
     private String displayName;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
-    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
-    @ApiModelProperty(value = "This indicates the users that have starred this organization", required = false, position = 10)
+    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "organizationid", nullable = false, referencedColumnName = "id", columnDefinition = "bigint"))
+    @ApiModelProperty(value = "This indicates the users that have starred this organization", position = 10)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @OrderBy("id")
     private Set<User> starredUsers;

@@ -1011,9 +1011,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
 
+        version.setUserFiles(theWf.getOtherFiles());
         // If this is a notebook, set the version's user-specified files and image.
         if (theWf instanceof YamlNotebook yamlNotebook) {
-            version.setUserFiles(yamlNotebook.getOtherFiles());
             version.setKernelImagePath(yamlNotebook.getKernel());
         }
 
