@@ -60,6 +60,8 @@
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.basedir}/target/jacoco.xml,${project.basedir}/target/jacoco-it.xml,${project.basedir}/../reports/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
+		<!-- re-enable when sonar seems to have fixed this, maybe old regression? https://community.sonarsource.com/t/can-i-desable-scm-blame-is-in-progress/106570 --> 
+		<sonar.scm.disabled>true</sonar.scm.disabled>
         <!-- end sonarcloud properties -->
     </properties>
 
@@ -755,10 +757,11 @@
                     </execution>
                 </executions>
             </plugin>
+	    <!-- https://mvnrepository.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.9.1.2184</version>
+                <version>5.5.0.6356</version>
             </plugin>
         </plugins>
     </build>

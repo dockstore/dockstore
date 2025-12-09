@@ -4129,6 +4129,7 @@ paths:
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
+          - PLAIN_GXFORMAT2
           - PLAIN_SMK
           - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
@@ -4200,6 +4201,7 @@ paths:
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
+          - PLAIN_GXFORMAT2
           - PLAIN_SMK
           - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
@@ -4347,6 +4349,7 @@ paths:
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
+          - PLAIN_GXFORMAT2
           - PLAIN_SMK
           - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
