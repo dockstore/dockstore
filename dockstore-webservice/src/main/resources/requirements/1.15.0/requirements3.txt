@@ -7,7 +7,7 @@ cwl-upgrader==1.2.11
 cwl-utils==0.33
 cwlref-runner==1.0
 cwltool==3.1.20240708091337
-filelock==3.15.4
+filelock==3.20.1
 humanfriendly==10.0
 idna==3.7
 isodate==0.6.1
