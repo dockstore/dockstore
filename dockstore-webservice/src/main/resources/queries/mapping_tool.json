@@ -192,7 +192,7 @@
       },
       "stars_count": {
         "type": "long"
-      }
+      },
       "tags": {
         "include_in_root": true,
         "properties": {
