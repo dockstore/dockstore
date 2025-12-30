@@ -57,6 +57,9 @@
   },
   "mappings": {
     "properties": {
+      "archived": {
+        "type": "boolean"
+      },
       "author": {
         "type": "keyword",
         "null_value": ""
@@ -151,6 +154,12 @@
       "monthlyExecutionCounts": {
         "enabled": false
       },
+      "normalizedAuthors": {
+        "type": "keyword"
+      },
+      "normalizedName": {
+        "type": "keyword"
+      },
       "organization": {
         "type": "keyword"
       },
@@ -159,6 +168,9 @@
       },
       "repository": {
         "type": "keyword"
+      },
+      "stars_count": {
+        "type": "long"
       },
       "weeklyExecutionCounts": {
         "enabled": false

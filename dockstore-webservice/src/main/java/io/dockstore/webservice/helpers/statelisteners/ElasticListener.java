@@ -59,6 +59,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -360,6 +361,8 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
         objectNode.set("monthlyExecutionCounts", MAPPER.valueToTree(getMonthlyExecutionCounts(entry)));
         objectNode.set("weeklyExecutionCounts", MAPPER.valueToTree(getWeeklyExecutionCounts(entry)));
+        objectNode.set("normalizedAuthors", MAPPER.valueToTree(getNormalizedAuthors(entry)));
+        objectNode.set("normalizedName", MAPPER.valueToTree(getNormalizedName(entry)));
         return jsonNode;
     }
 
@@ -401,6 +404,24 @@ public class ElasticListener implements StateListenerInterface {
         return getMetricsForAll(entry)
             .map(metricsForAll -> metricsForAll.getWeeklyExecutionCounts())
             .orElse(null);
+    }
+
+    private static String getNormalizedAuthors(Entry<?, ?> entry) {
+        return getAllAuthors(entry).stream().map(ElasticListener::getNormalizedAuthor).collect(Collectors.joining(" "));
+    }
+
+    private static String getNormalizedAuthor(Author author) {
+        return ObjectUtils.firstNonNull(author.getName(), "");
+    }
+
+    private static String getNormalizedName(Entry<?, ?> entry) {
+        if (entry instanceof Tool tool) {
+            return tool.getName();
+        } else if (entry instanceof Workflow workflow) {
+            return workflow.getWorkflowName();
+        } else {
+            return "";
+        }
     }
 
     /**
