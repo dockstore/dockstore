@@ -59,7 +59,6 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -407,18 +406,19 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private static String getNormalizedAuthors(Entry<?, ?> entry) {
-        // Return the author names, lowercased and separated by tabs, or null if there are no author names.
-        Set<Author> allAuthors = getAllAuthors(entry);
-        List<String> names = allAuthors.stream().map(Author::getName).filter(Objects::nonNull).toList();
+        // Return the author names, filtered of non-alphanumeric characters, lowercased, and separated by tabs, or null if there are no author names.
+        List<String> names = getAllAuthors(entry).stream()
+            .map(Author::getName)
+            .filter(Objects::nonNull)
+            .map(name -> name.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", ""))
+            .filter(StringUtils::isNotBlank)
+            .map(String::toLowerCase)
+            .toList();
         if (names.size() > 0) {
             return names.stream().collect(Collectors.joining("\t"));
         } else {
             return null;
         }
-    }
-
-    private static String getNormalizedAuthor(Author author) {
-        return ObjectUtils.firstNonNull(author.getName(), "").toLowerCase();
     }
 
     private static String getNormalizedName(Entry<?, ?> entry) {
