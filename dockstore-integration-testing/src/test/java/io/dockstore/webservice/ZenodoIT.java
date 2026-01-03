@@ -547,11 +547,12 @@ class ZenodoIT {
 
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
-        final Duration duration = Duration.ofDays(2);
+        final Duration duration = Duration.ofDays(3);
         final DateTimeFormatter psqlTimestampFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd hh:mm:ss");
         final String twoDaysAgo = LocalDateTime.now().minus(duration).format(psqlTimestampFormatter);
         // If we publish using the API, then we have to add the Hoverfly statements to autocreate the DOI; easier to just change the DB
         testingPostgres.runUpdateStatement("update workflow set ispublished = true, waseverpublic = true, latestreleasedate = '%s';".formatted(twoDaysAgo));
+        System.out.println(twoDaysAgo);
         List<Workflow> workflows = workflowsApi.updateDois(null, 1);
         assertEquals(0, workflows.size(), "Should update 0 workflows because lastreleasedate is more than a day ago");
         final String oneDayAgo = LocalDateTime.now().format(psqlTimestampFormatter);
