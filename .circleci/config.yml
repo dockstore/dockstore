@@ -477,7 +477,7 @@ jobs:
           command: ./mvnw clean install -DskipTests
       - run:
           name: SonarCloud scan - coverage
-          command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+          command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
       - store_artifacts:
           path: misses
 
