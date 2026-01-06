@@ -887,6 +887,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String deployVersion;
 
+        private String supportVersion;
+
         private String cwlParsingLambdaVersion;
         private String wdlParsingLambdaVersion;
         private String nextflowParsingLambdaVersion;
@@ -1196,6 +1198,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setCheckUrlLambdaVersion(String checkUrlLambdaVersion) {
             this.checkUrlLambdaVersion = checkUrlLambdaVersion;
+        }
+
+        public String getSupportVersion() {
+            return supportVersion;
+        }
+
+        public void setSupportVersion(String supportVersion) {
+            this.supportVersion = supportVersion;
         }
     }
 }
