@@ -256,7 +256,8 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
-      - checkout # check out source code to working directory
+      - checkout:
+          method: full
       - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
