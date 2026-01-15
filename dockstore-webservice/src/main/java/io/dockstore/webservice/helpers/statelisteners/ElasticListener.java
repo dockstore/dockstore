@@ -445,16 +445,16 @@ public class ElasticListener implements StateListenerInterface {
         double recentExecutionCount = getRecentExecutionCount(entry);
         double starCount = entry.getStarredUsers().size();
         Date lastChanged = ObjectUtils.firstNonNull(entry.getLastModifiedDate(), entry.getLastUpdated());
-        double daysSinceLastChanged = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
-        boolean archived = entry.isArchived();
+        double daysSinceLastChange = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
+        boolean isArchived = entry.isArchived();
         boolean inCategory = entry.getCategories().size() > 0;
         // Combine the signals into a single numeric measurement.
         // Larger values indicate more "relevance".
         // The following coefficients are tuned to the current state of Dockstore, wherein the maximum
         // execution count for any entry is approximately 1500000, and the maximum star count is 15.
-        // The goal is to get a good mix of entry types, some with stars and/or in categories, in the first page of Search results.
-        double numerator = 0.01 + Math.sqrt(executionCount + recentExecutionCount) + 80 * starCount + (inCategory ? 300 : 0);
-        double denominator = (200. + daysSinceLastChanged) * (archived ? 3 : 1);
+        // The goal is to get a good mix of entry types, some with stars and/or in categories, on the first page of Search results.
+        double numerator = 0.01 + Math.sqrt(executionCount + recentExecutionCount) + 80. * starCount + (inCategory ? 300. : 0.);
+        double denominator = (200. + daysSinceLastChange) * (isArchived ? 3 : 1);
         return numerator / denominator;
     }
 
