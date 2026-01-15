@@ -180,6 +180,9 @@
       "private_access": {
         "type": "boolean"
       },
+      "relevance": {
+        "type": "double"
+      },
       "registry": {
         "type": "keyword"
       },

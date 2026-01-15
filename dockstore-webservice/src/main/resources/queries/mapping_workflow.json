@@ -163,6 +163,9 @@
       "path": {
         "type": "text"
       },
+      "relevance": {
+        "type": "double"
+      },
       "repository": {
         "type": "keyword"
       },

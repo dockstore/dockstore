@@ -174,11 +174,30 @@ public class TimeSeriesMetric extends Metric {
      * Calculate the maximum value of the specified number of most recent values in this time series.
      */
     public double maxOfMostRecentValues(int valueCount) {
-        if (valueCount <= 0) {
+        List<Double> mostRecentValues = mostRecentValues(valueCount);
+        if (mostRecentValues.size() <= 0) {
             return Double.MIN_VALUE;
         }
+        return Collections.max(mostRecentValues(valueCount));
+    }
+
+    /**
+     * Calculate the sum of the the specified number of most recent values in this time series.
+     */
+    public double sumOfMostRecentValues(int valueCount) {
+        return mostRecentValues(valueCount).stream().mapToDouble(Double::doubleValue).sum();
+    }
+
+    /**
+     * Return the most recent values in this time series.
+     * If there's less values than the specified value count, the resulting list will be shorter than the specified count.
+     */
+    public List<Double> mostRecentValues(int valueCount) {
+        if (valueCount <= 0) {
+            return List.of();
+        }
         int size = values.size();
-        return Collections.max(values.subList(Math.max(size - valueCount, 0), size));
+        return values.subList(Math.max(size - valueCount, 0), size);
     }
 
     public enum TimeSeriesMetricInterval {

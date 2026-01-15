@@ -47,6 +47,9 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,6 +62,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -95,6 +99,7 @@ public class ElasticListener implements StateListenerInterface {
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     protected static final String EXECUTION_PARTNERS = "execution_partners";
     protected static final String VALIDATION_PARTNERS = "validation_partners";
+    private static final int WEEKS_PER_YEAR = 52;
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
@@ -362,6 +367,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("weeklyExecutionCounts", MAPPER.valueToTree(getWeeklyExecutionCounts(entry)));
         objectNode.set("normalizedAuthors", MAPPER.valueToTree(getNormalizedAuthors(entry)));
         objectNode.set("normalizedName", MAPPER.valueToTree(getNormalizedName(entry)));
+        objectNode.set("relevance", MAPPER.valueToTree(getRelevance(entry)));
         return jsonNode;
     }
 
@@ -430,6 +436,34 @@ public class ElasticListener implements StateListenerInterface {
         } else {
             return path;
         }
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static double getRelevance(Entry<?, ?> entry) {
+        // Compute the various signals.
+        double executionCount = getExecutionCount(entry);
+        double recentExecutionCount = getRecentExecutionCount(entry);
+        double starCount = entry.getStarredUsers().size();
+        Date lastChanged = ObjectUtils.firstNonNull(entry.getLastModifiedDate(), entry.getLastUpdated());
+        double daysSinceLastChanged = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
+        boolean archived = entry.isArchived();
+        boolean inCategory = entry.getCategories().size() > 0;
+        // Combine the signals into a single numeric measurement.
+        // Larger values indicate more "relevance".
+        // The following coefficients are tuned to the current state of Dockstore, wherein the maximum
+        // execution count for any entry is approximately 1500000, and the maximum star count is 15.
+        // The goal is to get a good mix of entry types, some with stars and/or in categories, in the first page of Search results.
+        double numerator = 0.01 + Math.sqrt(executionCount + recentExecutionCount) + 80 * starCount + (inCategory ? 300 : 0);
+        double denominator = (200. + daysSinceLastChanged) * (archived ? 3 : 1);
+        return numerator / denominator;
+    }
+
+    private static double getRecentExecutionCount(Entry<?, ?> entry) {
+        TimeSeriesMetric weeklyExecutionCounts = getWeeklyExecutionCounts(entry);
+        if (weeklyExecutionCounts == null) {
+            return 0;
+        }
+        return weeklyExecutionCounts.advanceTo(Instant.now()).sumOfMostRecentValues(WEEKS_PER_YEAR);
     }
 
     /**
