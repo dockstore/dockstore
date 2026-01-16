@@ -458,11 +458,17 @@ public class ElasticListener implements StateListenerInterface {
         return numerator / denominator;
     }
 
+    /**
+     * Compute the number of recent executions, typically the sum or a time-weighted average of the number of executions during some recent time period.
+     * The resulting number is used as an input to the "relevance" formula.
+     * See this method's comments for the current definition of "number of recent executions".
+     */
     private static double getRecentExecutionCount(Entry<?, ?> entry) {
         TimeSeriesMetric weeklyExecutionCounts = getWeeklyExecutionCounts(entry);
         if (weeklyExecutionCounts == null) {
             return 0;
         }
+        // Return the total number of executions over the past year.
         return weeklyExecutionCounts.advanceTo(Instant.now()).sumOfMostRecentValues(WEEKS_PER_YEAR);
     }
 
