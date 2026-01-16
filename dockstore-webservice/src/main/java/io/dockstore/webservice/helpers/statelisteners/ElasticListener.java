@@ -459,7 +459,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     /**
-     * Compute the number of recent executions, typically the sum or a time-weighted average of the number of executions during some recent time period.
+     * Compute the number of recent executions, typically a total or a time-weighted sum of the number of executions during some recent time period.
      * The resulting number is used as an input to the "relevance" formula.
      * See this method's comments for the current definition of "number of recent executions".
      */
