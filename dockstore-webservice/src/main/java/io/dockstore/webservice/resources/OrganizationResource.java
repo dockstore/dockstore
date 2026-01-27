@@ -460,8 +460,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         if (organization.getStatus() == Organization.ApplicationState.PENDING || organization.getStatus() == Organization.ApplicationState.REJECTED) {
             // To delete an org, you need to delete its associated events, entryversions, and collections (in this order) first.
             eventDAO.deleteEventByOrganizationID(organizationId);
-            List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
-            collections.stream().forEach(collection -> collectionDAO.deleteEntryVersionByCollectionId(collection.getId()));
+            // delete JPA way first
+            List<Collection> collections = organization.getCollections().stream().toList();
+            collections.forEach(organization::removeCollection);
+            collections.forEach(collectionDAO::delete);
+            // then clear out join tables which don't appear to be managed quite right
+            collections.forEach(collection -> collectionDAO.deleteEntryVersionByCollectionId(collection.getId()));
             collectionDAO.deleteCollectionsByOrgId(organizationId);
             organizationDAO.delete(organization);
         } else { // else if the organization is not pending nor rejected, then throw an error

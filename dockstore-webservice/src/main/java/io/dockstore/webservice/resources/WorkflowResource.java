@@ -23,7 +23,6 @@ import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.webhook.ReleasePayload.Action.PUBLISHED;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOIForRecentTags;
 import static io.dockstore.webservice.helpers.ZenodoHelper.checkCanRegisterDoi;
-import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
 import static io.dockstore.webservice.resources.LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
@@ -69,6 +68,7 @@ import io.dockstore.webservice.core.database.WorkflowAndVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric.TimeSeriesMetricInterval;
 import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.core.webhook.ReleasePayload;
@@ -200,6 +200,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String AUTHORS = "authors";
     private static final String ORCID_PUT_CODES = "orcidputcodes";
     private static final String METRICS = "metrics";
+    private static final String ENTRY_METRICS = "entrymetrics";
     private static final String VERSION_INCLUDE = VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + AUTHORS + ", " + METRICS;
     private static final List<String> VERSION_INCLUDE_LIST = List.of(VERSION_INCLUDE.split(", "));
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
@@ -920,8 +921,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         workflow.setWorkflowVersionsOverride(workflowVersions);
-        initializeAdditionalFields(include, workflow);
-        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
+        workflow.getWorkflowVersions().forEach(version -> initializeAdditionalFields(include, version));
+        workflow.getWorkflowVersions().forEach(version -> sessionFactory.getCurrentSession().detach(version));
     }
 
     /**
@@ -1118,6 +1119,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
 
         Hibernate.initialize(workflow.getAliases());
+        initializeAdditionalFields(include, workflow, false);
         setWorkflowVersionSubset(workflow, include, versionName);
         filterContainersForHiddenTags(workflow);
         return workflow;
@@ -1913,16 +1915,37 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param workflow
      */
     private void initializeAdditionalFields(String include, Workflow workflow) {
+        initializeAdditionalFields(include, workflow, true);
+    }
+
+    /**
+     * Initialize some of the lazy fields of the specified workflow and its versions.
+     * If include contains versions field, initialize the versions for the workflow.
+     * If include contains validations field, initialize the workflows validations for all of its workflow versions.
+     * If include contains aliases field, initialize the aliases for all of its workflow versions.
+     * If include contains images field, initialize the images for all of its workflow versions.
+     * If include contains authors field, initialize the authors for all of its workflow versions.
+     * If include contains orcid_put_codes field, initialize the authors for all of its workflow versions.
+     * Do not initialize any workflow versions if initializeVersions is false.
+     *
+     * @param include
+     * @param workflow
+     * @param initializeVersions
+     */
+    private void initializeAdditionalFields(String include, Workflow workflow, boolean initializeVersions) {
         final boolean containsVersionIncludes = VERSION_INCLUDE_LIST.stream().anyMatch(versionInclude -> checkIncludes(include, versionInclude));
-        if (containsVersionIncludes) {
+        if (containsVersionIncludes && initializeVersions) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> initializeAdditionalFields(include, workflowVersion));
         }
 
-        if (checkIncludes(include, VERSIONS)) {
+        if (checkIncludes(include, VERSIONS) && initializeVersions) {
             Hibernate.initialize(workflow.getWorkflowVersions());
         }
         if (checkIncludes(include, ORCID_PUT_CODES)) {
             Hibernate.initialize(workflow.getUserIdToOrcidPutCode());
+        }
+        if (checkIncludes(include, ENTRY_METRICS)) {
+            Hibernate.initialize(workflow.getMetricsByPlatform());
         }
     }
 
@@ -2370,6 +2393,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
+    @Deprecated(since = "1.19.0")
     @Operation(operationId = "getMaxWeeklyExecutionCountForAnyVersion", description = "Determine the maximum weekly execution count for all workflow versions over the specified time range.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public long getMaxWeeklyExecutionCountForAnyVersion(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -2387,7 +2411,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         double max = 0;
         for (TimeSeriesMetric timeSeries: listOfTimeSeries) {
             List<Double> values = timeSeries.getValues();
-            Instant oldestBinStart = timeSeries.getBegins().toInstant().minusSeconds(secondsPerWeek / 2);
+            Instant oldestBinStart = timeSeries.getBegins().toInstant();
             for (int i = 0, n = values.size(); i < n; i++) {
                 Instant binStart = oldestBinStart.plusSeconds(i * secondsPerWeek);
                 Instant binEnd = binStart.plusSeconds(secondsPerWeek);
@@ -2397,6 +2421,41 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         return (long)max;
+    }
+
+    @GET
+    @Path("/{workflowId}/maxExecutionCountForAllVersions")
+    @Timed
+    @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getMaxExecutionCountForAllVersions", description = "Determine the maximum execution count for all workflow versions.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public long getMaxExecutionCountForAllVersions(
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "ID of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") long workflowId,
+        @Parameter(name = "interval", description = "Type of time series to include", required = true, in = ParameterIn.QUERY) @QueryParam("interval") TimeSeriesMetricInterval interval,
+        @Parameter(name = "valueCount", description = "Number of most recent values to include", required = true, in = ParameterIn.QUERY) @QueryParam("valueCount") int valueCount,
+        @Parameter(name = "now", description = "Current client time, expressed in UTC Java epoch seconds", required = true, in = ParameterIn.QUERY) @QueryParam("now") long now) {
+        checkNotNull(interval, "Interval must be set");
+
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
+
+        // Retrieve the execution count time series for the specified workflow and interval.
+        List<TimeSeriesMetric> listOfTimeSeries = switch (interval) {
+        case WEEK -> workflowDAO.getWeeklyExecutionCountsForAllVersions(workflow.getId());
+        case MONTH -> workflowDAO.getMonthlyExecutionCountsForAllVersions(workflow.getId());
+        default -> throw new CustomWebApplicationException("Unsupported time series interval", HttpStatus.SC_BAD_REQUEST);
+        };
+
+        // Advance each retrieved time series to the current client time, compute the maximum of its most-recent values, and combine into a global maximum.
+        Instant nowInstant = Instant.ofEpochSecond(now);
+        return listOfTimeSeries.stream()
+            .map(timeSeries -> timeSeries.advanceTo(nowInstant))
+            .map(timeSeries -> timeSeries.maxOfMostRecentValues(valueCount))
+            .map(Number::longValue)
+            .max(Comparator.naturalOrder())
+            .orElse(0L);
     }
 
     @GET
@@ -2594,8 +2653,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @RequestBody(description = "The request to update DOI generation", required = true, content = @Content(schema = @Schema(implementation = AutoDoiRequest.class))) AutoDoiRequest autoDoiRequest) {
         final Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        boolean canChange = canWrite(user, workflow) || isAdmin(user) || isCurator(user);
-        throwIf(!canChange, FORBIDDEN_WRITE_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+        checkCanWrite(user, workflow);
         workflow.setAutoGenerateDois(autoDoiRequest.isAutoGenerateDois());
         return autoDoiRequest.isAutoGenerateDois();
     }

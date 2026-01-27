@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
+import io.dockstore.common.metrics.ExecutionStatus;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
@@ -34,6 +36,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.metrics.MetricsByStatus;
+import io.dockstore.webservice.core.metrics.TimeSeriesMetric;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -43,6 +47,9 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +62,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -91,6 +99,7 @@ public class ElasticListener implements StateListenerInterface {
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     protected static final String EXECUTION_PARTNERS = "execution_partners";
     protected static final String VALIDATION_PARTNERS = "validation_partners";
+    private static final int WEEKS_PER_YEAR = 52;
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
@@ -104,6 +113,7 @@ public class ElasticListener implements StateListenerInterface {
      */
     private void eagerLoadEntry(Entry entry) {
         Hibernate.initialize(entry.getAliases());
+        Hibernate.initialize(entry.getMetricsByPlatform());
     }
 
     private String determineIndex(Entry entry) {
@@ -334,7 +344,7 @@ public class ElasticListener implements StateListenerInterface {
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
-        Set<Author> allAuthors = getAllAuthors(entry);
+        Set<Author> allAuthors = getAllAuthorsAndPad(entry);
         Doi selectedConceptDoi = entry.getDefaultConceptDoi();
         Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
@@ -352,6 +362,12 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
+        objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
+        objectNode.set("monthlyExecutionCounts", MAPPER.valueToTree(getMonthlyExecutionCounts(entry)));
+        objectNode.set("weeklyExecutionCounts", MAPPER.valueToTree(getWeeklyExecutionCounts(entry)));
+        objectNode.set("normalizedAuthors", MAPPER.valueToTree(getNormalizedAuthors(entry)));
+        objectNode.set("normalizedName", MAPPER.valueToTree(getNormalizedName(entry)));
+        objectNode.set("relevance", MAPPER.valueToTree(getRelevance(entry)));
         return jsonNode;
     }
 
@@ -368,6 +384,92 @@ public class ElasticListener implements StateListenerInterface {
                 return map;
             }
         ).toList();
+    }
+
+    private static Optional<MetricsByStatus> getMetricsForAll(Entry<?, ?> entry) {
+        return Optional.ofNullable(entry.getMetricsByPlatform())
+            .map(metricsByPlatform -> metricsByPlatform.get(Partner.ALL))
+            .map(metrics -> metrics.getExecutionStatusCount())
+            .map(executionStatusCountMetric -> executionStatusCountMetric.getMetricsByStatus(ExecutionStatus.ALL));
+    }
+
+    private static long getExecutionCount(Entry<?, ?> entry) {
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> (long)metricsForAll.getExecutionStatusCount())
+            .orElse(0L);
+    }
+
+    private static TimeSeriesMetric getMonthlyExecutionCounts(Entry<?, ?> entry) {
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> metricsForAll.getMonthlyExecutionCounts())
+            .orElse(null);
+    }
+
+    private static TimeSeriesMetric getWeeklyExecutionCounts(Entry<?, ?> entry) {
+        return getMetricsForAll(entry)
+            .map(metricsForAll -> metricsForAll.getWeeklyExecutionCounts())
+            .orElse(null);
+    }
+
+    private static String getNormalizedAuthors(Entry<?, ?> entry) {
+        // Return the author names, filtered of non-alphanumeric characters, lowercased, and separated by tabs, or null if there are no author names.
+        List<String> names = getAllAuthors(entry).stream()
+            .map(Author::getName)
+            .filter(Objects::nonNull)
+            .map(name -> name.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", ""))
+            .filter(StringUtils::isNotBlank)
+            .map(String::toLowerCase)
+            .toList();
+        if (names.size() > 0) {
+            return names.stream().collect(Collectors.joining("\t"));
+        } else {
+            return null;
+        }
+    }
+
+    private static String getNormalizedName(Entry<?, ?> entry) {
+        // Return the path, lowercased, with the leading path component removed through the first slash ("dockstore.org/", "github.com/", etc).
+        String path = entry.getEntryPath().toLowerCase();
+        int indexOfSlash = path.indexOf('/');
+        if (indexOfSlash >= 0) {
+            return path.substring(indexOfSlash + 1);
+        } else {
+            return path;
+        }
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static double getRelevance(Entry<?, ?> entry) {
+        // Compute the various signals.
+        double executionCount = getExecutionCount(entry);
+        double recentExecutionCount = getRecentExecutionCount(entry);
+        double starCount = entry.getStarredUsers().size();
+        Date lastChanged = ObjectUtils.firstNonNull(entry.getLastModifiedDate(), entry.getLastUpdated());
+        double daysSinceLastChange = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
+        boolean isArchived = entry.isArchived();
+        boolean inCategory = entry.getCategories().size() > 0;
+        // Combine the signals into a single numeric measurement.
+        // Larger values indicate more "relevance".
+        // The following coefficients are tuned to the current state of Dockstore, wherein the maximum
+        // execution count for any entry is approximately 1500000, and the maximum star count is 15.
+        // The goal is to get a good mix of entry types, some with stars and/or in categories, on the first page of Search results.
+        double numerator = 0.01 + Math.sqrt(executionCount + recentExecutionCount) + 80. * starCount + (inCategory ? 300. : 0.);
+        double denominator = (200. + daysSinceLastChange) * (isArchived ? 3 : 1);
+        return numerator / denominator;
+    }
+
+    /**
+     * Compute the number of recent executions, typically a total or a time-weighted sum of the number of executions during some recent time period.
+     * The resulting number is used as an input to the "relevance" formula.
+     * See this method's comments for the current definition of "number of recent executions".
+     */
+    private static double getRecentExecutionCount(Entry<?, ?> entry) {
+        TimeSeriesMetric weeklyExecutionCounts = getWeeklyExecutionCounts(entry);
+        if (weeklyExecutionCounts == null) {
+            return 0;
+        }
+        // Return the total number of executions over the past year.
+        return weeklyExecutionCounts.advanceTo(Instant.now()).sumOfMostRecentValues(WEEKS_PER_YEAR);
     }
 
     /**
@@ -526,14 +628,17 @@ public class ElasticListener implements StateListenerInterface {
             }
         }
         allAuthors.addAll(entry.getAuthors());
+        return allAuthors;
+    }
 
+    private static Set<Author> getAllAuthorsAndPad(Entry entry) {
+        Set<Author> allAuthors = getAllAuthors(entry);
         if (allAuthors.isEmpty()) {
             // Add an empty author with a null name so that ES has something to replace with the null_value otherwise an empty array is ignored by ES
             allAuthors.add(new Author());
         }
         return allAuthors;
     }
-
 
     /**
      * If entry is a checker workflow, return null.  Otherwise, return entry

@@ -39,6 +39,7 @@ import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedSe
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -77,6 +78,7 @@ import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.ExecutionsResponseBody;
+import io.dockstore.openapi.client.model.HistogramMetric;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.MetricsByStatus;
@@ -85,6 +87,8 @@ import io.dockstore.openapi.client.model.PrivilegeRequest.PlatformPartnerEnum;
 import io.dockstore.openapi.client.model.RunExecution;
 import io.dockstore.openapi.client.model.RunExecution.ExecutionStatusEnum;
 import io.dockstore.openapi.client.model.TaskExecutions;
+import io.dockstore.openapi.client.model.TimeSeriesMetric;
+import io.dockstore.openapi.client.model.TimeSeriesMetric.IntervalEnum;
 import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.ValidatorInfo;
@@ -98,7 +102,9 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +134,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class, LocalstackDockerExtension.class })
 @Tag(ConfidentialTest.NAME)
 @Tag(LocalStackTest.NAME)
-class ExtendedMetricsTRSOpenApiIT extends BaseIT {
+final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
     public static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
@@ -541,17 +547,24 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
-                .count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1),
-                        FAILED_SEMANTIC_INVALID.name(), new MetricsByStatus().executionStatusCount(1),
-                        ABORTED.name(), new MetricsByStatus().executionStatusCount(2)));
+                .count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1),
+                        FAILED_SEMANTIC_INVALID.name(), createMetricsByStatus(1),
+                        ABORTED.name(), createMetricsByStatus(2)));
         final double min = 1.0;
         final double max = 3.0;
         final double average = 2.0;
-        final int numberOfDataPointsForAverage = 3;
+        final double median = 2.1;
+        final double percentile05th = 1.05;
+        final double percentile95th = 2.9;
+        final int numberOfDataPointsForAverage = 5;
+
         ExecutionTimeMetric executionTimeMetric = new ExecutionTimeMetric()
                 .minimum(min)
                 .maximum(max)
                 .average(average)
+                .median(median)
+                .percentile05th(percentile05th)
+                .percentile95th(percentile95th)
                 .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
         executionStatusMetric.getCount().get(SUCCESSFUL.name()).setExecutionTime(executionTimeMetric);
         CpuMetric cpuMetric = new CpuMetric()
@@ -589,6 +602,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(min, platform1SuccessfulMetrics.getExecutionTime().getMinimum());
         assertEquals(max, platform1SuccessfulMetrics.getExecutionTime().getMaximum());
         assertEquals(average, platform1SuccessfulMetrics.getExecutionTime().getAverage());
+        assertEquals(percentile05th, platform1SuccessfulMetrics.getExecutionTime().getPercentile05th());
+        assertEquals(percentile95th, platform1SuccessfulMetrics.getExecutionTime().getPercentile95th());
+        assertEquals(median, platform1SuccessfulMetrics.getExecutionTime().getMedian());
         assertEquals(numberOfDataPointsForAverage, platform1SuccessfulMetrics.getExecutionTime().getNumberOfDataPointsForAverage());
         assertEquals(ExecutionTimeStatisticMetric.UNIT, platform1SuccessfulMetrics.getExecutionTime().getUnit());
         // Verify CPU
@@ -665,6 +681,136 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     }
 
     @Test
+    void testAggregatedMetricsEntryLevel() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String platform2 = Partner.DNA_STACK.name();
+        Map<String, Metrics> platformToMetrics = new HashMap<>();
+
+        // Register and publish a workflow
+        final String workflowId = String.format("#workflow/%s/my-workflow", DOCKSTORE_WORKFLOW_CNV_PATH);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Put execution metrics for platform 1
+        Metrics metrics = createExecutionMetrics();
+        platformToMetrics.put(platform1, metrics);
+        extendedGa4GhApi.aggregatedMetricsPutEntry(platformToMetrics, workflowId);
+
+        // Retrieve workflow without its metrics and confirm they weren't included.
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "");
+        assertNull(workflow.getMetricsByPlatform());
+
+        // Retrieve workflow and its metrics, then confirm that the submitted metrics and retrieved metrics are the same.
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entrymetrics");
+        assertEquivalenceAndConsistency(platformToMetrics, workflow.getMetricsByPlatform());
+
+        // Put metrics for platform1 again to verify that the old metrics are deleted from the DB and there are no orphans
+        extendedGa4GhApi.aggregatedMetricsPutEntry(platformToMetrics, workflowId);
+        long metricsDbCount = testingPostgres.runSelectStatement("select count(*) from metrics", long.class);
+        assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry with aggregated metrics");
+
+        // Put validation metrics for platform 2
+        metrics = createValidationMetrics();
+        platformToMetrics.put(platform2, metrics);
+        extendedGa4GhApi.aggregatedMetricsPutEntry(platformToMetrics, workflowId);
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entrymetrics");
+        assertEquivalenceAndConsistency(platformToMetrics, workflow.getMetricsByPlatform());
+
+        // Verify that the endpoint can submit metrics that were aggregated across all platforms using Partner.ALL
+        final String allPlatforms = Partner.ALL.name();
+        platformToMetrics.put(allPlatforms, metrics);
+        extendedGa4GhApi.aggregatedMetricsPutEntry(platformToMetrics, workflowId);
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "entrymetrics");
+        assertEquivalenceAndConsistency(platformToMetrics, workflow.getMetricsByPlatform());
+        assertEquivalenceAndConsistency(platformToMetrics, extendedGa4GhApi.aggregatedMetricsGetEntry(workflowId));
+    }
+
+    private Metrics createExecutionMetrics() {
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric()
+                .count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1),
+                        FAILED_SEMANTIC_INVALID.name(), createMetricsByStatus(1),
+                        ABORTED.name(), createMetricsByStatus(2)));
+        final double min = 1.0;
+        final double max = 3.0;
+        final double average = 2.0;
+        final double median = 2.1;
+        final double percentile05th = 1.05;
+        final double percentile95th = 2.9;
+        final int numberOfDataPointsForAverage = 3;
+        ExecutionTimeMetric executionTimeMetric = new ExecutionTimeMetric()
+                .minimum(min)
+                .maximum(max)
+                .average(average)
+                .median(median)
+                .percentile05th(percentile05th)
+                .percentile95th(percentile95th)
+                .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        executionStatusMetric.getCount().get(SUCCESSFUL.name()).setExecutionTime(executionTimeMetric);
+        CpuMetric cpuMetric = new CpuMetric()
+                .minimum(min)
+                .maximum(max)
+                .average(average)
+                .median(median)
+                .percentile05th(percentile05th)
+                .percentile95th(percentile95th)
+                .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        executionStatusMetric.getCount().get(SUCCESSFUL.name()).setCpu(cpuMetric);
+        MemoryMetric memoryMetric = new MemoryMetric()
+                .minimum(min)
+                .maximum(max)
+                .average(average)
+                .median(median)
+                .percentile05th(percentile05th)
+                .percentile95th(percentile95th)
+                .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        executionStatusMetric.getCount().get(SUCCESSFUL.name()).setMemory(memoryMetric);
+        return new Metrics()
+                .executionStatusCount(executionStatusMetric);
+    }
+
+    private Metrics createValidationMetrics() {
+        ValidatorVersionInfo expectedMostRecentVersion = new ValidatorVersionInfo()
+                .name("1.0")
+                .isValid(true)
+                .dateExecuted(Instant.now().toString())
+                .numberOfRuns(1)
+                .passingRate(100d);
+        // Put validation metrics for platform2
+        ValidationStatusMetric validationStatusMetric = new ValidationStatusMetric().validatorTools(Map.of(
+                MINIWDL.toString(),
+                new ValidatorInfo()
+                        .mostRecentVersionName(expectedMostRecentVersion.getName())
+                        .validatorVersions(List.of(expectedMostRecentVersion))
+                        .passingRate(100d)
+                        .numberOfRuns(1)));
+        return new Metrics().validationStatus(validationStatusMetric);
+    }
+
+    private void assertEquivalenceAndConsistency(Map<String, Metrics> submitted, Map<String, Metrics> retrieved) {
+        // Confirm that the fields in the submitted metrics data match the fields in the retrieved metrics data.
+        // Don't check the "id" and "numberOf.*Executions" fields, which are set by the webservice at submission time.
+        assertThat(submitted)
+            .usingRecursiveComparison()
+            .ignoringFieldsMatchingRegexes("id", ".*\\.id", ".*Id", ".*\\.numberOf.*Executions")
+            .ignoringAllOverriddenEquals()
+            .isEqualTo(retrieved);
+        // For each platform that has execution metrics, check that the "numberOf.*Executions" field values in the retrieved metrics are consistent with the source data.
+        for (String platform: retrieved.keySet()) {
+            ExecutionStatusMetric executionStatusCount = retrieved.get(platform).getExecutionStatusCount();
+            if (executionStatusCount != null) {
+                assertEquals(executionStatusCount.getCount().get("SUCCESSFUL").getExecutionStatusCount(), executionStatusCount.getNumberOfSuccessfulExecutions());
+                assertEquals(executionStatusCount.getCount().get("ABORTED").getExecutionStatusCount(), executionStatusCount.getNumberOfAbortedExecutions());
+                assertEquals(executionStatusCount.getCount().get("FAILED_SEMANTIC_INVALID").getExecutionStatusCount(), executionStatusCount.getNumberOfFailedExecutions());
+            }
+        }
+    }
+
+    @Test
     void testPartnerPermissions() {
         // Admin user
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -687,7 +833,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
@@ -744,7 +890,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         String versionId = "master";
         String platform = Partner.TERRA.name();
 
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
         Map<String, Metrics> platformToMetrics = Map.of(platform, metrics);
         // Test malformed ID
@@ -915,7 +1061,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEntryVersionToAggregate(entryVersionsToAggregate, workflowId, masterWorkflowVersion);
 
         // Post aggregated metrics for one of the workflow versions. Note: these aggregated metrics are dummy metrics
-        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), new MetricsByStatus().executionStatusCount(1)));
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), createMetricsByStatus(1)));
         Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
         Map<String, Metrics> platformToMetrics = Map.of(platform1, metrics);
         extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, masterWorkflowVersion);
@@ -1109,5 +1255,23 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         execution.setDateExecuted(Instant.now().toString());
         execution.setAdditionalProperties(map);
         return execution;
+    }
+
+    private MetricsByStatus createMetricsByStatus(int executionStatusCount) {
+        MetricsByStatus metricsByStatus = new MetricsByStatus().executionStatusCount(executionStatusCount);
+        // Add a TimeSeriesMetric.
+        Instant now = Instant.now();
+        TimeSeriesMetric timeSeries = new TimeSeriesMetric();
+        timeSeries.setValues(List.of(1., 2.));
+        timeSeries.setBegins(Date.from(now));
+        timeSeries.setEnds(Date.from(now.plus(2, ChronoUnit.DAYS)));
+        timeSeries.setInterval(IntervalEnum.DAY);
+        metricsByStatus.setDailyExecutionCounts(timeSeries);
+        // Add a HistogramsMetric.
+        HistogramMetric histogram = new HistogramMetric();
+        histogram.setFrequencies(List.of(3., 4.));
+        histogram.setEdges(List.of(5., 6., 7.));
+        metricsByStatus.setExecutionTimeHistogram(histogram);
+        return metricsByStatus;
     }
 }

@@ -179,7 +179,7 @@ class MetricsIT extends BaseIT {
 
         // Add aggregated information about execution time for the workflow runs.
         // The minimum execution time was 1 minute, the maximum was 5 minutes, and the average was 3 minutes. 10 data points were used to calculate the average
-        ExecutionTimeStatisticMetric executionTimeStatisticMetric = new ExecutionTimeStatisticMetric(60.0, 300.0, 180.12, 10);
+        ExecutionTimeStatisticMetric executionTimeStatisticMetric = new ExecutionTimeStatisticMetric(60.0, 61.0, 300., 300.0, 380.12, 400,  10);
         executionStatusCountMetric.getMetricsByStatus(SUCCESSFUL).setExecutionTime(executionTimeStatisticMetric);
 
         // Add aggregated information about the CPU used for the workflow runs.

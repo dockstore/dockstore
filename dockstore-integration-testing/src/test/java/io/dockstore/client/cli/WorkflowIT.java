@@ -754,6 +754,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue(map.get("nodes").size() >= 11 && map.get("edges").size() >= 13, "workflow dag is not as large as expected");
     }
 
+
     /**
      * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.
      */

@@ -59,6 +59,8 @@ public class YamlWorkflow implements Workflowish {
 
     private List<String> testParameterFiles = new ArrayList<>();
 
+    private List<String> otherFiles = new ArrayList<>();
+
     @EntryName
     public String getName() {
         return name;
@@ -158,5 +160,22 @@ public class YamlWorkflow implements Workflowish {
 
     public void setEnableAutoDois(Boolean enableAutoDois) {
         this.enableAutoDois = enableAutoDois;
+    }
+
+    /**
+     * Get the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
+    @NotNull
+    public List<String> getOtherFiles() {
+        return otherFiles;
+    }
+
+    /**
+     * Set the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
+    public void setOtherFiles(List<String> otherFiles) {
+        this.otherFiles = otherFiles;
     }
 }

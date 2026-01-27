@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -851,10 +852,26 @@ class WebhookIT extends BaseIT {
         assertTrue(version.getVersionMetadata().getDescriptorTypeVersions().contains("1.0"));
     }
 
+    @Test
+    void testOtherFilesWithWorkflow() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        String wdlWorkflowRepo = "dockstore-testing/dockstore-whalesay2";
+
+        handleGitHubRelease(workflowsApi, wdlWorkflowRepo, "refs/heads/otherFiles", USER_2_USERNAME);
+        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + wdlWorkflowRepo, WorkflowSubClass.BIOWORKFLOW, "versions");
+        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("otherFiles")).findFirst().get();
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
+        // we added two "other" files
+        assertEquals(2, sourceFiles.stream().filter(f -> f.getType() == SourceFile.TypeEnum.DOCKSTORE_WORKFLOW_OTHER).collect(Collectors.toSet()).size());
+        assertTrue(sourceFiles.stream().anyMatch(f -> f.getContent().contains("stuff that isn't referenced from elsewhere")));
+
+    }
+
     /**
      * Tests that an attempt to register a WDL that contains recursive
      * remote references will result in failure.
-     * <a href="https://ucsc-cgl.atlassian.net/browse/DOCK-2299">...</a>
+     * <a href="https://github.com/dockstore/dockstore/issues/5274">https://github.com/dockstore/dockstore/issues/5274</a>
      */
     @Test
     void testRegistrationOfRecursiveWDL() {
@@ -1095,7 +1112,7 @@ class WebhookIT extends BaseIT {
     }
 
     /**
-     * https://ucsc-cgl.atlassian.net/browse/SEAB-6850
+     * <a href="https://ucsc-cgl.atlassian.net/browse/SEAB-6850">...</a>
      */
     @Test
     void testGitHubReleaseUserHasAnExpiredGitHubToken() {

@@ -155,11 +155,37 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         // add the Nextflow scripts
         final String mainScriptPath = getMainScriptPath(configuration);
         suspectedConfigImports.add(mainScriptPath);
+        handleSetOfIndividualFiles(repositoryId, version, sourceCodeRepoInterface, filepath, suspectedConfigImports, imports, DescriptorLanguage.FileType.NEXTFLOW);
 
+        Set<String> suspectedOtherWorkflowFiles = new HashSet<>();
+        // from https://nf-co.re/docs/contributing/pipelines/pipeline_file_structure well-known individual files like ro-crate-metadata.json, nextflow_schema.json, etc.
+        suspectedOtherWorkflowFiles.add("nextflow_schema.json");
+        suspectedOtherWorkflowFiles.add("CHANGELOG.md");
+        suspectedOtherWorkflowFiles.add("LICENSE");
+        suspectedOtherWorkflowFiles.add("CITATIONS.md");
+        suspectedOtherWorkflowFiles.add("modules.json");
+        suspectedOtherWorkflowFiles.add(".nf-core.yml");
+        suspectedOtherWorkflowFiles.add("ro-crate-metadata.json");
+        handleSetOfIndividualFiles(repositoryId, version, sourceCodeRepoInterface, filepath, suspectedOtherWorkflowFiles, imports, DescriptorLanguage.FileType.DOCKSTORE_WORKFLOW_OTHER);
+
+        // source files in /lib seem to be automatically added to the script classpath
+        // binaries are also there and will need to be ignored
+        List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
+        // bin, templates, and lib from https://training.nextflow.io/2.1/advanced/structure/#templates
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "templates");
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
+        // from nf-core https://nf-co.re/docs/contributing/pipelines/pipeline_file_structure
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "assets");
+        return imports;
+    }
+
+    private void handleSetOfIndividualFiles(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, String filepath, Set<String> suspectedConfigImports,
+        Map<String, SourceFile> imports, DescriptorLanguage.FileType fileType) {
         for (String filename : suspectedConfigImports) {
             String filenameAbsolutePath = unsafeConvertRelativePathToAbsolutePath(filepath, filename);
             Optional<SourceFile> sourceFile = sourceCodeRepoInterface
-                .readFile(repositoryId, version, DescriptorLanguage.FileType.NEXTFLOW, filenameAbsolutePath);
+                .readFile(repositoryId, version, fileType, filenameAbsolutePath);
             if (sourceFile.isPresent()) {
                 sourceFile.get().setPath(filename);
                 imports.put(filename, sourceFile.get());
@@ -167,13 +193,6 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                         sourceFile.get().getAbsolutePath()));
             }
         }
-
-        // source files in /lib seem to be automatically added to the script classpath
-        // binaries are also there and will need to be ignored
-        List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
-        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
-        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
-        return imports;
     }
 
     /**

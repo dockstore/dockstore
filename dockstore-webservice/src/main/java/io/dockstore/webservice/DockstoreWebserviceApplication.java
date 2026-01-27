@@ -79,6 +79,7 @@ import io.dockstore.webservice.core.metrics.CostStatisticMetric;
 import io.dockstore.webservice.core.metrics.CpuStatisticMetric;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
+import io.dockstore.webservice.core.metrics.HistogramMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsByStatus;
@@ -192,7 +193,7 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.ee10.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -263,7 +264,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, PublicNotification.class, GitHubAppNotification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class, CostStatisticMetric.class,
-            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class, TimeSeriesMetric.class) {
+            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class, TimeSeriesMetric.class, HistogramMetric.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -402,6 +403,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
+
+        // a painful one liner to find, turns out jetty required this in addition to uricompliance as in jetty 11, see https://github.com/jetty/jetty.project/issues/11890
+        environment.getApplicationContext().getServletHandler().setDecodeAmbiguousURIs(true);
 
         restrictSourceFiles(configuration);
 
@@ -605,12 +609,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void configureDropwizardMetrics(DockstoreWebserviceConfiguration configuration, Environment environment) {
         this.metricRegistry = new MetricRegistry();
 
-        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, new Gauge() {
-            @Override
-            public Object getValue() {
-                final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
-                return ((double) activeConnections / configuration.getDataSourceFactory().getMaxSize()) * PERCENT;
-            }
+        metricRegistry.registerGauge(IO_DROPWIZARD_DB_HIBERNATE_CALCULATED_LOAD, (Gauge) () -> {
+            final int activeConnections = (int) environment.metrics().getGauges().get(IO_DROPWIZARD_DB_HIBERNATE_ACTIVE).getValue();
+            return ((double) activeConnections / configuration.getDataSourceFactory().getMaxSize()) * PERCENT;
         });
 
         metricRegistry.registerGauge(

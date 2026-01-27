@@ -525,7 +525,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     static Predicate addAuthorClauseToCriteriaBuilder(CriteriaBuilder cb, Root<?> entryRoot, Subquery<Author> subQuery, String author) {
         Root<Author> authorRoot = subQuery.from(Author.class);
         final Predicate notEmpty = cb.exists(
-                subQuery.select(authorRoot).where(cb.and(cb.and(cb.equal(authorRoot.get("versionid"), entryRoot.get("actualDefaultVersion")))), (cb.like(cb.upper(authorRoot.get("name")), "%" + author.toUpperCase() + "%"))));
+                subQuery.select(authorRoot).where(cb.and(cb.and(cb.equal(authorRoot.get("versionid"), entryRoot.get("actualDefaultVersion").get("id")))), (cb.like(cb.upper(authorRoot.get("name")), "%" + author.toUpperCase() + "%"))));
         return cb.and(cb.isNotNull(entryRoot.get("actualDefaultVersion")), notEmpty);
     }
 }

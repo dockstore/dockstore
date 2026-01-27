@@ -81,6 +81,18 @@ public class MetricsByStatus {
     @Schema(description = "weekly execution count time series for the status")
     private TimeSeriesMetric weeklyExecutionCounts;
 
+    @Valid
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "monthlyexecutioncountsid", referencedColumnName = "id")
+    @Schema(description = "monthly execution count time series for the status")
+    private TimeSeriesMetric monthlyExecutionCounts;
+
+    @Valid
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "executiontimehistogramid", referencedColumnName = "id")
+    @Schema(description = "histogram of execution times for the status")
+    private HistogramMetric executionTimeHistogram;
+
     public MetricsByStatus() {
 
     }
@@ -151,5 +163,21 @@ public class MetricsByStatus {
 
     public void setWeeklyExecutionCounts(TimeSeriesMetric weeklyExecutionCounts) {
         this.weeklyExecutionCounts = weeklyExecutionCounts;
+    }
+
+    public TimeSeriesMetric getMonthlyExecutionCounts() {
+        return monthlyExecutionCounts;
+    }
+
+    public void setMonthlyExecutionCounts(TimeSeriesMetric monthlyExecutionCounts) {
+        this.monthlyExecutionCounts = monthlyExecutionCounts;
+    }
+
+    public HistogramMetric getExecutionTimeHistogram() {
+        return executionTimeHistogram;
+    }
+
+    public void setExecutionTimeHistogram(HistogramMetric executionTimeHistogram) {
+        this.executionTimeHistogram = executionTimeHistogram;
     }
 }

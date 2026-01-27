@@ -34,6 +34,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.languages.NextflowHandler;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +75,7 @@ class NextflowHandlerIT extends BaseIT {
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
-        List<String> knownFileNames = Arrays.asList("main.nf", "/modules/index.nf", "/modules/multiqc.nf", "/modules/quant.nf", "/modules/fastqc.nf", "/modules/rnaseq.nf");
+        List<String> knownFileNames = Arrays.asList("main.nf", "/modules/index.nf", "/modules/multiqc.nf", "/modules/quant.nf", "/modules/fastqc.nf", "/modules/rnaseq.nf", "LICENSE");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
         assertEquals(size, stringSourceFileMap.size());
@@ -94,8 +95,29 @@ class NextflowHandlerIT extends BaseIT {
         assertEquals(
             "[{\"id\":\"FASTQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"MULTIQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"INDEX\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"QUANT\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"}]",
             content.get());
+    }
 
-
+    /**
+     * Tests:
+     * Nextflow workflow with assets and templates directories
+     */
+    @Test
+    void testMoreKnownDirectories() {
+        final String githubRepository = "dockstore-testing/chipimputation";
+        WorkflowVersion workflowVersion = new WorkflowVersion();
+        workflowVersion.setName("main");
+        workflowVersion.setReference("main");
+        String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "main");
+        Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
+            .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
+        List<String> knownFilenames = Arrays.asList("main.nf", "assets/email_template.html", "templates/AF_comparison.R", "LICENSE", "CHANGELOG.md");
+        for (String knownFileName : knownFilenames) {
+            assertTrue(stringSourceFileMap.containsKey(knownFileName));
+        }
+        knownFilenames.forEach(knownFile -> {
+            SourceFile sourceFile = stringSourceFileMap.get(knownFile);
+            checkSourceFile(sourceFile, EnumSet.of(DescriptorLanguage.FileType.NEXTFLOW, FileType.NEXTFLOW_CONFIG, FileType.DOCKSTORE_WORKFLOW_OTHER));
+        });
     }
 
     /**
@@ -111,7 +133,7 @@ class NextflowHandlerIT extends BaseIT {
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
-        List<String> knownFileNames = Arrays.asList("main.nf", "bin/gghist.R", "/modules.nf");
+        List<String> knownFileNames = Arrays.asList("main.nf", "bin/gghist.R", "/modules.nf", "LICENSE");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
         assertEquals(size, stringSourceFileMap.size());
@@ -119,7 +141,6 @@ class NextflowHandlerIT extends BaseIT {
             SourceFile sourceFile = stringSourceFileMap.get(knownFile);
             checkSourceFile(sourceFile);
         });
-
     }
 
     /**
@@ -148,8 +169,12 @@ class NextflowHandlerIT extends BaseIT {
     }
 
     private void checkSourceFile(SourceFile sourceFile) {
+        checkSourceFile(sourceFile, EnumSet.of(FileType.NEXTFLOW, FileType.DOCKSTORE_WORKFLOW_OTHER));
+    }
+
+    private void checkSourceFile(SourceFile sourceFile, EnumSet<FileType> fileTypeSet) {
         assertNotNull(sourceFile.getContent());
-        assertEquals(FileType.NEXTFLOW, sourceFile.getType());
+        assertTrue(fileTypeSet.contains(sourceFile.getType()));
         assertTrue(sourceFile.getAbsolutePath().startsWith("/"));
         assertFalse(sourceFile.getPath().startsWith("/"));
         assertFalse(sourceFile.getPath().startsWith("./"));

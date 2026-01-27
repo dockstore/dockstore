@@ -78,9 +78,9 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
      * @return
      */
     public Set<Entry> findStarredEntries(List<Class> entryTypes, String username) {
-        final Query query = namedTypedQuery("io.dockstore.webservice.core.User.findStarredEntries").setParameter("entryTypes", entryTypes).setParameter("username", username);
-        List<Entry> list = query.list();
-        return new LinkedHashSet(list);
+        final Query query = namedQuery("io.dockstore.webservice.core.User.findStarredEntries").setParameter("entryTypes", entryTypes).setParameter("username", username);
+        List<Entry<?, ?>> list = query.list();
+        return new LinkedHashSet<>(list);
     }
 
     public User findByGoogleEmail(String email) {

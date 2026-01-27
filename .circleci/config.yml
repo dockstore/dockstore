@@ -2,7 +2,7 @@ version: 2.1
 parameters:
   java-tag:
     type: string
-    default: "21.0.6"
+    default: "21.0.8"
   postgres-tag:
     type: string
     default: "16.9"
@@ -256,7 +256,8 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
-      - checkout # check out source code to working directory
+      - checkout:
+          method: full
       - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
@@ -477,7 +478,7 @@ jobs:
           command: ./mvnw clean install -DskipTests
       - run:
           name: SonarCloud scan - coverage
-          command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+          command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
       - store_artifacts:
           path: misses
 
@@ -728,5 +729,6 @@ commands:
             for file in ~/test-results/**/*
             do
               xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file || true
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunError' $file || true
             done
           when: always

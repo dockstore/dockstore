@@ -86,6 +86,9 @@
           }
         }
       },
+      "archived": {
+        "type": "boolean"
+      },
       "categories": {
         "properties": {
           "description": {
@@ -132,6 +135,9 @@
       "email": {
         "type": "text"
       },
+      "executionCount": {
+        "type": "long"
+      },
       "gitUrl": {
         "type": "text"
       },
@@ -152,8 +158,17 @@
       "mode": {
         "type": "text"
       },
+      "monthlyExecutionCounts": {
+        "enabled": false
+      },
       "name": {
         "type": "text"
+      },
+      "normalizedAuthors": {
+        "type": "keyword"
+      },
+      "normalizedName": {
+        "type": "keyword"
       },
       "namespace": {
         "type": "keyword"
@@ -165,6 +180,9 @@
       "private_access": {
         "type": "boolean"
       },
+      "relevance": {
+        "type": "double"
+      },
       "registry": {
         "type": "keyword"
       },
@@ -174,6 +192,9 @@
             "type": "long"
           }
         }
+      },
+      "stars_count": {
+        "type": "long"
       },
       "tags": {
         "include_in_root": true,
@@ -262,6 +283,9 @@
       },
       "repository": {
         "type": "keyword"
+      },
+      "weeklyExecutionCounts": {
+        "enabled": false
       },
       "workflowName": {
         "type": "keyword"

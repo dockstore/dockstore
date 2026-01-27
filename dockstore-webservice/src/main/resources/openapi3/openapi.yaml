@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.18.2-SNAPSHOT
+  version: 1.19.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -615,6 +615,79 @@ paths:
                   $ref: '#/components/schemas/ToolV1'
           description: An array of Tools of the input organization.
       summary: List workflows of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/aggregatedMetrics:
+    get:
+      description: This endpoint retrieves aggregated metrics for a tool from all
+        platforms
+      operationId: aggregatedMetricsGetEntry
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Metrics'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - extendedGA4GH
+    put:
+      description: This endpoint adds aggregated metrics for a workflow that was executed
+        on a platform
+      operationId: aggregatedMetricsPutEntry
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Metrics'
+        description: A map of aggregated metrics for platforms to set as the version's
+          metrics
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Aggregated metrics added successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to add aggregated metrics.
+      security:
+      - BEARER: []
+      summary: Add aggregated execution metrics for a workflow that was executed on
+        a platform.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/aiTopicCandidate:
@@ -2756,6 +2829,7 @@ paths:
             - CWL_TEST_JSON
             - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKSTORE_WORKFLOW_OTHER
             - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
@@ -3459,6 +3533,7 @@ paths:
                   - CWL_TEST_JSON
                   - DOCKSTORE_WDL
                   - WDL_TEST_JSON
+                  - DOCKSTORE_WORKFLOW_OTHER
                   - DOCKERFILE
                   - NEXTFLOW
                   - NEXTFLOW_CONFIG
@@ -4054,6 +4129,7 @@ paths:
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
+          - PLAIN_GXFORMAT2
           - PLAIN_SMK
           - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
@@ -4125,6 +4201,7 @@ paths:
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
+          - PLAIN_GXFORMAT2
           - PLAIN_SMK
           - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
@@ -4272,6 +4349,7 @@ paths:
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
+          - PLAIN_GXFORMAT2
           - PLAIN_SMK
           - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
@@ -8371,8 +8449,61 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/maxExecutionCountForAllVersions:
+    get:
+      description: Determine the maximum execution count for all workflow versions.
+      operationId: getMaxExecutionCountForAllVersions
+      parameters:
+      - description: ID of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Type of time series to include
+        in: query
+        name: interval
+        required: true
+        schema:
+          type: string
+          enum:
+          - SECOND
+          - MINUTE
+          - HOUR
+          - DAY
+          - WEEK
+          - MONTH
+          - YEAR
+      - description: Number of most recent values to include
+        in: query
+        name: valueCount
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - description: "Current client time, expressed in UTC Java epoch seconds"
+        in: query
+        name: now
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/maxWeeklyExecutionCountForAnyVersion:
     post:
+      deprecated: true
       description: Determine the maximum weekly execution count for all workflow versions
         over the specified time range.
       operationId: getMaxWeeklyExecutionCountForAnyVersion
@@ -9167,6 +9298,7 @@ paths:
             - CWL_TEST_JSON
             - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKSTORE_WORKFLOW_OTHER
             - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
@@ -9640,6 +9772,8 @@ components:
           type: string
         quayIoScope:
           type: string
+        supportVersion:
+          type: string
         tagManagerId:
           type: string
         terraImportUrl:
@@ -9684,6 +9818,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -9692,6 +9830,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             default: USD
@@ -9702,8 +9848,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     CpuMetric:
       type: object
       allOf:
@@ -9718,6 +9867,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -9726,6 +9879,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             description: The unit of the data points
@@ -9734,8 +9895,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     DescriptionMetrics:
       type: object
       properties:
@@ -9875,6 +10039,10 @@ components:
           $ref: '#/components/schemas/DockstoreTool'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         mode:
           type: string
           enum:
@@ -10096,6 +10264,10 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         orcidAuthors:
           type: array
           description: "ORCID authors for the entry, retrieved from the default version"
@@ -10401,6 +10573,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -10409,6 +10585,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             default: s
@@ -10419,8 +10603,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     ExecutionsRequestBody:
       type: object
       description: Request body model for executionMetricsPost
@@ -10583,6 +10770,41 @@ components:
           type: string
         healthy:
           type: boolean
+    HistogramMetric:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Metric'
+      - type: object
+        properties:
+          edges:
+            type: array
+            description: "List of edge values. Bin number i includes all data values\
+              \ within the interval [edges[i], edges[i + 1])"
+            items:
+              type: number
+              format: double
+              description: Edge value
+          frequencies:
+            type: array
+            description: "List of frequencies, one per bin."
+            items:
+              type: number
+              format: double
+              description: Frequency
+          id:
+            type: integer
+            format: int64
+            description: Implementation specific ID for metrics in this webservice
+          numberOfSkippedExecutions:
+            type: integer
+            format: int32
+            default: 0
+            description: The number of executions that were skipped during aggregation
+              because they were invalid
+      description: Describes a metric that consists of a histogram
+      required:
+      - edges
+      - frequencies
     Image:
       type: object
       properties:
@@ -10892,6 +11114,10 @@ components:
             type: number
             format: double
             description: The maximum value from the data points
+          median:
+            type: number
+            format: double
+            description: The 50th percentile value from the data points
           minimum:
             type: number
             format: double
@@ -10900,6 +11126,14 @@ components:
             type: integer
             format: int32
             description: The number of data points used to calculate the average
+          percentile05th:
+            type: number
+            format: double
+            description: The 05th percentile value from the data points
+          percentile95th:
+            type: number
+            format: double
+            description: The 95th percentile value from the data points
           unit:
             type: string
             default: GB
@@ -10910,8 +11144,11 @@ components:
       required:
       - average
       - maximum
+      - median
       - minimum
       - numberOfDataPointsForAverage
+      - percentile05th
+      - percentile95th
     MetadataV20beta:
       type: object
       properties:
@@ -10970,12 +11207,16 @@ components:
           description: The number of executions for the status
         executionTime:
           $ref: '#/components/schemas/ExecutionTimeMetric'
+        executionTimeHistogram:
+          $ref: '#/components/schemas/HistogramMetric'
         id:
           type: integer
           format: int64
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+        monthlyExecutionCounts:
+          $ref: '#/components/schemas/TimeSeriesMetric'
         weeklyExecutionCounts:
           $ref: '#/components/schemas/TimeSeriesMetric'
       required:
@@ -11503,6 +11744,7 @@ components:
           - CWL_TEST_JSON
           - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKSTORE_WORKFLOW_OTHER
           - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
@@ -11808,7 +12050,11 @@ components:
           begins:
             type: string
             format: date-time
-            description: Time that the first point was sampled at
+            description: Earliest time represented by this time series
+          ends:
+            type: string
+            format: date-time
+            description: Latest time represented by this time series
           id:
             type: integer
             format: int64
@@ -11823,6 +12069,7 @@ components:
             - DAY
             - WEEK
             - MONTH
+            - YEAR
           numberOfSkippedExecutions:
             type: integer
             format: int32
@@ -11840,6 +12087,7 @@ components:
         at evenly-spaced points in time
       required:
       - begins
+      - ends
       - interval
       - values
     Token_Auth:
@@ -12509,6 +12757,7 @@ components:
           - CWL_TEST_JSON
           - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKSTORE_WORKFLOW_OTHER
           - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
@@ -13019,6 +13268,10 @@ components:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         mode:
           type: string
           enum:

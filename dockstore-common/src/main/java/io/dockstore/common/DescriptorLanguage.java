@@ -253,6 +253,8 @@ public enum DescriptorLanguage {
         DOCKSTORE_SMK(FileTypeCategory.GENERIC_DESCRIPTOR), SMK_TEST_PARAMS(FileTypeCategory.TEST_FILE),
         DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), CWL_TEST_JSON(FileTypeCategory.TEST_FILE),
         DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), WDL_TEST_JSON(FileTypeCategory.TEST_FILE),
+
+        DOCKSTORE_WORKFLOW_OTHER(FileTypeCategory.OTHER),
         DOCKERFILE(FileTypeCategory.CONTAINERFILE),
         NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE),
         DOCKSTORE_YML(FileTypeCategory.OTHER),

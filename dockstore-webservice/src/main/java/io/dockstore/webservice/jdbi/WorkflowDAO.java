@@ -374,6 +374,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWeeklyExecutionCountsForAllVersions").setParameter("id", workflowId).list();
     }
 
+    public List<TimeSeriesMetric> getMonthlyExecutionCountsForAllVersions(long workflowId) {
+        return currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getMonthlyExecutionCountsForAllVersions").setParameter("id", workflowId).list();
+    }
+
     public Map<Long, Long> getWorkflowIdsAndDoiCounts() {
         Query<WorkflowIdToCount> query = currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getWorkflowIdsAndDoiCounts");
         return query.getResultList().stream()
