@@ -15,3 +15,4 @@ jobs:
         uses: swaggerexpert/swagger-editor-validate@v1
         with:
           definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+          default-timeout: 20000  
