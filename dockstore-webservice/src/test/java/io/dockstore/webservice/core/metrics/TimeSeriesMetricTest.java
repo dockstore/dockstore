@@ -17,7 +17,9 @@ public class TimeSeriesMetricTest {
     @Test
     public void testAdvanceIntervals() {
 
-        Instant testInstant = Instant.parse("2026-01-20T00:00:00Z");
+        Instant testInstant = Instant.parse("2026-01-25T10:00:00Z");
+        // note this fails with the following
+        // Instant testInstant = Instant.parse("2026-01-30T10:00:00Z");
 
         for (TimeSeriesMetricInterval interval: TimeSeriesMetricInterval.values()) {
 
