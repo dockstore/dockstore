@@ -17,9 +17,11 @@ public class TimeSeriesMetricTest {
     @Test
     public void testAdvanceIntervals() {
 
+        Instant testInstant = Instant.parse("2026-01-20T00:00:00Z");
+
         for (TimeSeriesMetricInterval interval: TimeSeriesMetricInterval.values()) {
 
-            TimeSeriesMetric timeSeries = makeTimeSeries(40, interval, Instant.now());
+            TimeSeriesMetric timeSeries = makeTimeSeries(40, interval, testInstant);
 
             Instant now = timeSeries.getEnds().toInstant();
             TimeSeriesMetric advancedTimeSeries = timeSeries.advanceTo(now);
@@ -72,7 +74,7 @@ public class TimeSeriesMetricTest {
         for (int i = 0; i < size; i++) {
             double value = values.get(i);
             if (i < size - zeroCount) {
-                assertEquals((double)(i + 1 + zeroCount), value);
+                assertEquals(i + 1 + zeroCount, value);
             } else {
                 assertEquals(0., value);
             }
