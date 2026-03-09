@@ -1177,7 +1177,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.30.0</version>
+                <version>5.0.2</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>
