@@ -12,7 +12,7 @@
 
 Dockstore provides a place for users to share tools and workflows encapsulated in Docker and described with the Common 
 Workflow Language (CWL), WDL (Workflow Description Language), Nextflow, or Galaxy. This enables scientists to share analytical 
-workflows so that they are  machine readable as well as runnable in a variety of environments. While the 
+workflows so that they are machine readable as well as runnable in a variety of environments. While the 
 Dockstore is focused on serving researchers in the biosciences, the combination of Docker + workflow languages can be used by 
 anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  
 Dockstore is also a leading implementor of the GA4GH API standard for container registries, [TRS](https://www.ga4gh.org/news/tool-registry-service-api-enabling-an-interoperable-library-of-genomics-analysis-tools/). The usage of this is to enumerate the docker containers 
