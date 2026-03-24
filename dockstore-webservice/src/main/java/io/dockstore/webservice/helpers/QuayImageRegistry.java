@@ -62,8 +62,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
-// import org.apache.commons.collections.ListUtils;
+import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -299,7 +300,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         try {
             final UserView loggedInUser = userApi.getLoggedInUser();
             final List<QuayOrganization> organizations = loggedInUser.getOrganizations();
-            namespaces = organizations.stream().map(QuayOrganization::getName).toList();
+            namespaces = organizations.stream().map(QuayOrganization::getName).collect(Collectors.toList());
         } catch (ApiException e) {
             LOG.error(quayToken.getUsername() + " Exception: {}", e);
         }
@@ -348,12 +349,9 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     }
 
     private List<QuayRepo> getRepositories(String namespace) throws ApiException {
-        return repositoryApi.listRepos(null, null, null, null, true, null, namespace).getRepositories();
-        /*
         List<QuayRepo> publicRepositories = repositoryApi.listRepos(null, null, null, null, true, null, namespace).getRepositories();
         List<QuayRepo> privateRepositories = repositoryApi.listRepos(null, null, null, null, false, null, namespace).getRepositories();
         return ListUtils.union(publicRepositories, privateRepositories);
-        */
     }
 
     public Tool getToolFromNamespaceAndRepo(String namespace, String repository) {
