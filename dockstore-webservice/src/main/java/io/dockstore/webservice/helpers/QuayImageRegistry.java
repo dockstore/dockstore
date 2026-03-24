@@ -62,9 +62,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.collections.ListUtils;
+// import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -300,7 +299,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         try {
             final UserView loggedInUser = userApi.getLoggedInUser();
             final List<QuayOrganization> organizations = loggedInUser.getOrganizations();
-            namespaces = organizations.stream().map(QuayOrganization::getName).collect(Collectors.toList());
+            namespaces = organizations.stream().map(QuayOrganization::getName).toList();
         } catch (ApiException e) {
             LOG.error(quayToken.getUsername() + " Exception: {}", e);
         }
@@ -311,7 +310,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
     public List<String> getRepositoryNamesFromNamespace(String namespace) {
         try {
-            return getRepositories(namespace).stream().map(QuayRepo::getName).collect(Collectors.toList());
+            return getRepositories(namespace).stream().map(QuayRepo::getName).toList();
         } catch (ApiException e) {
             LOG.error("Could not retrieve repositories for: " + namespace, e);
             return new ArrayList<>();
