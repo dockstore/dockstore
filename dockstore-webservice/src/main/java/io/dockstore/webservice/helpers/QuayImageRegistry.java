@@ -64,6 +64,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -310,8 +311,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
     public List<String> getRepositoryNamesFromNamespace(String namespace) {
         try {
-            List<QuayRepo> repositories = repositoryApi.listRepos(null, null, null, null, null, null, namespace).getRepositories();
-            return repositories.stream().map(QuayRepo::getName).collect(Collectors.toList());
+            return getRepositories(namespace).stream().map(QuayRepo::getName).collect(Collectors.toList());
         } catch (ApiException e) {
             LOG.error("Could not retrieve repositories for: " + namespace, e);
             return new ArrayList<>();
@@ -325,9 +325,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
         for (String namespace : namespaces) {
             try {
-                final List<QuayRepo> quayRepos = repositoryApi.listRepos(null, null, null, null, null, null, namespace).getRepositories();
                 List<Tool> tools = Lists.newArrayList();
-                for (QuayRepo repo : quayRepos) {
+                for (QuayRepo repo : getRepositories(namespace)) {
                     Tool tool = new Tool();
                     // interesting, this relies upon our container object having the same fields
                     // as quay.io's repositories
@@ -347,6 +346,15 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         }
 
         return toolList;
+    }
+
+    private List<QuayRepo> getRepositories(String namespace) throws ApiException {
+        return repositoryApi.listRepos(null, null, null, null, true, null, namespace).getRepositories();
+        /*
+        List<QuayRepo> publicRepositories = repositoryApi.listRepos(null, null, null, null, true, null, namespace).getRepositories();
+        List<QuayRepo> privateRepositories = repositoryApi.listRepos(null, null, null, null, false, null, namespace).getRepositories();
+        return ListUtils.union(publicRepositories, privateRepositories);
+        */
     }
 
     public Tool getToolFromNamespaceAndRepo(String namespace, String repository) {
