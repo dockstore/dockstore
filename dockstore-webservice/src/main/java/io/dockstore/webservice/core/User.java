@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -433,7 +434,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Override
     public int compareTo(User that) {
-        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username)
+        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username, Ordering.natural().nullsFirst())
                 .compareTrueFirst(this.isAdmin, that.isAdmin).result();
     }
 

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -278,7 +279,7 @@ public class Token implements Comparable<Token> {
 
     @Override
     public int compareTo(Token that) {
-        return ComparisonChain.start().compare(this.id, that.id).compare(this.tokenSource, that.tokenSource).result();
+        return ComparisonChain.start().compare(this.id, that.id).compare(this.tokenSource, that.tokenSource, Ordering.natural().nullsFirst()).result();
     }
 
     @Override

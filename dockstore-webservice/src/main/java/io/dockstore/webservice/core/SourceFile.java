@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
@@ -300,9 +301,9 @@ public class SourceFile implements Comparable<SourceFile> {
     @Override
     public int compareTo(@NotNull SourceFile that) {
         if (this.absolutePath == null || that.absolutePath == null) {
-            return ComparisonChain.start().compare(this.path, that.path).result();
+            return ComparisonChain.start().compare(this.path, that.path, Ordering.natural().nullsFirst()).result();
         } else {
-            return ComparisonChain.start().compare(this.absolutePath, that.absolutePath).result();
+            return ComparisonChain.start().compare(this.absolutePath, that.absolutePath, Ordering.natural().nullsFirst()).result();
         }
     }
 
