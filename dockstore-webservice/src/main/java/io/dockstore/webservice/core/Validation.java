@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.swagger.annotations.ApiModel;
@@ -146,7 +147,7 @@ public class Validation implements Comparable<Validation> {
 
     @Override
     public int compareTo(Validation that) {
-        return ComparisonChain.start().compare(this.type, that.type).result();
+        return ComparisonChain.start().compare(this.type, that.type, Ordering.natural().nullsFirst()).result();
     }
 
     @Override
