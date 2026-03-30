@@ -71,7 +71,7 @@ jobs:
 
       # deploy database documentation and also verify that non-confidential migrations seem sane
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Generate database documentation  
         run: | 
           rm dockstore-webservice/target/dockstore-webservice-*sources.jar || true
