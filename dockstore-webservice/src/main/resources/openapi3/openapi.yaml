@@ -11314,6 +11314,8 @@ components:
           - HIDDEN
         topic:
           type: string
+          maxLength: 255
+          minLength: 0
         users:
           type: array
           items:
