@@ -1042,7 +1042,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
-                <version>3.10.0</version>
+                <version>3.14.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1138,7 +1138,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.github.zafarkhaja</groupId>
                 <artifactId>java-semver</artifactId>
-                <version>0.9.0</version>
+                <version>0.10.2</version>
             </dependency>
 
             <dependency>
