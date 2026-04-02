@@ -1527,6 +1527,20 @@ class WebhookIT extends BaseIT {
         assertEquals(0, version.getOrcidAuthors().size());
     }
 
+    @Test
+    void testWdlAppTools() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS, "refs/heads/wdl", USER_2_USERNAME);
+        Workflow wdlAppTool = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS_WDL_TOOL_PATH, WorkflowSubClass.APPTOOL, "versions");
+
+        assertNotNull(wdlAppTool);
+
+        assertEquals(1, wdlAppTool.getWorkflowVersions().size());
+    }
+
+
     // .dockstore.yml in test repo needs to change to add a 'name' field to one of them. Should also include another branch that doesn't keep the name field
     @Test
     void testTools() {
