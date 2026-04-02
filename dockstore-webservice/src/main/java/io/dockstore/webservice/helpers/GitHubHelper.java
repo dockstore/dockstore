@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.logging.Level;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHLicense;
 import org.kohsuke.github.GHPullRequest;
@@ -102,10 +103,14 @@ public final class GitHubHelper {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
                 HTTP_TRANSPORT, JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
                 new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
-                "https://github.com/login/oauth/authorize").build();
+                "https://github.com/login/oauth/authorize").enablePKCE().build();
         try {
+            java.util.logging.Logger.getLogger("com.google.api.client.http.HttpTransport").setLevel(Level.CONFIG);
             TokenResponse tokenResponse = flow.newTokenRequest(code)
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                    .setRequestInitializer(request -> {
+                        request.getHeaders().setAccept("application/json");
+                        request.setLoggingEnabled(true);
+                    }).execute();
             if (tokenResponse.getAccessToken() != null) {
                 return tokenResponse.getAccessToken();
             } else {
