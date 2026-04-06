@@ -114,7 +114,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
     }
 
     @Test
-    void testCollectionEntryTopicLong() {
+    void testOrganizationEntryTopicLong() {
         final ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientOpenApiUser);
 
@@ -122,6 +122,20 @@ public class OpenAPIOrganizationIT extends BaseIT {
         organization.setTopic(LONG_STRING_CONSTANT);
         ApiException apiException = assertThrows(ApiException.class, () -> {
             organizationsApiAdmin.createOrganization(organization);
+        });
+        assertEquals(HttpStatus.SC_BAD_REQUEST, apiException.getCode());
+    }
+
+    @Test
+    void testCollectionEntryTopicLong() {
+        final ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientOpenApiUser);
+
+        Organization organization = organizationsApiAdmin.createOrganization(OrganizationIT.openApiStubOrgObject());
+        Collection stubCollection = OrganizationIT.openApiStubCollectionObject();
+        stubCollection.setTopic(LONG_STRING_CONSTANT);
+        ApiException apiException = assertThrows(ApiException.class, () -> {
+            organizationsApiAdmin.createCollection(stubCollection, organization.getId());
         });
         assertEquals(HttpStatus.SC_BAD_REQUEST, apiException.getCode());
     }

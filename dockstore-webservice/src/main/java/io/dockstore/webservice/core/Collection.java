@@ -106,6 +106,7 @@ public class Collection implements Serializable, Aliasable {
     @Column
     @ApiModelProperty(value = "Short description of the collection", position = 4)
     @Schema(description = "Short description of the collection", requiredMode = RequiredMode.REQUIRED, example = "A collection of alignment algorithms")
+    @Size(max = 255)
     private String topic;
 
     @Transient
