@@ -9485,6 +9485,8 @@ components:
           type: string
           description: Short description of the collection
           example: A collection of alignment algorithms
+          maxLength: 255
+          minLength: 0
         workflowsLength:
           type: integer
           format: int64
@@ -9622,6 +9624,8 @@ components:
           type: string
           description: Short description of the collection
           example: A collection of alignment algorithms
+          maxLength: 255
+          minLength: 0
         workflowsLength:
           type: integer
           format: int64
