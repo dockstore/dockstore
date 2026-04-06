@@ -1536,8 +1536,8 @@ class WebhookIT extends BaseIT {
         Workflow wdlAppTool = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS_WDL_TOOL_PATH, WorkflowSubClass.APPTOOL, "versions");
 
         assertNotNull(wdlAppTool);
-
         assertEquals(1, wdlAppTool.getWorkflowVersions().size());
+        assertTrue(wdlAppTool.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
     }
 
 
