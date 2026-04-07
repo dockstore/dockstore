@@ -21,6 +21,8 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -81,8 +83,12 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -90,6 +96,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GitHub;
@@ -119,6 +126,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      */
     public static final JsonFactory JSON_FACTORY = new JacksonFactory();
     public static final String ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE = "Admins and curators may not login with Google";
+    public static final int RECOMMENDED_ENTROPY = 32;
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -128,6 +136,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private static final String TOKEN_NOT_FOUND_DESCRIPTION = "Token not found";
     private static final String USER_NOT_FOUND_MESSAGE = "User not found";
+
+    private static final SecureRandom PKCE_RANDOM = new SecureRandom();
+    private static final int CACHE_SIZE = 10;
+    /**
+     * store map of state values to the original verifier
+     * should not need to store many or for very long
+     */
+    private static final Cache<String, String> PKCE_CACHE = Caffeine.newBuilder().maximumSize(
+        CACHE_SIZE).build();
+
     public static final String INVALID_JSON = "Invalid JSON provided";
 
     private final TokenDAO tokenDAO;
@@ -553,6 +571,36 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/github/codeChallenge")
+    @Operation(operationId = "getGitHubCodeChallenge", description = "Get a PKCE code challenge value and store the verifier.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "et a PKCE code challenge value", content = @Content(schema = @Schema(implementation = PKCE.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
+    @ApiOperation(value = "Get a PKCE code challenge value and store the verifier.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "This is used as part of the OAuth 2.1 PKCE challenge. ", response = PKCE.class)
+    public PKCE getGitHubCodeChallenge(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser) {
+        // record original value and send hashed value to client
+        byte[] verifierBytes = new byte[RECOMMENDED_ENTROPY];
+        PKCE_RANDOM.nextBytes(verifierBytes);
+        String verifier = Base64.getUrlEncoder().withoutPadding().encodeToString(verifierBytes);
+
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.UTF_8));
+            String hashedValue = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+            // TODO: this approach will require application load balancer stickiness
+            String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
+            PKCE pkce = new PKCE(hashedValue, state);
+            PKCE_CACHE.put(state, verifier);
+            return pkce;
+        } catch (Exception e) {
+            throw new RuntimeException("SHA-256 not supported", e);
+        }
+    }
+
     @POST
     @Timed
     @UnitOfWork
@@ -574,7 +622,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 JsonObject satellizerObject = element.getAsJsonObject();
                 final String code = getCodeFromSatellizerObject(satellizerObject);
                 final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-                return handleGitHubUser(null, code, registerUser);
+                return handleGitHubUser(null, code, null, registerUser);
             } catch (IllegalStateException ex) {
                 throw new CustomWebApplicationException("Request body is an invalid JSON", HttpStatus.SC_BAD_REQUEST);
             }
@@ -599,13 +647,23 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "This is used as part of the OAuth 2 web flow. "
         + "Once a user has approved permissions for Collaboratory"
         + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addGithubToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @QueryParam("code") String code) {
+    public Token addGithubToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @QueryParam("code") String code, @QueryParam("state") String state) {
         // never create a new user via account linking page
-        return handleGitHubUser(authUser, code, false);
+        return handleGitHubUser(authUser, code, state, false);
     }
 
-    private Token handleGitHubUser(User authUser, String code, boolean registerUser) {
-        String accessToken = GitHubHelper.getGitHubAccessToken(code, this.githubClientID, this.githubClientSecret);
+    private Token handleGitHubUser(User authUser, String code, String state, boolean registerUser) {
+        // check that the state matches and fetch the original code_verifier value
+
+        String verifier = null;
+        if (state != null) {
+            verifier = PKCE_CACHE.getIfPresent(state);
+            if (verifier == null) {
+                throw new CustomWebApplicationException("Auth error, state did not match", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        String accessToken = GitHubHelper.getGitHubAccessToken(code, this.githubClientID, this.githubClientSecret, verifier);
 
         String githubLogin;
         Token dockstoreToken = null;
@@ -922,4 +980,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
+
+    record PKCE(String hashedValue, String state) { }
 }

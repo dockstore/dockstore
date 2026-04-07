@@ -1635,6 +1635,10 @@ paths:
         name: code
         schema:
           type: string
+      - in: query
+        name: state
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -1642,6 +1646,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/Token_User'
           description: Successfully added a new github.com token
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
+      security:
+      - BEARER: []
+      tags:
+      - tokens
+  /auth/tokens/github/codeChallenge:
+    get:
+      description: Get a PKCE code challenge value and store the verifier.
+      operationId: getGitHubCodeChallenge
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PKCE'
+          description: et a PKCE code challenge value
         "401":
           description: Unauthorized
         "403":
@@ -11370,6 +11395,13 @@ components:
         userId:
           type: integer
           format: int64
+    PKCE:
+      type: object
+      properties:
+        hashedValue:
+          type: string
+        state:
+          type: string
     ParsedInformation:
       type: object
       properties:
