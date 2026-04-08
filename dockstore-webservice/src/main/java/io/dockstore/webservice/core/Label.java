@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import jakarta.persistence.Column;
@@ -99,7 +100,7 @@ public class Label implements Comparable<Label> {
 
     @Override
     public int compareTo(Label that) {
-        return ComparisonChain.start().compare(this.value, that.value).result();
+        return ComparisonChain.start().compare(this.value, that.value, Ordering.natural().nullsFirst()).result();
     }
 
     @Override

@@ -107,6 +107,7 @@ public class Organization implements Serializable, Aliasable {
 
     @Column
     @ApiModelProperty(value = "Short description of the organization", position = 8)
+    @Size(max = 255)
     private String topic;
 
     @Column(nullable = false, unique = true)
