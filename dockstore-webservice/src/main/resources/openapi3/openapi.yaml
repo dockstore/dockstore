@@ -1604,6 +1604,11 @@ paths:
       description: "Allow satellizer to post a new GitHub token to dockstore, used\
         \ by login, can create new users."
       operationId: addToken
+      parameters:
+      - in: query
+        name: state
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -1673,8 +1678,6 @@ paths:
           description: Forbidden
         "409":
           description: Conflict
-      security:
-      - BEARER: []
       tags:
       - tokens
   /auth/tokens/gitlab.com:

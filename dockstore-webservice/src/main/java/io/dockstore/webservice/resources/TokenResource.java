@@ -85,6 +85,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Instant;
@@ -142,6 +143,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     /**
      * store map of state values to the original verifier
      * should not need to store many or for very long
+     * TODO: move this to the DB to make this production worthy across multiple webservices (or make load balancer sticky)
      */
     private static final Cache<String, String> PKCE_CACHE = Caffeine.newBuilder().maximumSize(
         CACHE_SIZE).build();
@@ -575,14 +577,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github/codeChallenge")
-    @Operation(operationId = "getGitHubCodeChallenge", description = "Get a PKCE code challenge value and store the verifier.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getGitHubCodeChallenge", description = "Get a PKCE code challenge value and store the verifier.")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "et a PKCE code challenge value", content = @Content(schema = @Schema(implementation = PKCE.class)))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
-    @ApiOperation(value = "Get a PKCE code challenge value and store the verifier.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "This is used as part of the OAuth 2.1 PKCE challenge. ", response = PKCE.class)
-    public PKCE getGitHubCodeChallenge(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser) {
+    @ApiOperation(value = "Get a PKCE code challenge value and store the verifier.", notes = "This is used as part of the OAuth 2.1 PKCE challenge. ", response = PKCE.class)
+    public PKCE getGitHubCodeChallenge() {
         // record original value and send hashed value to client
         byte[] verifierBytes = new byte[RECOMMENDED_ENTROPY];
         PKCE_RANDOM.nextBytes(verifierBytes);
@@ -591,12 +592,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.UTF_8));
             String hashedValue = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
-            // TODO: this approach will require application load balancer stickiness
             String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
             PKCE pkce = new PKCE(hashedValue, state);
             PKCE_CACHE.put(state, verifier);
             return pkce;
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not supported", e);
         }
     }
@@ -614,7 +614,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
-    public Token addToken(@ApiParam("code") String satellizerJson) {
+    public Token addToken(@ApiParam("code") String satellizerJson, @QueryParam("state") String state) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         if (element != null) {
@@ -622,6 +622,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 JsonObject satellizerObject = element.getAsJsonObject();
                 final String code = getCodeFromSatellizerObject(satellizerObject);
                 final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
+                // String verifier = verifyGitHubUser(state);
                 return handleGitHubUser(null, code, null, registerUser);
             } catch (IllegalStateException ex) {
                 throw new CustomWebApplicationException("Request body is an invalid JSON", HttpStatus.SC_BAD_REQUEST);
@@ -649,12 +650,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @QueryParam("code") String code, @QueryParam("state") String state) {
         // never create a new user via account linking page
-        return handleGitHubUser(authUser, code, state, false);
+        String verifier = verifyGitHubUser(state);
+        return handleGitHubUser(authUser, code, verifier, false);
     }
 
-    private Token handleGitHubUser(User authUser, String code, String state, boolean registerUser) {
+    private String verifyGitHubUser(String state) {
         // check that the state matches and fetch the original code_verifier value
-
         String verifier = null;
         if (state != null) {
             verifier = PKCE_CACHE.getIfPresent(state);
@@ -662,7 +663,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw new CustomWebApplicationException("Auth error, state did not match", HttpStatus.SC_BAD_REQUEST);
             }
         }
+        return verifier;
+    }
 
+    private Token handleGitHubUser(User authUser, String code, String verifier, boolean registerUser) {
         String accessToken = GitHubHelper.getGitHubAccessToken(code, this.githubClientID, this.githubClientSecret, verifier);
 
         String githubLogin;
