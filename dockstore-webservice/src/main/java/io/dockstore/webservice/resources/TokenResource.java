@@ -402,6 +402,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return oauthData.get("code").getAsString();
     }
 
+    private String getStateFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
+        return oauthData.get("state").getAsString();
+    }
+
     private String getRedirectURIFromSatellizerObject(JsonObject satellizerObject) {
         JsonObject authorizationData = satellizerObject.get("authorizationData").getAsJsonObject();
         return authorizationData.get("redirect_uri").getAsString();
@@ -614,7 +619,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
-    public Token addToken(@ApiParam("code") String satellizerJson, @QueryParam("state") String state) {
+    public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         if (element != null) {
@@ -622,8 +627,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 JsonObject satellizerObject = element.getAsJsonObject();
                 final String code = getCodeFromSatellizerObject(satellizerObject);
                 final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-                // String verifier = verifyGitHubUser(state);
-                return handleGitHubUser(null, code, null, registerUser);
+                String verifier = verifyGitHubUser(getStateFromSatellizerObject(satellizerObject));
+                return handleGitHubUser(null, code, verifier, registerUser);
             } catch (IllegalStateException ex) {
                 throw new CustomWebApplicationException("Request body is an invalid JSON", HttpStatus.SC_BAD_REQUEST);
             }
