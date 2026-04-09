@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.logging.Level;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHLicense;
 import org.kohsuke.github.GHPullRequest;
