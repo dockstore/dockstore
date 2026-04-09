@@ -105,7 +105,6 @@ public final class GitHubHelper {
                 new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
                 "https://github.com/login/oauth/authorize").build();
         try {
-            java.util.logging.Logger.getLogger("com.google.api.client.http.HttpTransport").setLevel(Level.CONFIG);
             TokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRequestInitializer(request -> {
                         request.getHeaders().setAccept("application/json");

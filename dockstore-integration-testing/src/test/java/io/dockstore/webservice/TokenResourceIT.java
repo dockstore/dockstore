@@ -226,6 +226,7 @@ public class TokenResourceIT {
     void testNinjaedGitHubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokenResource.getPkceCache().put("fakeState", "fakeVerifier");
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
@@ -349,6 +350,7 @@ public class TokenResourceIT {
     void recreateAccountsAfterSelfDestruct(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokenResource.getPkceCache().put("fakeState", "fakeVerifier");
         createAccount1(unAuthenticatedTokensApi);
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
     }

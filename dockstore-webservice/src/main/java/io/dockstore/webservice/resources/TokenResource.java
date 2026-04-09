@@ -140,11 +140,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     private static final SecureRandom PKCE_RANDOM = new SecureRandom();
     private static final int CACHE_SIZE = 10;
-    /**
-     * store map of state values to the original verifier
-     * should not need to store many or for very long
-     * TODO: move this to the DB to make this production worthy across multiple webservices (or make load balancer sticky)
-     */
     private static final Cache<String, String> PKCE_CACHE = Caffeine.newBuilder().maximumSize(
         CACHE_SIZE).build();
 
@@ -209,6 +204,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
         }
+    }
+
+    /**
+     * store map of state values to the original verifier
+     * should not need to store many or for very long
+     * TODO: move this to the DB to make this production worthy across multiple webservices (or make load balancer sticky)
+     */
+    public static Cache<String, String> getPkceCache() {
+        return PKCE_CACHE;
     }
 
     @GET
@@ -599,7 +603,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             String hashedValue = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
             String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
             PKCE pkce = new PKCE(hashedValue, state);
-            PKCE_CACHE.put(state, verifier);
+            getPkceCache().put(state, verifier);
             return pkce;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not supported", e);
@@ -663,7 +667,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         // check that the state matches and fetch the original code_verifier value
         String verifier = null;
         if (state != null) {
-            verifier = PKCE_CACHE.getIfPresent(state);
+            verifier = getPkceCache().getIfPresent(state);
             if (verifier == null) {
                 throw new CustomWebApplicationException("Auth error, state did not match", HttpStatus.SC_BAD_REQUEST);
             }
