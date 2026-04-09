@@ -33,6 +33,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -144,6 +145,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         CACHE_SIZE).build();
 
     public static final String INVALID_JSON = "Invalid JSON provided";
+    public static final String PKCE_ENCODING_ALGORITHM = "SHA-256";
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
@@ -587,7 +589,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @UnitOfWork
     @Path("/github/codeChallenge")
     @Operation(operationId = "getGitHubCodeChallenge", description = "Get a PKCE code challenge value and store the verifier.")
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "et a PKCE code challenge value", content = @Content(schema = @Schema(implementation = PKCE.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a PKCE code challenge value", content = @Content(schema = @Schema(implementation = PKCE.class)))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
@@ -599,14 +601,14 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String verifier = Base64.getUrlEncoder().withoutPadding().encodeToString(verifierBytes);
 
         try {
-            byte[] hash = MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.UTF_8));
-            String hashedValue = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+            byte[] hash = MessageDigest.getInstance(PKCE_ENCODING_ALGORITHM).digest(verifier.getBytes(StandardCharsets.UTF_8));
+            String hashedValue = BaseEncoding.base64Url().omitPadding().encode(hash);
             String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
             PKCE pkce = new PKCE(hashedValue, state);
             getPkceCache().put(state, verifier);
             return pkce;
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not supported", e);
+            throw new CustomWebApplicationException(PKCE_ENCODING_ALGORITHM + " not supported", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -615,13 +617,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @UnitOfWork
     @Path("/github")
     @JsonView(TokenViews.Auth.class)
-    @Operation(operationId = "addToken", description = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addToken", description = "Allow n2-oauth-client (fork) to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
-        + "", description = "Satellizer successfully posted a new GitHub token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
+        + "", description = "Allow n2-oauth-client (fork) successfully posted a new GitHub token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
-    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
+    @ApiOperation(value = "Allow n2-oauth-client (fork) to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
@@ -994,5 +996,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
+    /**
+     * Safe values that can be returned to the client
+     * @param hashedValue hashed verifier value (sent to GitHub or Google to initiate OAuth 2.1 PKCE)
+     * @param state string used to prevent CRSF attacks (only accept requests that we actually started)
+     */
     record PKCE(String hashedValue, String state) { }
 }
