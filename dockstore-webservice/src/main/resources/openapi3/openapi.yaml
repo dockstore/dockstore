@@ -1601,8 +1601,8 @@ paths:
       - tokens
   /auth/tokens/github:
     post:
-      description: "Allow satellizer to post a new GitHub token to dockstore, used\
-        \ by login, can create new users."
+      description: "Allow n2-oauth-client (fork) to post a new GitHub token to dockstore,\
+        \ used by login, can create new users."
       operationId: addToken
       requestBody:
         content:
@@ -1615,7 +1615,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_Auth'
-          description: Satellizer successfully posted a new GitHub token to Dockstore
+          description: Allow n2-oauth-client (fork) successfully posted a new GitHub
+            token to Dockstore
         "401":
           description: Unauthorized
         "403":
@@ -1666,7 +1667,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PKCE'
-          description: et a PKCE code challenge value
+          description: Get a PKCE code challenge value
         "401":
           description: Unauthorized
         "403":
