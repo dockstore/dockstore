@@ -9,6 +9,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
@@ -243,11 +244,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
         if (versionId == null) {
             // Add the entry to the collection
-            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null);
+            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null, EntryVersion.Curator.HUMAN);
         } else {
             // TODO: Need to check that the version belongs to the entry
             Version version = versionDAO.findById(versionId);
-            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
+            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version, EntryVersion.Curator.HUMAN);
         }
 
         // Event for addition

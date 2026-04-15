@@ -68,9 +68,10 @@ public class EntryVersion implements Serializable {
         this.entry = entry;
     }
 
-    public EntryVersion(Entry entry, Version version) {
+    public EntryVersion(Entry entry, Version version, Curator curator) {
         this.entry = entry;
         this.version = version;
+        this.curator = curator;
     }
 
     public boolean equals(Long entryId, Long versionId) {
