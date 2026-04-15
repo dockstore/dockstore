@@ -242,7 +242,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
         @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId,
         @ApiParam(value = "Curator type", required = false) @Parameter(description = "Curator type.", name = "curator", in = ParameterIn.QUERY, required = false) @DefaultValue("HUMAN") @QueryParam("curator") EntryVersion.Curator curator) {
-        if (curator != EntryVersion.Curator.HUMAN && !user.isCurator() && !user.getIsAdmin()) {
+        if (curator != EntryVersion.Curator.HUMAN && !(user.isCurator() || user.getIsAdmin())) {
             throw new CustomWebApplicationException("Only curators and admins can add entries with a non-HUMAN curator value.", HttpStatus.SC_UNAUTHORIZED);
         }
         // Call common code to check if entry and collection exist and return them
