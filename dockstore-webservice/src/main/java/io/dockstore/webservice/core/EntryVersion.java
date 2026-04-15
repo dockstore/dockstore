@@ -4,6 +4,8 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,6 +24,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity(name = "CollectionEntryVersion")
 @Table(name = "collection_entry_version")
 public class EntryVersion implements Serializable {
+
+    public enum Curator {
+        AI, HUMAN
+    }
 
     // TODO: Possibly use @EmbeddedID instead
     @Id
@@ -48,6 +54,11 @@ public class EntryVersion implements Serializable {
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "The type of entity that added this entry/version to the collection", example = "HUMAN")
+    private Curator curator = Curator.HUMAN;
 
     private EntryVersion() {
 
@@ -94,6 +105,14 @@ public class EntryVersion implements Serializable {
 
     public void setVersion(Version version) {
         this.version = version;
+    }
+
+    public Curator getCurator() {
+        return curator;
+    }
+
+    public void setCurator(Curator curator) {
+        this.curator = curator;
     }
 }
 
