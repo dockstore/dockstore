@@ -24,5 +24,10 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <sql>
+            UPDATE collection_entry_version
+            SET curator = 'DOCKSTORE'
+            WHERE collection_id IN (SELECT id FROM collection WHERE dtype = 'Category')
+        </sql>
     </changeSet>
 </databaseChangeLog>
