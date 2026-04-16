@@ -24,7 +24,7 @@ import io.dockstore.common.metrics.ExecutionStatus;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
-import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
@@ -359,7 +359,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
         objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
         objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
-        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategorySummaries())));
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
@@ -372,7 +372,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
 
-    private static List<Map<String, Object>> convertCategories(List<Category> categories) {
+    private static List<Map<String, Object>> convertCategories(List<CategorySummary> categories) {
         return categories.stream().map(
             category -> {
                 Map<String, Object> map = new LinkedHashMap<>();
@@ -447,7 +447,7 @@ public class ElasticListener implements StateListenerInterface {
         Date lastChanged = ObjectUtils.firstNonNull(entry.getLastModifiedDate(), entry.getLastUpdated());
         double daysSinceLastChange = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
         boolean isArchived = entry.isArchived();
-        boolean inCategory = entry.getCategories().size() > 0;
+        boolean inCategory = entry.getCategorySummaries().size() > 0;
         // Combine the signals into a single numeric measurement.
         // Larger values indicate more "relevance".
         // The following coefficients are tuned to the current state of Dockstore, wherein the maximum

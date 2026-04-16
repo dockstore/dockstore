@@ -110,7 +110,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select distinct new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName, organization.avatarUrl) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED' and col.deleted = false"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select distinct new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryId", query = "select distinct cat from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds", query = "select distinct entry.entry, cat from Category cat join cat.entries as entry where entry.entry.id in (:entryIds) and cat.deleted = false"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategorySummaryPairsByEntryIds", query = "select distinct entry.entry.id, new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id in (:entryIds) and cat.deleted = false"),
     @NamedQuery(name = "Entry.getAllCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName, e.curator) from Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
     @NamedQuery(name = "Entry.getCollectionBioWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName, e.curator) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
     @NamedQuery(name = "Entry.getCollectionAppTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName, e.curator) from AppTool a, Collection col join col.entries as e where col.id = :collectionId and e.version is null and a.id = e.entry.id and a.isPublished = true"),
@@ -308,7 +308,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Transient
     @JsonIgnore
-    private List<Category> categories = new ArrayList<>();
+    private List<CategorySummary> categorySummaries = new ArrayList<>();
 
     @Transient
     @JsonIgnore
@@ -830,12 +830,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
      * @return
      */
-    public List<Category> getCategories() {
-        return (categories);
+    public List<CategorySummary> getCategorySummaries() {
+        return (categorySummaries);
     }
 
-    public void setCategories(List<Category> categories) {
-        this.categories = categories;
+    public void setCategorySummaries(List<CategorySummary> categorySummaries) {
+        this.categorySummaries = categorySummaries;
     }
 
     /**
