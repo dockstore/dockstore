@@ -152,7 +152,7 @@ class SwaggerServiceIT extends BaseIT {
         //add service to collection
         Set<String> expectedCollectionNames = new HashSet<>();
         expectedCollectionNames.add("Collection");
-        organizationsApi.addEntryToCollection(collectionOrg.getId(), collection.getId(), serviceID, null, "USER");
+        organizationsApi.addEntryToCollection(collectionOrg.getId(), collection.getId(), serviceID, null, null);
         List<io.dockstore.openapi.client.model.CollectionOrganization> entryCollection = entriesApi.entryCollections(serviceID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(1, entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
