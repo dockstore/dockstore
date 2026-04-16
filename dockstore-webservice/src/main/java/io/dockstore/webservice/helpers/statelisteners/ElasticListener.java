@@ -24,7 +24,6 @@ import io.dockstore.common.metrics.ExecutionStatus;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
-import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
@@ -51,9 +50,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -359,7 +356,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
         objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
         objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
-        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategorySummaries())));
+        objectNode.set("categories", MAPPER.valueToTree(entry.getCategorySummaries()));
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
@@ -371,20 +368,6 @@ public class ElasticListener implements StateListenerInterface {
         return jsonNode;
     }
 
-
-    private static List<Map<String, Object>> convertCategories(List<CategorySummary> categories) {
-        return categories.stream().map(
-            category -> {
-                Map<String, Object> map = new LinkedHashMap<>();
-                map.put("id", category.getId());
-                map.put("name", category.getName());
-                map.put("description", category.getDescription());
-                map.put("displayName", category.getDisplayName());
-                map.put("topic", category.getTopic());
-                return map;
-            }
-        ).toList();
-    }
 
     private static Optional<MetricsByStatus> getMetricsForAll(Entry<?, ?> entry) {
         return Optional.ofNullable(entry.getMetricsByPlatform())
