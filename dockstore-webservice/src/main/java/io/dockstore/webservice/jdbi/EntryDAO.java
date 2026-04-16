@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -205,14 +206,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 ENTRY_IDS, entryIds));
 
         // convert the list of entryId/categorySummary pairs to a map (as described in the javadoc above).
-        Map<Long, List<CategorySummary>> entryIdToCategories = new HashMap<>();
-        results.forEach(result -> {
-            Long entryId = (Long)result[0];
-            CategorySummary summary = (CategorySummary)result[1];
-            entryIdToCategories.computeIfAbsent(entryId, k -> new ArrayList<>()).add(summary);
-        });
+        Map<Long, List<CategorySummary>> entryIdToCategorySummaries = results.stream()
+            .collect(Collectors.groupingBy(result -> (Long)result[0],
+                Collectors.mapping(result -> (CategorySummary)result[1], Collectors.toList())));
 
-        return (entryIdToCategories);
+        return (entryIdToCategorySummaries);
     }
 
     public T findPublishedById(long id) {
