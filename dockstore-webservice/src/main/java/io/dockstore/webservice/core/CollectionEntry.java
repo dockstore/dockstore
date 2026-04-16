@@ -29,6 +29,7 @@ public class CollectionEntry implements Serializable {
     private List<String> labels = new ArrayList<String>();
     @JsonProperty("categories")
     private List<CategorySummary> categorySummaries = new ArrayList<>();
+    private EntryVersion.Curator curator;
 
     public CollectionEntry() throws InvalidObjectException {
         throw new InvalidObjectException("Invalid CollectionEntry");
@@ -42,24 +43,24 @@ public class CollectionEntry implements Serializable {
      * @param organization
      * @param repository
      * @param entryName
-     * @deprecated assumes verification is false, but one version may in fact be verified
+     * @deprecated assumes verification is false and curator is HUMAN
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Deprecated
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false);
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, EntryVersion.Curator curator)  {
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false, curator);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified, EntryVersion.Curator curator)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPathFromFragments(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
+        setCurator(curator);
     }
-
 
     /**
      * @param id
@@ -73,18 +74,19 @@ public class CollectionEntry implements Serializable {
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Deprecated
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false);
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, EntryVersion.Curator curator)  {
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false, curator);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, boolean verified)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, boolean verified, EntryVersion.Curator curator)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPathFromFragments(registry, organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
+        setCurator(curator);
     }
 
     private void setEntryPathFromFragments(String sourceControl, String organization, String repository, String entryName) {
@@ -185,5 +187,13 @@ public class CollectionEntry implements Serializable {
 
     public void setIsApprovedAITopic(boolean approvedAITopic) {
         this.isApprovedAITopic = approvedAITopic;
+    }
+
+    public EntryVersion.Curator getCurator() {
+        return curator;
+    }
+
+    public void setCurator(EntryVersion.Curator curator) {
+        this.curator = curator;
     }
 }
