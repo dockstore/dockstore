@@ -44,7 +44,6 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -241,12 +240,20 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
         @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
         @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId,
-        @ApiParam(value = "Curator type", required = false) @Parameter(description = "Curator type.", name = "curator", in = ParameterIn.QUERY, required = false) @DefaultValue("USER") @QueryParam("curator") EntryVersion.Curator curator) {
+        @ApiParam(value = "Curator type", required = false) @Parameter(description = "Curator type.", name = "curator", in = ParameterIn.QUERY, required = false) @QueryParam("curator") EntryVersion.Curator curator) {
+        // Call common code to check if entry and collection exist and retrieve them
+        ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
+        // If no "curator" was specified, apply the default rule:
+        // The curator is "USER", unless we're modifying a Category, in which case the curator is "DOCKSTORE"
+        if (curator == null) {
+            boolean isCategory = entryAndCollection.getRight() instanceof Category;
+            curator = isCategory ? EntryVersion.Curator.DOCKSTORE : EntryVersion.Curator.USER;
+        }
+        // Only admins/curators can specify a non-USER curator
         if (curator != EntryVersion.Curator.USER && !(user.isCurator() || user.getIsAdmin())) {
             throw new CustomWebApplicationException("Only curators and admins can add entries with a non-USER curator value.", HttpStatus.SC_UNAUTHORIZED);
         }
-        // Call common code to check if entry and collection exist and return them
-        ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
+        // Add the entry (and version, if specified) to the collection
         if (versionId == null) {
             // Add the entry to the collection
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null, curator);

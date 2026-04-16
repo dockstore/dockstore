@@ -5375,7 +5375,6 @@ paths:
         name: curator
         schema:
           type: string
-          default: USER
           enum:
           - USER
           - DOCKSTORE
