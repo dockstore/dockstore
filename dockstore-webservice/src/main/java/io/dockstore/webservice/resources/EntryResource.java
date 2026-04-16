@@ -25,6 +25,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.SyncStatus;
 import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
@@ -367,6 +368,22 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
+    }
+
+    @GET
+    @Path("/{id}/categorySummaries")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "entryCategorySummaries", description = "Get the category summaries for the entry")
+    @ApiOperation(value = "Get the category summaries for the entry", response = CategorySummary.class, responseContainer = "List", hidden = true)
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved category summaries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = CategorySummary.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Entry must by published")
+    public List<CategorySummary> entryCategorySummaries(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return this.toolDAO.findCategorySummariesByEntryId(entry.getId());
     }
 
     @GET
