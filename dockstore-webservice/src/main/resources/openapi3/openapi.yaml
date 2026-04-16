@@ -5345,6 +5345,15 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Curator type.
+        in: query
+        name: curator
+        schema:
+          type: string
+          default: HUMAN
+          enum:
+          - AI
+          - HUMAN
       responses:
         default:
           content:
@@ -9640,6 +9649,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategorySummary'
+        curator:
+          type: string
+          enum:
+          - AI
+          - HUMAN
         dbUpdateDate:
           type: integer
           format: int64

@@ -161,7 +161,7 @@ class WebhookIT extends BaseIT {
         // Attach collection
         final Collection createdCollection = organizationsApiAdmin.createCollection(stubCollection, registeredOrganization.getId());
         // Add tool to collection
-        organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
+        organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null, "HUMAN");
 
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
