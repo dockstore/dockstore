@@ -26,7 +26,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class EntryVersion implements Serializable {
 
     public enum Curator {
-        AI, HUMAN
+        USER, DOCKSTORE, AI
     }
 
     // TODO: Possibly use @EmbeddedID instead
@@ -57,8 +57,8 @@ public class EntryVersion implements Serializable {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Schema(description = "The type of entity that added this entry/version to the collection", example = "HUMAN")
-    private Curator curator = Curator.HUMAN;
+    @Schema(description = "The type of entity that added this entry/version to the collection", example = "USER")
+    private Curator curator = Curator.USER;
 
     private EntryVersion() {
 

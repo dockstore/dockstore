@@ -5375,10 +5375,11 @@ paths:
         name: curator
         schema:
           type: string
-          default: HUMAN
+          default: USER
           enum:
+          - USER
+          - DOCKSTORE
           - AI
-          - HUMAN
       responses:
         default:
           content:
@@ -9534,8 +9535,9 @@ components:
         curator:
           type: string
           enum:
+          - USER
+          - DOCKSTORE
           - AI
-          - HUMAN
         description:
           type: string
         displayName:
@@ -9682,8 +9684,9 @@ components:
         curator:
           type: string
           enum:
+          - USER
+          - DOCKSTORE
           - AI
-          - HUMAN
         dbUpdateDate:
           type: integer
           format: int64

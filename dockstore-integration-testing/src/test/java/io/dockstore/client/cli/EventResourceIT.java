@@ -166,7 +166,7 @@ class EventResourceIT extends BaseIT {
         // create a collection and add the entry to it
         long organizationId = OrganizationIT.createOrg(organizationsApi).getId();
         long collectionId = organizationsApi.createCollection(organizationId, OrganizationIT.stubCollectionObject()).getId();
-        organizationsApiOpenApi.addEntryToCollection(organizationId, collectionId, entryId, null, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(organizationId, collectionId, entryId, null, "USER");
 
         // create a synthetic "ADD_VERSION_TO_ENTRY" event
         testingPostgres.runUpdateStatement(String.format("insert into event (id, initiatorUserId, type, toolId, versionId) values (%d, %d, '%s', %d, %d)", eventId++, creatorId, TypeEnum.ADD_VERSION_TO_ENTRY, entryId, versionId));

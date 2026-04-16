@@ -1607,12 +1607,12 @@ public class OrganizationIT extends BaseIT {
         long collectionId = collection.getId();
         testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true, waseverpublic = true WHERE id = 2");
 
-        organizationsOpenApi.addEntryToCollection(id, collectionId, 2L, 8L, "HUMAN");
+        organizationsOpenApi.addEntryToCollection(id, collectionId, 2L, 8L, "USER");
         long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
         assertEquals(1, collectionCount);
 
         try {
-            organizationsOpenApi.addEntryToCollection(id, collectionId, 2L, 8L, "HUMAN");
+            organizationsOpenApi.addEntryToCollection(id, collectionId, 2L, 8L, "USER");
             fail("should not be able to do this");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(HttpStatus.SC_CONFLICT, ex.getCode());
@@ -1729,7 +1729,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals(0, collectionOrganizations.size());
 
         // Add tool to collection
-        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, null, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, null, "USER");
 
         // Able to retrieve the collection and organization an entry is part of
         collectionOrganizations = entriesApi.entryCollections(entryId);
@@ -1760,7 +1760,7 @@ public class OrganizationIT extends BaseIT {
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, null, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, null, "USER");
 
         // There should be two entries for collection with ID 1
         Collection collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
@@ -1834,8 +1834,8 @@ public class OrganizationIT extends BaseIT {
         String versionName = "latest";
 
         // Add tool and specific version to collection
-        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId, "HUMAN");
-        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, null, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId, "USER");
+        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collectionId, entryId, null, "USER");
 
         // There should now be 3 entries
         // entry id 1, version id 3
@@ -1881,7 +1881,7 @@ public class OrganizationIT extends BaseIT {
     private void testVersionRemoval(io.dockstore.openapi.client.api.OrganizationsApi organizationsApi, Organization organization, Long collectionId, Long entryId, Long versionId, ApiClient webClientUser2) {
         io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.EntriesApi entriesApi1 = new io.dockstore.openapi.client.api.EntriesApi(openAPIWebClient);
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId, "HUMAN");
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId, "USER");
         List<io.dockstore.openapi.client.model.CollectionOrganization> collectionOrganizations1 = entriesApi1.entryCollections(entryId);
         assertEquals(1L, collectionOrganizations1.size());
         ContainertagsApi containertagsApi = new ContainertagsApi(webClientUser2);
@@ -1905,7 +1905,7 @@ public class OrganizationIT extends BaseIT {
 
         Long idToAddAndDelete = workflowVersions.get(0).getId();
         String idToAddAndDeleteString = workflowVersions.get(0).getName();
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), idToAddAndDelete, "HUMAN");
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), idToAddAndDelete, "USER");
         collectionOrganizations1 = entriesApi1.entryCollections(workflow.getId());
         assertEquals(1L, collectionOrganizations1.size());
         hostedApi.deleteHostedWorkflowVersion(workflow.getId(), idToAddAndDeleteString);
@@ -2128,7 +2128,7 @@ public class OrganizationIT extends BaseIT {
         organizationsApiAdmin.approveOrganization(organization.getId());
 
         // Add entry to collection
-        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null, "USER");
 
         Collection addedCollection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
         assertEquals(DescriptorLanguage.CWL.toString(), addedCollection.getEntries().get(0).getDescriptorTypes().get(0));
@@ -2202,9 +2202,9 @@ public class OrganizationIT extends BaseIT {
         organizationsApiAdmin.approveOrganization(organization.getId());
 
         // Add workflow to collection, should then have 3 workflows included regardless of versions
-        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow2.getId(), null, "HUMAN");
-        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(0).getId(), "HUMAN");
-        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(1).getId(), "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow2.getId(), null, "USER");
+        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(0).getId(), "USER");
+        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(1).getId(), "USER");
 
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
         long workflowsCount = addedCollection.getWorkflowsLength();
@@ -2254,7 +2254,7 @@ public class OrganizationIT extends BaseIT {
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, entryId, null, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(orgId, collectionId, entryId, null, "USER");
 
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
 
@@ -2353,7 +2353,7 @@ public class OrganizationIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
-        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, "HUMAN");
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, "USER");
 
         // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
@@ -2724,7 +2724,7 @@ public class OrganizationIT extends BaseIT {
         Organization organization = organizationsApi.getOrganizationByName(orgName);
 
         Collection collection = organizationsApi.getCollectionByName(organization.getName(), name);
-        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), versionId, "HUMAN");
+        organizationsApiOpenApi.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), versionId, "USER");
     }
 
     private void addToCollection(String name, String orgName, Workflow workflow) {

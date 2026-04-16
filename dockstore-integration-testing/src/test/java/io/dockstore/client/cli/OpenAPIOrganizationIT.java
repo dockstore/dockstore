@@ -106,7 +106,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
         workflowsApi.refresh1(workflowByPathGithub.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, "HUMAN");
+        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, "USER");
         Collection addedCollection = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
 
         assertEquals("viral-ngs: complete pipelines", addedCollection.getEntries().get(0).getTopic());
