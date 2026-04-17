@@ -212,8 +212,8 @@ public class Collection implements Serializable, Aliasable {
         this.entries = entries.stream().map(EntryVersion::new).collect(Collectors.toSet());
     }
 
-    public void addEntry(Entry entry, Version version) {
-        this.entries.add(new EntryVersion(entry, version));
+    public void addEntry(Entry entry, Version version, EntryVersion.Curator curator) {
+        this.entries.add(new EntryVersion(entry, version, curator));
     }
 
     public void removeEntry(Long entryId, Long versionId) {

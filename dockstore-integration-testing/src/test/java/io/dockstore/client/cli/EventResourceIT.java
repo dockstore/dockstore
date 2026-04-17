@@ -148,6 +148,7 @@ class EventResourceIT extends BaseIT {
         EventsApi eventsApi = new EventsApi(client);
         ContainersApi toolsApi = new ContainersApi(client);
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOpenApi = new io.dockstore.openapi.client.api.OrganizationsApi(getOpenAPIWebClient(USER_1_USERNAME, testingPostgres));
         ApiClient otherClient = getWebClient(OTHER_USERNAME, testingPostgres);
         EventsApi otherEventsApi = new EventsApi(otherClient);
         long creatorId = 1;
@@ -165,7 +166,7 @@ class EventResourceIT extends BaseIT {
         // create a collection and add the entry to it
         long organizationId = OrganizationIT.createOrg(organizationsApi).getId();
         long collectionId = organizationsApi.createCollection(organizationId, OrganizationIT.stubCollectionObject()).getId();
-        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
+        organizationsApiOpenApi.addEntryToCollection(organizationId, collectionId, entryId, null, null);
 
         // create a synthetic "ADD_VERSION_TO_ENTRY" event
         testingPostgres.runUpdateStatement(String.format("insert into event (id, initiatorUserId, type, toolId, versionId) values (%d, %d, '%s', %d, %d)", eventId++, creatorId, TypeEnum.ADD_VERSION_TO_ENTRY, entryId, versionId));

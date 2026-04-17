@@ -3654,6 +3654,31 @@ paths:
           description: Entry must be published
       tags:
       - entries
+  /entries/{id}/categorySummaries:
+    get:
+      description: Get the category summaries for the entry
+      operationId: entryCategorySummaries
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategorySummary'
+          description: Successfully retrieved category summaries
+        "400":
+          description: Entry must by published
+      tags:
+      - entries
   /entries/{id}/collections:
     get:
       description: Get the collections and approved organizations that contain the
@@ -5345,6 +5370,15 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Curator type.
+        in: query
+        name: curator
+        schema:
+          type: string
+          enum:
+          - USER
+          - DOCKSTORE
+          - AI
       responses:
         default:
           content:
@@ -9497,6 +9531,12 @@ components:
     CategorySummary:
       type: object
       properties:
+        curator:
+          type: string
+          enum:
+          - USER
+          - DOCKSTORE
+          - AI
         description:
           type: string
         displayName:
@@ -9640,6 +9680,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategorySummary'
+        curator:
+          type: string
+          enum:
+          - USER
+          - DOCKSTORE
+          - AI
         dbUpdateDate:
           type: integer
           format: int64
