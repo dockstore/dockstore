@@ -3677,6 +3677,59 @@ paths:
           description: default response
       tags:
       - entries
+  /entries/{id}/lastCategorizedDate:
+    get:
+      description: Get the date of the last categorization of an entry.
+      operationId: getLastCategorizedDate
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date-time
+          description: Successfully retrieved the last categorized date
+      security:
+      - BEARER: []
+      tags:
+      - entries
+    put:
+      description: Set the date of the last categorization of an entry.
+      operationId: setLastCategorizedDate
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Milliseconds since epoch; defaults to now
+        in: query
+        name: date
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date-time
+          description: Successfully set the last categorized date
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.

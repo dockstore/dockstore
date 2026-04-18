@@ -84,6 +84,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -91,6 +92,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -367,6 +369,37 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{id}/lastCategorizedDate")
+    @Operation(operationId = "getLastCategorizedDate", description = "Get the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    public Timestamp getLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return entry.getEntryMetadata().getLastCategorizedDate();
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/lastCategorizedDate")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "setLastCategorizedDate", description = "Set the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully set the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    public Timestamp setLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
+            @Parameter(description = "UTC epoch seconds; defaults to now") @QueryParam("when") Long when) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        Timestamp timestamp = when != null ? new Timestamp(when * 1000L) : new Timestamp(System.currentTimeMillis());
+        entry.getEntryMetadata().setLastCategorizedDate(timestamp);
+        return entry.getEntryMetadata().getLastCategorizedDate();
     }
 
     @GET
