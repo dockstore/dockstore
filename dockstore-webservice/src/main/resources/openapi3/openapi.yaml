@@ -3316,6 +3316,35 @@ paths:
       - BEARER: []
       tags:
       - curation
+  /entries/toCategorize:
+    get:
+      description: "Get IDs of published entries that are new and uncategorized, or\
+        \ that have changed since last categorization and were last categorized before\
+        \ the given cutoff."
+      operationId: findEntriesToCategorize
+      parameters:
+      - description: Cutoff UTC epoch seconds; entries last categorized before this
+          time are eligible for re-categorization if changed
+        in: query
+        name: cutoff
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+          description: Successfully retrieved entry IDs
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/updateLanguageVersions:
     post:
       description: Update language versions

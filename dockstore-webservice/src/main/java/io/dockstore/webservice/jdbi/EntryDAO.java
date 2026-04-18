@@ -45,6 +45,7 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import jakarta.persistence.metamodel.Attribute;
 import java.lang.reflect.ParameterizedType;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -415,6 +416,12 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public long countPublishedEntriesWithNoTopics() {
         return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Long.class).getSingleResult();
+    }
+
+    public List<Long> findEntriesToCategorize(Timestamp cutoff) {
+        return this.currentSession().createNamedQuery(Entry.FIND_ENTRIES_TO_CATEGORIZE, Long.class)
+                .setParameter("cutoff", cutoff)
+                .list();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

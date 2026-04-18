@@ -404,6 +404,22 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/toCategorize")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "findEntriesToCategorize", description = "Get IDs of published entries that are new and uncategorized, or that have changed since last categorization and were last categorized before the given cutoff.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry IDs", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Long.class))))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public List<Long> findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Cutoff UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoff") Long cutoff) {
+        if (cutoff == null) {
+            throw new CustomWebApplicationException("cutoff query parameter is required", HttpStatus.SC_BAD_REQUEST);
+        }
+        return toolDAO.findEntriesToCategorize(new Timestamp(cutoff * 1000L));
+    }
+
+    @GET
     @Path("/{entryId}/verifiedPlatforms")
     @UnitOfWork
     @ApiOperation(value = "Get the verified platforms for each version of an entry.",  hidden = true)
