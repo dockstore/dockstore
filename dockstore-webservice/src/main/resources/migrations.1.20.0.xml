@@ -27,5 +27,17 @@
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="lastcategorizeddate" type="TIMESTAMP WITHOUT TIME ZONE"/>
         </createTable>
+        <sql>
+            INSERT INTO entry_metadata (id)
+            SELECT id FROM tool
+            UNION ALL
+            SELECT id FROM apptool
+            UNION ALL
+            SELECT id FROM notebook
+            UNION ALL
+            SELECT id FROM service
+            UNION ALL
+            SELECT id FROM workflow
+        </sql>
     </changeSet>
 </databaseChangeLog>
