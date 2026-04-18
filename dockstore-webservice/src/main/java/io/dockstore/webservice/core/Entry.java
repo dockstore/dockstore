@@ -61,6 +61,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -83,6 +84,7 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -366,6 +368,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @MapKeyEnumerated(EnumType.STRING)
     @ApiModelProperty(value = "The aggregated metrics for executions of this entry, grouped by platform", position = 26)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
+
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private EntryMetadata entryMetadata = new EntryMetadata();
 
     public enum GitVisibility {
         /**
@@ -984,6 +991,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
         this.metricsByPlatform = metricsByPlatform;
+    }
+
+    public EntryMetadata getEntryMetadata() {
+        if (entryMetadata == null) {
+            entryMetadata = new EntryMetadata();
+            entryMetadata.setId(this.id);
+        }
+        return entryMetadata;
+    }
+
+    public void setEntryMetadata(EntryMetadata entryMetadata) {
+        this.entryMetadata = entryMetadata;
     }
 
     @JsonProperty
