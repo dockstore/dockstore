@@ -3712,9 +3712,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: Milliseconds since epoch; defaults to now
+      - description: UTC epoch seconds; defaults to now
         in: query
-        name: date
+        name: when
         schema:
           type: integer
           format: int64

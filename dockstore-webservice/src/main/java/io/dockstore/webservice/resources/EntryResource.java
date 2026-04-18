@@ -92,11 +92,11 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -392,6 +392,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @RolesAllowed({"curator", "admin"})
     @Operation(operationId = "setLastCategorizedDate", description = "Set the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully set the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    @SuppressWarnings("checkstyle:MagicNumber")
     public Timestamp setLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
             @Parameter(description = "UTC epoch seconds; defaults to now") @QueryParam("when") Long when) {
