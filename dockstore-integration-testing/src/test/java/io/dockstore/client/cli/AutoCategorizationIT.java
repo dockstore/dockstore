@@ -48,7 +48,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 class AutoCategorizationIT extends BaseIT {
 
-    private static final String WORKFLOW_PATH = "DockstoreTestUser/dockstore-whalesay-wdl";
+    private static final String WORKFLOW_PATH = "DockstoreTestUser/dockstore-whalesay-2";
     private static final String DESCRIPTOR_PATH = "/dockstore.wdl";
     private static final long EPOCH_FAR_PAST = 1_000_000_000L;   // Sep 2001
     private static final long EPOCH_FAR_FUTURE = 99_999_999_999L; // year 5138
@@ -83,7 +83,7 @@ class AutoCategorizationIT extends BaseIT {
 
     @Test
     void testGetLastCategorizedDateIsInitiallyNull() throws ApiException {
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
         assertNull(getLastCategorizedDate(userClient, workflow.getId()));
     }
@@ -91,7 +91,7 @@ class AutoCategorizationIT extends BaseIT {
     @Test
     void testSetAndGetLastCategorizedDate() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
         long id = workflow.getId();
 
@@ -107,7 +107,7 @@ class AutoCategorizationIT extends BaseIT {
     @Test
     void testSetLastCategorizedDateDefaultsToNow() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
 
         long before = System.currentTimeMillis();
@@ -121,7 +121,7 @@ class AutoCategorizationIT extends BaseIT {
 
     @Test
     void testSetLastCategorizedDateRequiresAdminOrCurator() throws ApiException {
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
 
         ApiException ex = assertThrows(ApiException.class,
@@ -132,7 +132,7 @@ class AutoCategorizationIT extends BaseIT {
     @Test
     void testGetAndSetLastCategorizedDateForArchivedEntry() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
         long id = workflow.getId();
 
@@ -152,7 +152,7 @@ class AutoCategorizationIT extends BaseIT {
     @Test
     void testFindEntriesToCategorize() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
 
         // Entry A: published, never categorized → must appear
@@ -182,7 +182,7 @@ class AutoCategorizationIT extends BaseIT {
 
     @Test
     void testFindEntriesToCategorizeRequiresAdminOrCurator() {
-        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         long cutoff = System.currentTimeMillis() / 1000L;
 
         ApiException ex = assertThrows(ApiException.class,
