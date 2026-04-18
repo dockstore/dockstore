@@ -48,8 +48,8 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 class AutoCategorizationIT extends BaseIT {
 
-    private static final String WORKFLOW_PATH = "DockstoreTestUser/dockstore-whalesay-2";
-    private static final String DESCRIPTOR_PATH = "/dockstore.wdl";
+    private static final String WORKFLOW_PATH = "dockstore-testing/hello_world";
+    private static final String DESCRIPTOR_PATH = "/hello_world.cwl";
     private static final long EPOCH_FAR_PAST = 1_000_000_000L;   // Sep 2001
     private static final long EPOCH_FAR_FUTURE = 99_999_999_999L; // Year 5138
 
@@ -66,7 +66,7 @@ class AutoCategorizationIT extends BaseIT {
 
     private Workflow publishedWorkflow(WorkflowsApi workflowsApi, String name) {
         return openManualRegisterAndPublish(workflowsApi, WORKFLOW_PATH, name,
-            DescriptorLanguage.WDL.getShortName(), SourceControl.GITHUB, DESCRIPTOR_PATH, true);
+            DescriptorLanguage.CWL.getShortName(), SourceControl.GITHUB, DESCRIPTOR_PATH, true);
     }
 
     private Date getLastCategorizedDate(ApiClient client, long id) throws ApiException {
