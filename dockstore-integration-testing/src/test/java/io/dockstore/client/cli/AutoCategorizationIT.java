@@ -1,5 +1,5 @@
 /*
- *    Copyright 2024 OICR and UCSC
+ *    Copyright 2026 OICR and UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class AutoCategorizationIT extends BaseIT {
     private static final String WORKFLOW_PATH = "DockstoreTestUser/dockstore-whalesay-2";
     private static final String DESCRIPTOR_PATH = "/dockstore.wdl";
     private static final long EPOCH_FAR_PAST = 1_000_000_000L;   // Sep 2001
-    private static final long EPOCH_FAR_FUTURE = 99_999_999_999L; // year 5138
+    private static final long EPOCH_FAR_FUTURE = 99_999_999_999L; // Year 5138
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -83,8 +83,9 @@ class AutoCategorizationIT extends BaseIT {
 
     @Test
     void testGetLastCategorizedDateIsInitiallyNull() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
+        Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
         assertNull(getLastCategorizedDate(userClient, workflow.getId()));
     }
 
@@ -92,7 +93,7 @@ class AutoCategorizationIT extends BaseIT {
     void testSetAndGetLastCategorizedDate() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
+        Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
         long id = workflow.getId();
 
         Date set = setLastCategorizedDate(adminClient, id, EPOCH_FAR_PAST);
@@ -108,7 +109,7 @@ class AutoCategorizationIT extends BaseIT {
     void testSetLastCategorizedDateDefaultsToNow() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
+        Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
 
         long before = System.currentTimeMillis();
         Date set = setLastCategorizedDate(adminClient, workflow.getId(), null);
@@ -121,8 +122,9 @@ class AutoCategorizationIT extends BaseIT {
 
     @Test
     void testSetLastCategorizedDateRequiresAdminOrCurator() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
+        Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
 
         ApiException ex = assertThrows(ApiException.class,
             () -> setLastCategorizedDate(userClient, workflow.getId(), null));
@@ -133,7 +135,7 @@ class AutoCategorizationIT extends BaseIT {
     void testGetAndSetLastCategorizedDateForArchivedEntry() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        Workflow workflow = publishedWorkflow(new WorkflowsApi(userClient), "");
+        Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
         long id = workflow.getId();
 
         new EntriesApi(adminClient).archiveEntry(id);
@@ -153,7 +155,7 @@ class AutoCategorizationIT extends BaseIT {
     void testFindEntriesToCategorize() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
 
         // Entry A: published, never categorized → must appear
         Workflow entryA = publishedWorkflow(workflowsApi, "a");
