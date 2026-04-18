@@ -402,12 +402,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
+        entryMetadata.parent = this;
     }
 
     public Entry(long id) {
         this.id = id;
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
+        entryMetadata.parent = this;
     }
 
     public abstract Entry<?, ?> createEmptyEntry();
