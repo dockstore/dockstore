@@ -157,21 +157,21 @@ class AutoCategorizationIT extends BaseIT {
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
 
-        // Entry A: published, never categorized → must appear
+        // Entry A: published, never categorized, must appear
         Workflow entryA = publishedWorkflow(workflowsApi, "a");
 
-        // Entry B: published, categorized long ago; refresh set dbUpdateDate >> farPast → must appear
+        // Entry B: published, categorized long ago; refresh set dbUpdateDate >> farPast, must appear
         Workflow entryB = publishedWorkflow(workflowsApi, "b");
         setLastCategorizedDate(adminClient, entryB.getId(), EPOCH_FAR_PAST);
 
-        // Entry C: published, categorized far in the future → must NOT appear
+        // Entry C: published, categorized far in the future, must NOT appear
         Workflow entryC = publishedWorkflow(workflowsApi, "c");
         setLastCategorizedDate(adminClient, entryC.getId(), EPOCH_FAR_FUTURE);
 
-        // Entry D: registered but not published → must NOT appear
-        Workflow entryDStub = workflowsApi.manualRegister(SourceControl.GITHUB.name(), WORKFLOW_PATH,
-            DESCRIPTOR_PATH, "d", DescriptorLanguage.WDL.getShortName(), "");
-        workflowsApi.refresh1(entryDStub.getId(), false);
+        // Entry D: registered but not published, must NOT appear
+        Workflow entryD = workflowsApi.manualRegister(SourceControl.GITHUB.name(), WORKFLOW_PATH,
+            DESCRIPTOR_PATH, "d", DescriptorLanguage.CWL.getShortName(), "");
+        workflowsApi.refresh1(entryD.getId(), false);
 
         long cutoffNow = System.currentTimeMillis() / 1000L;
         List<Long> toCategorize = findEntriesToCategorize(adminClient, cutoffNow);
@@ -179,7 +179,7 @@ class AutoCategorizationIT extends BaseIT {
         assertTrue(toCategorize.contains(entryA.getId()), "Never-categorized published entry should appear");
         assertTrue(toCategorize.contains(entryB.getId()), "Stale-categorized published entry should appear");
         assertFalse(toCategorize.contains(entryC.getId()), "Future-dated categorized entry should not appear");
-        assertFalse(toCategorize.contains(entryDStub.getId()), "Unpublished entry should not appear");
+        assertFalse(toCategorize.contains(entryD.getId()), "Unpublished entry should not appear");
     }
 
     @Test
