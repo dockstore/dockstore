@@ -74,7 +74,7 @@ class AutoCategorizationIT extends BaseIT {
     }
 
     private Date setLastCategorizedDate(ApiClient client, long id, Long when) throws ApiException {
-        return new EntriesApi(client).setLastCategorizedDate(id, when);
+        return new EntriesApi(client).setLastCategorizedDate(id, "", when);
     }
 
     private List<Long> findEntriesToCategorize(ApiClient client, long cutoff) throws ApiException {
