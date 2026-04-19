@@ -395,7 +395,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @SuppressWarnings("checkstyle:MagicNumber")
     public Timestamp setLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
-            @Parameter(description = "UTC epoch seconds; defaults to now") @QueryParam("when") Long when) {
+            @Parameter(description = "UTC epoch seconds; defaults to now") @QueryParam("when") Long when,
+            @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
         checkNotNullEntry(entry);
         Timestamp timestamp = when != null ? new Timestamp(when * 1000L) : new Timestamp(System.currentTimeMillis());

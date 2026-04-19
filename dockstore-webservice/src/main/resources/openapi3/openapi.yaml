@@ -3747,6 +3747,13 @@ paths:
         schema:
           type: integer
           format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
       responses:
         "200":
           content:
