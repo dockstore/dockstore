@@ -10087,8 +10087,6 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
-        entryMetadata:
-          $ref: '#/components/schemas/EntryMetadata'
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -10321,8 +10319,6 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
-        entryMetadata:
-          $ref: '#/components/schemas/EntryMetadata'
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -10447,16 +10443,6 @@ components:
           $ref: '#/components/schemas/EntryLite'
         versionName:
           type: string
-    EntryMetadata:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        lastCategorizedDate:
-          type: string
-          format: date-time
-          description: The timestamp of the last categorization of this entry
     EntryType:
       type: string
       description: Entry type
@@ -13326,8 +13312,6 @@ components:
           - USER
           - DOCKSTORE
           - GITHUB
-        entryMetadata:
-          $ref: '#/components/schemas/EntryMetadata'
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:

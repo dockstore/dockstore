@@ -371,6 +371,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The aggregated metrics for executions of this entry, grouped by platform", position = 26)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
+    @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn

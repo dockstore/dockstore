@@ -108,7 +108,6 @@ class AutoCategorizationIT extends BaseIT {
     @Test
     void testSetLastCategorizedDateDefaultsToNow() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
 
         long before = System.currentTimeMillis();
@@ -154,7 +153,6 @@ class AutoCategorizationIT extends BaseIT {
     @Test
     void testFindEntriesToCategorize() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
 
         // Entry A: published, never categorized, must appear
