@@ -3316,6 +3316,35 @@ paths:
       - BEARER: []
       tags:
       - curation
+  /entries/toCategorize:
+    get:
+      description: "Get IDs of published entries that are new and uncategorized, or\
+        \ that have changed since last categorization and were last categorized before\
+        \ the given cutoff."
+      operationId: findEntriesToCategorize
+      parameters:
+      - description: Cutoff in UTC epoch seconds; entries last categorized before
+          this time are eligible for re-categorization if changed
+        in: query
+        name: cutoffSeconds
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+          description: Successfully retrieved entry IDs
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/updateLanguageVersions:
     post:
       description: Update language versions
@@ -3675,6 +3704,66 @@ paths:
                 items:
                   $ref: '#/components/schemas/CollectionOrganization'
           description: default response
+      tags:
+      - entries
+  /entries/{id}/lastCategorizedDate:
+    get:
+      description: Get the date of the last categorization of an entry.
+      operationId: getLastCategorizedDate
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date-time
+          description: Successfully retrieved the last categorized date
+      security:
+      - BEARER: []
+      tags:
+      - entries
+    put:
+      description: Set the date of the last categorization of an entry.
+      operationId: setLastCategorizedDate
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Date in UTC epoch seconds; defaults to now
+        in: query
+        name: whenSeconds
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date-time
+          description: Successfully set the last categorized date
+      security:
+      - BEARER: []
       tags:
       - entries
   /entries/{id}/topic:

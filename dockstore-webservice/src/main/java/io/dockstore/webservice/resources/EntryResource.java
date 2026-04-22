@@ -84,6 +84,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -95,6 +96,7 @@ import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -367,6 +369,55 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{id}/lastCategorizedDate")
+    @Operation(operationId = "getLastCategorizedDate", description = "Get the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    public Timestamp getLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return entry.getEntryMetadata().getLastCategorizedDate();
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/lastCategorizedDate")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "setLastCategorizedDate", description = "Set the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully set the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public Timestamp setLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
+            @Parameter(description = "Date in UTC epoch seconds; defaults to now") @QueryParam("whenSeconds") Long whenSeconds,
+            @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        Timestamp timestamp = whenSeconds != null ? new Timestamp(whenSeconds * 1000L) : new Timestamp(System.currentTimeMillis());
+        entry.getEntryMetadata().setLastCategorizedDate(timestamp);
+        return entry.getEntryMetadata().getLastCategorizedDate();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/toCategorize")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "findEntriesToCategorize", description = "Get IDs of published entries that are new and uncategorized, or that have changed since last categorization and were last categorized before the given cutoff.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry IDs", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Long.class))))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public List<Long> findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Cutoff in UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoffSeconds") Long cutoffSeconds) {
+        if (cutoffSeconds == null) {
+            throw new CustomWebApplicationException("cutoffSeconds query parameter is required", HttpStatus.SC_BAD_REQUEST);
+        }
+        return toolDAO.findEntriesToCategorize(new Timestamp(cutoffSeconds * 1000L));
     }
 
     @GET
