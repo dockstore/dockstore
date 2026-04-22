@@ -3323,10 +3323,10 @@ paths:
         \ the given cutoff."
       operationId: findEntriesToCategorize
       parameters:
-      - description: Cutoff UTC epoch seconds; entries last categorized before this
-          time are eligible for re-categorization if changed
+      - description: Cutoff in UTC epoch seconds; entries last categorized before
+          this time are eligible for re-categorization if changed
         in: query
-        name: cutoff
+        name: cutoffSeconds
         required: true
         schema:
           type: integer
@@ -3741,9 +3741,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: UTC epoch seconds; defaults to now
+      - description: Date in UTC epoch seconds; defaults to now
         in: query
-        name: when
+        name: whenSeconds
         schema:
           type: integer
           format: int64

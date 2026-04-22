@@ -50,8 +50,8 @@ class AutoCategorizationIT extends BaseIT {
 
     private static final String WORKFLOW_PATH = "dockstore-testing/hello_world";
     private static final String DESCRIPTOR_PATH = "/hello_world.cwl";
-    private static final long EPOCH_FAR_PAST = 1_000_000_000L;   // Sep 2001
-    private static final long EPOCH_FAR_FUTURE = 99_999_999_999L; // Year 5138
+    private static final long EPOCH_PAST = 1_000_000_000L;   // Sep 2001
+    private static final long EPOCH_FUTURE = 99_999_999_999L; // Year 5138
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -96,13 +96,13 @@ class AutoCategorizationIT extends BaseIT {
         Workflow workflow = publishedWorkflow(new WorkflowsApi(adminClient), "");
         long id = workflow.getId();
 
-        Date set = setLastCategorizedDate(adminClient, id, EPOCH_FAR_PAST);
+        Date set = setLastCategorizedDate(adminClient, id, EPOCH_PAST);
         assertNotNull(set);
-        assertEquals(EPOCH_FAR_PAST * 1000L, set.getTime());
+        assertEquals(EPOCH_PAST * 1000L, set.getTime());
 
         Date got = getLastCategorizedDate(userClient, id);
         assertNotNull(got);
-        assertEquals(EPOCH_FAR_PAST * 1000L, got.getTime());
+        assertEquals(EPOCH_PAST * 1000L, got.getTime());
     }
 
     @Test
@@ -143,11 +143,11 @@ class AutoCategorizationIT extends BaseIT {
         assertNull(getLastCategorizedDate(userClient, id));
 
         // admin can set the date on an archived entry
-        Date set = setLastCategorizedDate(adminClient, id, EPOCH_FAR_PAST);
-        assertEquals(EPOCH_FAR_PAST * 1000L, set.getTime());
+        Date set = setLastCategorizedDate(adminClient, id, EPOCH_PAST);
+        assertEquals(EPOCH_PAST * 1000L, set.getTime());
 
         Date got = getLastCategorizedDate(userClient, id);
-        assertEquals(EPOCH_FAR_PAST * 1000L, got.getTime());
+        assertEquals(EPOCH_PAST * 1000L, got.getTime());
     }
 
     @Test
@@ -160,11 +160,11 @@ class AutoCategorizationIT extends BaseIT {
 
         // Entry B: published, categorized long ago; refresh set dbUpdateDate >> farPast, must appear
         Workflow entryB = publishedWorkflow(workflowsApi, "b");
-        setLastCategorizedDate(adminClient, entryB.getId(), EPOCH_FAR_PAST);
+        setLastCategorizedDate(adminClient, entryB.getId(), EPOCH_PAST);
 
         // Entry C: published, categorized far in the future, must NOT appear
         Workflow entryC = publishedWorkflow(workflowsApi, "c");
-        setLastCategorizedDate(adminClient, entryC.getId(), EPOCH_FAR_FUTURE);
+        setLastCategorizedDate(adminClient, entryC.getId(), EPOCH_FUTURE);
 
         // Entry D: registered but not published, must NOT appear
         Workflow entryD = workflowsApi.manualRegister(SourceControl.GITHUB.name(), WORKFLOW_PATH,

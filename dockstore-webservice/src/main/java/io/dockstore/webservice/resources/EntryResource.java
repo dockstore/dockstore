@@ -395,11 +395,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @SuppressWarnings("checkstyle:MagicNumber")
     public Timestamp setLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
-            @Parameter(description = "UTC epoch seconds; defaults to now") @QueryParam("when") Long when,
+            @Parameter(description = "Date in UTC epoch seconds; defaults to now") @QueryParam("whenSeconds") Long whenSeconds,
             @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
         checkNotNullEntry(entry);
-        Timestamp timestamp = when != null ? new Timestamp(when * 1000L) : new Timestamp(System.currentTimeMillis());
+        Timestamp timestamp = whenSeconds != null ? new Timestamp(whenSeconds * 1000L) : new Timestamp(System.currentTimeMillis());
         entry.getEntryMetadata().setLastCategorizedDate(timestamp);
         return entry.getEntryMetadata().getLastCategorizedDate();
     }
@@ -413,11 +413,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry IDs", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Long.class))))
     @SuppressWarnings("checkstyle:MagicNumber")
     public List<Long> findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Cutoff UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoff") Long cutoff) {
-        if (cutoff == null) {
-            throw new CustomWebApplicationException("cutoff query parameter is required", HttpStatus.SC_BAD_REQUEST);
+            @Parameter(description = "Cutoff in UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoffSeconds") Long cutoffSeconds) {
+        if (cutoffSeconds == null) {
+            throw new CustomWebApplicationException("cutoffSeconds query parameter is required", HttpStatus.SC_BAD_REQUEST);
         }
-        return toolDAO.findEntriesToCategorize(new Timestamp(cutoff * 1000L));
+        return toolDAO.findEntriesToCategorize(new Timestamp(cutoffSeconds * 1000L));
     }
 
     @GET
