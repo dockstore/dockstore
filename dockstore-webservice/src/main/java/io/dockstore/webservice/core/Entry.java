@@ -61,6 +61,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -83,6 +84,7 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -136,7 +138,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
             + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus is not null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
     @NamedQuery(name = Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
-    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL")
+    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
+    @NamedQuery(name = Entry.FIND_ENTRIES_TO_CATEGORIZE, query = "SELECT e.id FROM Entry e JOIN e.entryMetadata m WHERE e.isPublished = TRUE AND (m.lastCategorizedDate IS NULL OR (e.dbUpdateDate > m.lastCategorizedDate AND m.lastCategorizedDate < :cutoff))")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -159,6 +162,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
     public static final String GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.getPublishedEntriesWithNoTopics";
     public static final String COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.countPublishedEntriesWithNoTopics";
+    public static final String FIND_ENTRIES_TO_CATEGORIZE = "Entry.findEntriesToCategorize";
     private static final int TOPIC_LENGTH = 250;
 
     /**
@@ -367,6 +371,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The aggregated metrics for executions of this entry, grouped by platform", position = 26)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private EntryMetadata entryMetadata = new EntryMetadata();
+
     public enum GitVisibility {
         /**
          * There was a failed attempt to determine visibility
@@ -393,12 +403,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
+        entryMetadata.parent = this;
     }
 
     public Entry(long id) {
         this.id = id;
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
+        entryMetadata.parent = this;
     }
 
     public abstract Entry<?, ?> createEmptyEntry();
@@ -984,6 +996,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
         this.metricsByPlatform = metricsByPlatform;
+    }
+
+    public EntryMetadata getEntryMetadata() {
+        if (entryMetadata == null) {
+            entryMetadata = new EntryMetadata();
+            entryMetadata.setId(this.id);
+        }
+        return entryMetadata;
+    }
+
+    public void setEntryMetadata(EntryMetadata entryMetadata) {
+        this.entryMetadata = entryMetadata;
     }
 
     @JsonProperty

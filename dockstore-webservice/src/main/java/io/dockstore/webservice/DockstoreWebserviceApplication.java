@@ -50,6 +50,7 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Doi;
+import io.dockstore.webservice.core.EntryMetadata;
 import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
@@ -264,7 +265,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, PublicNotification.class, GitHubAppNotification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class, CostStatisticMetric.class,
-            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class, TimeSeriesMetric.class, HistogramMetric.class) {
+            ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class, MetricsByStatus.class, Doi.class, TimeSeriesMetric.class, HistogramMetric.class,
+            EntryMetadata.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
