@@ -177,12 +177,12 @@ class AutoCategorizationIT extends BaseIT {
         workflowsApi.refresh1(entryD.getId(), false);
 
         List<EntryLiteAndVersionName> toCategorize = findEntriesToCategorize(adminClient, 0L, 0, 100);
-        List<String> paths = toCategorize.stream().map(e -> e.getEntryLite().getEntryPath()).toList();
+        List<String> trsIds = toCategorize.stream().map(e -> e.getEntryLite().getTrsId()).toList();
 
-        assertTrue(paths.contains(entryA.getWorkflowPath()), "Never-categorized published entry should appear");
-        assertTrue(paths.contains(entryB.getWorkflowPath()), "Stale-categorized published entry should appear");
-        assertFalse(paths.contains(entryC.getWorkflowPath()), "Future-dated categorized entry should not appear");
-        assertFalse(paths.contains(entryD.getWorkflowPath()), "Unpublished entry should not appear");
+        assertTrue(trsIds.contains(entryA.getTrsId()), "Never-categorized published entry should appear");
+        assertTrue(trsIds.contains(entryB.getTrsId()), "Stale-categorized published entry should appear");
+        assertFalse(trsIds.contains(entryC.getTrsId()), "Future-dated categorized entry should not appear");
+        assertFalse(trsIds.contains(entryD.getTrsId()), "Unpublished entry should not appear");
     }
 
     @Test
