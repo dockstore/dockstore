@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -28,6 +29,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.SourceFile;
@@ -39,6 +41,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -90,6 +93,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -409,15 +413,25 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork(readOnly = true)
     @Path("/toCategorize")
     @RolesAllowed({"curator", "admin"})
-    @Operation(operationId = "findEntriesToCategorize", description = "Get IDs of published entries that are new and uncategorized, or that have changed since last categorization and were last categorized before the given cutoff.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry IDs", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Long.class))))
+    @Operation(operationId = "findEntriesToCategorize", description = "Get published entries that are new and uncategorized, or that have changed since last categorization and were last categorized before the given cutoff.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))))
     @SuppressWarnings("checkstyle:MagicNumber")
-    public List<Long> findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Cutoff in UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoffSeconds") Long cutoffSeconds) {
+    public Response findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Cutoff in UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoffSeconds") Long cutoffSeconds,
+            @Parameter(description = "Pagination offset") @QueryParam("offset") @DefaultValue("0") int offset,
+            @Parameter(description = "Pagination limit") @QueryParam("limit") @DefaultValue("100") int limit) {
         if (cutoffSeconds == null) {
             throw new CustomWebApplicationException("cutoffSeconds query parameter is required", HttpStatus.SC_BAD_REQUEST);
         }
-        return toolDAO.findEntriesToCategorize(new Timestamp(cutoffSeconds * 1000L));
+        Timestamp cutoff = new Timestamp(cutoffSeconds * 1000L);
+        List<Entry> entries = toolDAO.findEntriesToCategorize(cutoff, offset, limit);
+        List<EntryLiteAndVersionName> result = entries.stream()
+            .map(entry -> new EntryLiteAndVersionName(
+                entry.createEntryLite(),
+                EntryVersionHelper.determineRepresentativeVersion(entry).map(Version::getName).orElse("")))
+            .toList();
+        long totalCount = toolDAO.countEntriesToCategorize(cutoff);
+        return Response.ok(result).header(X_TOTAL_COUNT, totalCount).build();
     }
 
     @GET

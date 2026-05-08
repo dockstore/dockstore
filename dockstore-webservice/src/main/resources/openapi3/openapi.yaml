@@ -3318,8 +3318,8 @@ paths:
       - curation
   /entries/toCategorize:
     get:
-      description: "Get IDs of published entries that are new and uncategorized, or\
-        \ that have changed since last categorization and were last categorized before\
+      description: "Get published entries that are new and uncategorized, or that\
+        \ have changed since last categorization and were last categorized before\
         \ the given cutoff."
       operationId: findEntriesToCategorize
       parameters:
@@ -3331,6 +3331,20 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
       responses:
         "200":
           content:
@@ -3338,9 +3352,8 @@ paths:
               schema:
                 type: array
                 items:
-                  type: integer
-                  format: int64
-          description: Successfully retrieved entry IDs
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
       security:
       - BEARER: []
       tags:

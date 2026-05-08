@@ -418,10 +418,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Long.class).getSingleResult();
     }
 
-    public List<Long> findEntriesToCategorize(Timestamp cutoff) {
-        return this.currentSession().createNamedQuery(Entry.FIND_ENTRIES_TO_CATEGORIZE, Long.class)
-                .setParameter("cutoff", cutoff)
-                .list();
+    public List<Entry> findEntriesToCategorize(Timestamp cutoff, int offset, int limit) {
+        return this.currentSession().createNamedQuery(Entry.FIND_ENTRIES_TO_CATEGORIZE, Entry.class)
+            .setParameter("cutoff", cutoff)
+            .setFirstResult(offset)
+            .setMaxResults(limit)
+            .list();
+    }
+
+    public long countEntriesToCategorize(Timestamp cutoff) {
+        return this.currentSession().createNamedQuery(Entry.COUNT_ENTRIES_TO_CATEGORIZE, Long.class)
+            .setParameter("cutoff", cutoff)
+            .getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
