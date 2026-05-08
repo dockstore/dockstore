@@ -12,7 +12,7 @@ humanfriendly==10.0
 idna==3.7
 isodate==0.6.1
 lxml==5.2.2
-mistune==3.0.2
+mistune==3.2.1
 msgpack==1.0.8
 mypy-extensions==1.0.0
 networkx==3.3
