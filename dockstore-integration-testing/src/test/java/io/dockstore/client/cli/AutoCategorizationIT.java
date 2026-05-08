@@ -31,6 +31,7 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.Workflow;
 import java.util.Date;
 import java.util.List;
@@ -77,8 +78,8 @@ class AutoCategorizationIT extends BaseIT {
         return new EntriesApi(client).setLastCategorizedDate(id, "", when);
     }
 
-    private List<Long> findEntriesToCategorize(ApiClient client, long cutoff) throws ApiException {
-        return new EntriesApi(client).findEntriesToCategorize(cutoff);
+    private List<EntryLiteAndVersionName> findEntriesToCategorize(ApiClient client, long intervalSeconds, int offset, int limit) throws ApiException {
+        return new EntriesApi(client).findEntriesToCategorize(intervalSeconds, offset, limit);
     }
 
     @Test
@@ -171,32 +172,31 @@ class AutoCategorizationIT extends BaseIT {
             DESCRIPTOR_PATH, "d", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.refresh1(entryD.getId(), false);
 
-        long cutoffNow = System.currentTimeMillis() / 1000L;
-        List<Long> toCategorize = findEntriesToCategorize(adminClient, cutoffNow);
+        List<EntryLiteAndVersionName> toCategorize = findEntriesToCategorize(adminClient, 0L, 0, 100);
+        List<String> paths = toCategorize.stream().map(e -> e.getEntryLite().getEntryPath()).toList();
 
-        assertTrue(toCategorize.contains(entryA.getId()), "Never-categorized published entry should appear");
-        assertTrue(toCategorize.contains(entryB.getId()), "Stale-categorized published entry should appear");
-        assertFalse(toCategorize.contains(entryC.getId()), "Future-dated categorized entry should not appear");
-        assertFalse(toCategorize.contains(entryD.getId()), "Unpublished entry should not appear");
+        assertTrue(paths.contains(entryA.getWorkflowPath()), "Never-categorized published entry should appear");
+        assertTrue(paths.contains(entryB.getWorkflowPath()), "Stale-categorized published entry should appear");
+        assertFalse(paths.contains(entryC.getWorkflowPath()), "Future-dated categorized entry should not appear");
+        assertFalse(paths.contains(entryD.getWorkflowPath()), "Unpublished entry should not appear");
     }
 
     @Test
     void testFindEntriesToCategorizeRequiresAdminOrCurator() {
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        long cutoff = System.currentTimeMillis() / 1000L;
 
         ApiException ex = assertThrows(ApiException.class,
-            () -> findEntriesToCategorize(userClient, cutoff));
+            () -> findEntriesToCategorize(userClient, 0L, 0, 100));
         assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
     }
 
     @Test
-    void testFindEntriesToCategorizeRequiresCutoff() {
+    void testFindEntriesToCategorizeRequiresInterval() {
         ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(adminClient);
 
         ApiException ex = assertThrows(ApiException.class,
-            () -> entriesApi.findEntriesToCategorize(null));
+            () -> entriesApi.findEntriesToCategorize(null, 0, 100));
         assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
     }
 }

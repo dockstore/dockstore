@@ -413,17 +413,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork(readOnly = true)
     @Path("/toCategorize")
     @RolesAllowed({"curator", "admin"})
-    @Operation(operationId = "findEntriesToCategorize", description = "Get published entries that are new and uncategorized, or that have changed since last categorization and were last categorized before the given cutoff.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "findEntriesToCategorize", description = "Get published entries that are new and uncategorized, or that have changed since last categorization and were last categorized at least intervalSeconds seconds ago.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))))
     @SuppressWarnings("checkstyle:MagicNumber")
     public Response findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Cutoff in UTC epoch seconds; entries last categorized before this time are eligible for re-categorization if changed", required = true) @QueryParam("cutoffSeconds") Long cutoffSeconds,
+            @Parameter(description = "Interval in seconds; entries last categorized at least this many seconds ago are eligible for re-categorization if changed", required = true) @QueryParam("intervalSeconds") Long intervalSeconds,
             @Parameter(description = "Pagination offset") @QueryParam("offset") @DefaultValue("0") int offset,
             @Parameter(description = "Pagination limit") @QueryParam("limit") @DefaultValue("100") int limit) {
-        if (cutoffSeconds == null) {
-            throw new CustomWebApplicationException("cutoffSeconds query parameter is required", HttpStatus.SC_BAD_REQUEST);
+        if (intervalSeconds == null) {
+            throw new CustomWebApplicationException("intervalSeconds query parameter is required", HttpStatus.SC_BAD_REQUEST);
         }
-        Timestamp cutoff = new Timestamp(cutoffSeconds * 1000L);
+        Timestamp cutoff = new Timestamp(System.currentTimeMillis() - intervalSeconds * 1000L);
         List<Entry> entries = toolDAO.findEntriesToCategorize(cutoff, offset, limit);
         List<EntryLiteAndVersionName> result = entries.stream()
             .map(entry -> new EntryLiteAndVersionName(

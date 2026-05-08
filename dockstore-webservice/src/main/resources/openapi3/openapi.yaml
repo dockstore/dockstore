@@ -3319,14 +3319,14 @@ paths:
   /entries/toCategorize:
     get:
       description: "Get published entries that are new and uncategorized, or that\
-        \ have changed since last categorization and were last categorized before\
-        \ the given cutoff."
+        \ have changed since last categorization and were last categorized at least\
+        \ intervalSeconds seconds ago."
       operationId: findEntriesToCategorize
       parameters:
-      - description: Cutoff in UTC epoch seconds; entries last categorized before
-          this time are eligible for re-categorization if changed
+      - description: Interval in seconds; entries last categorized at least this many
+          seconds ago are eligible for re-categorization if changed
         in: query
-        name: cutoffSeconds
+        name: intervalSeconds
         required: true
         schema:
           type: integer
