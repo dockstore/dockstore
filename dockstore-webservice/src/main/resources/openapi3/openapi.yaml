@@ -3318,19 +3318,33 @@ paths:
       - curation
   /entries/toCategorize:
     get:
-      description: "Get IDs of published entries that are new and uncategorized, or\
-        \ that have changed since last categorization and were last categorized before\
-        \ the given cutoff."
+      description: "Get published entries that are new and uncategorized, or that\
+        \ have changed since last categorization and were last categorized at least\
+        \ intervalSeconds seconds ago."
       operationId: findEntriesToCategorize
       parameters:
-      - description: Cutoff in UTC epoch seconds; entries last categorized before
-          this time are eligible for re-categorization if changed
+      - description: Interval in seconds; entries last categorized at least this many
+          seconds ago are eligible for re-categorization if changed
         in: query
-        name: cutoffSeconds
+        name: intervalSeconds
         required: true
         schema:
           type: integer
           format: int64
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
       responses:
         "200":
           content:
@@ -3338,9 +3352,8 @@ paths:
               schema:
                 type: array
                 items:
-                  type: integer
-                  format: int64
-          description: Successfully retrieved entry IDs
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
       security:
       - BEARER: []
       tags:

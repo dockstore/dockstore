@@ -15,6 +15,7 @@
  */
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,9 +32,13 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.Workflow;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,8 +82,8 @@ class AutoCategorizationIT extends BaseIT {
         return new EntriesApi(client).setLastCategorizedDate(id, "", when);
     }
 
-    private List<Long> findEntriesToCategorize(ApiClient client, long cutoff) throws ApiException {
-        return new EntriesApi(client).findEntriesToCategorize(cutoff);
+    private List<EntryLiteAndVersionName> findEntriesToCategorize(ApiClient client, long intervalSeconds, int offset, int limit) throws ApiException {
+        return new EntriesApi(client).findEntriesToCategorize(intervalSeconds, offset, limit);
     }
 
     @Test
@@ -171,32 +176,102 @@ class AutoCategorizationIT extends BaseIT {
             DESCRIPTOR_PATH, "d", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.refresh1(entryD.getId(), false);
 
-        long cutoffNow = System.currentTimeMillis() / 1000L;
-        List<Long> toCategorize = findEntriesToCategorize(adminClient, cutoffNow);
+        List<EntryLiteAndVersionName> toCategorize = findEntriesToCategorize(adminClient, 0L, 0, 100);
+        List<String> trsIds = toCategorize.stream().map(e -> e.getEntryLite().getTrsId()).toList();
 
-        assertTrue(toCategorize.contains(entryA.getId()), "Never-categorized published entry should appear");
-        assertTrue(toCategorize.contains(entryB.getId()), "Stale-categorized published entry should appear");
-        assertFalse(toCategorize.contains(entryC.getId()), "Future-dated categorized entry should not appear");
-        assertFalse(toCategorize.contains(entryD.getId()), "Unpublished entry should not appear");
+        assertTrue(trsIds.contains(entryA.getTrsId()), "Never-categorized published entry should appear");
+        assertTrue(trsIds.contains(entryB.getTrsId()), "Stale-categorized published entry should appear");
+        assertFalse(trsIds.contains(entryC.getTrsId()), "Future-dated categorized entry should not appear");
+        assertFalse(trsIds.contains(entryD.getTrsId()), "Unpublished entry should not appear");
     }
 
     @Test
     void testFindEntriesToCategorizeRequiresAdminOrCurator() {
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        long cutoff = System.currentTimeMillis() / 1000L;
 
         ApiException ex = assertThrows(ApiException.class,
-            () -> findEntriesToCategorize(userClient, cutoff));
+            () -> findEntriesToCategorize(userClient, 0L, 0, 100));
         assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
     }
 
     @Test
-    void testFindEntriesToCategorizeRequiresCutoff() {
+    void testFindEntriesToCategorizeRequiresInterval() {
         ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(adminClient);
 
         ApiException ex = assertThrows(ApiException.class,
-            () -> entriesApi.findEntriesToCategorize(null));
+            () -> entriesApi.findEntriesToCategorize(null, 0, 100));
         assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+    }
+
+    @Test
+    void testFindEntriesToCategorizePagingLimit() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(adminClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
+
+        for (int i = 1; i <= 5; i++) {
+            publishedWorkflow(workflowsApi, "pg" + i);
+        }
+
+        entriesApi.findEntriesToCategorize(0L, 0, 1);
+        long total = getXTotalCount(entriesApi);
+        assertTrue(total >= 5);
+
+        // limit=3 returns at most 3 entries; X-Total-Count still reflects the full total
+        List<EntryLiteAndVersionName> page = entriesApi.findEntriesToCategorize(0L, 0, 3);
+        assertEquals(3, page.size());
+        assertEquals(total, getXTotalCount(entriesApi));
+    }
+
+    @Test
+    void testFindEntriesToCategorizePagingOffset() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(adminClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
+
+        for (int i = 1; i <= 5; i++) {
+            publishedWorkflow(workflowsApi, "pg" + i);
+        }
+
+        List<EntryLiteAndVersionName> all = entriesApi.findEntriesToCategorize(0L, 0, 10000);
+        long total = getXTotalCount(entriesApi);
+        assertTrue(total >= 5);
+
+        List<EntryLiteAndVersionName> page0 = entriesApi.findEntriesToCategorize(0L, 0, 3);
+        List<EntryLiteAndVersionName> page1 = entriesApi.findEntriesToCategorize(0L, 3, 3);
+        assertEquals(3, page0.size());
+        assertTrue(page1.size() >= 2); // total >= 5, so at least 2 remain after skipping 3
+
+        assertTrue(Collections.disjoint(entryPaths(page0), entryPaths(page1)), "Pages must not overlap");
+        assertTrue(entryPaths(all).containsAll(entryPaths(page0)));
+        assertTrue(entryPaths(all).containsAll(entryPaths(page1)));
+    }
+
+    @Test
+    void testFindEntriesToCategorizePagingPastEnd() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(adminClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
+
+        for (int i = 1; i <= 3; i++) {
+            publishedWorkflow(workflowsApi, "pg" + i);
+        }
+
+        entriesApi.findEntriesToCategorize(0L, 0, 1);
+        long total = getXTotalCount(entriesApi);
+
+        // Offset past the end returns an empty list but X-Total-Count is unchanged
+        List<EntryLiteAndVersionName> empty = entriesApi.findEntriesToCategorize(0L, 10000, 10);
+        assertTrue(empty.isEmpty());
+        assertEquals(total, getXTotalCount(entriesApi));
+    }
+
+    private long getXTotalCount(EntriesApi entriesApi) {
+        return Long.parseLong(entriesApi.getApiClient().getResponseHeaders().get(X_TOTAL_COUNT).get(0));
+    }
+
+    private Set<String> entryPaths(List<EntryLiteAndVersionName> entries) {
+        return entries.stream().map(e -> e.getEntryLite().getEntryPath()).collect(Collectors.toSet());
     }
 }
