@@ -40,4 +40,7 @@
             SELECT id FROM workflow
         </sql>
     </changeSet>
+    <changeSet author="dyuen" id="null_long_sentences">
+        <sql>update workflow set topicai = null where topicselection = 'AI' and length(topicai) = 250 and ispublished;</sql>
+    </changeSet>
 </databaseChangeLog>
