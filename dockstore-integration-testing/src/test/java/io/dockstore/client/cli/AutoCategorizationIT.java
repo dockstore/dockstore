@@ -289,26 +289,24 @@ class AutoCategorizationIT extends BaseIT {
     }
 
     @Test
-    void testAdminCanSetCollectionMetadataOnCreate() throws ApiException {
+    void testAdminCanManageCollectionMetadata() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi orgsApi = new OrganizationsApi(adminClient);
         Organization org = orgsApi.createOrganization(stubOrg());
-        Collection stub = stubCollection("Alignment");
-        stub.setMetadata(Map.of("source", "test"));
-        Collection collection = orgsApi.createCollection(stub, org.getId());
-        assertNotNull(collection.getMetadata());
-    }
 
-    @Test
-    void testAdminCanUpdateCollectionMetadata() throws ApiException {
-        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        OrganizationsApi orgsApi = new OrganizationsApi(adminClient);
-        Organization org = orgsApi.createOrganization(stubOrg());
-        Collection collection = orgsApi.createCollection(stubCollection("Alignment"), org.getId());
+        // Admin can set metadata on create
+        Collection withMetadata = stubCollection("Alignment");
+        withMetadata.setMetadata(Map.of("source", "test"));
+        assertNotNull(orgsApi.createCollection(withMetadata, org.getId()).getMetadata());
+
+        // Creating without metadata starts null; admin can update to set it
+        Collection collection = orgsApi.createCollection(stubCollection("Categorization"), org.getId());
         assertNull(collection.getMetadata());
-        collection.setMetadata(Map.of("source", "test"));
-        Collection updated = orgsApi.updateCollection(collection, org.getId(), collection.getId());
-        assertNotNull(updated.getMetadata());
+        collection.setMetadata(Map.of("source", "autocategorization"));
+        assertNotNull(orgsApi.updateCollection(collection, org.getId(), collection.getId()).getMetadata());
+
+        // Source field persists correctly on retrieval
+        assertEquals("autocategorization", orgsApi.getCollectionById(org.getId(), collection.getId()).getMetadata().get("source"));
     }
 
     @Test
@@ -340,20 +338,6 @@ class AutoCategorizationIT extends BaseIT {
         withAdminMetadata.setMetadata(null);
         Collection unchanged = userOrgsApi.updateCollection(withAdminMetadata, orgId, withAdminMetadata.getId());
         assertNotNull(unchanged.getMetadata(), "Non-admin/curator should not be able to clear metadata");
-    }
-
-    @Test
-    void testCollectionMetadataSourceField() throws ApiException {
-        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        OrganizationsApi orgsApi = new OrganizationsApi(adminClient);
-        Organization org = orgsApi.createOrganization(stubOrg());
-        Collection collection = orgsApi.createCollection(stubCollection("Alignment"), org.getId());
-
-        collection.setMetadata(Map.of("source", "autocategorization"));
-        orgsApi.updateCollection(collection, org.getId(), collection.getId());
-
-        Collection retrieved = orgsApi.getCollectionById(org.getId(), collection.getId());
-        assertEquals("autocategorization", retrieved.getMetadata().get("source"));
     }
 
     private Organization stubOrg() {
