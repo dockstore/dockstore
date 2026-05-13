@@ -2,7 +2,6 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import io.swagger.annotations.ApiModel;
@@ -179,7 +178,7 @@ public class Collection implements Serializable, Aliasable {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Schema(description = "Arbitrary metadata for this collection, settable only by admins and curators")
-    private JsonNode metadata;
+    private Map<String, String> metadata;
 
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
@@ -333,11 +332,11 @@ public class Collection implements Serializable, Aliasable {
         this.deleted = deleted;
     }
 
-    public JsonNode getMetadata() {
+    public Map<String, String> getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(JsonNode metadata) {
+    public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
 }
