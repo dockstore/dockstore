@@ -466,6 +466,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             collectionOrCategory = collection;
         }
 
+        // Only admins/curators may set metadata
+        if (!user.getIsAdmin() && !user.isCurator()) {
+            collectionOrCategory.setMetadata(null);
+        }
+
         // Save the collection
         long id = collectionDAO.create(collectionOrCategory);
         organization.addCollection(collectionOrCategory);
@@ -525,6 +530,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         existingCollection.setDisplayName(collection.getDisplayName());
         existingCollection.setDescription(collection.getDescription());
         existingCollection.setTopic(collection.getTopic());
+        // Only admins/curators may update metadata
+        if (user.getIsAdmin() || user.isCurator()) {
+            existingCollection.setMetadata(collection.getMetadata());
+        }
 
         // Event for update
         Event updateCollectionEvent = new Event.Builder()
@@ -720,6 +729,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         category.setDescription(collection.getDescription());
         category.setDisplayName(collection.getDisplayName());
         category.setTopic(collection.getTopic());
+        category.setMetadata(collection.getMetadata());
         category.setOrganization(collection.getOrganization());
         return category;
     }

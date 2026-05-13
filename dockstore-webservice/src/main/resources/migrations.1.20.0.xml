@@ -40,4 +40,9 @@
             SELECT id FROM workflow
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="addMetadataToCollection">
+        <addColumn tableName="collection">
+            <column name="metadata" type="JSONB"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
