@@ -3316,6 +3316,39 @@ paths:
       - BEARER: []
       tags:
       - curation
+  /entries:
+    get:
+      description: Get TRS IDs and default version names of all published entries.
+      operationId: getAllEntries
+      parameters:
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
+      tags:
+      - entries
   /entries/toCategorize:
     get:
       description: "Get published entries that are new and uncategorized, or that\

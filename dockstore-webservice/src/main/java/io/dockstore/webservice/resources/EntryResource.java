@@ -19,6 +19,7 @@ import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation
 import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
 import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -83,6 +84,8 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -431,6 +434,20 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 EntryVersionHelper.determineRepresentativeVersion(entry).map(Version::getName).orElse("")))
             .toList();
         long totalCount = toolDAO.countEntriesToCategorize(cutoff);
+        return Response.ok(result).header(X_TOTAL_COUNT, totalCount).build();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("")
+    @Operation(operationId = "getAllEntries", description = "Get TRS IDs and default version names of all published entries.")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))))
+    public Response getAllEntries(
+            @Parameter(description = "Pagination offset") @QueryParam("offset") @Min(0) @DefaultValue("0") int offset,
+            @Parameter(description = "Pagination limit") @QueryParam("limit") @Min(1) @Max(MAX_PAGINATION_LIMIT) @DefaultValue("100") int limit) {
+        List<EntryLiteAndVersionName> result = toolDAO.findPublishedEntries(offset, limit);
+        long totalCount = toolDAO.countPublishedEntries();
         return Response.ok(result).header(X_TOTAL_COUNT, totalCount).build();
     }
 
