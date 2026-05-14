@@ -46,8 +46,10 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -208,6 +210,49 @@ class ExtendedTRSApiIT extends BaseIT {
         aiTopicCandidates = extendedGa4GhApi.getAITopicCandidates(null, null);
         assertTrue(aiTopicCandidates.isEmpty());
         checkXTotalCountHeader(extendedGa4GhApi, 0);
+    }
+
+    @Test
+    void testGetAllEntries() throws ApiException {
+        // Mark all of the tools as published.  At the time of this writing, there are 4 tools.
+        testingPostgres.runUpdateStatement("update tool set ispublished = true");
+
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(getAnonymousOpenAPIWebClient());
+        List<EntryLiteAndVersionName> entries = extendedGa4GhApi.getAllEntries(0, 100);
+        long total = getXTotalCount(extendedGa4GhApi);
+
+        assertTrue(total >= 4);
+        assertEquals(total, entries.size());
+        entries.forEach(e -> assertNotNull(e.getEntryLite().getTrsId()));
+    }
+
+    @Test
+    void testGetAllEntriesPagination() throws ApiException {
+        // Mark all of the tools as published.  At the time of this writing, there are 4 tools.
+        testingPostgres.runUpdateStatement("update tool set ispublished = true");
+
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(getAnonymousOpenAPIWebClient());
+        extendedGa4GhApi.getAllEntries(0, 100);
+        long total = getXTotalCount(extendedGa4GhApi);
+        assertTrue(total >= 4);
+
+        // limit restricts page size but X-Total-Count still reflects the full total
+        List<EntryLiteAndVersionName> limited = extendedGa4GhApi.getAllEntries(0, 1);
+        assertEquals(1, limited.size());
+        assertEquals(total, getXTotalCount(extendedGa4GhApi));
+
+        // offset paginates without overlap
+        List<EntryLiteAndVersionName> page0 = extendedGa4GhApi.getAllEntries(0, 3);
+        List<EntryLiteAndVersionName> page1 = extendedGa4GhApi.getAllEntries(3, 100);
+        assertEquals(3, page0.size());
+        assertTrue(page1.size() < 100);
+        Set<String> ids0 = page0.stream().map(e -> e.getEntryLite().getTrsId()).collect(Collectors.toSet());
+        Set<String> ids1 = page1.stream().map(e -> e.getEntryLite().getTrsId()).collect(Collectors.toSet());
+        assertTrue(Collections.disjoint(ids0, ids1));
+    }
+
+    private long getXTotalCount(ExtendedGa4GhApi extendedGa4GhApi) {
+        return Long.parseLong(extendedGa4GhApi.getApiClient().getResponseHeaders().get(X_TOTAL_COUNT).get(0));
     }
 
     private void checkXTotalCountHeader(ExtendedGa4GhApi extendedGa4GhApi, int expectedCount) {

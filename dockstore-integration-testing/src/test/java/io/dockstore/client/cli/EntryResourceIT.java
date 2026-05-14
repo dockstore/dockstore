@@ -1,8 +1,6 @@
 package io.dockstore.client.cli;
 
-import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -20,14 +18,10 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DescriptionMetrics;
 import io.dockstore.openapi.client.model.DockstoreTool;
-import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -181,46 +175,4 @@ class EntryResourceIT extends BaseIT {
             Long.class);
     }
 
-    @Test
-    void testGetAllEntries() throws ApiException {
-        // Mark all of the tools as published.  There are 4 tools at time of this writing.
-        testingPostgres.runUpdateStatement("update tool set ispublished = true");
-
-        EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
-        List<EntryLiteAndVersionName> entries = entriesApi.getAllEntries(0, 100);
-        long total = getXTotalCount(entriesApi);
-
-        assertTrue(total >= 4);
-        assertEquals(total, entries.size());
-        entries.forEach(e -> assertNotNull(e.getEntryLite().getTrsId()));
-    }
-
-    @Test
-    void testGetAllEntriesPagination() throws ApiException {
-        // Mark all of the tools as published.  There are 4 tools at time of this writing.
-        testingPostgres.runUpdateStatement("update tool set ispublished = true");
-
-        EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
-        entriesApi.getAllEntries(0, 100);
-        long total = getXTotalCount(entriesApi);
-        assertTrue(total >= 4);
-
-        // limit restricts page size but X-Total-Count still reflects the full total
-        List<EntryLiteAndVersionName> limited = entriesApi.getAllEntries(0, 1);
-        assertEquals(1, limited.size());
-        assertEquals(total, getXTotalCount(entriesApi));
-
-        // offset paginates without overlap
-        List<EntryLiteAndVersionName> page0 = entriesApi.getAllEntries(0, 3);
-        List<EntryLiteAndVersionName> page1 = entriesApi.getAllEntries(3, 100);
-        assertEquals(3, page0.size());
-        assertTrue(page1.size() < 100);
-        Set<String> ids0 = page0.stream().map(e -> e.getEntryLite().getTrsId()).collect(Collectors.toSet());
-        Set<String> ids1 = page1.stream().map(e -> e.getEntryLite().getTrsId()).collect(Collectors.toSet());
-        assertTrue(Collections.disjoint(ids0, ids1));
-    }
-
-    private long getXTotalCount(EntriesApi entriesApi) {
-        return Long.parseLong(entriesApi.getApiClient().getResponseHeaders().get(X_TOTAL_COUNT).get(0));
-    }
 }

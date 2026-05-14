@@ -59,4 +59,5 @@ public abstract class ToolsExtendedApiService {
 
     public abstract Response getAITopicCandidate(String id);
     public abstract Response getAITopicCandidates(int offset, int limit);
+    public abstract Response getAllEntries(int offset, int limit);
 }
