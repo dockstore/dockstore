@@ -31,12 +31,16 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
+import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.Workflow;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
@@ -273,5 +277,86 @@ class AutoCategorizationIT extends BaseIT {
 
     private Set<String> entryPaths(List<EntryLiteAndVersionName> entries) {
         return entries.stream().map(e -> e.getEntryLite().getEntryPath()).collect(Collectors.toSet());
+    }
+
+    @Test
+    void testCollectionMetadataIsNullByDefault() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi orgsApi = new OrganizationsApi(adminClient);
+        Organization org = orgsApi.createOrganization(stubOrg());
+        Collection collection = orgsApi.createCollection(stubCollection("Alignment"), org.getId());
+        assertNull(collection.getMetadata());
+    }
+
+    @Test
+    void testAdminCanManageCollectionMetadata() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi orgsApi = new OrganizationsApi(adminClient);
+        Organization org = orgsApi.createOrganization(stubOrg());
+
+        // Admin can set metadata on create
+        Collection withMetadata = stubCollection("Alignment");
+        withMetadata.setMetadata(Map.of("source", "test"));
+        assertNotNull(orgsApi.createCollection(withMetadata, org.getId()).getMetadata());
+
+        // Creating without metadata starts null; admin can update to set it
+        Collection collection = orgsApi.createCollection(stubCollection("Categorization"), org.getId());
+        assertNull(collection.getMetadata());
+        collection.setMetadata(Map.of("source", "autocategorization"));
+        assertNotNull(orgsApi.updateCollection(collection, org.getId(), collection.getId()).getMetadata());
+
+        // Source field persists correctly on retrieval
+        assertEquals("autocategorization", orgsApi.getCollectionById(org.getId(), collection.getId()).getMetadata().get("source"));
+    }
+
+    @Test
+    void testNonAdminCannotSetCollectionMetadata() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        OrganizationsApi adminOrgsApi = new OrganizationsApi(adminClient);
+        OrganizationsApi userOrgsApi = new OrganizationsApi(userClient);
+
+        Organization org = adminOrgsApi.createOrganization(stubOrg());
+        long orgId = org.getId();
+
+        // Make OTHER_USERNAME an org maintainer and have them accept
+        adminOrgsApi.addUserToOrgByUsername("MAINTAINER", OTHER_USERNAME, orgId);
+        userOrgsApi.acceptOrRejectInvitation(orgId, true);
+
+        // Non-admin/curator creates collection with metadata — metadata is silently discarded
+        Collection withMetadata = stubCollection("Alignment");
+        withMetadata.setMetadata(Map.of("source", "test"));
+        Collection created = userOrgsApi.createCollection(withMetadata, orgId);
+        assertNull(created.getMetadata(), "Non-admin/curator should not be able to set metadata on create");
+
+        // Admin sets metadata via update
+        created.setMetadata(Map.of("source", "test"));
+        Collection withAdminMetadata = adminOrgsApi.updateCollection(created, orgId, created.getId());
+        assertNotNull(withAdminMetadata.getMetadata());
+
+        // Non-admin/curator tries to clear metadata via update — should be silently ignored
+        withAdminMetadata.setMetadata(null);
+        Collection unchanged = userOrgsApi.updateCollection(withAdminMetadata, orgId, withAdminMetadata.getId());
+        assertNotNull(unchanged.getMetadata(), "Non-admin/curator should not be able to clear metadata");
+    }
+
+    private Organization stubOrg() {
+        Organization org = new Organization();
+        org.setName("TestOrg");
+        org.setDisplayName("Test Organization");
+        org.setEmail("test@org.com");
+        org.setDescription("A test organization");
+        org.setLink("https://www.example.com");
+        org.setLocation("location");
+        org.setTopic("topic");
+        return org;
+    }
+
+    private Collection stubCollection(String name) {
+        Collection c = new Collection();
+        c.setName(name);
+        c.setDisplayName(name + " Display");
+        c.setDescription("A test collection");
+        return c;
     }
 }

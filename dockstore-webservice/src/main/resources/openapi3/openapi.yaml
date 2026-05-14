@@ -5257,6 +5257,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entries as necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         "204":
           description: Successfully deleted the collection
@@ -5438,6 +5445,13 @@ paths:
         name: versionName
         schema:
           type: string
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -5481,6 +5495,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -9593,6 +9614,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
@@ -9732,6 +9761,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
