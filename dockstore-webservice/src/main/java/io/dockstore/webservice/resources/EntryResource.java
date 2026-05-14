@@ -441,7 +441,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("")
-    @Operation(operationId = "getAllEntries", description = "Get TRS IDs and default version names of all published entries.")
+    @Operation(operationId = "getAllEntries", description = "Retrieve an abbreviated description and the default version name of each published entry.")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))))
     public Response getAllEntries(
             @Parameter(description = "Pagination offset") @QueryParam("offset") @Min(0) @DefaultValue("0") int offset,

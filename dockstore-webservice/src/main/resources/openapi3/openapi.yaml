@@ -3318,7 +3318,8 @@ paths:
       - curation
   /entries:
     get:
-      description: Get TRS IDs and default version names of all published entries.
+      description: Retrieve an abbreviated description and the default version name
+        of each published entry.
       operationId: getAllEntries
       parameters:
       - description: Pagination offset
