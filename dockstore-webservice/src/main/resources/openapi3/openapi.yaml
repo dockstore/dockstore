@@ -5223,6 +5223,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entries as necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         "204":
           description: Successfully deleted the collection
@@ -5404,6 +5411,13 @@ paths:
         name: versionName
         schema:
           type: string
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -5447,6 +5461,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
