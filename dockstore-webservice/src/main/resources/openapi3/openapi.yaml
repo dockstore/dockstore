@@ -9559,6 +9559,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
@@ -9698,6 +9706,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
