@@ -5157,7 +5157,7 @@ paths:
           format: int64
       - description: Java regular expression to match collection names against.
         in: query
-        name: nameRegex
+        name: regex
         required: true
         schema:
           type: string

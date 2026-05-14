@@ -490,18 +490,18 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public List<String> deleteCollectionsWithMatchingNames(
         @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
-        @Parameter(description = "Java regular expression to match collection names against.", name = "nameRegex", in = ParameterIn.QUERY, required = true) @QueryParam("nameRegex") String nameRegex) {
+        @Parameter(description = "Java regular expression to match collection names against.", name = "regex", in = ParameterIn.QUERY, required = true) @QueryParam("regex") String regex) {
 
         Organization organization = organizationDAO.findById(organizationId);
         throwExceptionForNullOrganization(organization);
 
-        if (nameRegex == null || nameRegex.isEmpty()) {
-            throw new CustomWebApplicationException("nameRegex parameter is required", HttpStatus.SC_BAD_REQUEST);
+        if (regex == null || regex.isEmpty()) {
+            throw new CustomWebApplicationException("regex parameter is required", HttpStatus.SC_BAD_REQUEST);
         }
 
         Pattern pattern;
         try {
-            pattern = Pattern.compile(nameRegex);
+            pattern = Pattern.compile(regex);
         } catch (PatternSyntaxException e) {
             throw new CustomWebApplicationException("Invalid regular expression: " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
