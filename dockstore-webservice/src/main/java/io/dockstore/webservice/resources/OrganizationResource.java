@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -54,6 +55,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -471,6 +474,53 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         } else { // else if the organization is not pending nor rejected, then throw an error
             throw new CustomWebApplicationException("You can only delete organizations that are pending or have been rejected", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{organizationId}/collections")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "deleteCollectionsWithMatchingNames", summary = "Delete collections with names matching a regexp.", description = "Delete all collections belonging to the given organization whose names match the provided Java regular expression. Returns the list of deleted collection names. Admin/curator only.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "OK", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+        @ApiResponse(responseCode = "400", description = "BAD REQUEST"),
+        @ApiResponse(responseCode = "404", description = "NOT FOUND")
+    })
+    public List<String> deleteCollectionsWithMatchingNames(
+        @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
+        @Parameter(description = "Java regular expression to match collection names against.", name = "nameRegex", in = ParameterIn.QUERY, required = true) @QueryParam("nameRegex") String nameRegex) {
+
+        Organization organization = organizationDAO.findById(organizationId);
+        throwExceptionForNullOrganization(organization);
+
+        if (nameRegex == null || nameRegex.isEmpty()) {
+            throw new CustomWebApplicationException("nameRegex parameter is required", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Pattern pattern;
+        try {
+            pattern = Pattern.compile(nameRegex);
+        } catch (PatternSyntaxException e) {
+            throw new CustomWebApplicationException("Invalid regular expression: " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+        }
+
+        List<Collection> matching = collectionDAO.findAllByOrg(organizationId).stream()
+            .filter(c -> pattern.matcher(c.getName()).matches())
+            .toList();
+
+        for (Collection collection : matching) {
+            collection.setDeleted(true);
+            eventDAO.create(new Event.Builder()
+                .withOrganization(organization)
+                .withCollection(collection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.DELETE_COLLECTION)
+                .build());
+        }
+
+        return matching.stream().map(Collection::getName).toList();
     }
 
     @GET
