@@ -31,6 +31,7 @@ public final class RepositoryConstants {
         public static final String TEST_SERVICE = DOCKSTORE_TEST_USER_2 + "/test-service";
         public static final String TEST_WORKFLOW_AND_TOOLS = DOCKSTORE_TEST_USER_2 + "/test-workflows-and-tools";
         public static final String TEST_WORKFLOW_AND_TOOLS_TOOL_PATH = TEST_WORKFLOW_AND_TOOLS + "/md5sum";
+        public static final String TEST_WORKFLOW_AND_TOOLS_WDL_TOOL_PATH = TEST_WORKFLOW_AND_TOOLS + "/wilds";
         public static final String WORKFLOW_DOCKSTORE_YML = DOCKSTORE_TEST_USER_2 + "/workflow-dockstore-yml";
         // Contains a Galaxy workflow
         public static final String WORKFLOW_TESTING_REPO = DOCKSTORE_TEST_USER_2 + "/workflow-testing-repo";

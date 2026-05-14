@@ -58,6 +58,13 @@
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-core</artifactId>
+            <exclusions>
+                <!-- SEAB - https://ucsc-cgl.atlassian.net/browse/SEAB-7567 remove exclusion when there is a version of docker-java-core with the right version of bcutil-jdk18on naturally -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcutil-jdk18on</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>

@@ -161,7 +161,7 @@ class WebhookIT extends BaseIT {
         // Attach collection
         final Collection createdCollection = organizationsApiAdmin.createCollection(stubCollection, registeredOrganization.getId());
         // Add tool to collection
-        organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
+        organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null, null);
 
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
@@ -1526,6 +1526,20 @@ class WebhookIT extends BaseIT {
         version.getAuthors().forEach(author -> assertNotNull(author.getEmail()));
         assertEquals(0, version.getOrcidAuthors().size());
     }
+
+    @Test
+    void testWdlAppTools() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS, "refs/heads/wdl", USER_2_USERNAME);
+        Workflow wdlAppTool = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS_WDL_TOOL_PATH, WorkflowSubClass.APPTOOL, "versions");
+
+        assertNotNull(wdlAppTool);
+        assertEquals(1, wdlAppTool.getWorkflowVersions().size());
+        assertTrue(wdlAppTool.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
+    }
+
 
     // .dockstore.yml in test repo needs to change to add a 'name' field to one of them. Should also include another branch that doesn't keep the name field
     @Test
