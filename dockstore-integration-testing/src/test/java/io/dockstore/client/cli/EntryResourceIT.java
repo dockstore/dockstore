@@ -185,7 +185,7 @@ class EntryResourceIT extends BaseIT {
     void testGetAllEntries() throws ApiException {
         EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
 
-        List<EntryLiteAndVersionName> entries = entriesApi.getAllEntries(0, 1000);
+        List<EntryLiteAndVersionName> entries = entriesApi.getAllEntries(0, 100);
         long total = getXTotalCount(entriesApi);
 
         // cleanStatePrivate2 has 1 published tool and 2 published workflows
@@ -198,7 +198,7 @@ class EntryResourceIT extends BaseIT {
     void testGetAllEntriesPagination() throws ApiException {
         EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
 
-        entriesApi.getAllEntries(0, 1000);
+        entriesApi.getAllEntries(0, 100);
         long total = getXTotalCount(entriesApi);
         assertTrue(total >= 3);
 
