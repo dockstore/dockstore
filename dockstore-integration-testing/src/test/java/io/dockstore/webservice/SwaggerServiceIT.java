@@ -160,7 +160,7 @@ class SwaggerServiceIT extends BaseIT {
         assertEquals(1, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getServicesLength());
 
         //remove service from collection
-        organizationsApi.deleteEntryFromCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
+        organizationsApi.deleteEntryFromCollection(collectionOrg.getId(), collection.getId(), serviceID, null, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(serviceID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()));

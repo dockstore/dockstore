@@ -285,7 +285,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
         @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
-        @ApiParam(value = "Version Name", required = false) @Parameter(description = "Version Name.", name = "versionName", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName) {
+        @ApiParam(value = "Version Name", required = false) @Parameter(description = "Version Name.", name = "versionName", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName,
+        @Parameter(description = "Reindex entry if necessary. Only admins and curators may set this to false.", name = "reindex", in = ParameterIn.QUERY) @DefaultValue("true") @QueryParam("reindex") boolean reindex) {
+        if (!reindex && !(user.getIsAdmin() || user.isCurator())) {
+            throw new CustomWebApplicationException("Only admins and curators can disable reindexing.", HttpStatus.SC_FORBIDDEN);
+        }
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
@@ -318,7 +322,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         eventDAO.create(removeFromCollectionEvent);
 
         // If deleted from a Category, update the Entry in the index
-        if (entryAndCollection.getRight() instanceof Category) {
+        if (reindex && entryAndCollection.getRight() instanceof Category) {
             handleIndexUpdate(entryAndCollection.getLeft());
         }
 
