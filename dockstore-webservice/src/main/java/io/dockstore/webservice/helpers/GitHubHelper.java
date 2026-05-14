@@ -108,7 +108,7 @@ public final class GitHubHelper {
                     .setRequestInitializer(request -> {
                         request.getHeaders().setAccept("application/json");
                         request.getUrl().set("code_verifier", codeVerifier);
-                        request.setLoggingEnabled(true);
+                        // useful for debugging PKCE, but would leave unadvisable content in CloudWatch logs  request.setLoggingEnabled(true);
                     }).execute();
             if (tokenResponse.getAccessToken() != null) {
                 return tokenResponse.getAccessToken();

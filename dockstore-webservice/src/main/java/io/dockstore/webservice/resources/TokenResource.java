@@ -33,7 +33,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.model.Userinfoplus;
-import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -602,7 +601,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         try {
             byte[] hash = MessageDigest.getInstance(PKCE_ENCODING_ALGORITHM).digest(verifier.getBytes(StandardCharsets.UTF_8));
-            String hashedValue = BaseEncoding.base64Url().omitPadding().encode(hash);
+            String hashedValue = Base64.getUrlEncoder().encodeToString(hash);
             String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
             PKCE pkce = new PKCE(hashedValue, state);
             getPkceCache().put(state, verifier);
