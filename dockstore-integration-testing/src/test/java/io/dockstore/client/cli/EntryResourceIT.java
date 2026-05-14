@@ -183,24 +183,27 @@ class EntryResourceIT extends BaseIT {
 
     @Test
     void testGetAllEntries() throws ApiException {
-        EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
+        // Mark all of the tools as published.  There are 4 tools at time of this writing.
+        testingPostgres.runUpdateStatement("update tool set ispublished = true");
 
+        EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
         List<EntryLiteAndVersionName> entries = entriesApi.getAllEntries(0, 100);
         long total = getXTotalCount(entriesApi);
 
-        // cleanStatePrivate2 has 1 published tool and 2 published workflows
-        assertTrue(total >= 3);
+        assertTrue(total >= 4);
         assertEquals(total, entries.size());
         entries.forEach(e -> assertNotNull(e.getEntryLite().getTrsId()));
     }
 
     @Test
     void testGetAllEntriesPagination() throws ApiException {
-        EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
+        // Mark all of the tools as published.  There are 4 tools at time of this writing.
+        testingPostgres.runUpdateStatement("update tool set ispublished = true");
 
+        EntriesApi entriesApi = new EntriesApi(getAnonymousOpenAPIWebClient());
         entriesApi.getAllEntries(0, 100);
         long total = getXTotalCount(entriesApi);
-        assertTrue(total >= 3);
+        assertTrue(total >= 4);
 
         // limit restricts page size but X-Total-Count still reflects the full total
         List<EntryLiteAndVersionName> limited = entriesApi.getAllEntries(0, 1);
@@ -208,9 +211,10 @@ class EntryResourceIT extends BaseIT {
         assertEquals(total, getXTotalCount(entriesApi));
 
         // offset paginates without overlap
-        List<EntryLiteAndVersionName> page0 = entriesApi.getAllEntries(0, 2);
-        List<EntryLiteAndVersionName> page1 = entriesApi.getAllEntries(2, 2);
-        assertEquals(2, page0.size());
+        List<EntryLiteAndVersionName> page0 = entriesApi.getAllEntries(0, 3);
+        List<EntryLiteAndVersionName> page1 = entriesApi.getAllEntries(3, 100);
+        assertEquals(3, page0.size());
+        assertTrue(page1.size() < 100);
         Set<String> ids0 = page0.stream().map(e -> e.getEntryLite().getTrsId()).collect(Collectors.toSet());
         Set<String> ids1 = page1.stream().map(e -> e.getEntryLite().getTrsId()).collect(Collectors.toSet());
         assertTrue(Collections.disjoint(ids0, ids1));
