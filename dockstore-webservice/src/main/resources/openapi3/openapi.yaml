@@ -1666,7 +1666,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PKCE'
+                $ref: '#/components/schemas/ClientPKCE'
           description: Get a PKCE code challenge value
         "401":
           description: Unauthorized
@@ -9685,6 +9685,13 @@ components:
       required:
       - checksum
       - type
+    ClientPKCE:
+      type: object
+      properties:
+        hashedValue:
+          type: string
+        state:
+          type: string
     CloudInstance:
       type: object
       properties:
@@ -11537,13 +11544,6 @@ components:
         userId:
           type: integer
           format: int64
-    PKCE:
-      type: object
-      properties:
-        hashedValue:
-          type: string
-        state:
-          type: string
     ParsedInformation:
       type: object
       properties:

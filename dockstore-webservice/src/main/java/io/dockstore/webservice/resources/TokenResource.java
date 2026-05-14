@@ -21,8 +21,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -40,6 +38,7 @@ import com.google.gson.JsonSyntaxException;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.PKCE;
 import io.dockstore.webservice.core.PrivacyPolicyVersion;
 import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
@@ -53,6 +52,7 @@ import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
+import io.dockstore.webservice.jdbi.PKCEDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -139,15 +139,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String USER_NOT_FOUND_MESSAGE = "User not found";
 
     private static final SecureRandom PKCE_RANDOM = new SecureRandom();
-    private static final int CACHE_SIZE = 10;
-    private static final Cache<String, String> PKCE_CACHE = Caffeine.newBuilder().maximumSize(
-        CACHE_SIZE).build();
 
     public static final String INVALID_JSON = "Invalid JSON provided";
     public static final String PKCE_ENCODING_ALGORITHM = "SHA-256";
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
+    private  final PKCEDAO pkceDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
 
     private final String githubClientID;
@@ -174,10 +172,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
     private String orcidUrl = null;
 
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, PKCEDAO pkceDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
         DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
+        this.pkceDAO = pkceDAO;
         this.deletedUsernameDAO = deletedUsernameDAO;
         this.githubClientID = configuration.getGithubClientID();
         this.githubClientSecret = configuration.getGithubClientSecret();
@@ -205,15 +204,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
         }
-    }
-
-    /**
-     * store map of state values to the original verifier
-     * should not need to store many or for very long
-     * TODO: move this to the DB to make this production worthy across multiple webservices (or make load balancer sticky)
-     */
-    public static Cache<String, String> getPkceCache() {
-        return PKCE_CACHE;
     }
 
     @GET
@@ -588,12 +578,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @UnitOfWork
     @Path("/github/codeChallenge")
     @Operation(operationId = "getGitHubCodeChallenge", description = "Get a PKCE code challenge value and store the verifier.")
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a PKCE code challenge value", content = @Content(schema = @Schema(implementation = PKCE.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a PKCE code challenge value", content = @Content(schema = @Schema(implementation = ClientPKCE.class)))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
-    @ApiOperation(value = "Get a PKCE code challenge value and store the verifier.", notes = "This is used as part of the OAuth 2.1 PKCE challenge. ", response = PKCE.class)
-    public PKCE getGitHubCodeChallenge() {
+    @ApiOperation(value = "Get a PKCE code challenge value and store the verifier.", notes = "This is used as part of the OAuth 2.1 PKCE challenge. ", response = ClientPKCE.class)
+    public ClientPKCE getGitHubCodeChallenge() {
         // record original value and send hashed value to client
         byte[] verifierBytes = new byte[RECOMMENDED_ENTROPY];
         PKCE_RANDOM.nextBytes(verifierBytes);
@@ -601,11 +591,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         try {
             byte[] hash = MessageDigest.getInstance(PKCE_ENCODING_ALGORITHM).digest(verifier.getBytes(StandardCharsets.UTF_8));
-            String hashedValue = Base64.getUrlEncoder().encodeToString(hash);
+            String hashedValue = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
             String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
-            PKCE pkce = new PKCE(hashedValue, state);
-            getPkceCache().put(state, verifier);
-            return pkce;
+            ClientPKCE clientPKCE = new ClientPKCE(hashedValue, state);
+            PKCE pkce = new PKCE(state, verifier);
+            pkceDAO.create(pkce);
+            return clientPKCE;
         } catch (NoSuchAlgorithmException e) {
             throw new CustomWebApplicationException(PKCE_ENCODING_ALGORITHM + " not supported", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
@@ -668,10 +659,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         // check that the state matches and fetch the original code_verifier value
         String verifier = null;
         if (state != null) {
-            verifier = getPkceCache().getIfPresent(state);
-            if (verifier == null) {
+            PKCE pkce = pkceDAO.find(state);
+            if (pkce == null) {
                 throw new CustomWebApplicationException("Auth error, state did not match", HttpStatus.SC_BAD_REQUEST);
             }
+            verifier = pkce.getVerifier();
         }
         return verifier;
     }
@@ -1000,5 +992,5 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * @param hashedValue hashed verifier value (sent to GitHub or Google to initiate OAuth 2.1 PKCE)
      * @param state string used to prevent CRSF attacks (only accept requests that we actually started)
      */
-    record PKCE(String hashedValue, String state) { }
+    record ClientPKCE(String hashedValue, String state) { }
 }
