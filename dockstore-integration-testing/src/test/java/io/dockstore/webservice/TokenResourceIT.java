@@ -294,6 +294,8 @@ public class TokenResourceIT {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
+        // re-create PKCE info
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         createAccount2(unAuthenticatedTokensApi);
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
@@ -342,6 +344,8 @@ public class TokenResourceIT {
         // Should not be able to register new Dockstore account when profiles already exist
         registerNewUsersWithExisting(unAuthenticatedTokensApi);
         // Can't link tokens to other Dockstore accounts
+        // re-create PKCE info
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         addUnavailableGitHubTokenToGoogleUser();
         addUnavailableGoogleTokenToGitHubUser();
     }
