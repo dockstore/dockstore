@@ -395,7 +395,7 @@ public class TokenResourceIT {
             unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
             fail();
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("already exists"));
+            assertTrue(e.getMessage().contains("already exists"), e.getMessage());
             // Call should fail
         }
     }
