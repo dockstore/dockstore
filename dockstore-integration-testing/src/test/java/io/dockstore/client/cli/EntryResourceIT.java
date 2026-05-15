@@ -174,4 +174,5 @@ class EntryResourceIT extends BaseIT {
             "select count(*) from version_metadata where descriptortypeversions is not null",
             Long.class);
     }
+
 }
