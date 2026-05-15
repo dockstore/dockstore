@@ -3042,11 +3042,11 @@ public class OrganizationIT extends BaseIT {
             organizationsApiOtherUser.deleteCollectionsWithMatchingNames(organizationId, ".*");
             fail("Non-admin/non-curator should not be able to delete collections.");
         } catch (io.dockstore.openapi.client.ApiException e) {
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         assertEquals(5, organizationsApiAdmin.getCollectionsFromOrganization(organizationId, "").size());
 
-        // Nonexistent organization → 404.
+        // Nonexistent organization: code 404.
         try {
             organizationsApiAdmin.deleteCollectionsWithMatchingNames(NONEXISTENT_ID, ".*");
             fail("Should fail with 404 for nonexistent organization.");
@@ -3054,7 +3054,7 @@ public class OrganizationIT extends BaseIT {
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
 
-        // Empty regex → 400.
+        // Empty regex: code 400.
         try {
             organizationsApiAdmin.deleteCollectionsWithMatchingNames(organizationId, "");
             fail("Should fail with 400 for empty regex.");
@@ -3062,7 +3062,7 @@ public class OrganizationIT extends BaseIT {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
 
-        // Invalid regex pattern → 400.
+        // Invalid regex pattern: code 400.
         try {
             organizationsApiAdmin.deleteCollectionsWithMatchingNames(organizationId, "[invalid");
             fail("Should fail with 400 for invalid regex.");
