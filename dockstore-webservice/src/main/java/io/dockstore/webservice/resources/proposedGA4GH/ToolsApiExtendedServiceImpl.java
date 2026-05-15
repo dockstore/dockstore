@@ -776,6 +776,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.ok(aiTopicCandidates).header(X_TOTAL_COUNT, totalCount).build();
     }
 
+    @Override
+    public Response getAllEntries(int offset, int limit) {
+        List<EntryLiteAndVersionName> result = toolDAO.findPublishedEntries(offset, limit);
+        long totalCount = toolDAO.countPublishedEntries();
+        return Response.ok(result).header(X_TOTAL_COUNT, totalCount).build();
+    }
+
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
         ToolsApiServiceImpl.ParsedRegistryID parsedID =  new ToolsApiServiceImpl.ParsedRegistryID(id);
         return TOOLS_API_SERVICE_IMPL.getEntry(parsedID, user);

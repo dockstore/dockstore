@@ -2309,7 +2309,7 @@ public class OrganizationIT extends BaseIT {
 
     private void testDeleteCollectionFail(final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi, long organizationId, long collectionId, int status) {
         try {
-            organizationsApi.deleteCollection(organizationId, collectionId);
+            organizationsApi.deleteCollection(organizationId, collectionId, null);
             fail("Collection deletion should have failed with status code " + status + ".");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
@@ -2348,7 +2348,7 @@ public class OrganizationIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
-        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, null);
 
         // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
@@ -2377,7 +2377,7 @@ public class OrganizationIT extends BaseIT {
         assertTrue(existsCollection(organizationId, collectionId));
 
         // An org admin should be able to delete the collection
-        organizationsApi.deleteCollection(organizationId, collectionId);
+        organizationsApi.deleteCollection(organizationId, collectionId, null);
         assertFalse(existsCollection(organizationId, collectionId));
 
         // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
@@ -3114,7 +3114,7 @@ public class OrganizationIT extends BaseIT {
 
         // Delete a category.
         io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
-        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null).get(0).getId());
+        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null).get(0).getId(), null);
 
         // Verify that the proper number of categories are visible.
         assertEquals(1, categoriesApi.getCategories(null, null).size());

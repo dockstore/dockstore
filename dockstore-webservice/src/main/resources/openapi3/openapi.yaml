@@ -491,6 +491,40 @@ paths:
       summary: List entries of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/entries:
+    get:
+      description: Retrieve an abbreviated description and the default version name
+        of each published entry.
+      operationId: getAllEntries
+      parameters:
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/entryVersionsToAggregate:
     get:
       description: This endpoint gets entry versions that have new execution metrics
@@ -5260,6 +5294,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entries as necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         "204":
           description: Successfully deleted the collection
@@ -5441,6 +5482,13 @@ paths:
         name: versionName
         schema:
           type: string
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -5484,6 +5532,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -9596,6 +9651,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
@@ -9735,6 +9798,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
