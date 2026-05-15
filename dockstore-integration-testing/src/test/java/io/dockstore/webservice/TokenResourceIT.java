@@ -295,7 +295,7 @@ public class TokenResourceIT {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
         // re-create PKCE info
-        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         createAccount2(unAuthenticatedTokensApi);
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
@@ -345,7 +345,7 @@ public class TokenResourceIT {
         registerNewUsersWithExisting(unAuthenticatedTokensApi);
         // Can't link tokens to other Dockstore accounts
         // re-create PKCE info
-        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         addUnavailableGitHubTokenToGoogleUser();
         addUnavailableGoogleTokenToGitHubUser();
     }
