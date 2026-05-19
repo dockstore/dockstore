@@ -491,6 +491,40 @@ paths:
       summary: List entries of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/entries:
+    get:
+      description: Retrieve an abbreviated description and the default version name
+        of each published entry.
+      operationId: getAllEntries
+      parameters:
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/entryVersionsToAggregate:
     get:
       description: This endpoint gets entry versions that have new execution metrics
@@ -3316,6 +3350,48 @@ paths:
       - BEARER: []
       tags:
       - curation
+  /entries/toCategorize:
+    get:
+      description: "Get published entries that are new and uncategorized, or that\
+        \ have changed since last categorization and were last categorized at least\
+        \ intervalSeconds seconds ago."
+      operationId: findEntriesToCategorize
+      parameters:
+      - description: Interval in seconds; entries last categorized at least this many
+          seconds ago are eligible for re-categorization if changed
+        in: query
+        name: intervalSeconds
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/updateLanguageVersions:
     post:
       description: Update language versions
@@ -3700,6 +3776,66 @@ paths:
                 items:
                   $ref: '#/components/schemas/CollectionOrganization'
           description: default response
+      tags:
+      - entries
+  /entries/{id}/lastCategorizedDate:
+    get:
+      description: Get the date of the last categorization of an entry.
+      operationId: getLastCategorizedDate
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date-time
+          description: Successfully retrieved the last categorized date
+      security:
+      - BEARER: []
+      tags:
+      - entries
+    put:
+      description: Set the date of the last categorization of an entry.
+      operationId: setLastCategorizedDate
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Date in UTC epoch seconds; defaults to now
+        in: query
+        name: whenSeconds
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date-time
+          description: Successfully set the last categorized date
+      security:
+      - BEARER: []
       tags:
       - entries
   /entries/{id}/topic:
@@ -5146,6 +5282,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Reindex entries as necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         "204":
           description: Successfully deleted the collection
@@ -5327,6 +5470,13 @@ paths:
         name: versionName
         schema:
           type: string
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -5379,6 +5529,13 @@ paths:
           - USER
           - DOCKSTORE
           - AI
+      - description: Reindex entry if necessary. Only admins and curators may set
+          this to false.
+        in: query
+        name: reindex
+        schema:
+          type: boolean
+          default: true
       responses:
         default:
           content:
@@ -9491,6 +9648,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection
@@ -9636,6 +9801,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Arbitrary metadata for this collection, settable only by\
+              \ admins and curators"
+          description: "Arbitrary metadata for this collection, settable only by admins\
+            \ and curators"
         name:
           type: string
           description: Name of the collection

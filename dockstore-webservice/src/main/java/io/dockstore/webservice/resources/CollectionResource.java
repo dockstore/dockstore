@@ -44,6 +44,7 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -240,8 +241,12 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
         @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
         @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId,
-        @ApiParam(value = "Curator type", required = false) @Parameter(description = "Curator type.", name = "curator", in = ParameterIn.QUERY, required = false) @QueryParam("curator") EntryVersion.Curator curator) {
-        // Call common code to check if entry and collection exist and retrieve them
+        @ApiParam(value = "Curator type", required = false) @Parameter(description = "Curator type.", name = "curator", in = ParameterIn.QUERY, required = false) @QueryParam("curator") EntryVersion.Curator curator,
+        @Parameter(description = "Reindex entry if necessary. Only admins and curators may set this to false.", name = "reindex", in = ParameterIn.QUERY, required = false) @DefaultValue("true") @QueryParam("reindex") boolean reindex) {
+        if (!reindex && !(user.getIsAdmin() || user.isCurator())) {
+            throw new CustomWebApplicationException("Only admins and curators can disable reindexing.", HttpStatus.SC_FORBIDDEN);
+        }
+        // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
         // If no "curator" was specified, apply the default rule:
         // The curator is "USER", unless we're modifying a Category, in which case the curator is "DOCKSTORE"
@@ -276,7 +281,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         eventDAO.create(addToCollectionEvent);
 
         // If added to a Category, update the Entry in the index
-        if (entryAndCollection.getRight() instanceof Category) {
+        if (reindex && entryAndCollection.getRight() instanceof Category) {
             handleIndexUpdate(entryAndCollection.getLeft());
         }
 
@@ -293,7 +298,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
         @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
-        @ApiParam(value = "Version Name", required = false) @Parameter(description = "Version Name.", name = "versionName", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName) {
+        @ApiParam(value = "Version Name", required = false) @Parameter(description = "Version Name.", name = "versionName", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName,
+        @Parameter(description = "Reindex entry if necessary. Only admins and curators may set this to false.", name = "reindex", in = ParameterIn.QUERY) @DefaultValue("true") @QueryParam("reindex") boolean reindex) {
+        if (!reindex && !(user.getIsAdmin() || user.isCurator())) {
+            throw new CustomWebApplicationException("Only admins and curators can disable reindexing.", HttpStatus.SC_FORBIDDEN);
+        }
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
@@ -326,7 +335,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         eventDAO.create(removeFromCollectionEvent);
 
         // If deleted from a Category, update the Entry in the index
-        if (entryAndCollection.getRight() instanceof Category) {
+        if (reindex && entryAndCollection.getRight() instanceof Category) {
             handleIndexUpdate(entryAndCollection.getLeft());
         }
 
@@ -479,6 +488,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             collectionOrCategory = collection;
         }
 
+        // Only admins/curators may set metadata
+        if (!user.getIsAdmin() && !user.isCurator()) {
+            collectionOrCategory.setMetadata(null);
+        }
+
         // Save the collection
         long id = collectionDAO.create(collectionOrCategory);
         organization.addCollection(collectionOrCategory);
@@ -538,6 +552,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         existingCollection.setDisplayName(collection.getDisplayName());
         existingCollection.setDescription(collection.getDescription());
         existingCollection.setTopic(collection.getTopic());
+        // Only admins/curators may update metadata
+        if (user.getIsAdmin() || user.isCurator()) {
+            existingCollection.setMetadata(collection.getMetadata());
+        }
 
         // Event for update
         Event updateCollectionEvent = new Event.Builder()
@@ -584,7 +602,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
     public void deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
-        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
+        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
+        @Parameter(description = "Reindex entries as necessary. Only admins and curators may set this to false.", name = "reindex", in = ParameterIn.QUERY) @DefaultValue("true") @QueryParam("reindex") boolean reindex) {
+        if (!reindex && !(user.getIsAdmin() || user.isCurator())) {
+            throw new CustomWebApplicationException("Only admins and curators can disable reindexing.", HttpStatus.SC_FORBIDDEN);
+        }
         // Ensure collection exists to the user
         Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
         Organization organization = getOrganizationAndCheckModificationRights(user, collection);
@@ -593,7 +615,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collection.setDeleted(true);
 
         // If the collection was a Category, reindex the entries.
-        if (collection instanceof Category) {
+        if (reindex && collection instanceof Category) {
             reindexEntries(collection);
         }
 
@@ -733,6 +755,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         category.setDescription(collection.getDescription());
         category.setDisplayName(collection.getDisplayName());
         category.setTopic(collection.getTopic());
+        category.setMetadata(collection.getMetadata());
         category.setOrganization(collection.getOrganization());
         return category;
     }

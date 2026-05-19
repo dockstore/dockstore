@@ -46,7 +46,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 /**
  * This describes a Dockstore collection that can be associated with an organization.
@@ -172,6 +174,11 @@ public class Collection implements Serializable, Aliasable {
     @JsonIgnore
     @Column
     private boolean deleted;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Schema(description = "Arbitrary metadata for this collection, settable only by admins and curators")
+    private Map<String, String> metadata;
 
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
@@ -323,5 +330,13 @@ public class Collection implements Serializable, Aliasable {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
     }
 }

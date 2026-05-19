@@ -95,7 +95,13 @@
             "type": "text"
           },
           "displayName": {
-            "type": "text"
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 50
+              }
+            }
           },
           "id": {
             "type": "long"
