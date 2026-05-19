@@ -1884,6 +1884,23 @@ paths:
         name: include
         schema:
           type: string
+      - description: Maximum number of results to return
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 100
+          minimum: 1
+      - description: Offset of the first result to return
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
       responses:
         "200":
           content:

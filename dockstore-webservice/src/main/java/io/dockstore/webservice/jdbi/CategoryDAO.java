@@ -40,4 +40,10 @@ public class CategoryDAO extends AbstractDockstoreDAO<Category> {
     public List<Category> getCategories() {
         return list(namedTypedQuery("io.dockstore.webservice.core.Category.getCategories"));
     }
+
+    public List<Category> getCategories(int offset, int limit) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Category.getCategories")
+            .setFirstResult(offset)
+            .setMaxResults(limit));
+    }
 }

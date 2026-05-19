@@ -43,7 +43,7 @@ import jakarta.persistence.NamedQuery;
 @Schema(name = "Category", description = "Category of entries")
 @Entity
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.Category.getCategories", query = "SELECT c FROM Category c where c.deleted = false"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Category.getCategories", query = "SELECT c FROM Category c where c.deleted = false ORDER BY c.id"),
     @NamedQuery(name = "io.dockstore.webservice.core.Category.findByName", query = "SELECT c FROM Category c where lower(c.name) = lower(:name) and c.deleted = false")
 })
 
