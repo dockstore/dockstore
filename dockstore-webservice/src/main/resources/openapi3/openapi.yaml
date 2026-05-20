@@ -9603,7 +9603,7 @@ components:
           description: Description of the collection
         displayName:
           type: string
-          maxLength: 50
+          maxLength: 90
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
         entries:
@@ -9626,9 +9626,9 @@ components:
           type: string
           description: Name of the collection
           example: alignment
-          maxLength: 39
+          maxLength: 90
           minLength: 3
-          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,89}"
         notebooksLength:
           type: integer
           format: int64
@@ -9750,7 +9750,7 @@ components:
           description: Description of the collection
         displayName:
           type: string
-          maxLength: 50
+          maxLength: 90
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
         entries:
@@ -9773,9 +9773,9 @@ components:
           type: string
           description: Name of the collection
           example: alignment
-          maxLength: 39
+          maxLength: 90
           minLength: 3
-          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,89}"
         notebooksLength:
           type: integer
           format: int64
