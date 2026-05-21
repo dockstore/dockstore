@@ -32,9 +32,11 @@ import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.CollectionEntry;
 import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Event.TypeEnum;
 import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.OrganizationUser;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.EventSearchType;
@@ -138,5 +140,54 @@ public class OpenAPIOrganizationIT extends BaseIT {
             organizationsApiAdmin.createCollection(stubCollection, organization.getId());
         });
         assertEquals(HttpStatus.SC_BAD_REQUEST, apiException.getCode());
+    }
+
+    @Test
+    void testCollectionEntryCurator() {
+        final ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(adminClient);
+
+        Organization organization = OrganizationIT.openApiStubOrgObject();
+        organization = organizationsApiAdmin.createOrganization(organization);
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        Collection collection = organizationsApiAdmin.createCollection(OrganizationIT.openApiStubCollectionObject(), organization.getId());
+
+        final ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines",
+                "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        final Workflow workflowByPathGithub = workflowsApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", WorkflowSubClass.BIOWORKFLOW, null);
+        workflowsApi.refresh1(workflowByPathGithub.getId(), false);
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // null curator defaults to USER for a regular (non-Category) collection
+        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, null, null);
+        Collection col = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
+        assertEquals(CollectionEntry.CuratorEnum.USER, col.getEntries().get(0).getCurator());
+
+        // admin can set curator to DOCKSTORE
+        organizationsApiAdmin.deleteEntryFromCollection(organization.getId(), collection.getId(), workflow.getId(), null, null);
+        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, "DOCKSTORE", null);
+        col = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
+        assertEquals(CollectionEntry.CuratorEnum.DOCKSTORE, col.getEntries().get(0).getCurator());
+
+        // admin can set curator to AI
+        organizationsApiAdmin.deleteEntryFromCollection(organization.getId(), collection.getId(), workflow.getId(), null, null);
+        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, "AI", null);
+        col = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
+        assertEquals(CollectionEntry.CuratorEnum.AI, col.getEntries().get(0).getCurator());
+
+        // a non-admin/curator org maintainer cannot set curator to a non-USER value
+        organizationsApiAdmin.deleteEntryFromCollection(organization.getId(), collection.getId(), workflow.getId(), null, null);
+        io.dockstore.openapi.client.api.UsersApi usersApiOtherUser =
+                new io.dockstore.openapi.client.api.UsersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        long otherUserId = usersApiOtherUser.getUser().getId();
+        organizationsApiAdmin.addUserToOrg(OrganizationUser.Role.MAINTAINER.toString(), otherUserId, organization.getId(), "");
+        OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        organizationsApiOtherUser.acceptOrRejectInvitation(organization.getId(), true);
+        ApiException exception = assertThrows(ApiException.class, () ->
+                organizationsApiOtherUser.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, "DOCKSTORE", null));
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
     }
 }
