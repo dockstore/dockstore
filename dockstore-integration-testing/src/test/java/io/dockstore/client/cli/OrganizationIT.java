@@ -664,6 +664,43 @@ public class OrganizationIT extends BaseIT {
         organisationsApiUser2.createCollection(createdOrganization2.getId(), collectionTwo);
     }
 
+    /**
+     * Test that collections in the same organization cannot share a display name,
+     * but categories in the same (categorizer) organization can.
+     */
+    @Test
+    void testDisplayNameUniquenessEnforcedForCollectionsButNotCategories() {
+        // Collections: two collections in the same org cannot share a display name.
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        final OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+        final Organization createdOrganization = organisationsApiUser2.createOrganization(stubOrgObject());
+
+        Collection collection1 = stubCollectionObject();
+        organisationsApiUser2.createCollection(createdOrganization.getId(), collection1);
+
+        Collection collection2 = stubCollectionObject();
+        collection2.setName("differentname"); // different name, same displayName as collection1
+        final ApiException collectionEx = assertThrows(ApiException.class,
+            () -> organisationsApiUser2.createCollection(createdOrganization.getId(), collection2),
+            "Should not be able to create a collection with the same display name as an existing collection in the same organization.");
+        assertTrue(collectionEx.getMessage().contains("A collection already exists with the display name"));
+
+        // Categories: two categories in the same categorizer org can share a display name.
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
+        final ApiClient webClientAdmin = getWebClient(ADMIN_USERNAME, testingPostgres);
+        final OrganizationsApi organisationsApiAdmin = new OrganizationsApi(webClientAdmin);
+        final Organization dockstoreOrg = organisationsApiAdmin.getOrganizationByName("dockstore");
+
+        Collection category1 = stubCollectionObject();
+        category1.setName("category1");
+        organisationsApiAdmin.createCollection(dockstoreOrg.getId(), category1);
+
+        Collection category2 = stubCollectionObject();
+        category2.setName("category2"); // same displayName as category1
+        assertNotNull(organisationsApiAdmin.createCollection(dockstoreOrg.getId(), category2),
+            "Should be able to create two categories with the same display name in a categorizer organization.");
+    }
+
     @Test
     void testGetViaAlternateCase() {
         // Setup user two
