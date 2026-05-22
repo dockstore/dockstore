@@ -68,4 +68,8 @@
             create unique index collection_displayname_index on collection (LOWER(displayname), organizationid) where dtype = 'Collection' and not deleted;
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="increase_collection_name_length">
+        <modifyDataType tableName="collection" columnName="name" newDataType="varchar(90)"/>
+        <modifyDataType tableName="collection" columnName="displayname" newDataType="varchar(90)"/>
+    </changeSet>
 </databaseChangeLog>
