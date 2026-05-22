@@ -62,4 +62,10 @@
             update organization set name = 'dockstoreai', displayname = 'Dockstore AI' where name = 'ai';
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="category_displayname_not_unique">
+        <sql dbms="postgresql">
+            drop index collection_displayname_index;
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid) where dtype = 'Collection' and not deleted;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
