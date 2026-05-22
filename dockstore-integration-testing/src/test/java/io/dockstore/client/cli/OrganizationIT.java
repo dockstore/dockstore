@@ -75,18 +75,18 @@ public class OrganizationIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
+    private final List<String> goodCollectionNames = List.of("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa", "this-is-a-moderate-length-test-string-of-54-characters");
     // All numbers, too short, bad pattern, too long, foreign characters
-    private final List<String> badNames = Arrays.asList("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
+    private final List<String> badNames = List.of("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
     // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
-    private final List<String> badAvatarUrls = Arrays
-        .asList("https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
+    private final List<String> badAvatarUrls = List.of(
+            "https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
             "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1", ".png",
             "https://via.placeholder.com/150.jpg asdf", "ad .jpg");
-    private final List<String> goodDisplayNames = Arrays
-        .asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
-    private final List<String> badDisplayNames = Arrays
-        .asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
+    private final List<String> goodDisplayNames = List.of(
+        "test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name", "This is a moderate length test string of 54 characters");
+    private final List<String> badDisplayNames = List.of(
+        "test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
 
     private static StarRequest getStarRequest(boolean star) {
         StarRequest starRequest = new StarRequest();
