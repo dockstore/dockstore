@@ -378,14 +378,14 @@ public class ElasticListener implements StateListenerInterface {
     private static List<Category> selectHumanCategories(List<Category> categories) {
         return categories.stream()
             .filter(c -> "dockstore".equals(c.getOrganizationName()))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private static List<Category> selectAiCategories(List<Category> categories, String ontologyName) {
         return categories.stream()
             .filter(c -> "dockstoreai".equals(c.getOrganizationName()))
             .filter(c -> ontologyName.equals(c.getName()) || c.getName().startsWith(ontologyName + "-"))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private static List<Map<String, Object>> convertCategories(List<Category> categories) {
