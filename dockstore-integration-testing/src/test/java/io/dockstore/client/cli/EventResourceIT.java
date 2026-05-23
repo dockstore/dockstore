@@ -148,7 +148,6 @@ class EventResourceIT extends BaseIT {
         EventsApi eventsApi = new EventsApi(client);
         ContainersApi toolsApi = new ContainersApi(client);
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
-        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOpenApi = new io.dockstore.openapi.client.api.OrganizationsApi(getOpenAPIWebClient(USER_1_USERNAME, testingPostgres));
         ApiClient otherClient = getWebClient(OTHER_USERNAME, testingPostgres);
         EventsApi otherEventsApi = new EventsApi(otherClient);
         long creatorId = 1;

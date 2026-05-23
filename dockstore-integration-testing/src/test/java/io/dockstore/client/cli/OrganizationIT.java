@@ -2330,8 +2330,6 @@ public class OrganizationIT extends BaseIT {
 
     @Test
     void testDeleteCollection() {
-        final ApiClient webClientSwagger = getWebClient(ADMIN_USERNAME, testingPostgres);
-        final OrganizationsApi organizationsApiSwagger = new OrganizationsApi(webClientSwagger);
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
@@ -2350,7 +2348,7 @@ public class OrganizationIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
-        organizationsApiSwagger.addEntryToCollection(organizationId, collectionId, entryId, null);
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, null, null);
 
         // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
