@@ -140,7 +140,9 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
     @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
     @NamedQuery(name = Entry.FIND_ENTRIES_TO_CATEGORIZE, query = "SELECT e FROM Entry e JOIN e.entryMetadata m WHERE e.isPublished = TRUE AND (m.lastCategorizedDate IS NULL OR (e.dbUpdateDate > m.lastCategorizedDate AND m.lastCategorizedDate < :cutoff))"),
-    @NamedQuery(name = Entry.COUNT_ENTRIES_TO_CATEGORIZE, query = "SELECT COUNT(e.id) FROM Entry e JOIN e.entryMetadata m WHERE e.isPublished = TRUE AND (m.lastCategorizedDate IS NULL OR (e.dbUpdateDate > m.lastCategorizedDate AND m.lastCategorizedDate < :cutoff))")
+    @NamedQuery(name = Entry.COUNT_ENTRIES_TO_CATEGORIZE, query = "SELECT COUNT(e.id) FROM Entry e JOIN e.entryMetadata m WHERE e.isPublished = TRUE AND (m.lastCategorizedDate IS NULL OR (e.dbUpdateDate > m.lastCategorizedDate AND m.lastCategorizedDate < :cutoff))"),
+    @NamedQuery(name = Entry.FIND_PUBLISHED_ENTRIES, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE ORDER BY e.id"),
+    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -165,6 +167,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public static final String COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.countPublishedEntriesWithNoTopics";
     public static final String FIND_ENTRIES_TO_CATEGORIZE = "Entry.findEntriesToCategorize";
     public static final String COUNT_ENTRIES_TO_CATEGORIZE = "Entry.countEntriesToCategorize";
+    public static final String FIND_PUBLISHED_ENTRIES = "Entry.findPublishedEntries";
+    public static final String COUNT_PUBLISHED_ENTRIES = "Entry.countPublishedEntries";
     private static final int TOPIC_LENGTH = 250;
 
     /**

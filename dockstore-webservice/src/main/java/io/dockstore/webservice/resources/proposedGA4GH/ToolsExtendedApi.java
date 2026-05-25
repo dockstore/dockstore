@@ -451,6 +451,18 @@ public class ToolsExtendedApi {
         return delegate.getAITopicCandidates(offset, limit);
     }
 
+    @GET
+    @UnitOfWork(readOnly = true)
+    @Path("/entries")
+    @Operation(operationId = "getAllEntries", description = "Retrieve an abbreviated description and the default version name of each published entry.", responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))))
+    })
+    public Response getAllEntries(
+            @Parameter(in = ParameterIn.QUERY, description = "Pagination offset") @Min(0) @DefaultValue("0") @QueryParam("offset") Integer offset,
+            @Parameter(in = ParameterIn.QUERY, description = "Pagination limit") @Min(1) @Max(ResourceConstants.MAX_PAGINATION_LIMIT) @DefaultValue("100") @QueryParam("limit") Integer limit) {
+        return delegate.getAllEntries(offset, limit);
+    }
+
     private static final class GetAITopicCandidates {
         public static final String OK_RESPONSE = "Retrieved published tools that are AI topic candidates and a single representative version name if it exists, otherwise an empty string is returned as the version name.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";

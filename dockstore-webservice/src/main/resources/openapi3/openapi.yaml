@@ -491,6 +491,40 @@ paths:
       summary: List entries of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/entries:
+    get:
+      description: Retrieve an abbreviated description and the default version name
+        of each published entry.
+      operationId: getAllEntries
+      parameters:
+      - description: Pagination offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Pagination limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryLiteAndVersionName'
+          description: Successfully retrieved entries
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/entryVersionsToAggregate:
     get:
       description: This endpoint gets entry versions that have new execution metrics
@@ -9593,7 +9627,7 @@ components:
           description: Description of the collection
         displayName:
           type: string
-          maxLength: 50
+          maxLength: 90
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
         entries:
@@ -9616,9 +9650,9 @@ components:
           type: string
           description: Name of the collection
           example: alignment
-          maxLength: 39
+          maxLength: 90
           minLength: 3
-          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,89}"
         notebooksLength:
           type: integer
           format: int64
@@ -9747,7 +9781,7 @@ components:
           description: Description of the collection
         displayName:
           type: string
-          maxLength: 50
+          maxLength: 90
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
         entries:
@@ -9770,9 +9804,9 @@ components:
           type: string
           description: Name of the collection
           example: alignment
-          maxLength: 39
+          maxLength: 90
           minLength: 3
-          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,89}"
         notebooksLength:
           type: integer
           format: int64
