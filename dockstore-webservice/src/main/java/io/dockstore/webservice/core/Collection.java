@@ -88,8 +88,8 @@ public class Collection implements Serializable, Aliasable {
     private long id;
 
     @Column(nullable = false)
-    @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d]){0,38}")
-    @Size(min = 3, max = 39)
+    @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d]){0,89}")
+    @Size(min = 3, max = 90)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "alignment", position = 1)
     @Schema(description = "Name of the collection", requiredMode = RequiredMode.REQUIRED, example = "alignment")
     private String name;
@@ -101,7 +101,7 @@ public class Collection implements Serializable, Aliasable {
 
     @Column(nullable = false)
     @Pattern(regexp = "[\\w ,_\\-&()']*")
-    @Size(min = 3, max = 50)
+    @Size(min = 3, max = 90)
     @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
     private String displayName;
 

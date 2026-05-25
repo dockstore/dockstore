@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -430,6 +431,22 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery(Entry.COUNT_ENTRIES_TO_CATEGORIZE, Long.class)
             .setParameter("cutoff", cutoff)
             .getSingleResult();
+    }
+
+    public List<EntryLiteAndVersionName> findPublishedEntries(int offset, int limit) {
+        List<Entry> entries = this.currentSession().createNamedQuery(Entry.FIND_PUBLISHED_ENTRIES, Entry.class)
+            .setFirstResult(offset)
+            .setMaxResults(limit)
+            .list();
+        return entries.stream()
+            .map(entry -> new EntryLiteAndVersionName(
+                entry.createEntryLite(),
+                EntryVersionHelper.determineRepresentativeVersion(entry).map(Version::getName).orElse("")))
+            .toList();
+    }
+
+    public long countPublishedEntries() {
+        return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES, Long.class).getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
