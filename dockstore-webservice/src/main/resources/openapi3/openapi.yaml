@@ -9696,6 +9696,8 @@ components:
     CategorySummary:
       type: object
       properties:
+        aiManaged:
+          type: boolean
         curator:
           type: string
           enum:

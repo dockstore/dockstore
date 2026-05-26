@@ -34,14 +34,16 @@ public class CategorySummary implements Serializable {
     private String displayName;
     private String topic;
     private EntryVersion.Curator curator;
+    private boolean aiManaged;
 
-    public CategorySummary(long id, String name, String description, String displayName, String topic, EntryVersion.Curator curator) {
+    public CategorySummary(long id, String name, String description, String displayName, String topic, EntryVersion.Curator curator, boolean aiManaged) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.displayName = displayName;
         this.topic = topic;
         this.curator = curator;
+        this.aiManaged = aiManaged;
     }
 
     public long getId() {
@@ -66,5 +68,13 @@ public class CategorySummary implements Serializable {
 
     public EntryVersion.Curator getCurator() {
         return curator;
+    }
+
+    public boolean isAiManaged() {
+        return aiManaged;
+    }
+
+    public void setAiManaged(boolean aiManaged) {
+        this.aiManaged = aiManaged;
     }
 }
