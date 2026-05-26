@@ -356,7 +356,10 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
         objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
         objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
-        objectNode.set("categories", MAPPER.valueToTree(entry.getCategorySummaries()));
+        objectNode.set("categories", MAPPER.valueToTree(convertCategories(selectHumanCategories(entry.getCategories()))));
+        for (String ontologyName : List.of("operation", "topic", "input-data", "input-format", "output-data", "output-format")) {
+            objectNode.set(ontologyName, MAPPER.valueToTree(convertCategories(selectAiCategories(entry.getCategories(), ontologyName))));
+        }
         objectNode.put("archived", entry.isArchived());
         objectNode.set("selected_concept_doi", MAPPER.valueToTree(selectedConceptDoi));
         objectNode.set("executionCount", MAPPER.valueToTree(getExecutionCount(entry)));
@@ -368,6 +371,33 @@ public class ElasticListener implements StateListenerInterface {
         return jsonNode;
     }
 
+
+    private static List<Category> selectHumanCategories(List<Category> categories) {
+        return categories.stream()
+            .filter(c -> "dockstore".equals(c.getOrganizationName()))
+            .toList();
+    }
+
+    private static List<Category> selectAiCategories(List<Category> categories, String ontologyName) {
+        return categories.stream()
+            .filter(c -> "dockstoreai".equals(c.getOrganizationName()))
+            .filter(c -> ontologyName.equals(c.getName()) || c.getName().startsWith(ontologyName + "-"))
+            .toList();
+    }
+
+    private static List<Map<String, Object>> convertCategories(List<Category> categories) {
+        return categories.stream().map(
+            category -> {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("id", category.getId());
+                map.put("name", category.getName());
+                map.put("description", category.getDescription());
+                map.put("displayName", category.getDisplayName());
+                map.put("topic", category.getTopic());
+                return map;
+            }
+        ).toList();
+    }
 
     private static Optional<MetricsByStatus> getMetricsForAll(Entry<?, ?> entry) {
         return Optional.ofNullable(entry.getMetricsByPlatform())

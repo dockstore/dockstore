@@ -466,14 +466,16 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        matchingCollection = collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId);
-        if (matchingCollection != null) {
-            String msg = "A collection already exists with the display name '" + collection.getDisplayName() + "' in the specified organization.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         final Collection collectionOrCategory;
+
+        if (!organization.isCategorizer()) {
+            matchingCollection = collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId);
+            if (matchingCollection != null) {
+                String msg = "A collection already exists with the display name '" + collection.getDisplayName() + "' in the specified organization.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+        }
 
         if (organization.isCategorizer()) {
             // The organization is a categorizer, make sure there are no category name collisions and convert the Collection to a Category
