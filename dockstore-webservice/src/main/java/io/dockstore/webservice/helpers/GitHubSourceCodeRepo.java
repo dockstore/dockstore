@@ -1118,13 +1118,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             String gitHubRepoInfo =
                 "Performing GitHub release for repository: " + Utilities.cleanForLogging(repository) + ", user: " + Utilities.cleanForLogging(username) + ", and git reference: " + Utilities
                     .cleanForLogging((gitReference));
-            String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+            String gitHubRateLimitInfo = " had a starting rate limit of " + rateLimitToRemainingString(startRateLimit) + " and ending rate limit of " + rateLimitToRemainingString(endRateLimit);
             if (isSuccessful) {
                 LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
             } else {
                 LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
             }
         }
+    }
+
+    private String rateLimitToRemainingString(GHRateLimit rateLimit) {
+        return rateLimit != null ? Integer.toString(rateLimit.getRemaining()) : "(unknown)";
     }
 
     public GHRateLimit getGhRateLimitQuietly() {
