@@ -1,6 +1,7 @@
 package io.dockstore.webservice.helpers;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
+import com.google.api.client.auth.oauth2.AuthorizationCodeTokenRequest;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
@@ -15,6 +16,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.resources.TokenResource;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -173,14 +175,26 @@ public final class GoogleHelper {
      * @param redirectUri The Google redirectUri
      * @return
      */
-    public static TokenResponse getTokenResponse(String googleClientID, String googleClientSecret, String code, String redirectUri) {
+    public static TokenResponse getTokenResponse(String googleClientID, String googleClientSecret, String code, String redirectUri, String codeVerifier) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), TokenResource.HTTP_TRANSPORT,
             TokenResource.JSON_FACTORY, new GenericUrl(GoogleHelper.GOOGLE_ENCODED_URL),
             new ClientParametersAuthentication(googleClientID, googleClientSecret), googleClientID,
             GoogleHelper.GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL).build();
+        /*
+          * there are  two big red herrings here when attempting to enable PKCE
+          *  1. https://docs.cloud.google.com/java/docs/reference/google-oauth-client/latest/com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder#com_google_api_client_auth_oauth2_AuthorizationCodeFlow_Builder_enablePKCE__
+          *  This creates a PKCE object, but there is no way to get data in and out from it without reflection. This is an issue for multiple web-services in particular.
+          *  I suspect that this is because the PR which added support focuses on public native apps https://github.com/googleapis/google-oauth-java-client/pull/470
+          *  2. https://docs.cloud.google.com/java/docs/reference/google-auth-library/latest/com.google.auth.oauth2.PKCEProvider seems even less re-usable
+        */
         try {
-            return flow.newTokenRequest(code).setRedirectUri(redirectUri)
-                .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            AuthorizationCodeTokenRequest authorizationCodeTokenRequest = flow.newTokenRequest(code).setRedirectUri(redirectUri)
+                .setRequestInitializer(request -> {
+                    request.getHeaders().setAccept(MediaType.APPLICATION_JSON);
+                    request.getUrl().set("code_verifier", codeVerifier);
+                    request.setLoggingEnabled(true);
+                });
+            return authorizationCodeTokenRequest.execute();
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful", e);
             throw new CustomWebApplicationException("Could not retrieve google token based on code", HttpStatus.SC_BAD_REQUEST);
