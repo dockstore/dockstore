@@ -19,7 +19,7 @@ class GitHubHelperTest {
     @Test
     void testGetGitHubAccessToken() {
         try {
-            GitHubHelper.getGitHubAccessToken(CODE, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
+            GitHubHelper.getGitHubAccessToken(CODE, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, "foo");
             fail("No CustomWebApplicationException thrown");
         } catch (CustomWebApplicationException e) {
             assertEquals("Could not retrieve github.com token based on code", e.getMessage());

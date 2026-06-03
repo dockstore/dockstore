@@ -226,6 +226,7 @@ public class TokenResourceIT {
     void testNinjaedGitHubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
@@ -293,6 +294,8 @@ public class TokenResourceIT {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
+        // re-create PKCE info
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         createAccount2(unAuthenticatedTokensApi);
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
@@ -341,6 +344,8 @@ public class TokenResourceIT {
         // Should not be able to register new Dockstore account when profiles already exist
         registerNewUsersWithExisting(unAuthenticatedTokensApi);
         // Can't link tokens to other Dockstore accounts
+        // re-create PKCE info
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         addUnavailableGitHubTokenToGoogleUser();
         addUnavailableGoogleTokenToGitHubUser();
     }
@@ -349,6 +354,7 @@ public class TokenResourceIT {
     void recreateAccountsAfterSelfDestruct(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         createAccount1(unAuthenticatedTokensApi);
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
     }
@@ -393,7 +399,7 @@ public class TokenResourceIT {
             unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
             fail();
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("already exists"));
+            assertTrue(e.getMessage().contains("already exists"), e.getMessage());
             // Call should fail
         }
     }
