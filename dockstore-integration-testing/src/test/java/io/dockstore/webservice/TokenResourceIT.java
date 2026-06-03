@@ -294,6 +294,7 @@ public class TokenResourceIT {
     void loginRegisterTestWithMultipleAccounts(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         createAccount1(unAuthenticatedTokensApi);
         // re-create PKCE info
         testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
@@ -323,11 +324,12 @@ public class TokenResourceIT {
     void adminsAndCuratorsMayNotLoginWithGoogle(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
-        createAccount1(unAuthenticatedTokensApi);
-        // re-create PKCE info
         testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
+        createAccount1(unAuthenticatedTokensApi);
         setAdmin(true);
         try {
+            // re-create PKCE info
+            testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
             unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
             fail("An admin should not be able to log in via Google");
         } catch (ApiException ex) {
