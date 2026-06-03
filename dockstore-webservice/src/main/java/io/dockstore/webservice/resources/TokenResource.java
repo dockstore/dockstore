@@ -664,6 +664,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw new CustomWebApplicationException("Auth error, state did not match", HttpStatus.SC_BAD_REQUEST);
             }
             verifier = pkce.getVerifier();
+            pkceDAO.delete(pkce);
         }
         return verifier;
     }

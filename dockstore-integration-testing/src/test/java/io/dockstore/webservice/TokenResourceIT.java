@@ -228,6 +228,9 @@ public class TokenResourceIT {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
+        long count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
+        assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
+
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
         // registering user 1 again should fail
@@ -356,6 +359,7 @@ public class TokenResourceIT {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         createAccount1(unAuthenticatedTokensApi);
+
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
     }
 
