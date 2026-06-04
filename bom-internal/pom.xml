@@ -1411,11 +1411,6 @@ POM as their parent.
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.commonmark</groupId>
                 <artifactId>commonmark</artifactId>
                 <version>0.24.0</version>

@@ -461,7 +461,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String code = getCodeFromSatellizerObject(satellizerObject);
         final String redirectUri = getRedirectURIFromSatellizerObject(satellizerObject);
         final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-        TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
+        String verifier = verifyGitHubUser(getStateFromSatellizerObject(satellizerObject));
+        TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri, verifier);
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
         LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");

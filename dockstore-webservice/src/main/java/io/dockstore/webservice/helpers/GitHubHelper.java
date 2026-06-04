@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -106,7 +107,7 @@ public final class GitHubHelper {
         try {
             TokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRequestInitializer(request -> {
-                        request.getHeaders().setAccept("application/json");
+                        request.getHeaders().setAccept(MediaType.APPLICATION_JSON);
                         request.getUrl().set("code_verifier", codeVerifier);
                         // useful for debugging PKCE, but would leave unadvisable content in CloudWatch logs  request.setLoggingEnabled(true);
                     }).execute();
