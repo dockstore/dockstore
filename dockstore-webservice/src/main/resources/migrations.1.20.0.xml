@@ -84,4 +84,16 @@
         <modifyDataType tableName="collection" columnName="name" newDataType="varchar(90)"/>
         <modifyDataType tableName="collection" columnName="displayname" newDataType="varchar(90)"/>
     </changeSet>
+    <changeSet author="svonworl" id="add_curator_to_collection_entry_version">
+        <addColumn tableName="collection_entry_version">
+            <column name="curator" type="varchar(255)" value="USER">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql>
+            UPDATE collection_entry_version
+            SET curator = 'DOCKSTORE'
+            WHERE collection_id IN (SELECT id FROM collection WHERE dtype = 'Category')
+        </sql>
+    </changeSet>
 </databaseChangeLog>
