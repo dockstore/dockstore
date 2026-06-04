@@ -36,8 +36,7 @@ public class PKCEDAO extends AbstractDAO<PKCE> {
     }
 
     public void delete(PKCE pkce) {
-        Session session = currentSession();
-        session.delete(pkce);
-        session.flush();
+        Session session = currentSession(); // IDE will suggested try ... with resources but this causes issues with dropwizard UnitOfWork
+        session.remove(pkce);
     }
 }

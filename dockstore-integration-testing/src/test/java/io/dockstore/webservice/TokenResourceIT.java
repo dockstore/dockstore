@@ -229,6 +229,9 @@ public class TokenResourceIT {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
+        long count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
+        assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
+
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
         // registering user 1 again should fail
@@ -252,9 +255,14 @@ public class TokenResourceIT {
         }
         assertTrue(shouldFail);
 
+        // re-create deleted PKCE information
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         // now register user2, should autogenerate a name
         TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
+        count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
+        assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
+
         UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername(), testingPostgres));
         assertNotEquals(CUSTOM_USERNAME2, usersApi2.getUser().getUsername());
         assertEquals("better.name", usersApi2.changeUsername("better.name").getUsername());
@@ -361,6 +369,7 @@ public class TokenResourceIT {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         createAccount1(unAuthenticatedTokensApi);
+
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
     }
 
