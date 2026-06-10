@@ -322,6 +322,7 @@ public class TokenResourceIT {
         assertEquals(CUSTOM_USERNAME2, token.getUsername());
         assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource());
 
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         // Login with GitHub still works
         io.swagger.client.model.TokenAuth fakeGitHubCode = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, false));
         assertEquals(CUSTOM_USERNAME2, fakeGitHubCode.getUsername());
@@ -427,6 +428,7 @@ public class TokenResourceIT {
         Boolean aBoolean = mainUsersApi.selfDestruct(null);
         assertTrue(aBoolean);
         io.swagger.client.model.TokenAuth recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         io.swagger.client.model.TokenAuth recreatedGitHubToken = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
         assertNotSame(recreatedGitHubToken.getUserId(), recreatedGoogleToken.getUserId());
     }
