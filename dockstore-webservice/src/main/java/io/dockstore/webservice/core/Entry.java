@@ -378,7 +378,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
     @JsonIgnore
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true, fetch = FetchType.LAZY, optional = false)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private EntryMetadata entryMetadata = new EntryMetadata();
