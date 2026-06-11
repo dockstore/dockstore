@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -195,26 +196,23 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     /**
-     * Retrieve the list of categories containing each of the specified Entries.
+     * Retrieve the list of category summaries for each of the specified Entries.
      * @param entryIds a list of Entry IDs
-     * @return a map of each Entry contained by one-or-more Categories to a list of all Categories that contain it, any Entry contained by zero Categories is not included in the map
+     * @return a map of each Entry ID contained by one-or-more Categories to a list of all CategorySummaries for those Categories, any Entry contained by zero Categories is not included in the map
      */
-    public Map<Entry, List<Category>> findCategoriesByEntryIds(List<Long> entryIds) {
-        // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
-        // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
+    public Map<Long, List<CategorySummary>> findCategorySummariesByEntryIds(List<Long> entryIds) {
+        // run a query to determine the categories that contain the specified entries, where the result is a list of unique entryId/categorySummary pairs.
+        // for example, if Entry E is in categories C and D, the result would be [[E.id, C-summary], [E.id, D-summary]].
 
-        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList(
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategorySummaryPairsByEntryIds").setParameterList(
                 ENTRY_IDS, entryIds));
 
-        // convert the list of entry/category pairs to a map (as described in the javadoc above).
-        Map<Entry, List<Category>> entryToCategories = new HashMap<>();
-        results.forEach(result -> {
-            Entry entry = (Entry)result[0];
-            Category category = (Category)result[1];
-            entryToCategories.computeIfAbsent(entry, k -> new ArrayList<>()).add(category);
-        });
+        // convert the list of entryId/categorySummary pairs to a map (as described in the javadoc above).
+        Map<Long, List<CategorySummary>> entryIdToCategorySummaries = results.stream()
+            .collect(Collectors.groupingBy(result -> (Long)result[0],
+                Collectors.mapping(result -> (CategorySummary)result[1], Collectors.toList())));
 
-        return (entryToCategories);
+        return (entryIdToCategorySummaries);
     }
 
     public T findPublishedById(long id) {

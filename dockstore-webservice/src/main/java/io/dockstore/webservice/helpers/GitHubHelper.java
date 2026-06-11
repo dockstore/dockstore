@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -98,14 +99,18 @@ public final class GitHubHelper {
         }
     }
 
-    public static String getGitHubAccessToken(String code, String githubClientID, String githubClientSecret) {
+    public static String getGitHubAccessToken(String code, String githubClientID, String githubClientSecret, String codeVerifier) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
                 HTTP_TRANSPORT, JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
                 new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
                 "https://github.com/login/oauth/authorize").build();
         try {
             TokenResponse tokenResponse = flow.newTokenRequest(code)
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                    .setRequestInitializer(request -> {
+                        request.getHeaders().setAccept(MediaType.APPLICATION_JSON);
+                        request.getUrl().set("code_verifier", codeVerifier);
+                        // useful for debugging PKCE, but would leave unadvisable content in CloudWatch logs  request.setLoggingEnabled(true);
+                    }).execute();
             if (tokenResponse.getAccessToken() != null) {
                 return tokenResponse.getAccessToken();
             } else {

@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -75,18 +76,28 @@ public class OrganizationIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
+    private final List<String> goodNames = List.of("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
     // All numbers, too short, bad pattern, too long, foreign characters
-    private final List<String> badNames = Arrays.asList("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
+    private final List<String> badNames = List.of("1234", "", "a", "ab", "1aab", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
+    private final List<String> goodCollectionNames = ListUtils.union(goodNames, List.of("this-is-a-moderate-length-test-string-of-54-characters"));
+    private final List<String> badCollectionNames = ListUtils.union(badNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+    private final List<String> goodOrganizationNames = ListUtils.union(goodNames, List.of("this-is-a-test-string-of-38-characters"));
+    private final List<String> badOrganizationNames = ListUtils.union(badNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+
+    private final List<String> goodDisplayNames = List.of(
+        "test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
+    private final List<String> badDisplayNames = List.of(
+        "test@hello", "aa", "我喜欢狗", "%+%");
+    private final List<String> goodCollectionDisplayNames = ListUtils.union(goodDisplayNames, List.of("This is a moderate length test string of 54 characters"));
+    private final List<String> badCollectionDisplayNames = ListUtils.union(badDisplayNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"));
+    private final List<String> goodOrganizationDisplayNames = ListUtils.union(goodDisplayNames, List.of("This is a test string of 38 characters"));
+    private final List<String> badOrganizationDisplayNames = ListUtils.union(badDisplayNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"));
+
     // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
-    private final List<String> badAvatarUrls = Arrays
-        .asList("https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
+    private final List<String> badAvatarUrls = List.of(
+            "https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
             "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1", ".png",
             "https://via.placeholder.com/150.jpg asdf", "ad .jpg");
-    private final List<String> goodDisplayNames = Arrays
-        .asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
-    private final List<String> badDisplayNames = Arrays
-        .asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
 
     private static StarRequest getStarRequest(boolean star) {
         StarRequest starRequest = new StarRequest();
@@ -662,6 +673,43 @@ public class OrganizationIT extends BaseIT {
         initialOrganisation.setDisplayName("Org 2");
         final Organization createdOrganization2 = organisationsApiUser2.createOrganization(initialOrganisation);
         organisationsApiUser2.createCollection(createdOrganization2.getId(), collectionTwo);
+    }
+
+    /**
+     * Test that collections in the same organization cannot share a display name,
+     * but categories in the same (categorizer) organization can.
+     */
+    @Test
+    void testDisplayNameUniquenessEnforcedForCollectionsButNotCategories() {
+        // Collections: two collections in the same org cannot share a display name.
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        final OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+        final Organization createdOrganization = organisationsApiUser2.createOrganization(stubOrgObject());
+
+        Collection collection1 = stubCollectionObject();
+        organisationsApiUser2.createCollection(createdOrganization.getId(), collection1);
+
+        Collection collection2 = stubCollectionObject();
+        collection2.setName("differentname"); // different name, same displayName as collection1
+        final ApiException collectionEx = assertThrows(ApiException.class,
+            () -> organisationsApiUser2.createCollection(createdOrganization.getId(), collection2),
+            "Should not be able to create a collection with the same display name as an existing collection in the same organization.");
+        assertTrue(collectionEx.getMessage().contains("A collection already exists with the display name"));
+
+        // Categories: two categories in the same categorizer org can share a display name.
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
+        final ApiClient webClientAdmin = getWebClient(ADMIN_USERNAME, testingPostgres);
+        final OrganizationsApi organisationsApiAdmin = new OrganizationsApi(webClientAdmin);
+        final Organization dockstoreOrg = organisationsApiAdmin.getOrganizationByName("dockstore");
+
+        Collection category1 = stubCollectionObject();
+        category1.setName("category1");
+        organisationsApiAdmin.createCollection(dockstoreOrg.getId(), category1);
+
+        Collection category2 = stubCollectionObject();
+        category2.setName("category2"); // same displayName as category1
+        assertNotNull(organisationsApiAdmin.createCollection(dockstoreOrg.getId(), category2),
+            "Should be able to create two categories with the same display name in a categorizer organization.");
     }
 
     @Test
@@ -1324,7 +1372,7 @@ public class OrganizationIT extends BaseIT {
     void testCreateOrganizationWithInvalidNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-        badNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
+        badOrganizationNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
     }
 
     /**
@@ -1334,8 +1382,8 @@ public class OrganizationIT extends BaseIT {
     void testCreatedOrganizationWithValidDisplayNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-        goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi,
-            "testname" + goodDisplayNames.indexOf(displayName)));
+        goodOrganizationDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi,
+            "testname" + goodOrganizationDisplayNames.indexOf(displayName)));
     }
 
     /**
@@ -1345,8 +1393,8 @@ public class OrganizationIT extends BaseIT {
     void testCreateOrganizationsWithBadDisplayNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-        badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi,
-            "testname" + badDisplayNames.indexOf(displayName)));
+        badOrganizationDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi,
+            "testname" + badOrganizationDisplayNames.indexOf(displayName)));
     }
 
     /**
@@ -1491,9 +1539,9 @@ public class OrganizationIT extends BaseIT {
         Organization organization = createOrg(organizationsApi);
 
         final Long organizationID = organization.getId();
-        goodDisplayNames.forEach(displayName -> {
+        goodCollectionDisplayNames.forEach(displayName -> {
             createCollectionWithValidDisplayName(displayName, organizationsApi, organizationID,
-                "testname" + goodDisplayNames.indexOf(displayName));
+                "testname" + goodCollectionDisplayNames.indexOf(displayName));
         });
     }
 
@@ -1510,9 +1558,9 @@ public class OrganizationIT extends BaseIT {
         Organization organization = createOrg(organizationsApi);
 
         final Long organizationID = organization.getId();
-        badDisplayNames.forEach(displayName -> {
+        badCollectionDisplayNames.forEach(displayName -> {
             createCollectionWithBadDisplayName(displayName, organizationsApi, organizationID,
-                "testname" + badDisplayNames.indexOf(displayName));
+                "testname" + badCollectionDisplayNames.indexOf(displayName));
         });
     }
 
@@ -1658,7 +1706,7 @@ public class OrganizationIT extends BaseIT {
         Collection stubCollection = stubCollectionObject();
 
         final Long organizationID = organization.getId();
-        badNames.forEach(name -> {
+        badCollectionNames.forEach(name -> {
             createCollectionWithBadName(name, organizationsApi, organizationID);
         });
 
@@ -2348,7 +2396,7 @@ public class OrganizationIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
-        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, null);
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, null, null);
 
         // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);

@@ -1635,8 +1635,8 @@ paths:
       - tokens
   /auth/tokens/github:
     post:
-      description: "Allow satellizer to post a new GitHub token to dockstore, used\
-        \ by login, can create new users."
+      description: "Allow n2-oauth-client (fork) to post a new GitHub token to dockstore,\
+        \ used by login, can create new users."
       operationId: addToken
       requestBody:
         content:
@@ -1649,7 +1649,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_Auth'
-          description: Satellizer successfully posted a new GitHub token to Dockstore
+          description: Allow n2-oauth-client (fork) successfully posted a new GitHub
+            token to Dockstore
         "401":
           description: Unauthorized
         "403":
@@ -1669,6 +1670,10 @@ paths:
         name: code
         schema:
           type: string
+      - in: query
+        name: state
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -1684,6 +1689,25 @@ paths:
           description: Conflict
       security:
       - BEARER: []
+      tags:
+      - tokens
+  /auth/tokens/github/codeChallenge:
+    get:
+      description: Get a PKCE code challenge value and store the verifier.
+      operationId: getGitHubCodeChallenge
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientPKCE'
+          description: Get a PKCE code challenge value
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
       tags:
       - tokens
   /auth/tokens/gitlab.com:
@@ -3747,6 +3771,31 @@ paths:
           description: Entry must be published
       tags:
       - entries
+  /entries/{id}/categorySummaries:
+    get:
+      description: Get the category summaries for the entry
+      operationId: entryCategorySummaries
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategorySummary'
+          description: Successfully retrieved category summaries
+        "400":
+          description: Entry must by published
+      tags:
+      - entries
   /entries/{id}/collections:
     get:
       description: Get the collections and approved organizations that contain the
@@ -5512,6 +5561,15 @@ paths:
         schema:
           type: integer
           format: int64
+      - description: Curator type.
+        in: query
+        name: curator
+        schema:
+          type: string
+          enum:
+          - USER
+          - DOCKSTORE
+          - AI
       - description: Reindex entry if necessary. Only admins and curators may set
           this to false.
         in: query
@@ -9620,7 +9678,7 @@ components:
           description: Description of the collection
         displayName:
           type: string
-          maxLength: 50
+          maxLength: 90
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
         entries:
@@ -9643,9 +9701,9 @@ components:
           type: string
           description: Name of the collection
           example: alignment
-          maxLength: 39
+          maxLength: 90
           minLength: 3
-          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,89}"
         notebooksLength:
           type: integer
           format: int64
@@ -9679,6 +9737,14 @@ components:
     CategorySummary:
       type: object
       properties:
+        aiManaged:
+          type: boolean
+        curator:
+          type: string
+          enum:
+          - USER
+          - DOCKSTORE
+          - AI
         description:
           type: string
         displayName:
@@ -9712,6 +9778,13 @@ components:
       required:
       - checksum
       - type
+    ClientPKCE:
+      type: object
+      properties:
+        hashedValue:
+          type: string
+        state:
+          type: string
     CloudInstance:
       type: object
       properties:
@@ -9767,7 +9840,7 @@ components:
           description: Description of the collection
         displayName:
           type: string
-          maxLength: 50
+          maxLength: 90
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
         entries:
@@ -9790,9 +9863,9 @@ components:
           type: string
           description: Name of the collection
           example: alignment
-          maxLength: 39
+          maxLength: 90
           minLength: 3
-          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,89}"
         notebooksLength:
           type: integer
           format: int64
@@ -9830,6 +9903,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategorySummary'
+        curator:
+          type: string
+          enum:
+          - USER
+          - DOCKSTORE
+          - AI
         dbUpdateDate:
           type: integer
           format: int64

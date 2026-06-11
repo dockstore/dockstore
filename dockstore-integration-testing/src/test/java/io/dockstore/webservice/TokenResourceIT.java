@@ -172,6 +172,7 @@ public class TokenResourceIT {
     void getGoogleTokenNewUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         io.swagger.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
 
         // check that the user has the correct two tokens
@@ -226,7 +227,11 @@ public class TokenResourceIT {
     void testNinjaedGitHubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
+        long count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
+        assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
+
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
         // registering user 1 again should fail
@@ -250,9 +255,14 @@ public class TokenResourceIT {
         }
         assertTrue(shouldFail);
 
+        // re-create deleted PKCE information
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         // now register user2, should autogenerate a name
         TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
+        count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
+        assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
+
         UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername(), testingPostgres));
         assertNotEquals(CUSTOM_USERNAME2, usersApi2.getUser().getUsername());
         assertEquals("better.name", usersApi2.changeUsername("better.name").getUsername());
@@ -292,7 +302,10 @@ public class TokenResourceIT {
     void loginRegisterTestWithMultipleAccounts(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         createAccount1(unAuthenticatedTokensApi);
+        // re-create PKCE info
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         createAccount2(unAuthenticatedTokensApi);
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
@@ -319,9 +332,12 @@ public class TokenResourceIT {
     void adminsAndCuratorsMayNotLoginWithGoogle(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         createAccount1(unAuthenticatedTokensApi);
         setAdmin(true);
         try {
+            // re-create PKCE info
+            testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
             unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
             fail("An admin should not be able to log in via Google");
         } catch (ApiException ex) {
@@ -341,6 +357,8 @@ public class TokenResourceIT {
         // Should not be able to register new Dockstore account when profiles already exist
         registerNewUsersWithExisting(unAuthenticatedTokensApi);
         // Can't link tokens to other Dockstore accounts
+        // re-create PKCE info
+        testingPostgres.runUpdateStatement("insert into PKCE (dbcreatedate, dbupdatedate, state, verifier) select now(), now(),  'fakeState', 'fakeVerifier' where (select count(*) from PKCE) = 0");
         addUnavailableGitHubTokenToGoogleUser();
         addUnavailableGoogleTokenToGitHubUser();
     }
@@ -349,7 +367,9 @@ public class TokenResourceIT {
     void recreateAccountsAfterSelfDestruct(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         createAccount1(unAuthenticatedTokensApi);
+
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
     }
 
@@ -393,7 +413,7 @@ public class TokenResourceIT {
             unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
             fail();
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("already exists"));
+            assertTrue(e.getMessage().contains("already exists"), e.getMessage());
             // Call should fail
         }
     }
@@ -586,7 +606,7 @@ public class TokenResourceIT {
         List<Token> byUserId = tokenDAO.findByUserId(getFakeUser().getId());
         assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
-
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         io.swagger.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
@@ -617,6 +637,7 @@ public class TokenResourceIT {
         assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
+        testingPostgres.runUpdateStatement("insert into PKCE values (now(), now(),  'fakeState', 'fakeVerifier')");
         TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername(), testingPostgres));
         tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 

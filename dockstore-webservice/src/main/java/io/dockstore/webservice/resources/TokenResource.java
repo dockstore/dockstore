@@ -38,6 +38,7 @@ import com.google.gson.JsonSyntaxException;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.PKCE;
 import io.dockstore.webservice.core.PrivacyPolicyVersion;
 import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
@@ -51,6 +52,7 @@ import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
+import io.dockstore.webservice.jdbi.PKCEDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -81,8 +83,13 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -90,6 +97,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GitHub;
@@ -119,6 +127,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      */
     public static final JsonFactory JSON_FACTORY = new JacksonFactory();
     public static final String ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE = "Admins and curators may not login with Google";
+    public static final int RECOMMENDED_ENTROPY = 32;
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -128,10 +137,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private static final String TOKEN_NOT_FOUND_DESCRIPTION = "Token not found";
     private static final String USER_NOT_FOUND_MESSAGE = "User not found";
+
+    private static final SecureRandom PKCE_RANDOM = new SecureRandom();
+
     public static final String INVALID_JSON = "Invalid JSON provided";
+    public static final String PKCE_ENCODING_ALGORITHM = "SHA-256";
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
+    private  final PKCEDAO pkceDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
 
     private final String githubClientID;
@@ -158,10 +172,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
     private String orcidUrl = null;
 
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, PKCEDAO pkceDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
         DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
+        this.pkceDAO = pkceDAO;
         this.deletedUsernameDAO = deletedUsernameDAO;
         this.githubClientID = configuration.getGithubClientID();
         this.githubClientSecret = configuration.getGithubClientSecret();
@@ -382,6 +397,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return oauthData.get("code").getAsString();
     }
 
+    private String getStateFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
+        return oauthData.get("state").getAsString();
+    }
+
     private String getRedirectURIFromSatellizerObject(JsonObject satellizerObject) {
         JsonObject authorizationData = satellizerObject.get("authorizationData").getAsJsonObject();
         return authorizationData.get("redirect_uri").getAsString();
@@ -441,7 +461,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String code = getCodeFromSatellizerObject(satellizerObject);
         final String redirectUri = getRedirectURIFromSatellizerObject(satellizerObject);
         final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-        TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
+        String verifier = verifyGitHubUser(getStateFromSatellizerObject(satellizerObject));
+        TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri, verifier);
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
         LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
@@ -553,18 +574,47 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/github/codeChallenge")
+    @Operation(operationId = "getGitHubCodeChallenge", description = "Get a PKCE code challenge value and store the verifier.")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a PKCE code challenge value", content = @Content(schema = @Schema(implementation = ClientPKCE.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
+    @ApiOperation(value = "Get a PKCE code challenge value and store the verifier.", notes = "This is used as part of the OAuth 2.1 PKCE challenge. ", response = ClientPKCE.class)
+    public ClientPKCE getGitHubCodeChallenge() {
+        // record original value and send hashed value to client
+        byte[] verifierBytes = new byte[RECOMMENDED_ENTROPY];
+        PKCE_RANDOM.nextBytes(verifierBytes);
+        String verifier = Base64.getUrlEncoder().withoutPadding().encodeToString(verifierBytes);
+
+        try {
+            byte[] hash = MessageDigest.getInstance(PKCE_ENCODING_ALGORITHM).digest(verifier.getBytes(StandardCharsets.UTF_8));
+            String hashedValue = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+            String state = RandomStringUtils.secure().nextAlphabetic(RECOMMENDED_ENTROPY);
+            ClientPKCE clientPKCE = new ClientPKCE(hashedValue, state);
+            PKCE pkce = new PKCE(state, verifier);
+            pkceDAO.create(pkce);
+            return clientPKCE;
+        } catch (NoSuchAlgorithmException e) {
+            throw new CustomWebApplicationException(PKCE_ENCODING_ALGORITHM + " not supported", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @POST
     @Timed
     @UnitOfWork
     @Path("/github")
     @JsonView(TokenViews.Auth.class)
-    @Operation(operationId = "addToken", description = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addToken", description = "Allow n2-oauth-client (fork) to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
-        + "", description = "Satellizer successfully posted a new GitHub token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
+        + "", description = "Allow n2-oauth-client (fork) successfully posted a new GitHub token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
-    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
+    @ApiOperation(value = "Allow n2-oauth-client (fork) to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
@@ -574,7 +624,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 JsonObject satellizerObject = element.getAsJsonObject();
                 final String code = getCodeFromSatellizerObject(satellizerObject);
                 final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-                return handleGitHubUser(null, code, registerUser);
+                String verifier = verifyGitHubUser(getStateFromSatellizerObject(satellizerObject));
+                return handleGitHubUser(null, code, verifier, registerUser);
             } catch (IllegalStateException ex) {
                 throw new CustomWebApplicationException("Request body is an invalid JSON", HttpStatus.SC_BAD_REQUEST);
             }
@@ -599,13 +650,28 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "This is used as part of the OAuth 2 web flow. "
         + "Once a user has approved permissions for Collaboratory"
         + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addGithubToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @QueryParam("code") String code) {
+    public Token addGithubToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @QueryParam("code") String code, @QueryParam("state") String state) {
         // never create a new user via account linking page
-        return handleGitHubUser(authUser, code, false);
+        String verifier = verifyGitHubUser(state);
+        return handleGitHubUser(authUser, code, verifier, false);
     }
 
-    private Token handleGitHubUser(User authUser, String code, boolean registerUser) {
-        String accessToken = GitHubHelper.getGitHubAccessToken(code, this.githubClientID, this.githubClientSecret);
+    private String verifyGitHubUser(String state) {
+        // check that the state matches and fetch the original code_verifier value
+        String verifier = null;
+        if (state != null) {
+            PKCE pkce = pkceDAO.find(state);
+            if (pkce == null) {
+                throw new CustomWebApplicationException("Auth error, state did not match", HttpStatus.SC_BAD_REQUEST);
+            }
+            verifier = pkce.getVerifier();
+            pkceDAO.delete(pkce);
+        }
+        return verifier;
+    }
+
+    private Token handleGitHubUser(User authUser, String code, String verifier, boolean registerUser) {
+        String accessToken = GitHubHelper.getGitHubAccessToken(code, this.githubClientID, this.githubClientSecret, verifier);
 
         String githubLogin;
         Token dockstoreToken = null;
@@ -922,4 +988,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
+
+    /**
+     * Safe values that can be returned to the client
+     * @param hashedValue hashed verifier value (sent to GitHub or Google to initiate OAuth 2.1 PKCE)
+     * @param state string used to prevent CRSF attacks (only accept requests that we actually started)
+     */
+    record ClientPKCE(String hashedValue, String state) { }
 }
