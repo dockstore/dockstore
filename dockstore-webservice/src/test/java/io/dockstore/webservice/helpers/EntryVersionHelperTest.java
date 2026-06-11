@@ -93,18 +93,29 @@ class EntryVersionHelperTest {
         // workflow with no versions
         BioWorkflow workflow = new BioWorkflow();
         assertEquals(Optional.empty(), EntryVersionHelper.determineRepresentativeVersion(workflow));
-        // workflow with one invalid version
+        // workflow with one invalid version -> falls back to all versions
         workflow.addWorkflowVersion(createVersion("invalid", false, 13));
         assertEquals("invalid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // workflow with one valid and one invalid version
+        // add a valid version -> valid versions are preferred over all
         workflow.addWorkflowVersion(createVersion("valid", true, 11));
         assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // workflow with "master" version and some other versions
+        // add "master" -> mainline versions take top priority
         workflow.addWorkflowVersion(createVersion("master", false, 1));
         assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // workflow with "master", "main", and "develop" versions, should select one of those three with the highest id
+        // add "main" with a higher id -> "main" is picked as more recently updated
         workflow.addWorkflowVersion(createVersion("main", false, 2));
+        assertEquals("main", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // add "develop" -> mainline still wins with "main"; "develop" pool is not reached
         workflow.addWorkflowVersion(createVersion("develop", false, 3));
+        assertEquals("main", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+    }
+
+    @Test
+    void testRepresentativeVersionSelectionDevelop() throws IllegalAccessException {
+        // When there are no mainline/valid-tag/default candidates, "develop" is chosen.
+        BioWorkflow workflow = new BioWorkflow();
+        workflow.addWorkflowVersion(createVersion("feature-x", false, 1));
+        workflow.addWorkflowVersion(createVersion("develop", false, 2));
         assertEquals("develop", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
     }
 
