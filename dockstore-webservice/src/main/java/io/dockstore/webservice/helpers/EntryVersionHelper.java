@@ -482,6 +482,17 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return determineRepresentativeVersion(versions, null);
     }
 
+    /**
+     * Determines a "representative" version from a set of versions — the most suitable version for use
+     * when a single version must be chosen. Candidates are ranked in priority order:
+     * mainline branches ("main"/"master"), valid tags, and {@code defaultVersion} (if provided);
+     * then "develop"; then any valid version; then any non-hidden version. Within each tier,
+     * the most recently updated version wins.
+     *
+     * @param versions the set of versions to select from
+     * @param defaultVersion the entry's designated default version, included as a top-tier candidate; may be null
+     * @return the representative version, or empty if {@code versions} is empty or all versions are hidden
+     */
     private static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions, V defaultVersion) {
         Set<V> nonHidden = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
 

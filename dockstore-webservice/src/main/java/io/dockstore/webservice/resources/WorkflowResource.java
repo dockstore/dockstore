@@ -925,6 +925,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         workflow.getWorkflowVersions().forEach(version -> sessionFactory.getCurrentSession().detach(version));
     }
 
+    /**
+     * Returns the id of the default version, falling back to a "representative" version id if no default is set.
+     */
     private long determineDefaultVersionId(Entry entry) {
         return Optional.ofNullable(entry.getActualDefaultVersion())
             .or(() -> EntryVersionHelper.determineRepresentativeVersion(entry))
