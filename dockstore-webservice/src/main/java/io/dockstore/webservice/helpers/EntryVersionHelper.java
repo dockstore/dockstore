@@ -487,7 +487,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         // 3. all valid versions
         // 4. all versions
         // Return the most recently-updated version from the first group, and if the group has no versions,
-        // move on to the next group, and repeat the process.  Exclude hidden versions.
+        // move on to the next group, and repeat the process, and so on.  Exclude hidden versions.
         Set<V> nonHidden = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
 
         Stream<V> mainlinePlusValidTagsPlusDefault = nonHidden.stream().filter(v ->
