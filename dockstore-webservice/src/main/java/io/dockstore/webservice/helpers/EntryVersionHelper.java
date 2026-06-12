@@ -475,25 +475,19 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     /**
-     * Determine which of the specified Versions, all of which should be from the same Entry,
-     * is most representative of the Entry.
-     */
-    static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions) {
-        return determineRepresentativeVersion(versions, null);
-    }
-
-    /**
-     * Determines a "representative" version from a set of versions — the most suitable version for use
-     * when a single version must be chosen. Candidates are ranked in priority order:
-     * mainline branches ("main"/"master"), valid tags, and {@code defaultVersion} (if provided);
-     * then "develop"; then any valid version; then any non-hidden version. Within each tier,
-     * the most recently updated version wins.
-     *
+     * Determines a "representative" Version from a set of Versions, given the specified default version.
      * @param versions the set of versions to select from
-     * @param defaultVersion the entry's designated default version, included as a top-tier candidate; may be null
+     * @param defaultVersion the entry's designated default version; may be null
      * @return the representative version, or empty if {@code versions} is empty or all versions are hidden
      */
     private static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions, V defaultVersion) {
+        // Attempt to select the "representative" version from successive sets of groups:
+        // 1. mainline branches ("main"/"master"), valid tags, and {@code defaultVersion} (if provided)
+        // 2. "develop" branch
+        // 3. all valid versions
+        // 4. all versions
+        // Return the most recently-updated version from the first group, and if the group has no versions,
+        // move on to the next group, and repeat the process.  Exclude hidden versions.
         Set<V> nonHidden = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
 
         Stream<V> mainlinePlusValidTagsPlusDefault = nonHidden.stream().filter(v ->
