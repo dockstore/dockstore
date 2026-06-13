@@ -224,7 +224,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
         // Non-owner cannot delete an AI-curated entry
         CategoriesApi categoriesApiOther = new CategoriesApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
         ApiException forbiddenEx = assertThrows(ApiException.class, () ->
-                categoriesApiOther.deleteAiCuratedEntryFromCategory(categoryId, workflowId));
+                categoriesApiOther.removeAiCuratedEntryFromCategory(categoryId, workflowId));
         assertEquals(HttpStatus.SC_FORBIDDEN, forbiddenEx.getCode());
 
         // Owner cannot delete an entry that is not AI-curated
@@ -232,12 +232,12 @@ public class OpenAPIOrganizationIT extends BaseIT {
         organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "USER", null);
         CategoriesApi categoriesApiUser2 = new CategoriesApi(userClient);
         ApiException notAiEx = assertThrows(ApiException.class, () ->
-                categoriesApiUser2.deleteAiCuratedEntryFromCategory(categoryId, workflowId));
+                categoriesApiUser2.removeAiCuratedEntryFromCategory(categoryId, workflowId));
         assertEquals(HttpStatus.SC_FORBIDDEN, notAiEx.getCode());
 
         // Nonexistent category returns NOT_FOUND
         ApiException notFoundEx = assertThrows(ApiException.class, () ->
-                categoriesApiUser2.deleteAiCuratedEntryFromCategory(Long.MAX_VALUE, workflowId));
+                categoriesApiUser2.removeAiCuratedEntryFromCategory(Long.MAX_VALUE, workflowId));
         assertEquals(HttpStatus.SC_NOT_FOUND, notFoundEx.getCode());
 
         // Re-add with AI curator for the success case
@@ -245,7 +245,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
         organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "AI", null);
 
         // Owner can delete an AI-curated entry
-        categoriesApiUser2.deleteAiCuratedEntryFromCategory(categoryId, workflowId);
+        categoriesApiUser2.removeAiCuratedEntryFromCategory(categoryId, workflowId);
         assertTrue(categoriesApiAdmin.getCategoryById(categoryId).getEntries().isEmpty());
         long removeFromCategoryCount = testingPostgres.runSelectStatement(
             "select count(*) from event where type = 'REMOVE_FROM_CATEGORY'", long.class);

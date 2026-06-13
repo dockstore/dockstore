@@ -133,11 +133,11 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{categoryId}/entry")
-    @Operation(operationId = "deleteAiCuratedEntryFromCategory", summary = "Delete an AI-curated entry from a category.", description = "Delete an AI-curated entry from a category. The entry must have been added to the category by AI. Only the owner of the entry may perform this action.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "removeAiCuratedEntryFromCategory", summary = "Delete an AI-curated entry from a category.", description = "Delete an AI-curated entry from a category. The entry must have been added to the category by AI. Only the owner of the entry may perform this action.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted AI-curated entry from category", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Category.class)))
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Category or entry not found")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "User is not an owner of the entry, or the entry was not added to the category by AI")
-    public Category deleteAiCuratedEntryFromCategory(@Parameter(hidden = true, name = "user") @Auth User user,
+    public Category removeAiCuratedEntryFromCategory(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Category ID.", name = "categoryId", in = ParameterIn.PATH, required = true) @PathParam("categoryId") Long categoryId,
         @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
 
