@@ -1920,6 +1920,44 @@ paths:
       summary: Retrieve all categories.
       tags:
       - categories
+  /categories/{categoryId}/entry:
+    delete:
+      description: Delete an AI-curated entry from a category. The entry must have
+        been added to the category by AI. Only the owner of the entry may perform
+        this action.
+      operationId: deleteAiCuratedEntryFromCategory
+      parameters:
+      - description: Category ID.
+        in: path
+        name: categoryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Entry ID.
+        in: query
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: Successfully deleted AI-curated entry from category
+        "403":
+          description: "User is not an owner of the entry, or the entry was not added\
+            \ to the category by AI"
+        "404":
+          description: Category or entry not found
+      security:
+      - BEARER: []
+      summary: Delete an AI-curated entry from a category.
+      tags:
+      - categories
   /categories/{id}:
     get:
       description: Retrieve a category by ID.

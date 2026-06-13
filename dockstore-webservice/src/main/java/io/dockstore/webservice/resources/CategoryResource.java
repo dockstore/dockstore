@@ -17,20 +17,36 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryVersion;
+import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ParamHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.CategoryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -43,6 +59,8 @@ import java.util.List;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Category endpoints
@@ -50,15 +68,21 @@ import org.hibernate.SessionFactory;
 @Path("/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "categories", description = ResourceConstants.CATEGORIES)
+@SecuritySchemes({@SecurityScheme(type = SecuritySchemeType.HTTP, name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME, scheme = "bearer")})
 public class CategoryResource implements AuthenticatedResourceInterface {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CategoryResource.class);
 
     private final CategoryDAO categoryDAO;
     private final CollectionHelper collectionHelper;
+    private final WorkflowDAO workflowDAO;
+    private final EventDAO eventDAO;
 
     public CategoryResource(SessionFactory sessionFactory) {
         this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionHelper = new CollectionHelper(sessionFactory, new ToolDAO(sessionFactory), new VersionDAO(sessionFactory));
-
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.eventDAO = new EventDAO(sessionFactory);
     }
 
     @GET
@@ -102,5 +126,52 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         Hibernate.initialize(category.getAliases());
         collectionHelper.evictAndAddEntries(category);
         return (category);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{categoryId}/entry")
+    @Operation(operationId = "deleteAiCuratedEntryFromCategory", summary = "Delete an AI-curated entry from a category.", description = "Delete an AI-curated entry from a category. The entry must have been added to the category by AI. Only the owner of the entry may perform this action.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted AI-curated entry from category", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Category.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Category or entry not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "User is not an owner of the entry, or the entry was not added to the category by AI")
+    public Category deleteAiCuratedEntryFromCategory(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Category ID.", name = "categoryId", in = ParameterIn.PATH, required = true) @PathParam("categoryId") Long categoryId,
+        @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
+
+        Entry<? extends Entry, ? extends Version> entry = workflowDAO.getGenericEntryById(entryId);
+        if (entry == null || !entry.getIsPublished()) {
+            String msg = "Entry not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Category category = categoryDAO.findById(categoryId);
+        if (category == null) {
+            String msg = "Category not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        checkIsOwner(user, entry);
+
+        if (category.getCurator(entry.getId(), null).orElse(null) != EntryVersion.Curator.AI) {
+            throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
+        }
+
+        category.removeEntry(entry.getId(), null);
+
+        Event removeFromCategoryEvent = entry.getEventBuilder()
+            .withOrganization(category.getOrganization())
+            .withCollection(category)
+            .withInitiatorUser(user)
+            .withType(Event.EventType.REMOVE_FROM_COLLECTION)
+            .build();
+        eventDAO.create(removeFromCategoryEvent);
+
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+
+        return categoryDAO.findById(categoryId);
     }
 }
