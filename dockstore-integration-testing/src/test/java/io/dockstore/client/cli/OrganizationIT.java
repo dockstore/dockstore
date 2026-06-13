@@ -2430,7 +2430,7 @@ public class OrganizationIT extends BaseIT {
 
         // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
         // Perform a couple of additional operations to make sure the collection is no longer visible.
-        assertEquals(0, organizationsApi.getCollectionsFromOrganization(organizationId, "").size());
+        assertEquals(0, organizationsApi.getCollectionsFromOrganization(organizationId, "", null, null).size());
         assertEquals(0, entriesApi.entryCollections(entryId).size());
         String sameOrganizationName = openApiStubOrgObject().getName();
         String sameCollectionName = openApiStubCollectionObject().getName();

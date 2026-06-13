@@ -1,6 +1,8 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
@@ -42,6 +44,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -404,7 +408,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Operation(operationId = "getCollectionsFromOrganization", summary = "Retrieve all collections for an organization.", description = "Retrieve all collections for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<Collection> getCollectionsFromOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
-        @ApiParam(value = "Included fields") @Parameter(description = "Included fields.", name = "include", in = ParameterIn.QUERY, required = true) @QueryParam("include") String include) {
+        @ApiParam(value = "Included fields") @Parameter(description = "Included fields.", name = "include", in = ParameterIn.QUERY, required = true) @QueryParam("include") String include,
+        @Min(0) @DefaultValue("0") @ApiParam(value = "Start index of paging. Minimum 0", defaultValue = "0") @Parameter(description = "Start index of paging. Minimum 0.", name = "offset", in = ParameterIn.QUERY, schema = @Schema(minimum = "0", defaultValue = "0")) @QueryParam("offset") Integer offset,
+        @Min(0) @Max(MAX_PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @ApiParam(value = "Maximum number of results to return. Maximum " + PAGINATION_LIMIT, defaultValue = PAGINATION_LIMIT) @Parameter(description = "Maximum number of results to return. Maximum " + PAGINATION_LIMIT + ".", name = "limit", in = ParameterIn.QUERY, schema = @Schema(minimum = "0", maximum = PAGINATION_LIMIT, defaultValue = PAGINATION_LIMIT)) @QueryParam("limit") Integer limit) {
         if (user.isEmpty()) {
             Organization organization = organizationDAO.findApprovedById(organizationId);
             throwExceptionForNullOrganization(organization);
@@ -417,7 +423,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
         }
 
-        List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
+        List<Collection> collections = collectionDAO.findAllByOrg(organizationId, offset, limit);
         boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
         collections.forEach(collection -> {
             if (includeEntries) {

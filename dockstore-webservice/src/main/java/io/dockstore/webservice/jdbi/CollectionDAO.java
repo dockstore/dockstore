@@ -40,6 +40,14 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return list(query);
     }
 
+    public List<Collection> findAllByOrg(long organizationId, int offset, int limit) {
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findAllByOrg")
+                .setParameter("organizationId", organizationId)
+                .setFirstResult(offset)
+                .setMaxResults(limit);
+        return list(query);
+    }
+
     public Collection findByNameAndOrg(String name, long organizationId) {
         Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findByNameAndOrg")
                 .setParameter("name", name)

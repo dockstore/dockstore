@@ -5243,6 +5243,23 @@ paths:
         required: true
         schema:
           type: string
+      - description: Start index of paging. Minimum 0.
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - description: Maximum number of results to return. Maximum 100.
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+          maximum: 100
+          minimum: 0
       responses:
         default:
           content:
