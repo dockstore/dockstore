@@ -141,27 +141,10 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         @Parameter(description = "Category ID.", name = "categoryId", in = ParameterIn.PATH, required = true) @PathParam("categoryId") Long categoryId,
         @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
 
-        Entry<? extends Entry, ? extends Version> entry = workflowDAO.getGenericEntryById(entryId);
-        if (entry == null || !entry.getIsPublished()) {
-            String msg = "Entry not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        Category category = categoryDAO.findById(categoryId);
-        if (category == null) {
-            String msg = "Category not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
+        Entry<? extends Entry, ? extends Version> entry = getPublishedEntry(entryId);
+        Category category = getCategory(categoryId);
         checkIsOwner(user, entry);
-
-        EntryVersion deleteEntryVersion = category.getEntry(entry.getId(), null)
-            .orElseThrow(() -> new CustomWebApplicationException("Entry is not a member of this category.", HttpStatus.SC_FORBIDDEN));
-        if (deleteEntryVersion.getCurator() != EntryVersion.Curator.AI) {
-            throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
-        }
+        EntryVersion entryVersion = getAiCuratedEntryVersion(category, entry);
 
         category.removeEntry(entry.getId(), null);
 
@@ -191,29 +174,12 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
         @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
 
-        Entry<? extends Entry, ? extends Version> entry = workflowDAO.getGenericEntryById(entryId);
-        if (entry == null || !entry.getIsPublished()) {
-            String msg = "Entry not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        Category category = categoryDAO.findById(categoryId);
-        if (category == null) {
-            String msg = "Category not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
+        Entry<? extends Entry, ? extends Version> entry = getPublishedEntry(entryId);
+        Category category = getCategory(categoryId);
         checkIsOwner(user, entry);
+        EntryVersion entryVersion = getAiCuratedEntryVersion(category, entry);
 
-        EntryVersion approveEntryVersion = category.getEntry(entry.getId(), null)
-            .orElseThrow(() -> new CustomWebApplicationException("Entry is not a member of this category.", HttpStatus.SC_FORBIDDEN));
-        if (approveEntryVersion.getCurator() != EntryVersion.Curator.AI) {
-            throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
-        }
-
-        approveEntryVersion.setCurator(EntryVersion.Curator.USER);
+        entryVersion.setCurator(EntryVersion.Curator.USER);
 
         // TODO this is probably not the correct type of event, correct
         Event approveEvent = entry.getEventBuilder()
@@ -227,5 +193,34 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
 
         return categoryDAO.findById(categoryId);
+    }
+
+    private Entry<? extends Entry, ? extends Version> getPublishedEntry(Long entryId) {
+        Entry<? extends Entry, ? extends Version> entry = workflowDAO.getGenericEntryById(entryId);
+        if (entry == null || !entry.getIsPublished()) {
+            String msg = "Entry not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+        return entry;
+    }
+
+    private Category getCategory(Long categoryId) {
+        Category category = categoryDAO.findById(categoryId);
+        if (category == null) {
+            String msg = "Category not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+        return category;
+    }
+
+    private EntryVersion getAiCuratedEntryVersion(Category category, Entry<? extends Entry, ? extends Version> entry) {
+        EntryVersion entryVersion = category.getEntry(entry.getId(), null)
+            .orElseThrow(() -> new CustomWebApplicationException("Entry is not a member of this category.", HttpStatus.SC_FORBIDDEN));
+        if (entryVersion.getCurator() != EntryVersion.Curator.AI) {
+            throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
+        }
+        return entryVersion;
     }
 }

@@ -1958,6 +1958,50 @@ paths:
       summary: Delete an AI-curated entry from a category.
       tags:
       - categories
+    put:
+      description: "Approve an AI-curated entry in a category, changing its curator\
+        \ from AI to human. The entry must have been added to the category by AI.\
+        \ Only the owner of the entry may perform this action."
+      operationId: approveAiCuratedEntryInCategory
+      parameters:
+      - description: Category ID.
+        in: path
+        name: categoryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Entry ID.
+        in: query
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: Successfully approved AI-curated entry in category
+        "403":
+          description: "User is not an owner of the entry, or the entry was not added\
+            \ to the category by AI"
+        "404":
+          description: Category or entry not found
+      security:
+      - BEARER: []
+      summary: Approve an AI-curated entry in a category.
+      tags:
+      - categories
   /categories/{id}:
     get:
       description: Retrieve a category by ID.
