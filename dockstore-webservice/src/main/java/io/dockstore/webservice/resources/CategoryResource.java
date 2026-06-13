@@ -48,6 +48,7 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -169,6 +170,55 @@ public class CategoryResource implements AuthenticatedResourceInterface {
             .withType(Event.EventType.REMOVE_FROM_COLLECTION)
             .build();
         eventDAO.create(removeFromCategoryEvent);
+
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+
+        return categoryDAO.findById(categoryId);
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{categoryId}/entry")
+    @Operation(operationId = "approveAiCuratedEntryInCategory", summary = "Approve an AI-curated entry in a category.", description = "Approve an AI-curated entry in a category, changing its curator from AI to human. The entry must have been added to the category by AI. Only the owner of the entry may perform this action.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully approved AI-curated entry in category", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Category.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Category or entry not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "User is not an owner of the entry, or the entry was not added to the category by AI")
+    public Category approveAiCuratedEntryInCategory(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Category ID.", name = "categoryId", in = ParameterIn.PATH, required = true) @PathParam("categoryId") Long categoryId,
+        @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
+        @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
+
+        Entry<? extends Entry, ? extends Version> entry = workflowDAO.getGenericEntryById(entryId);
+        if (entry == null || !entry.getIsPublished()) {
+            String msg = "Entry not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Category category = categoryDAO.findById(categoryId);
+        if (category == null) {
+            String msg = "Category not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        checkIsOwner(user, entry);
+
+        if (category.getCurator(entry.getId(), null).orElse(null) != EntryVersion.Curator.AI) {
+            throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
+        }
+
+        category.setCurator(entry.getId(), null, EntryVersion.Curator.USER);
+
+        // TODO this is probably not the correct type of event, correct
+        Event approveEvent = entry.getEventBuilder()
+            .withOrganization(category.getOrganization())
+            .withCollection(category)
+            .withInitiatorUser(user)
+            .withType(Event.EventType.MODIFY_COLLECTION)
+            .build();
+        eventDAO.create(approveEvent);
 
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
 

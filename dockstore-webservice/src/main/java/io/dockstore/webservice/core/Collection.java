@@ -232,6 +232,10 @@ public class Collection implements Serializable, Aliasable {
         return entries.stream().filter(ev -> ev.equals(entryId, versionId)).map(EntryVersion::getCurator).findFirst();
     }
 
+    public void setCurator(Long entryId, Long versionId, EntryVersion.Curator curator) {
+        entries.stream().filter(ev -> ev.equals(entryId, versionId)).findFirst().ifPresent(ev -> ev.setCurator(curator));
+    }
+
     public Organization getOrganization() {
         return organization;
     }
