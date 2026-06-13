@@ -157,7 +157,9 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
         checkIsOwner(user, entry);
 
-        if (category.getCurator(entry.getId(), null).orElse(null) != EntryVersion.Curator.AI) {
+        EntryVersion deleteEntryVersion = category.getEntry(entry.getId(), null)
+            .orElseThrow(() -> new CustomWebApplicationException("Entry is not a member of this category.", HttpStatus.SC_FORBIDDEN));
+        if (deleteEntryVersion.getCurator() != EntryVersion.Curator.AI) {
             throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
         }
 
@@ -205,11 +207,13 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
         checkIsOwner(user, entry);
 
-        if (category.getCurator(entry.getId(), null).orElse(null) != EntryVersion.Curator.AI) {
+        EntryVersion approveEntryVersion = category.getEntry(entry.getId(), null)
+            .orElseThrow(() -> new CustomWebApplicationException("Entry is not a member of this category.", HttpStatus.SC_FORBIDDEN));
+        if (approveEntryVersion.getCurator() != EntryVersion.Curator.AI) {
             throw new CustomWebApplicationException("Entry was not added to this category by AI.", HttpStatus.SC_FORBIDDEN);
         }
 
-        category.setCurator(entry.getId(), null, EntryVersion.Curator.USER);
+        approveEntryVersion.setCurator(EntryVersion.Curator.USER);
 
         // TODO this is probably not the correct type of event, correct
         Event approveEvent = entry.getEventBuilder()

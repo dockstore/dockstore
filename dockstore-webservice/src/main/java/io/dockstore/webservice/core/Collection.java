@@ -228,12 +228,8 @@ public class Collection implements Serializable, Aliasable {
         this.entries.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
     }
 
-    public Optional<EntryVersion.Curator> getCurator(Long entryId, Long versionId) {
-        return entries.stream().filter(ev -> ev.equals(entryId, versionId)).map(EntryVersion::getCurator).findFirst();
-    }
-
-    public void setCurator(Long entryId, Long versionId, EntryVersion.Curator curator) {
-        entries.stream().filter(ev -> ev.equals(entryId, versionId)).findFirst().ifPresent(ev -> ev.setCurator(curator));
+    public Optional<EntryVersion> getEntry(Long entryId, Long versionId) {
+        return entries.stream().filter(ev -> ev.equals(entryId, versionId)).findFirst();
     }
 
     public Organization getOrganization() {
