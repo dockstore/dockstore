@@ -10762,6 +10762,8 @@ components:
       properties:
         apptool:
           $ref: '#/components/schemas/AppTool'
+        category:
+          $ref: '#/components/schemas/Category'
         collection:
           $ref: '#/components/schemas/Collection'
         dbCreateDate:
@@ -10807,6 +10809,8 @@ components:
           - UNPUBLISH_ENTRY
           - ARCHIVE_ENTRY
           - UNARCHIVE_ENTRY
+          - APPROVE_IN_CATEGORY
+          - REMOVE_FROM_CATEGORY
         user:
           $ref: '#/components/schemas/User'
         version:

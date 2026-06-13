@@ -150,9 +150,9 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
         Event removeFromCategoryEvent = entry.getEventBuilder()
             .withOrganization(category.getOrganization())
-            .withCollection(category)
+            .withCategory(category)
             .withInitiatorUser(user)
-            .withType(Event.EventType.REMOVE_FROM_COLLECTION)
+            .withType(Event.EventType.REMOVE_FROM_CATEGORY)
             .build();
         eventDAO.create(removeFromCategoryEvent);
 
@@ -181,12 +181,11 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
         entryVersion.setCurator(EntryVersion.Curator.USER);
 
-        // TODO this is probably not the correct type of event, correct
         Event approveEvent = entry.getEventBuilder()
             .withOrganization(category.getOrganization())
-            .withCollection(category)
+            .withCategory(category)
             .withInitiatorUser(user)
-            .withType(Event.EventType.MODIFY_COLLECTION)
+            .withType(Event.EventType.APPROVE_IN_CATEGORY)
             .build();
         eventDAO.create(approveEvent);
 

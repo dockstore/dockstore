@@ -96,4 +96,12 @@
             WHERE collection_id IN (SELECT id FROM collection WHERE dtype = 'Category')
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="add_categoryid_to_event">
+        <addColumn tableName="event">
+            <column name="categoryid" type="bigint"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="event" baseColumnNames="categoryid"
+                                 referencedTableName="collection" referencedColumnNames="id"
+                                 constraintName="fk_event_categoryid"/>
+    </changeSet>
 </databaseChangeLog>

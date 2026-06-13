@@ -247,6 +247,9 @@ public class OpenAPIOrganizationIT extends BaseIT {
         // Owner can delete an AI-curated entry
         categoriesApiUser2.deleteAiCuratedEntryFromCategory(categoryId, workflowId);
         assertTrue(categoriesApiAdmin.getCategoryById(categoryId).getEntries().isEmpty());
+        long removeFromCategoryCount = testingPostgres.runSelectStatement(
+            "select count(*) from event where type = 'REMOVE_FROM_CATEGORY'", long.class);
+        assertEquals(1, removeFromCategoryCount, "There should be 1 REMOVE_FROM_CATEGORY event");
     }
 
     @Test
@@ -290,6 +293,9 @@ public class OpenAPIOrganizationIT extends BaseIT {
         Category updated = categoriesApiAdmin.getCategoryById(categoryId);
         assertEquals(1, updated.getEntries().size());
         assertEquals(CollectionEntry.CuratorEnum.USER, updated.getEntries().get(0).getCurator());
+        long approveInCategoryCount = testingPostgres.runSelectStatement(
+            "select count(*) from event where type = 'APPROVE_IN_CATEGORY'", long.class);
+        assertEquals(1, approveInCategoryCount, "There should be 1 APPROVE_IN_CATEGORY event");
 
         // Cannot approve again: entry is no longer AI-curated
         ApiException notAiEx = assertThrows(ApiException.class, () ->
