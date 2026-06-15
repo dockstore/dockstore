@@ -490,18 +490,13 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         // move on to the next group, and repeat the process, and so on.  Exclude hidden versions.
         Set<V> nonHidden = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
 
-        Stream<V> mainlinePlusValidTagsPlusDefault = nonHidden.stream().filter(v ->
-            "main".equals(v.getName()) || "master".equals(v.getName())
-            || (v.isValid() && v.getReferenceType() == Version.ReferenceType.TAG)
-            || v.equals(defaultVersion));
-        Stream<V> develop = nonHidden.stream().filter(v -> "develop".equals(v.getName()));
-        Stream<V> valid = nonHidden.stream().filter(Version::isValid);
-        Stream<V> all = nonHidden.stream();
-
-        return mostRecentlyUpdated(mainlinePlusValidTagsPlusDefault)
-            .or(() -> mostRecentlyUpdated(develop))
-            .or(() -> mostRecentlyUpdated(valid))
-            .or(() -> mostRecentlyUpdated(all));
+        return mostRecentlyUpdated(nonHidden.stream().filter(v ->
+                "main".equals(v.getName()) || "master".equals(v.getName())
+                || (v.isValid() && v.getReferenceType() == Version.ReferenceType.TAG)
+                || v.equals(defaultVersion)))
+            .or(() -> mostRecentlyUpdated(nonHidden.stream().filter(v -> "develop".equals(v.getName()))))
+            .or(() -> mostRecentlyUpdated(nonHidden.stream().filter(Version::isValid)))
+            .or(() -> mostRecentlyUpdated(nonHidden.stream()));
     }
 
     private static <V extends Version> Optional<V> mostRecentlyUpdated(Stream<V> versions) {
