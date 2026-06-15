@@ -144,7 +144,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         Entry<? extends Entry, ? extends Version> entry = getPublishedEntry(entryId);
         Category category = getCategory(categoryId);
         checkIsOwner(user, entry);
-        EntryVersion entryVersion = getAiCuratedEntryVersion(category, entry);
+        getAiCuratedEntryVersion(category, entry);
 
         category.removeEntry(entry.getId(), null);
 
