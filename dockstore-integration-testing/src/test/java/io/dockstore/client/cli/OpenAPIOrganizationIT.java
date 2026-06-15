@@ -283,13 +283,13 @@ public class OpenAPIOrganizationIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, forbiddenEx.getCode());
 
         // Nonexistent category returns NOT_FOUND
+        CategoriesApi categoriesApiUser2 = new CategoriesApi(userClient);
         ApiException notFoundEx = assertThrows(ApiException.class, () ->
-                new CategoriesApi(userClient).approveAiCuratedEntryInCategory(workflowId, Long.MAX_VALUE, null));
+                categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, Long.MAX_VALUE, ""));
         assertEquals(HttpStatus.SC_NOT_FOUND, notFoundEx.getCode());
 
         // Owner can approve an AI-curated entry; curator changes from AI to USER
-        CategoriesApi categoriesApiUser2 = new CategoriesApi(userClient);
-        categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, categoryId, null);
+        categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, categoryId, "");
         Category updated = categoriesApiAdmin.getCategoryById(categoryId);
         assertEquals(1, updated.getEntries().size());
         assertEquals(CollectionEntry.CuratorEnum.USER, updated.getEntries().get(0).getCurator());
@@ -299,7 +299,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
 
         // Cannot approve again: entry is no longer AI-curated
         ApiException notAiEx = assertThrows(ApiException.class, () ->
-                categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, categoryId, null));
+                categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, categoryId, ""));
         assertEquals(HttpStatus.SC_FORBIDDEN, notAiEx.getCode());
     }
 }
