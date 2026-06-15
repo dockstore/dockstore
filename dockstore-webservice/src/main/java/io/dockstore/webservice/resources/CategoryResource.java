@@ -153,13 +153,13 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
         category.removeEntry(entry.getId(), null);
 
-        Event removeFromCategoryEvent = entry.getEventBuilder()
+        Event removeEvent = entry.getEventBuilder()
             .withOrganization(category.getOrganization())
             .withCategory(category)
             .withInitiatorUser(user)
             .withType(Event.EventType.REMOVE_FROM_CATEGORY)
             .build();
-        eventDAO.create(removeFromCategoryEvent);
+        eventDAO.create(removeEvent);
 
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
 
