@@ -2728,7 +2728,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
-        assertEquals(0, categoriesApi.getCategories(null, null).size());
+        assertEquals(0, categoriesApi.getCategories(null, null, null, null).size());
     }
 
     /**
@@ -2811,7 +2811,7 @@ public class OrganizationIT extends BaseIT {
 
             addCollection(name, "dockstore");
             expectedNames.add(name);
-            assertEquals(expectedNames, extractNames(categoriesApi.getCategories(null, null)));
+            assertEquals(expectedNames, extractNames(categoriesApi.getCategories(null, null, null, null)));
 
             try {
                 addCollection(name, "dockstore");
@@ -2881,11 +2881,11 @@ public class OrganizationIT extends BaseIT {
         }
 
         // Verify that the added categories exist
-        assertEquals(catNames, extractNames(categoriesApi.getCategories(null, null)));
+        assertEquals(catNames, extractNames(categoriesApi.getCategories(null, null, null, null)));
 
         // Check that unique category names are enforced on creation
         // Try to add categories with existing category names
-        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null)) {
+        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null, null, null)) {
             String categoryName = category.getName();
             try {
                 addCollection(categoryName, "dockstore");
@@ -2900,7 +2900,7 @@ public class OrganizationIT extends BaseIT {
         // Try to change a category name to each of the other existing category names
         addCollection("catdockstore", "dockstore");
 
-        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null)) {
+        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null, null, null)) {
             io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
             io.dockstore.openapi.client.model.Collection collection = organizationsApiAdmin.getCollectionByName("dockstore", "catdockstore");
             if (category.getName().equals("catdockstore")) {
@@ -2934,8 +2934,8 @@ public class OrganizationIT extends BaseIT {
         long id = addCollection(catName, "dockstore").getId();
 
         // Retrieve by category name
-        assertEquals(catName, categoriesApi.getCategories(catName, null).get(0).getName());
-        assertEquals(0, categoriesApi.getCategories("bogus", null).size());
+        assertEquals(catName, categoriesApi.getCategories(catName, null, null, null).get(0).getName());
+        assertEquals(0, categoriesApi.getCategories("bogus", null, null, null).size());
 
         // Retrieve by category id
         assertEquals(catName, categoriesApi.getCategoryById(id).getName());
@@ -2959,7 +2959,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
 
         Collection collection = addCollection("test", "dockstore");
-        final io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories("test", null).get(0);
+        final io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories("test", null, null, null).get(0);
 
         assertEquals(collection.getId(), category.getId());
         assertEquals(collection.getName(), category.getName());
@@ -2983,13 +2983,13 @@ public class OrganizationIT extends BaseIT {
         addToCollection("test", "dockstore", createWorkflow1());
         addToCollection("test", "dockstore", createWorkflow2());
 
-        io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories(null, null).get(0);
+        io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories(null, null, null, null).get(0);
 
         assertEquals(workflowCount, category.getWorkflowsLength().longValue());
         assertEquals(0, category.getEntries().size());
 
         // Make sure the category looks right.
-        category = categoriesApi.getCategories(null, "entries").get(0);
+        category = categoriesApi.getCategories(null, "entries", null, null).get(0);
         assertEquals(workflowCount, category.getWorkflowsLength().longValue());
         assertEquals(workflowCount, category.getEntries().size());
 
@@ -3019,10 +3019,10 @@ public class OrganizationIT extends BaseIT {
         assertEquals(0, entriesApi.entryCategories(id).size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
-        assertEquals(1, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        assertEquals(1, categoriesApi.getCategories("test", "entries", null, null).get(0).getEntries().size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(1).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
-        assertEquals(2, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        assertEquals(2, categoriesApi.getCategories("test", "entries", null, null).get(0).getEntries().size());
     }
 
     /**
@@ -3046,15 +3046,15 @@ public class OrganizationIT extends BaseIT {
         addCollection("test2", "normal");
 
         // There should be no categories.
-        assertEquals(0, categoriesApi.getCategories(null, null).size());
-        assertEquals(0, categoriesApi.getCategories("test", null).size());
+        assertEquals(0, categoriesApi.getCategories(null, null, null, null).size());
+        assertEquals(0, categoriesApi.getCategories("test", null, null, null).size());
 
         // Create a category with the same name.
         addCollection("test", "dockstore");
 
         // There should only be one category.
-        assertEquals(1, categoriesApi.getCategories(null, null).size());
-        assertEquals(1, categoriesApi.getCategories("test", null).size());
+        assertEquals(1, categoriesApi.getCategories(null, null, null, null).size());
+        assertEquals(1, categoriesApi.getCategories("test", null, null, null).size());
 
         // The category and the normal collection with the same name should have different ids.
         assertNotEquals(organizationsApiAdmin.getCollectionByName("dockstore", "test").getId(), organizationsApiAdmin.getCollectionByName("normal", "test").getId());
@@ -3075,7 +3075,7 @@ public class OrganizationIT extends BaseIT {
         // Add two categories.
         addCollection("test", "dockstore");
         addCollection("test2", "dockstore");
-        assertEquals(2, categoriesApi.getCategories(null, null).size());
+        assertEquals(2, categoriesApi.getCategories(null, null, null, null).size());
 
         // Add a workflow to the categories.
         Workflow workflow = createWorkflow1();
@@ -3085,13 +3085,13 @@ public class OrganizationIT extends BaseIT {
 
         // Delete a category.
         io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
-        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null).get(0).getId(), null);
+        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null, null, null).get(0).getId(), null);
 
         // Verify that the proper number of categories are visible.
-        assertEquals(1, categoriesApi.getCategories(null, null).size());
-        assertEquals(0, categoriesApi.getCategories("test", null).size());
-        assertEquals(1, categoriesApi.getCategories("test2", null).size());
+        assertEquals(1, categoriesApi.getCategories(null, null, null, null).size());
+        assertEquals(0, categoriesApi.getCategories("test", null, null, null).size());
+        assertEquals(1, categoriesApi.getCategories("test2", null, null, null).size());
         assertEquals(1, entriesApi.entryCategories(workflow.getId()).size());
-        assertEquals(1, categoriesApi.getCategories("test2", "entries").get(0).getEntries().get(0).getCategories().size());
+        assertEquals(1, categoriesApi.getCategories("test2", "entries", null, null).get(0).getEntries().get(0).getCategories().size());
     }
 }

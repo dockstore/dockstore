@@ -423,7 +423,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, false, determineDefaultVersionId(workflow));
         versions.forEach(version -> initializeAdditionalFields(include, version));
         return new LinkedHashSet<>(versions);
     }
@@ -451,7 +451,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         response.addHeader(X_TOTAL_COUNT, String.valueOf(versionDAO.getPublicVersionsCount(workflowId)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
 
-        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, EntryVersionHelper.determineRepresentativeVersionId(workflow));
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), limit, offset, sortOrder, sortCol, true, determineDefaultVersionId(workflow));
         versions.forEach(version -> initializeAdditionalFields(include, version));
         return new LinkedHashSet<>(versions);
     }
@@ -907,7 +907,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
-        long representativeVersionId = EntryVersionHelper.determineRepresentativeVersionId(workflow);
+        long representativeVersionId = determineDefaultVersionId(workflow);
         sessionFactory.getCurrentSession().detach(workflow);
 
         // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
@@ -923,6 +923,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         workflow.setWorkflowVersionsOverride(workflowVersions);
         workflow.getWorkflowVersions().forEach(version -> initializeAdditionalFields(include, version));
         workflow.getWorkflowVersions().forEach(version -> sessionFactory.getCurrentSession().detach(version));
+    }
+
+    /**
+     * Returns the id of the default version, falling back to a "representative" version id if no default is set.
+     */
+    private long determineDefaultVersionId(Entry entry) {
+        return Optional.ofNullable(entry.getActualDefaultVersion())
+            .or(() -> EntryVersionHelper.determineRepresentativeVersion(entry))
+            .map(Version::getId).orElse(-1L);
     }
 
     /**

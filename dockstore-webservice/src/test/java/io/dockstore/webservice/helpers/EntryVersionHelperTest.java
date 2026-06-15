@@ -11,6 +11,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -93,26 +94,79 @@ class EntryVersionHelperTest {
         // workflow with no versions
         BioWorkflow workflow = new BioWorkflow();
         assertEquals(Optional.empty(), EntryVersionHelper.determineRepresentativeVersion(workflow));
-        // workflow with one invalid version
+        // workflow with one invalid version -> falls back to all versions
         workflow.addWorkflowVersion(createVersion("invalid", false, 13));
         assertEquals("invalid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // workflow with one valid and one invalid version
+        // add a valid version -> valid versions are preferred over all
         workflow.addWorkflowVersion(createVersion("valid", true, 11));
         assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // workflow with "master" version and some other versions
+        // add "master" -> mainline versions take top priority
         workflow.addWorkflowVersion(createVersion("master", false, 1));
         assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // workflow with "master", "main", and "develop" versions, should select one of those three with the highest id
+        // add "main" with a higher id -> "main" wins via the id fallback (dbUpdateDate is null for both)
         workflow.addWorkflowVersion(createVersion("main", false, 2));
+        assertEquals("main", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // add "develop" -> mainline still wins with "main"; "develop" pool is not reached
         workflow.addWorkflowVersion(createVersion("develop", false, 3));
+        assertEquals("main", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+    }
+
+    @Test
+    void testRepresentativeVersionMostRecentlyUpdated() throws IllegalAccessException {
+        Timestamp older = Timestamp.valueOf("2024-01-01 00:00:00");
+        Timestamp younger = Timestamp.valueOf("2025-06-01 00:00:00");
+
+        // Within the mainline pool: newer dbUpdateDate beats higher id
+        BioWorkflow workflow = new BioWorkflow();
+        workflow.addWorkflowVersion(createVersion("main", false, 10, older));
+        workflow.addWorkflowVersion(createVersion("master", false, 5, younger));
+        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+
+        // Within the mainline pool: non-null dbUpdateDate beats null dbUpdateDate, even with a lower id
+        BioWorkflow workflow2 = new BioWorkflow();
+        workflow2.addWorkflowVersion(createVersion("main", false, 10, null));
+        workflow2.addWorkflowVersion(createVersion("master", false, 5, older));
+        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow2).get().getName());
+
+        // dbUpdateDate is only a tiebreaker within a pool; a more-recently-updated version
+        // in a lower-priority pool cannot beat an older version in a higher-priority pool
+        BioWorkflow workflow3 = new BioWorkflow();
+        workflow3.addWorkflowVersion(createVersion("master", false, 1, older));
+        workflow3.addWorkflowVersion(createVersion("develop", false, 100, younger));
+        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow3).get().getName());
+
+        // Within the valid pool: newer dbUpdateDate wins over higher id
+        BioWorkflow workflow4 = new BioWorkflow();
+        workflow4.addWorkflowVersion(createVersion("v1.0", true, 10, older));
+        workflow4.addWorkflowVersion(createVersion("v2.0", true, 5, younger));
+        assertEquals("v2.0", EntryVersionHelper.determineRepresentativeVersion(workflow4).get().getName());
+
+        // Within the fallback (all) pool: newer dbUpdateDate wins over higher id
+        BioWorkflow workflow5 = new BioWorkflow();
+        workflow5.addWorkflowVersion(createVersion("feature-a", false, 10, older));
+        workflow5.addWorkflowVersion(createVersion("feature-b", false, 5, younger));
+        assertEquals("feature-b", EntryVersionHelper.determineRepresentativeVersion(workflow5).get().getName());
+    }
+
+    @Test
+    void testRepresentativeVersionSelectionDevelop() throws IllegalAccessException {
+        // When there are no mainline/valid-tag/default candidates, "develop" is chosen.
+        BioWorkflow workflow = new BioWorkflow();
+        workflow.addWorkflowVersion(createVersion("feature-x", false, 1));
+        workflow.addWorkflowVersion(createVersion("develop", false, 2));
         assertEquals("develop", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
     }
 
     private WorkflowVersion createVersion(String name, boolean valid, long id) throws IllegalAccessException {
+        return createVersion(name, valid, id, null);
+    }
+
+    private WorkflowVersion createVersion(String name, boolean valid, long id, Timestamp dbUpdateDate) throws IllegalAccessException {
         WorkflowVersion version = new WorkflowVersion();
         version.setName(name);
         version.setValid(valid);
         FieldUtils.writeField(version, "id", id, true);
+        version.setDbUpdateDate(dbUpdateDate);
         return version;
     }
 }

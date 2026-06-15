@@ -46,7 +46,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -93,13 +96,15 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     public List<Category> getCategories(
         @Parameter(description = "Name of category to retrieve", name = "name", in = ParameterIn.QUERY, required = false) @QueryParam("name") String name,
-        @Parameter(description = "Comma-delimited list of fields to include: entries", name = "include", in = ParameterIn.QUERY, required = false) @QueryParam("include") String include) {
+        @Parameter(description = "Comma-delimited list of fields to include: entries", name = "include", in = ParameterIn.QUERY, required = false) @QueryParam("include") String include,
+        @Parameter(description = "Maximum number of results to return", name = "limit", in = ParameterIn.QUERY, required = false, schema = @Schema(maximum = "100", minimum = "1", defaultValue = "10")) @Min(1) @Max(ResourceConstants.MAX_PAGINATION_LIMIT) @DefaultValue("10") @QueryParam("limit") int limit,
+        @Parameter(description = "Offset of the first result to return", name = "offset", in = ParameterIn.QUERY, required = false, schema = @Schema(minimum = "0", defaultValue = "0")) @Min(0) @DefaultValue("0") @QueryParam("offset") int offset) {
         List<Category> categories;
         if (name != null) {
             Category category = categoryDAO.findByName(name);
             categories = (category != null) ? Arrays.asList(category) : Collections.emptyList();
         } else {
-            categories = categoryDAO.getCategories();
+            categories = categoryDAO.getCategories(offset, limit);
         }
 
         boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
