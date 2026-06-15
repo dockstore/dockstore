@@ -279,7 +279,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
         // Non-owner cannot approve an AI-curated entry
         CategoriesApi categoriesApiOther = new CategoriesApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
         ApiException forbiddenEx = assertThrows(ApiException.class, () ->
-                categoriesApiOther.approveAiCuratedEntryInCategory(workflowId, categoryId, null));
+                categoriesApiOther.approveAiCuratedEntryInCategory(workflowId, categoryId, ""));
         assertEquals(HttpStatus.SC_FORBIDDEN, forbiddenEx.getCode());
 
         // Nonexistent category returns NOT_FOUND
