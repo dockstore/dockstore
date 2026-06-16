@@ -190,6 +190,41 @@ class AutoCategorizationIT extends BaseIT {
     }
 
     @Test
+    void testFindEntriesToCategorizeOrdering() throws ApiException {
+        ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(adminClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(adminClient);
+
+        // Create four entries; ids are auto-incremented so creation order == id order
+        Workflow entryA = publishedWorkflow(workflowsApi, "ord-a"); // null lastCategorizedDate
+        Workflow entryB = publishedWorkflow(workflowsApi, "ord-b"); // older date
+        Workflow entryC = publishedWorkflow(workflowsApi, "ord-c"); // newer date
+        Workflow entryD = publishedWorkflow(workflowsApi, "ord-d"); // null lastCategorizedDate, id > A
+
+        setLastCategorizedDate(adminClient, entryB.getId(), EPOCH_PAST);
+        setLastCategorizedDate(adminClient, entryC.getId(), EPOCH_PAST + 86400L); // one day later than B
+
+        List<EntryLiteAndVersionName> all = entriesApi.findEntriesToCategorize(0L, 0, 10000);
+        List<String> trsIds = all.stream().map(e -> e.getEntryLite().getTrsId()).toList();
+
+        int posA = trsIds.indexOf(entryA.getTrsId());
+        int posB = trsIds.indexOf(entryB.getTrsId());
+        int posC = trsIds.indexOf(entryC.getTrsId());
+        int posD = trsIds.indexOf(entryD.getTrsId());
+        assertTrue(posA >= 0 && posB >= 0 && posC >= 0 && posD >= 0, "All four entries must appear");
+
+        // Null lastCategorizedDate entries come before any dated entry
+        assertTrue(posA < posB, "Null-dated entry A should sort before dated entry B");
+        assertTrue(posD < posB, "Null-dated entry D should sort before dated entry B");
+
+        // Among null-dated entries, lower id sorts first (A was created before D)
+        assertTrue(posA < posD, "Among null-dated entries, lower id (A) sorts before higher id (D)");
+
+        // Among dated entries, ascending date order
+        assertTrue(posB < posC, "Older lastCategorizedDate (B) should sort before newer (C)");
+    }
+
+    @Test
     void testFindEntriesToCategorizeRequiresAdminOrCurator() {
         ApiClient userClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
 
