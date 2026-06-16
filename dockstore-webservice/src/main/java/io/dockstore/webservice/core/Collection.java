@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.annotations.CreationTimestamp;
@@ -225,6 +226,10 @@ public class Collection implements Serializable, Aliasable {
 
     public void removeEntry(Long entryId, Long versionId) {
         this.entries.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
+    }
+
+    public Optional<EntryVersion> getEntry(Long entryId, Long versionId) {
+        return entries.stream().filter(ev -> ev.equals(entryId, versionId)).findFirst();
     }
 
     public Organization getOrganization() {

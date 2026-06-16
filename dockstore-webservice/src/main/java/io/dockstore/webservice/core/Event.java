@@ -101,6 +101,11 @@ public class Event {
     private Collection collection;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoryId", referencedColumnName = "id", columnDefinition = "bigint")
+    @ApiModelProperty(value = "Category that the event is acting on.", position = 12)
+    private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "initiatorUserId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "User initiating the event.", position = 6)
     private User initiatorUser;
@@ -204,6 +209,14 @@ public class Event {
         this.collection = collection;
     }
 
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
     public User getInitiatorUser() {
         return initiatorUser;
     }
@@ -261,7 +274,9 @@ public class Event {
         PUBLISH_ENTRY,
         UNPUBLISH_ENTRY,
         ARCHIVE_ENTRY,
-        UNARCHIVE_ENTRY
+        UNARCHIVE_ENTRY,
+        APPROVE_IN_CATEGORY,
+        REMOVE_FROM_CATEGORY
     }
 
     public static class Builder {
@@ -273,6 +288,7 @@ public class Event {
         private Service service;
         private Notebook notebook;
         private Collection collection;
+        private Category category;
         private User initiatorUser;
         private EventType type;
         private Version version;
@@ -324,6 +340,11 @@ public class Event {
             return this;
         }
 
+        public Builder withCategory(Category category) {
+            this.category = category;
+            return this;
+        }
+
         public Builder withInitiatorUser(User initiatorUser) {
             this.initiatorUser = initiatorUser;
             return this;
@@ -344,6 +365,7 @@ public class Event {
             event.service = this.service;
             event.notebook = this.notebook;
             event.collection = this.collection;
+            event.category = this.category;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;
             event.version = this.version;
