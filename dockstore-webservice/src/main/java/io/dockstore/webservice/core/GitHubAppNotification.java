@@ -9,10 +9,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Schema(description = "Notifications for a GitHub App repository")
 @Entity
-@Table(name = "github_app_notification")
+@Table(name = "github_app_notification", uniqueConstraints = @UniqueConstraint(name = "unique_notifications", columnNames = { "organization", "repository", "sourcecontrol", "userid" }))
 @NamedQueries({
     @NamedQuery(
         name = "io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryAndUserIncludingHidden",
