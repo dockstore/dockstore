@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Doi;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
+import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
@@ -447,13 +448,14 @@ public class ElasticListener implements StateListenerInterface {
         Date lastChanged = ObjectUtils.firstNonNull(entry.getLastModifiedDate(), entry.getLastUpdated());
         double daysSinceLastChange = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
         boolean isArchived = entry.isArchived();
-        boolean inCategory = entry.getCategorySummaries().size() > 0;
+        boolean curatedByDockstore = entry.getCategorySummaries().stream().anyMatch(cs -> cs.getCurator() == EntryVersion.Curator.DOCKSTORE);
+        boolean curatedByUser = entry.getCategorySummaries().stream().anyMatch(cs -> cs.getCurator() == EntryVersion.Curator.USER);
         // Combine the signals into a single numeric measurement.
         // Larger values indicate more "relevance".
         // The following coefficients are tuned to the current state of Dockstore, wherein the maximum
         // execution count for any entry is approximately 1500000, and the maximum star count is 15.
         // The goal is to get a good mix of entry types, some with stars and/or in categories, on the first page of Search results.
-        double numerator = 2 + Math.sqrt(executionCount + recentExecutionCount) + 80. * starCount + (inCategory ? 300. : 0.);
+        double numerator = 2 + Math.sqrt(executionCount + recentExecutionCount) + 80. * starCount + (curatedByDockstore ? 300. : 0.) + (curatedByUser ? 50. : 0.);
         double denominator = (200. + daysSinceLastChange) * (isArchived ? 3 : 1);
         return numerator / denominator;
     }

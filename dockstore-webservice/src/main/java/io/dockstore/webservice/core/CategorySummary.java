@@ -73,8 +73,4 @@ public class CategorySummary implements Serializable {
     public boolean isAiManaged() {
         return aiManaged;
     }
-
-    public void setAiManaged(boolean aiManaged) {
-        this.aiManaged = aiManaged;
-    }
 }
