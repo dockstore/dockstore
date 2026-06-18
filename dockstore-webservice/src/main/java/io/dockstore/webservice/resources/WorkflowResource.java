@@ -2310,6 +2310,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             for (String repository: repositories) {
                 final int maximumBranchCount = 5;
                 final List<String> importantBranches = identifyImportantBranches(repository, gitHubSourceCodeRepo);
+                // releaseable as in these have a dockstore.yml
                 final List<String> releasableReferences = identifyGitReferencesToRelease(repository, installationId, subList(importantBranches, maximumBranchCount));
                 if (releasableReferences.isEmpty()) {
                     boolean inspectedAllBranches = importantBranches.size() <= maximumBranchCount;

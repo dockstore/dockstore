@@ -439,7 +439,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Identify git references that may be worth trying to handle as a github apps release event
+     * Identify git references that may be worth trying to handle as a github apps release event since they have a .dockstore.yml
      * @param repository
      * @param installationId
      * @return
@@ -454,7 +454,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<String> importantBranches) {
         // If there's no user for which to create a notification, abort.
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             return;
         }
 

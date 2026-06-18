@@ -101,6 +101,22 @@ class InferNotificationIT extends BaseIT {
     }
 
     @Test
+    void testDuplicateRepoOnInstallAndRelease() {
+        final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        CurationApi curationApi = new CurationApi(openApiClient);
+
+        // Simulate an install on a repo that does not contain a .dockstore.yml and has a small number of branches
+        // A notification should be created but not two
+        handleGitHubInstallation(workflowsApi, List.of("dockstore-testing/testWorkflow", "dockstore-testing/testWorkflow"), USER_2_USERNAME);
+        assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
+        assertThrows(ApiException.class, () -> {
+            handleGitHubRelease(workflowsApi, "dockstore-testing/testWorkflow", "refs/heads/master", USER_2_USERNAME);
+        });
+        assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
+    }
+
+    @Test
     void testNotificationsOnRelease() {
         final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
