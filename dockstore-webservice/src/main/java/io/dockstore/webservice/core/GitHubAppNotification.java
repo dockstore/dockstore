@@ -13,7 +13,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Schema(description = "Notifications for a GitHub App repository")
 @Entity
-@Table(name = "github_app_notification", uniqueConstraints = @UniqueConstraint(name = "unique_notifications", columnNames = { "organization", "repository", "sourcecontrol", "userid" }))
+@Table(name = "github_app_notification", uniqueConstraints = @UniqueConstraint(name = GitHubAppNotification.UNIQUE_NOTIFICATIONS, columnNames = { "organization", "repository", "sourcecontrol", "userid" }))
 @NamedQueries({
     @NamedQuery(
         name = "io.dockstore.webservice.core.GitHubAppNotification.getLatestByRepositoryAndUserIncludingHidden",
@@ -25,6 +25,7 @@ import jakarta.persistence.UniqueConstraint;
 })
 public class GitHubAppNotification extends UserNotification {
 
+    public static final String UNIQUE_NOTIFICATIONS = "unique_notifications";
     @Column(nullable = false, columnDefinition = "text")
     @Convert(converter = SourceControlConverter.class)
     @Schema(description = "The source control provider", requiredMode = RequiredMode.REQUIRED)

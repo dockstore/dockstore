@@ -47,6 +47,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 class InferNotificationIT extends BaseIT {
 
     private static final String ROOTTEST = "rootTest";
+    public static final String DOCKSTORE_TESTING_TEST_WORKFLOW = "dockstore-testing/testWorkflow";
     private UserNotificationDAO userNotificationDAO;
     private Session session;
     private UserDAO userDAO;
@@ -96,7 +97,7 @@ class InferNotificationIT extends BaseIT {
 
         // Simulate an install on a repo that does not contain a .dockstore.yml and has a small number of branches
         // A notification should be created
-        handleGitHubInstallation(workflowsApi, List.of("dockstore-testing/testWorkflow"), USER_2_USERNAME);
+        handleGitHubInstallation(workflowsApi, List.of(DOCKSTORE_TESTING_TEST_WORKFLOW), USER_2_USERNAME);
         assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
     }
 
@@ -108,10 +109,12 @@ class InferNotificationIT extends BaseIT {
 
         // Simulate an install on a repo that does not contain a .dockstore.yml and has a small number of branches
         // A notification should be created but not two
-        handleGitHubInstallation(workflowsApi, List.of("dockstore-testing/testWorkflow", "dockstore-testing/testWorkflow"), USER_2_USERNAME);
+        // separately from this test, can confirm this endpoint returns with a 500 if there is a simultaneous github app notification created, when there is a constraint
+        handleGitHubInstallation(workflowsApi, List.of(DOCKSTORE_TESTING_TEST_WORKFLOW,  DOCKSTORE_TESTING_TEST_WORKFLOW), USER_2_USERNAME);
         assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
         assertThrows(ApiException.class, () -> {
-            handleGitHubRelease(workflowsApi, "dockstore-testing/testWorkflow", "refs/heads/master", USER_2_USERNAME);
+            // separately from this test, can confirm this endpoint returns with a 500 if there is a simultaneous github app notification created, when there is a constraint
+            handleGitHubRelease(workflowsApi, DOCKSTORE_TESTING_TEST_WORKFLOW, "refs/heads/master", USER_2_USERNAME);
         });
         assertEquals(1, curationApi.getGitHubAppNotifications(0, 100).size());
     }
