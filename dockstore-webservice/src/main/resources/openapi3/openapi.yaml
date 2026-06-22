@@ -9834,6 +9834,10 @@ components:
         id:
           type: integer
           format: int64
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
         name:
           type: string
         topic:
