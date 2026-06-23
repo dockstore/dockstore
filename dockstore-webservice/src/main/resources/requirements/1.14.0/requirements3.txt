@@ -17,7 +17,7 @@ isodate==0.6.1
 lockfile==0.12.2
 lxml==4.9.2
 mistune==2.0.4
-msgpack==1.0.4
+msgpack==1.2.1
 mypy-extensions==0.4.3
 networkx==3.0
 packaging==23.0
