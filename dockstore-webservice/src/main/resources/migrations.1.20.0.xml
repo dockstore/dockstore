@@ -104,4 +104,11 @@
                                  referencedTableName="collection" referencedColumnNames="id"
                                  constraintName="fk_event_categoryid"/>
     </changeSet>
+    <changeSet author="dyuen" id="unique_notifications">
+        <sql>
+            DELETE FROM github_app_notification n1 USING github_app_notification n2
+                   WHERE n1.id  > n2.id AND n1.organization=n2.organization AND n1.repository=n2.repository AND n1.sourcecontrol = n2.sourcecontrol AND n1.userid=n2.userid;
+        </sql>
+        <addUniqueConstraint columnNames="organization, repository, sourcecontrol, userid" constraintName="unique_notifications" tableName="github_app_notification"/>
+    </changeSet>
 </databaseChangeLog>

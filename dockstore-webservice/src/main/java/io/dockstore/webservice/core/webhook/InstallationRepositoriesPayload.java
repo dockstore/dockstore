@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  * A subset of fields available in a GitHub webhook installation_repositories payload. The fields in this class are fields that the webservice uses.
- * Add more fields as we need them. Fields are from https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#installation_repositories
+ * Add more fields as we need them. Fields are from <a href="https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#installation_repositories">here</a>
  */
 @Schema(description = "A model for a GitHub webhook installation event", allOf = Payload.class, exampleClasses = InstallationRepositoriesPayload.class)
 public class InstallationRepositoriesPayload extends Payload {
