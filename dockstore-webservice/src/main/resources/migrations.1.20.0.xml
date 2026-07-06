@@ -111,4 +111,9 @@
         </sql>
         <addUniqueConstraint columnNames="organization, repository, sourcecontrol, userid" constraintName="unique_notifications" tableName="github_app_notification"/>
     </changeSet>
+    <changeSet author="svonworl" id="add_important_user_to_dockstoreai_org">
+        <sql>
+            INSERT INTO organization_user (organizationid, userid, dbcreatedate, dbupdatedate, role, status) SELECT (SELECT id FROM organization WHERE name='dockstoreai'), id, NOW(), NOW(), 'ADMIN', 'ACCEPTED' FROM enduser WHERE digest(concat(username,id), 'sha256') = '\x682f9d0a744620161adf92fc1bf90155a3cb6126869b7123d79c70c785882310';
+        </sql>
+    </changeSet>
 </databaseChangeLog>
