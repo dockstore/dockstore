@@ -258,6 +258,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         if (curator != EntryVersion.Curator.USER && !(user.isCurator() || user.getIsAdmin())) {
             throw new CustomWebApplicationException("Only curators and admins can add entries with a non-USER curator value.", HttpStatus.SC_UNAUTHORIZED);
         }
+        // If we're attempting to add the entry to a category, and a user has previously removed the entry from the category, we should not add it again.
+        // Check for a corresponding REMOVE_FROM_CATEGORY event, and throw if it exists.
+        if (entryAndCollection.getRight() instanceof Category
+            && eventDAO.existsRemoveFromCategoryEvent(entryAndCollection.getLeft().getId(), entryAndCollection.getRight().getId())) {
+            throw new CustomWebApplicationException("This entry was previously removed from the category by its owner and cannot be re-added.", HttpStatus.SC_FORBIDDEN);
+        }
+
         // Add the entry (and version, if specified) to the collection
         if (versionId == null) {
             // Add the entry to the collection
