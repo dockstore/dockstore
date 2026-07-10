@@ -126,14 +126,14 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.33</version>
+      <version>1.5.35</version>
       <scope>runtime</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.33</version>
+      <version>1.5.35</version>
       <scope>runtime</scope>
       <optional>true</optional>
     </dependency>
