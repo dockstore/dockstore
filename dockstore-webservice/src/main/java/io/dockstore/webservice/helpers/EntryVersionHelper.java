@@ -482,21 +482,22 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     private static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions, V defaultVersion) {
         // Attempt to select the "representative" version from successive sets of groups:
-        // 1. mainline branches ("main"/"master"), valid tags, and {@code defaultVersion} (if provided)
+        // 1. mainline branches ("main"/"master"), tags, and {@code defaultVersion} (if provided)
         // 2. "develop" branch
-        // 3. all valid versions
-        // 4. all versions
+        // 3. all remaining versions
         // Return the most recently-updated version from the first group, and if the group has no versions,
         // move on to the next group, and repeat the process, and so on.  Exclude hidden versions.
+        // Only consider invalid versions if there are no valid versions to choose from.
         Set<V> nonHidden = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
+        Set<V> valid = nonHidden.stream().filter(Version::isValid).collect(Collectors.toSet());
+        Set<V> candidates = valid.isEmpty() ? nonHidden : valid;
 
-        return mostRecentlyUpdated(nonHidden.stream().filter(v ->
+        return mostRecentlyUpdated(candidates.stream().filter(v ->
                 "main".equals(v.getName()) || "master".equals(v.getName())
-                || (v.isValid() && v.getReferenceType() == Version.ReferenceType.TAG)
+                || v.getReferenceType() == Version.ReferenceType.TAG
                 || v.equals(defaultVersion)))
-            .or(() -> mostRecentlyUpdated(nonHidden.stream().filter(v -> "develop".equals(v.getName()))))
-            .or(() -> mostRecentlyUpdated(nonHidden.stream().filter(Version::isValid)))
-            .or(() -> mostRecentlyUpdated(nonHidden.stream()));
+            .or(() -> mostRecentlyUpdated(candidates.stream().filter(v -> "develop".equals(v.getName()))))
+            .or(() -> mostRecentlyUpdated(candidates.stream()));
     }
 
     private static <V extends Version> Optional<V> mostRecentlyUpdated(Stream<V> versions) {
