@@ -20,6 +20,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.CollectionLength;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -27,6 +28,7 @@ import io.dockstore.webservice.jdbi.VersionDAO;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -53,6 +55,30 @@ class CollectionHelper {
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
+    }
+
+    public void evictAndSummarize(List<Collection> collections) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        List<Long> ids = collections.stream().map(Collection::getId).toList();
+        List<CollectionLength> appToolsLengthBulk = entryDAO.getAppToolsLengthBulk(ids);
+        Map<Long, Long> appToolsLengthBulkMap = appToolsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+        List<CollectionLength> bioWorkflowsLengthBulk = entryDAO.getBioWorkflowsLengthBulk(ids);
+        Map<Long, Long> bioWorkflowsLengthMap = bioWorkflowsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+        List<CollectionLength> notebooksLengthBulk = entryDAO.getNotebooksLengthBulk(ids);
+        Map<Long, Long> notebooksLengthMap = notebooksLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+        List<CollectionLength> servicesLengthBulk = entryDAO.getServicesLengthBulk(ids);
+        Map<Long, Long> servicesLengthBulkMap = servicesLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+
+
+        collections.forEach(collection -> {
+            currentSession.evict(collection);
+            collection.setEntries(new HashSet<>());
+            collection.setWorkflowsLength(bioWorkflowsLengthMap.getOrDefault(collection.getId(), 0L));
+            collection.setToolsLength(appToolsLengthBulkMap.getOrDefault(collection.getId(), 0L)); //TODO  also need regular tools
+            collection.setServicesLength(servicesLengthBulkMap.getOrDefault(collection.getId(), 0L));
+            collection.setNotebooksLength(notebooksLengthMap.getOrDefault(collection.getId(), 0L));
+        });
+
     }
 
     public void evictAndSummarize(Collection collection) {

@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.CollectionLength;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
@@ -264,6 +265,20 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public long getServicesLength(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getServicesLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+
+    public List<CollectionLength> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+    }
+    public List<CollectionLength> getAppToolsLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+    }
+    public List<CollectionLength> getNotebooksLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+    }
+
+    public List<CollectionLength> getServicesLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {

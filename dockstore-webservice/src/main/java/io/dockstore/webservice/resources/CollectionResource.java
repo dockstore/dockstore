@@ -428,13 +428,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
         boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
-        collections.forEach(collection -> {
-            if (includeEntries) {
-                evictAndAddEntries(collection);
-            } else {
-                evictAndSummarize(collection);
-            }
-        });
+        helper.evictAndSummarize(collections);
+        //        collections.forEach(collection -> {
+        //            if (includeEntries) {
+        //                evictAndAddEntries(collection);
+        //            } else {
+        //                evictAndSummarize(collection);
+        //            }
+        //        });
         return collections;
     }
 
