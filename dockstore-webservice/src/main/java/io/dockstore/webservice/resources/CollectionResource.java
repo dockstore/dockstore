@@ -218,10 +218,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    private void evictAndSummarize(Collection collection) {
-        helper.evictAndSummarize(collection);
-    }
-
     private void evictAndAddEntries(Collection collection) {
         helper.evictAndAddEntries(collection);
     }

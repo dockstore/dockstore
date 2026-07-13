@@ -57,7 +57,15 @@ class CollectionHelper {
         }
     }
 
-    public void evictAndSummarize(List<Collection> collections) {
+    /**
+     * Convenience wrapper for a single collection
+     * @param collection
+     */
+    public void evictAndSummarize(Collection collection) {
+        evictAndSummarize(List.of(collection));
+    }
+
+    public void evictAndSummarize(List<? extends Collection> collections) {
         Session currentSession = sessionFactory.getCurrentSession();
         List<Long> ids = collections.stream().map(Collection::getId).toList();
         List<CollectionLength> appToolsLengthBulk = entryDAO.getAppToolsLengthBulk(ids);
@@ -81,22 +89,6 @@ class CollectionHelper {
             collection.setNotebooksLength(notebooksLengthMap.getOrDefault(collection.getId(), 0L));
         });
 
-    }
-
-    public void evictAndSummarize(Collection collection) {
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.evict(collection);
-        // Ensure that entries is empty
-        // This is probably unnecessary
-        collection.setEntries(new HashSet<>());
-        collection.setWorkflowsLength(entryDAO.getBioWorkflowsLength(collection.getId()));
-        collection.setToolsLength(entryDAO.getToolsLength(collection.getId()) +  entryDAO.getAppToolsLength(collection.getId()));
-        collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
-        collection.setServicesLength(entryDAO.getServicesLength(collection.getId()));
-    }
-
-    public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
-        c.forEach(this::evictAndSummarize);
     }
 
     public void evictAndAddEntries(Collection collection) {
