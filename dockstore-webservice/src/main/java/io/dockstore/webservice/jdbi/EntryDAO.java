@@ -270,6 +270,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<CollectionLength> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
         return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
     }
+
+    public List<CollectionLength> getToolsLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+    }
     public List<CollectionLength> getAppToolsLengthBulk(List<Long> collectionIds) {
         return this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
     }

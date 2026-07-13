@@ -62,6 +62,8 @@ class CollectionHelper {
         List<Long> ids = collections.stream().map(Collection::getId).toList();
         List<CollectionLength> appToolsLengthBulk = entryDAO.getAppToolsLengthBulk(ids);
         Map<Long, Long> appToolsLengthBulkMap = appToolsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+        List<CollectionLength> toolsLengthBulk = entryDAO.getToolsLengthBulk(ids);
+        Map<Long, Long> toolsLengthBulkMap = toolsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
         List<CollectionLength> bioWorkflowsLengthBulk = entryDAO.getBioWorkflowsLengthBulk(ids);
         Map<Long, Long> bioWorkflowsLengthMap = bioWorkflowsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
         List<CollectionLength> notebooksLengthBulk = entryDAO.getNotebooksLengthBulk(ids);
@@ -74,7 +76,7 @@ class CollectionHelper {
             currentSession.evict(collection);
             collection.setEntries(new HashSet<>());
             collection.setWorkflowsLength(bioWorkflowsLengthMap.getOrDefault(collection.getId(), 0L));
-            collection.setToolsLength(appToolsLengthBulkMap.getOrDefault(collection.getId(), 0L)); //TODO  also need regular tools
+            collection.setToolsLength(toolsLengthBulkMap.getOrDefault(collection.getId(), 0L) + appToolsLengthBulkMap.getOrDefault(collection.getId(), 0L));
             collection.setServicesLength(servicesLengthBulkMap.getOrDefault(collection.getId(), 0L));
             collection.setNotebooksLength(notebooksLengthMap.getOrDefault(collection.getId(), 0L));
         });
