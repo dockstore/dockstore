@@ -323,6 +323,7 @@ jobs:
             TESTING_PROFILE: automated-review
 
   unit_test: # runs not using Workflows must have a `build` job as entry point
+    resource_class: large
     parameters:
       aws_bucket:
         type: string
@@ -337,7 +338,7 @@ jobs:
           POSTGRES_DB: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_PASSWORD: postgres
-    parallelism: 4
+    parallelism: 2
     steps: # a collection of executable commands
       - attach_workspace:
           at: .
