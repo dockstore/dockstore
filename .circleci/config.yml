@@ -376,6 +376,7 @@ jobs:
             - dockstore-web-cache-
       - run:
           name: run the actual tests
+          no_output_timeout: 30m
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
