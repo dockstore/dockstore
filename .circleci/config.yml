@@ -399,6 +399,7 @@ jobs:
           command: ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: run the non-confidential integration tests
+          no_output_timeout: 30m
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
@@ -623,6 +624,7 @@ commands:
           steps:
             - run:
                 name: run integration test with hoverfly cert
+                no_output_timeout: 30m
                 command: |                  
                   # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
                   /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
@@ -642,6 +644,7 @@ commands:
           steps:
             - run:
                 name: run integration test
+                no_output_timeout: 30m
                 command: |  # Runs normally if it is not being run in parallel
                   export DOCKSTORE_CACHE_MIGRATIONS=true
                   
