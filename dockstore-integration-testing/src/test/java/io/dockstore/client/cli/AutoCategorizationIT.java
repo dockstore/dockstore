@@ -37,6 +37,7 @@ import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.EntryLiteAndVersionName;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -88,6 +89,12 @@ class AutoCategorizationIT extends BaseIT {
 
     private List<EntryLiteAndVersionName> findEntriesToCategorize(ApiClient client, long intervalSeconds, int offset, int limit) throws ApiException {
         return new EntriesApi(client).findEntriesToCategorize(intervalSeconds, offset, limit);
+    }
+
+    private void hideAllVersions(ApiClient client, Workflow workflow) throws ApiException {
+        List<WorkflowVersion> versions = workflow.getWorkflowVersions();
+        versions.forEach(version -> version.setHidden(true));
+        new WorkflowsApi(client).updateWorkflowVersion(workflow.getId(), versions);
     }
 
     @Test
@@ -180,6 +187,10 @@ class AutoCategorizationIT extends BaseIT {
             DESCRIPTOR_PATH, "d", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.refresh1(entryD.getId(), false);
 
+        // Entry E: published, but all versions are hidden, so it has no non-hidden, valid version; must NOT appear
+        Workflow entryE = publishedWorkflow(workflowsApi, "e");
+        hideAllVersions(adminClient, entryE);
+
         List<EntryLiteAndVersionName> toCategorize = findEntriesToCategorize(adminClient, 0L, 0, 100);
         List<String> trsIds = toCategorize.stream().map(e -> e.getEntryLite().getTrsId()).toList();
 
@@ -187,6 +198,7 @@ class AutoCategorizationIT extends BaseIT {
         assertTrue(trsIds.contains(entryB.getTrsId()), "Stale-categorized published entry should appear");
         assertFalse(trsIds.contains(entryC.getTrsId()), "Future-dated categorized entry should not appear");
         assertFalse(trsIds.contains(entryD.getTrsId()), "Unpublished entry should not appear");
+        assertFalse(trsIds.contains(entryE.getTrsId()), "Entry with no non-hidden, valid version should not appear");
     }
 
     @Test
