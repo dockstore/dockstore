@@ -253,6 +253,7 @@ jobs:
           use_hoverfly_cert: true
       - save_test_results
   build:
+    resource_class: large
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
