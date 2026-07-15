@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.CollectionLength;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
@@ -78,6 +79,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int repoIndex = 2;
     final int entryNameIndex = 3;
     protected static final String ENTRY_IDS = "entryIds";
+    protected static final String COLLECTION_IDS = "collectionIds";
 
     private Class<T> typeOfT;
 
@@ -252,18 +254,22 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getCollectionNotebooks", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
-    public long getBioWorkflowsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
-    }
-    public long getAppToolsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getAppToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
-    }
-    public long getNotebooksLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getNotebooksLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    public List<CollectionLength> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
 
-    public long getServicesLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getServicesLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    public List<CollectionLength> getToolsLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+    }
+    public List<CollectionLength> getAppToolsLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+    }
+    public List<CollectionLength> getNotebooksLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+    }
+
+    public List<CollectionLength> getServicesLengthBulk(List<Long> collectionIds) {
+        return this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
@@ -272,10 +278,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getCollectionTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
-    }
-
-    public long getToolsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
     /**

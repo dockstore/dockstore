@@ -218,10 +218,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    private void evictAndSummarize(Collection collection) {
-        helper.evictAndSummarize(collection);
-    }
-
     private void evictAndAddEntries(Collection collection) {
         helper.evictAndAddEntries(collection);
     }
@@ -428,13 +424,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
         boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
-        collections.forEach(collection -> {
-            if (includeEntries) {
-                evictAndAddEntries(collection);
-            } else {
-                evictAndSummarize(collection);
-            }
-        });
+        if (includeEntries) {
+            collections.forEach(this::evictAndAddEntries);
+        } else {
+            helper.evictAndSummarize(collections);
+        }
         return collections;
     }
 
