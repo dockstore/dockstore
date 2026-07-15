@@ -253,6 +253,7 @@ jobs:
           use_hoverfly_cert: true
       - save_test_results
   build:
+    resource_class: large
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
@@ -281,6 +282,7 @@ jobs:
           path: temp/test-lists
       - run:
           name: build
+          no_output_timeout: 30m
           command: ./mvnw -B clean install -DskipTests
       - run:
           name: validate openapi
@@ -323,6 +325,7 @@ jobs:
             TESTING_PROFILE: automated-review
 
   unit_test: # runs not using Workflows must have a `build` job as entry point
+    resource_class: large
     parameters:
       aws_bucket:
         type: string
@@ -376,6 +379,7 @@ jobs:
             - dockstore-web-cache-
       - run:
           name: run the actual tests
+          no_output_timeout: 30m
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
@@ -397,6 +401,7 @@ jobs:
           command: ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: run the non-confidential integration tests
+          no_output_timeout: 30m
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
@@ -475,6 +480,7 @@ jobs:
             - dockstore-m2-
       - run:
           name: build
+          no_output_timeout: 30m
           command: ./mvnw clean install -DskipTests
       - run:
           name: SonarCloud scan - coverage
@@ -621,6 +627,7 @@ commands:
           steps:
             - run:
                 name: run integration test with hoverfly cert
+                no_output_timeout: 30m
                 command: |                  
                   # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
                   /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
@@ -640,6 +647,7 @@ commands:
           steps:
             - run:
                 name: run integration test
+                no_output_timeout: 30m
                 command: |  # Runs normally if it is not being run in parallel
                   export DOCKSTORE_CACHE_MIGRATIONS=true
                   
