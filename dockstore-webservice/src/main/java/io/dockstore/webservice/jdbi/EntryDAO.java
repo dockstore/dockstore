@@ -79,6 +79,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int repoIndex = 2;
     final int entryNameIndex = 3;
     protected static final String ENTRY_IDS = "entryIds";
+    protected static final String COLLECTION_IDS = "collectionIds";
 
     private Class<T> typeOfT;
 
@@ -254,21 +255,21 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<CollectionLength> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
 
     public List<CollectionLength> getToolsLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+        return this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
     public List<CollectionLength> getAppToolsLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+        return this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
     public List<CollectionLength> getNotebooksLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+        return this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
 
     public List<CollectionLength> getServicesLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter("collectionIds", collectionIds).getResultList();
+        return this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {

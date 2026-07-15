@@ -58,7 +58,7 @@ class CollectionHelper {
     }
 
     /**
-     * Convenience wrapper for a single collection
+     * Convenience wrapper for a single collection.
      * @param collection
      */
     public void evictAndSummarize(Collection collection) {
