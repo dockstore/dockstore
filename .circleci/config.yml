@@ -478,6 +478,7 @@ jobs:
             - dockstore-m2-
       - run:
           name: build
+          no_output_timeout: 30m
           command: ./mvnw clean install -DskipTests
       - run:
           name: SonarCloud scan - coverage
