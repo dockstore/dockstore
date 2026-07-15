@@ -466,6 +466,7 @@ jobs:
             - misses
 
   sonar-cloud:
+    resource_class: large
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
