@@ -281,6 +281,7 @@ jobs:
           path: temp/test-lists
       - run:
           name: build
+          no_output_timeout: 30m
           command: ./mvnw -B clean install -DskipTests
       - run:
           name: validate openapi
