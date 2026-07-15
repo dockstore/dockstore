@@ -111,4 +111,11 @@
         </sql>
         <addUniqueConstraint columnNames="organization, repository, sourcecontrol, userid" constraintName="unique_notifications" tableName="github_app_notification"/>
     </changeSet>
+    <changeSet author="svonworl" id="rename_collection_displayname_to_title">
+        <renameColumn tableName="collection" oldColumnName="displayname" newColumnName="title"/>
+        <sql dbms="postgresql">
+            drop index collection_displayname_index;
+            create unique index collection_title_index on collection (LOWER(title), organizationid) where dtype = 'Collection' and not deleted;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
