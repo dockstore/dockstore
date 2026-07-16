@@ -67,7 +67,7 @@ import org.hibernate.type.SqlTypes;
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByTitleAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.title) = lower(:title) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
 })
 
@@ -104,7 +104,8 @@ public class Collection implements Serializable, Aliasable {
     @Pattern(regexp = "[\\w ,_\\-&()']*")
     @Size(min = 3, max = 90)
     @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
-    private String displayName;
+    @JsonProperty("displayName")
+    private String title;
 
     @Column
     @ApiModelProperty(value = "Short description of the collection", position = 4)
@@ -272,12 +273,12 @@ public class Collection implements Serializable, Aliasable {
         this.topic = topic;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getTitle() {
+        return title;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public void setWorkflowsLength(long pworkflowsLength) {

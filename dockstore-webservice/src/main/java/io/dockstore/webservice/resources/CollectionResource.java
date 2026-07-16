@@ -472,9 +472,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         final Collection collectionOrCategory;
 
         if (!organization.isCategorizer()) {
-            matchingCollection = collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId);
+            matchingCollection = collectionDAO.findByTitleAndOrg(collection.getTitle(), organizationId);
             if (matchingCollection != null) {
-                String msg = "A collection already exists with the display name '" + collection.getDisplayName() + "' in the specified organization.";
+                String msg = "A collection already exists with the display name '" + collection.getTitle() + "' in the specified organization.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             }
@@ -554,7 +554,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Update the collection
         existingCollection.setName(collection.getName());
-        existingCollection.setDisplayName(collection.getDisplayName());
+        existingCollection.setTitle(collection.getTitle());
         existingCollection.setDescription(collection.getDescription());
         existingCollection.setTopic(collection.getTopic());
         // Only admins/curators may update metadata
@@ -758,7 +758,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Category category = new Category();
         category.setName(collection.getName());
         category.setDescription(collection.getDescription());
-        category.setDisplayName(collection.getDisplayName());
+        category.setTitle(collection.getTitle());
         category.setTopic(collection.getTopic());
         category.setMetadata(collection.getMetadata());
         category.setOrganization(collection.getOrganization());

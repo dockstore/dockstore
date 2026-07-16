@@ -47,9 +47,9 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return uniqueResult(query);
     }
 
-    public Collection findByDisplayNameAndOrg(String displayName, long organizationId) {
-        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg")
-            .setParameter("displayName", displayName)
+    public Collection findByTitleAndOrg(String title, long organizationId) {
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findByTitleAndOrg")
+            .setParameter("title", title)
             .setParameter("organizationId", organizationId);
         return uniqueResult(query);
     }
