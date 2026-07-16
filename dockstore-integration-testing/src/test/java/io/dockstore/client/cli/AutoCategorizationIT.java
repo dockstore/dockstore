@@ -90,6 +90,12 @@ class AutoCategorizationIT extends BaseIT {
         return new EntriesApi(client).findEntriesToCategorize(intervalSeconds, offset, limit);
     }
 
+    private void hideAllVersions(Workflow workflow) {
+        // The API forbids hiding the default version, so hide directly via SQL instead.
+        testingPostgres.runUpdateStatement(
+            "update version_metadata set hidden = 't' where id in (select id from workflowversion where parentid = " + workflow.getId() + ")");
+    }
+
     @Test
     void testGetLastCategorizedDateIsInitiallyNull() throws ApiException {
         ApiClient adminClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -180,6 +186,10 @@ class AutoCategorizationIT extends BaseIT {
             DESCRIPTOR_PATH, "d", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.refresh1(entryD.getId(), false);
 
+        // Entry E: published, but all versions are hidden, so it has no non-hidden, valid version; must NOT appear
+        Workflow entryE = publishedWorkflow(workflowsApi, "e");
+        hideAllVersions(entryE);
+
         List<EntryLiteAndVersionName> toCategorize = findEntriesToCategorize(adminClient, 0L, 0, 100);
         List<String> trsIds = toCategorize.stream().map(e -> e.getEntryLite().getTrsId()).toList();
 
@@ -187,6 +197,7 @@ class AutoCategorizationIT extends BaseIT {
         assertTrue(trsIds.contains(entryB.getTrsId()), "Stale-categorized published entry should appear");
         assertFalse(trsIds.contains(entryC.getTrsId()), "Future-dated categorized entry should not appear");
         assertFalse(trsIds.contains(entryD.getTrsId()), "Unpublished entry should not appear");
+        assertFalse(trsIds.contains(entryE.getTrsId()), "Entry with no non-hidden, valid version should not appear");
     }
 
     @Test

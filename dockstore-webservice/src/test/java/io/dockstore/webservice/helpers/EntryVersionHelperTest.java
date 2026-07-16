@@ -100,15 +100,34 @@ class EntryVersionHelperTest {
         // add a valid version -> valid versions are preferred over all
         workflow.addWorkflowVersion(createVersion("valid", true, 11));
         assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // add "master" -> mainline versions take top priority
+        // add an invalid "master" -> the valid version still wins, since an invalid version is
+        // only returned when there are no valid versions to choose from
         workflow.addWorkflowVersion(createVersion("master", false, 1));
-        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // add "main" with a higher id -> "main" wins via the id fallback (dbUpdateDate is null for both)
+        assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // add an invalid "main" -> still no effect, the valid version wins
         workflow.addWorkflowVersion(createVersion("main", false, 2));
-        assertEquals("main", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
-        // add "develop" -> mainline still wins with "main"; "develop" pool is not reached
+        assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        // add an invalid "develop" -> still no effect, the valid version wins
         workflow.addWorkflowVersion(createVersion("develop", false, 3));
-        assertEquals("main", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+        assertEquals("valid", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+    }
+
+    @Test
+    void testRepresentativeVersionSelectionMainlinePreferredAmongValid() throws IllegalAccessException {
+        // when multiple valid versions exist, a mainline branch still takes priority over a valid tag
+        BioWorkflow workflow = new BioWorkflow();
+        workflow.addWorkflowVersion(createVersion("v1.0", true, 1));
+        workflow.addWorkflowVersion(createVersion("master", true, 2));
+        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
+    }
+
+    @Test
+    void testRepresentativeVersionSelectionInvalidMainlineFallback() throws IllegalAccessException {
+        // when all versions are invalid, mainline branches still take top priority
+        BioWorkflow workflow = new BioWorkflow();
+        workflow.addWorkflowVersion(createVersion("feature", false, 1));
+        workflow.addWorkflowVersion(createVersion("master", false, 2));
+        assertEquals("master", EntryVersionHelper.determineRepresentativeVersion(workflow).get().getName());
     }
 
     @Test
