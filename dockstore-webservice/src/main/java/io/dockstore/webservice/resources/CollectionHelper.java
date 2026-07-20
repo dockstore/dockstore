@@ -20,7 +20,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
-import io.dockstore.webservice.core.CollectionLength;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -68,16 +67,11 @@ class CollectionHelper {
     public void evictAndSummarize(List<? extends Collection> collections) {
         Session currentSession = sessionFactory.getCurrentSession();
         List<Long> ids = collections.stream().map(Collection::getId).toList();
-        List<CollectionLength> appToolsLengthBulk = entryDAO.getAppToolsLengthBulk(ids);
-        Map<Long, Long> appToolsLengthBulkMap = appToolsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
-        List<CollectionLength> toolsLengthBulk = entryDAO.getToolsLengthBulk(ids);
-        Map<Long, Long> toolsLengthBulkMap = toolsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
-        List<CollectionLength> bioWorkflowsLengthBulk = entryDAO.getBioWorkflowsLengthBulk(ids);
-        Map<Long, Long> bioWorkflowsLengthMap = bioWorkflowsLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
-        List<CollectionLength> notebooksLengthBulk = entryDAO.getNotebooksLengthBulk(ids);
-        Map<Long, Long> notebooksLengthMap = notebooksLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
-        List<CollectionLength> servicesLengthBulk = entryDAO.getServicesLengthBulk(ids);
-        Map<Long, Long> servicesLengthBulkMap = servicesLengthBulk.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+        Map<Long, Long> appToolsLengthBulkMap = entryDAO.getAppToolsLengthBulk(ids);
+        Map<Long, Long> toolsLengthBulkMap = entryDAO.getToolsLengthBulk(ids);
+        Map<Long, Long> bioWorkflowsLengthMap = entryDAO.getBioWorkflowsLengthBulk(ids);
+        Map<Long, Long> notebooksLengthMap = entryDAO.getNotebooksLengthBulk(ids);
+        Map<Long, Long> servicesLengthBulkMap = entryDAO.getServicesLengthBulk(ids);
 
 
         collections.forEach(collection -> {

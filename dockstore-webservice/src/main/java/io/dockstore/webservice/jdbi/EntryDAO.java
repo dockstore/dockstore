@@ -27,7 +27,6 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
-import io.dockstore.webservice.core.CollectionLength;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
@@ -36,6 +35,7 @@ import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.CollectionLength;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import jakarta.persistence.TypedQuery;
@@ -254,22 +254,55 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getCollectionNotebooks", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
-    public List<CollectionLength> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds
+     * @return
+     */
+    public Map<Long, Long> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds)
+            .getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
     }
 
-    public List<CollectionLength> getToolsLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
-    }
-    public List<CollectionLength> getAppToolsLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
-    }
-    public List<CollectionLength> getNotebooksLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getToolsLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
     }
 
-    public List<CollectionLength> getServicesLengthBulk(List<Long> collectionIds) {
-        return this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getAppToolsLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+    }
+
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getNotebooksLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+    }
+
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getServicesLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
