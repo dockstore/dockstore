@@ -152,7 +152,7 @@ class SwaggerServiceIT extends BaseIT {
         //add service to collection
         Set<String> expectedCollectionNames = new HashSet<>();
         expectedCollectionNames.add("Collection");
-        organizationsApi.addEntryToCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
+        organizationsApi.addEntryToCollection(collectionOrg.getId(), collection.getId(), serviceID, null, null, null);
         List<io.dockstore.openapi.client.model.CollectionOrganization> entryCollection = entriesApi.entryCollections(serviceID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(1, entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
@@ -160,7 +160,7 @@ class SwaggerServiceIT extends BaseIT {
         assertEquals(1, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getServicesLength());
 
         //remove service from collection
-        organizationsApi.deleteEntryFromCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
+        organizationsApi.deleteEntryFromCollection(collectionOrg.getId(), collection.getId(), serviceID, null, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(serviceID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()));

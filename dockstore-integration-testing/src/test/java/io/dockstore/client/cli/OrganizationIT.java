@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -75,18 +76,28 @@ public class OrganizationIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
+    private final List<String> goodNames = List.of("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
     // All numbers, too short, bad pattern, too long, foreign characters
-    private final List<String> badNames = Arrays.asList("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
+    private final List<String> badNames = List.of("1234", "", "a", "ab", "1aab", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
+    private final List<String> goodCollectionNames = ListUtils.union(goodNames, List.of("this-is-a-moderate-length-test-string-of-54-characters"));
+    private final List<String> badCollectionNames = ListUtils.union(badNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+    private final List<String> goodOrganizationNames = ListUtils.union(goodNames, List.of("this-is-a-test-string-of-38-characters"));
+    private final List<String> badOrganizationNames = ListUtils.union(badNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+
+    private final List<String> goodDisplayNames = List.of(
+        "test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
+    private final List<String> badDisplayNames = List.of(
+        "test@hello", "aa", "我喜欢狗", "%+%");
+    private final List<String> goodCollectionDisplayNames = ListUtils.union(goodDisplayNames, List.of("This is a moderate length test string of 54 characters"));
+    private final List<String> badCollectionDisplayNames = ListUtils.union(badDisplayNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"));
+    private final List<String> goodOrganizationDisplayNames = ListUtils.union(goodDisplayNames, List.of("This is a test string of 38 characters"));
+    private final List<String> badOrganizationDisplayNames = ListUtils.union(badDisplayNames, List.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"));
+
     // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
-    private final List<String> badAvatarUrls = Arrays
-        .asList("https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
+    private final List<String> badAvatarUrls = List.of(
+            "https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
             "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1", ".png",
             "https://via.placeholder.com/150.jpg asdf", "ad .jpg");
-    private final List<String> goodDisplayNames = Arrays
-        .asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
-    private final List<String> badDisplayNames = Arrays
-        .asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
 
     private static StarRequest getStarRequest(boolean star) {
         StarRequest starRequest = new StarRequest();
@@ -662,6 +673,43 @@ public class OrganizationIT extends BaseIT {
         initialOrganisation.setDisplayName("Org 2");
         final Organization createdOrganization2 = organisationsApiUser2.createOrganization(initialOrganisation);
         organisationsApiUser2.createCollection(createdOrganization2.getId(), collectionTwo);
+    }
+
+    /**
+     * Test that collections in the same organization cannot share a display name,
+     * but categories in the same (categorizer) organization can.
+     */
+    @Test
+    void testDisplayNameUniquenessEnforcedForCollectionsButNotCategories() {
+        // Collections: two collections in the same org cannot share a display name.
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        final OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+        final Organization createdOrganization = organisationsApiUser2.createOrganization(stubOrgObject());
+
+        Collection collection1 = stubCollectionObject();
+        organisationsApiUser2.createCollection(createdOrganization.getId(), collection1);
+
+        Collection collection2 = stubCollectionObject();
+        collection2.setName("differentname"); // different name, same displayName as collection1
+        final ApiException collectionEx = assertThrows(ApiException.class,
+            () -> organisationsApiUser2.createCollection(createdOrganization.getId(), collection2),
+            "Should not be able to create a collection with the same display name as an existing collection in the same organization.");
+        assertTrue(collectionEx.getMessage().contains("A collection already exists with the display name"));
+
+        // Categories: two categories in the same categorizer org can share a display name.
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
+        final ApiClient webClientAdmin = getWebClient(ADMIN_USERNAME, testingPostgres);
+        final OrganizationsApi organisationsApiAdmin = new OrganizationsApi(webClientAdmin);
+        final Organization dockstoreOrg = organisationsApiAdmin.getOrganizationByName("dockstore");
+
+        Collection category1 = stubCollectionObject();
+        category1.setName("category1");
+        organisationsApiAdmin.createCollection(dockstoreOrg.getId(), category1);
+
+        Collection category2 = stubCollectionObject();
+        category2.setName("category2"); // same displayName as category1
+        assertNotNull(organisationsApiAdmin.createCollection(dockstoreOrg.getId(), category2),
+            "Should be able to create two categories with the same display name in a categorizer organization.");
     }
 
     @Test
@@ -1324,7 +1372,7 @@ public class OrganizationIT extends BaseIT {
     void testCreateOrganizationWithInvalidNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-        badNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
+        badOrganizationNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
     }
 
     /**
@@ -1334,8 +1382,8 @@ public class OrganizationIT extends BaseIT {
     void testCreatedOrganizationWithValidDisplayNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-        goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi,
-            "testname" + goodDisplayNames.indexOf(displayName)));
+        goodOrganizationDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi,
+            "testname" + goodOrganizationDisplayNames.indexOf(displayName)));
     }
 
     /**
@@ -1345,8 +1393,8 @@ public class OrganizationIT extends BaseIT {
     void testCreateOrganizationsWithBadDisplayNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-        badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi,
-            "testname" + badDisplayNames.indexOf(displayName)));
+        badOrganizationDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi,
+            "testname" + badOrganizationDisplayNames.indexOf(displayName)));
     }
 
     /**
@@ -1491,9 +1539,9 @@ public class OrganizationIT extends BaseIT {
         Organization organization = createOrg(organizationsApi);
 
         final Long organizationID = organization.getId();
-        goodDisplayNames.forEach(displayName -> {
+        goodCollectionDisplayNames.forEach(displayName -> {
             createCollectionWithValidDisplayName(displayName, organizationsApi, organizationID,
-                "testname" + goodDisplayNames.indexOf(displayName));
+                "testname" + goodCollectionDisplayNames.indexOf(displayName));
         });
     }
 
@@ -1510,9 +1558,9 @@ public class OrganizationIT extends BaseIT {
         Organization organization = createOrg(organizationsApi);
 
         final Long organizationID = organization.getId();
-        badDisplayNames.forEach(displayName -> {
+        badCollectionDisplayNames.forEach(displayName -> {
             createCollectionWithBadDisplayName(displayName, organizationsApi, organizationID,
-                "testname" + badDisplayNames.indexOf(displayName));
+                "testname" + badCollectionDisplayNames.indexOf(displayName));
         });
     }
 
@@ -1658,7 +1706,7 @@ public class OrganizationIT extends BaseIT {
         Collection stubCollection = stubCollectionObject();
 
         final Long organizationID = organization.getId();
-        badNames.forEach(name -> {
+        badCollectionNames.forEach(name -> {
             createCollectionWithBadName(name, organizationsApi, organizationID);
         });
 
@@ -2309,7 +2357,7 @@ public class OrganizationIT extends BaseIT {
 
     private void testDeleteCollectionFail(final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi, long organizationId, long collectionId, int status) {
         try {
-            organizationsApi.deleteCollection(organizationId, collectionId);
+            organizationsApi.deleteCollection(organizationId, collectionId, null);
             fail("Collection deletion should have failed with status code " + status + ".");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
@@ -2348,7 +2396,7 @@ public class OrganizationIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
-        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, null, null);
 
         // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
@@ -2377,7 +2425,7 @@ public class OrganizationIT extends BaseIT {
         assertTrue(existsCollection(organizationId, collectionId));
 
         // An org admin should be able to delete the collection
-        organizationsApi.deleteCollection(organizationId, collectionId);
+        organizationsApi.deleteCollection(organizationId, collectionId, null);
         assertFalse(existsCollection(organizationId, collectionId));
 
         // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
@@ -2680,7 +2728,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
-        assertEquals(0, categoriesApi.getCategories(null, null).size());
+        assertEquals(0, categoriesApi.getCategories(null, null, null, null).size());
     }
 
     /**
@@ -2763,7 +2811,7 @@ public class OrganizationIT extends BaseIT {
 
             addCollection(name, "dockstore");
             expectedNames.add(name);
-            assertEquals(expectedNames, extractNames(categoriesApi.getCategories(null, null)));
+            assertEquals(expectedNames, extractNames(categoriesApi.getCategories(null, null, null, null)));
 
             try {
                 addCollection(name, "dockstore");
@@ -2833,11 +2881,11 @@ public class OrganizationIT extends BaseIT {
         }
 
         // Verify that the added categories exist
-        assertEquals(catNames, extractNames(categoriesApi.getCategories(null, null)));
+        assertEquals(catNames, extractNames(categoriesApi.getCategories(null, null, null, null)));
 
         // Check that unique category names are enforced on creation
         // Try to add categories with existing category names
-        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null)) {
+        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null, null, null)) {
             String categoryName = category.getName();
             try {
                 addCollection(categoryName, "dockstore");
@@ -2852,7 +2900,7 @@ public class OrganizationIT extends BaseIT {
         // Try to change a category name to each of the other existing category names
         addCollection("catdockstore", "dockstore");
 
-        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null)) {
+        for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null, null, null)) {
             io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
             io.dockstore.openapi.client.model.Collection collection = organizationsApiAdmin.getCollectionByName("dockstore", "catdockstore");
             if (category.getName().equals("catdockstore")) {
@@ -2886,8 +2934,8 @@ public class OrganizationIT extends BaseIT {
         long id = addCollection(catName, "dockstore").getId();
 
         // Retrieve by category name
-        assertEquals(catName, categoriesApi.getCategories(catName, null).get(0).getName());
-        assertEquals(0, categoriesApi.getCategories("bogus", null).size());
+        assertEquals(catName, categoriesApi.getCategories(catName, null, null, null).get(0).getName());
+        assertEquals(0, categoriesApi.getCategories("bogus", null, null, null).size());
 
         // Retrieve by category id
         assertEquals(catName, categoriesApi.getCategoryById(id).getName());
@@ -2911,7 +2959,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
 
         Collection collection = addCollection("test", "dockstore");
-        final io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories("test", null).get(0);
+        final io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories("test", null, null, null).get(0);
 
         assertEquals(collection.getId(), category.getId());
         assertEquals(collection.getName(), category.getName());
@@ -2935,13 +2983,13 @@ public class OrganizationIT extends BaseIT {
         addToCollection("test", "dockstore", createWorkflow1());
         addToCollection("test", "dockstore", createWorkflow2());
 
-        io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories(null, null).get(0);
+        io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories(null, null, null, null).get(0);
 
         assertEquals(workflowCount, category.getWorkflowsLength().longValue());
         assertEquals(0, category.getEntries().size());
 
         // Make sure the category looks right.
-        category = categoriesApi.getCategories(null, "entries").get(0);
+        category = categoriesApi.getCategories(null, "entries", null, null).get(0);
         assertEquals(workflowCount, category.getWorkflowsLength().longValue());
         assertEquals(workflowCount, category.getEntries().size());
 
@@ -2971,10 +3019,10 @@ public class OrganizationIT extends BaseIT {
         assertEquals(0, entriesApi.entryCategories(id).size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
-        assertEquals(1, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        assertEquals(1, categoriesApi.getCategories("test", "entries", null, null).get(0).getEntries().size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(1).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
-        assertEquals(2, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        assertEquals(2, categoriesApi.getCategories("test", "entries", null, null).get(0).getEntries().size());
     }
 
     /**
@@ -2998,15 +3046,15 @@ public class OrganizationIT extends BaseIT {
         addCollection("test2", "normal");
 
         // There should be no categories.
-        assertEquals(0, categoriesApi.getCategories(null, null).size());
-        assertEquals(0, categoriesApi.getCategories("test", null).size());
+        assertEquals(0, categoriesApi.getCategories(null, null, null, null).size());
+        assertEquals(0, categoriesApi.getCategories("test", null, null, null).size());
 
         // Create a category with the same name.
         addCollection("test", "dockstore");
 
         // There should only be one category.
-        assertEquals(1, categoriesApi.getCategories(null, null).size());
-        assertEquals(1, categoriesApi.getCategories("test", null).size());
+        assertEquals(1, categoriesApi.getCategories(null, null, null, null).size());
+        assertEquals(1, categoriesApi.getCategories("test", null, null, null).size());
 
         // The category and the normal collection with the same name should have different ids.
         assertNotEquals(organizationsApiAdmin.getCollectionByName("dockstore", "test").getId(), organizationsApiAdmin.getCollectionByName("normal", "test").getId());
@@ -3027,7 +3075,7 @@ public class OrganizationIT extends BaseIT {
         // Add two categories.
         addCollection("test", "dockstore");
         addCollection("test2", "dockstore");
-        assertEquals(2, categoriesApi.getCategories(null, null).size());
+        assertEquals(2, categoriesApi.getCategories(null, null, null, null).size());
 
         // Add a workflow to the categories.
         Workflow workflow = createWorkflow1();
@@ -3037,13 +3085,13 @@ public class OrganizationIT extends BaseIT {
 
         // Delete a category.
         io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
-        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null).get(0).getId());
+        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null, null, null).get(0).getId(), null);
 
         // Verify that the proper number of categories are visible.
-        assertEquals(1, categoriesApi.getCategories(null, null).size());
-        assertEquals(0, categoriesApi.getCategories("test", null).size());
-        assertEquals(1, categoriesApi.getCategories("test2", null).size());
+        assertEquals(1, categoriesApi.getCategories(null, null, null, null).size());
+        assertEquals(0, categoriesApi.getCategories("test", null, null, null).size());
+        assertEquals(1, categoriesApi.getCategories("test2", null, null, null).size());
         assertEquals(1, entriesApi.entryCategories(workflow.getId()).size());
-        assertEquals(1, categoriesApi.getCategories("test2", "entries").get(0).getEntries().get(0).getCategories().size());
+        assertEquals(1, categoriesApi.getCategories("test2", "entries", null, null).get(0).getEntries().get(0).getCategories().size());
     }
 }

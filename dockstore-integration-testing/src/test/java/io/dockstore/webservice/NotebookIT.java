@@ -446,7 +446,7 @@ class NotebookIT extends BaseIT {
         //add notebook to collection
         Set<String> expectedCollectionNames = new HashSet<>();
         expectedCollectionNames.add("Collection");
-        organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
+        organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null, null, null);
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(1, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
@@ -454,7 +454,7 @@ class NotebookIT extends BaseIT {
         assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //remove notebook from collection
-        organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
+        organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
@@ -465,7 +465,7 @@ class NotebookIT extends BaseIT {
         //add notebook to category
         Set<String> expectedCategoryNames = new HashSet<>();
         expectedCategoryNames.add("Category");
-        organizationsApi.addEntryToCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
+        organizationsApi.addEntryToCollection(categorizerOrg.getId(), category.getId(), notebookID, null, null, null);
         List<Category> entryCategory = entriesApi.entryCategories(notebookID);
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(1,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
@@ -474,7 +474,7 @@ class NotebookIT extends BaseIT {
 
 
         //remove notebook from category
-        organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
+        organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null, null);
         expectedCategoryNames.remove("Category");
         entryCategory = entriesApi.entryCategories(notebookID);
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));

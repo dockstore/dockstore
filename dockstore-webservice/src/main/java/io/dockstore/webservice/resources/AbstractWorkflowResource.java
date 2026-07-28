@@ -45,7 +45,6 @@ import io.dockstore.webservice.core.webhook.GitCommit;
 import io.dockstore.webservice.core.webhook.PushPayload;
 import io.dockstore.webservice.helpers.CachingFileTree;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
-import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ExceptionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.FileTree;
@@ -392,7 +391,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     Version defaultVersion = workflow.getActualDefaultVersion();
                     if (defaultVersion != null && shouldDeleteVersion.test(defaultVersion)) {
                         Set<WorkflowVersion> remainingVersions = workflow.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), gitReferenceName.get())).collect(Collectors.toSet());
-                        Optional<WorkflowVersion> newDefaultVersion = EntryVersionHelper.determineRepresentativeVersion(remainingVersions);
+                        Optional<WorkflowVersion> newDefaultVersion = selectDefaultVersionIfPossible(remainingVersions);
                         workflow.setActualDefaultVersion(newDefaultVersion.orElse(null));
                     }
 
@@ -423,6 +422,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
+    private Optional<WorkflowVersion> selectDefaultVersionIfPossible(Set<WorkflowVersion> remainingVersions) {
+        for (String name : List.of("main", "master", "develop")) {
+            Optional<WorkflowVersion> match = remainingVersions.stream().filter(v -> name.equals(v.getName())).findFirst();
+            if (match.isPresent()) {
+                return match;
+            }
+        }
+        return Optional.empty();
+    }
+
     protected List<String> identifyImportantBranches(String repository, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         try (var r = RateLimitHelper.reporter(gitHubSourceCodeRepo)) {
             return gitHubSourceCodeRepo.listBranchesByImportance(repository);
@@ -430,7 +439,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Identify git references that may be worth trying to handle as a github apps release event
+     * Identify git references that may be worth trying to handle as a github apps release event since they have a .dockstore.yml
      * @param repository
      * @param installationId
      * @return
@@ -445,7 +454,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected void notifyIfPotentiallyContainsEntries(Optional<User> user, String repositoryId, long installationId, List<String> importantBranches) {
         // If there's no user for which to create a notification, abort.
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             return;
         }
 

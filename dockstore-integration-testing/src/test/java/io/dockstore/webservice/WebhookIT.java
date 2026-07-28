@@ -161,7 +161,7 @@ class WebhookIT extends BaseIT {
         // Attach collection
         final Collection createdCollection = organizationsApiAdmin.createCollection(stubCollection, registeredOrganization.getId());
         // Add tool to collection
-        organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
+        organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null, null, null);
 
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
@@ -1023,10 +1023,15 @@ class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(2, workflow.getWorkflowVersions().size(), "should have 2 versions");
 
-        // Delete 1.0 tag, should reassign 2.0 as the default version
+        // Add master branch
+        handleGitHubRelease(client, DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, "refs/heads/master", USER_2_USERNAME);
+        workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
+        assertEquals(3, workflow.getWorkflowVersions().size(), "should have 3 versions");
+
+        // Delete 1.0 tag, should reassign master as the default version
         handleGitHubBranchDeletion(client, DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/tags/1.0");
         workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
-        assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version after deletion");
+        assertEquals(2, workflow.getWorkflowVersions().size(), "should have 2 versions after deletion");
         assertNotNull(workflow.getDefaultVersion(), "should have reassigned the default version during deletion");
 
         // Publish workflow
@@ -1035,7 +1040,13 @@ class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
         assertTrue(workflow.isIsPublished());
 
-        // Delete 2.0 tag, unset default version
+        // Delete master branch, unset default version
+        handleGitHubBranchDeletion(client, DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/heads/master");
+        workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
+        assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version after deletion");
+        assertNull(workflow.getDefaultVersion(), "should have no default version after master branch is deleted");
+
+        // Delete 2.0 tag, should unpublish
         handleGitHubBranchDeletion(client, DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/tags/2.0");
         workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(0, workflow.getWorkflowVersions().size(), "should have 0 versions after deletion");

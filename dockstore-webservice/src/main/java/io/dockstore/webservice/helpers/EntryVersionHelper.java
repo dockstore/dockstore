@@ -466,42 +466,44 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     /**
-     * Return the ID of the version that is most representative of the Entry,
-     * or -1 if no such version exists.
-     */
-    static long determineRepresentativeVersionId(Entry entry) {
-        return determineRepresentativeVersion(entry).map(Version::getId).orElse(-1L);
-    }
-
-    /**
      * Determine which Version of the specified Entry is most representative of the Entry.
      * The resulting Version is used to generate identifying information about the Entry
      * (Search fields, AI topic, and perhaps other things)
      */
     static Optional<Version> determineRepresentativeVersion(Entry entry) {
-        return Optional.ofNullable(entry.getActualDefaultVersion())
-            .or(() -> determineRepresentativeVersion(entry.getWorkflowVersions()));
+        return determineRepresentativeVersion(entry.getWorkflowVersions(), entry.getActualDefaultVersion());
     }
 
     /**
-     * Determine which of the specified Versions, which should be of the same Entry,
-     * is most representative of the Entry.
+     * Determines a "representative" Version from a set of Versions, given the specified default version.
+     * @param versions the set of versions to select from
+     * @param defaultVersion the entry's designated default version; may be null
+     * @return the representative version, or empty if {@code versions} is empty or all versions are hidden
      */
-    static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions) {
-        // Prefer "mainline" Versions over valid Versions over all Versions, with ties going to the most-recently-created Version.
-        Set<String> mainlineVersionNames = Set.of("master", "main", "develop");
-        Set<V> nonHiddenVersions = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
-        Stream<V> mainlineVersions = nonHiddenVersions.stream().filter(version -> mainlineVersionNames.contains(version.getName()));
-        Stream<V> validVersions = nonHiddenVersions.stream().filter(Version::isValid);
-        Stream<V> allVersions = nonHiddenVersions.stream();
-        return youngestVersion(mainlineVersions)
-            .or(() -> youngestVersion(validVersions))
-            .or(() -> youngestVersion(allVersions));
+    private static <V extends Version> Optional<V> determineRepresentativeVersion(Set<V> versions, V defaultVersion) {
+        // Attempt to select the "representative" version from successive sets of groups:
+        // 1. mainline branches ("main"/"master"), tags, and {@code defaultVersion} (if provided)
+        // 2. "develop" branch
+        // 3. all remaining versions
+        // Return the most recently-updated version from the first group, and if the group has no versions,
+        // move on to the next group, and repeat the process, and so on.  Exclude hidden versions.
+        // Only consider invalid versions if there are no valid versions to choose from.
+        Set<V> nonHidden = versions.stream().filter(v -> !v.isHidden()).collect(Collectors.toSet());
+        Set<V> valid = nonHidden.stream().filter(Version::isValid).collect(Collectors.toSet());
+        Set<V> candidates = valid.isEmpty() ? nonHidden : valid;
+
+        return mostRecentlyUpdated(candidates.stream().filter(v ->
+                "main".equals(v.getName()) || "master".equals(v.getName())
+                || v.getReferenceType() == Version.ReferenceType.TAG
+                || v.equals(defaultVersion)))
+            .or(() -> mostRecentlyUpdated(candidates.stream().filter(v -> "develop".equals(v.getName()))))
+            .or(() -> mostRecentlyUpdated(candidates.stream()));
     }
 
-    private static <V extends Version> Optional<V> youngestVersion(Stream<V> versions) {
-        // Because we assign IDs sequentially, in increasing order, the Version with the highest ID was created most recently.
-        return versions.max(Comparator.comparing(Version::getId));
+    private static <V extends Version> Optional<V> mostRecentlyUpdated(Stream<V> versions) {
+        // Use dbUpdateDate as the primary sort key; fall back to ID (assigned sequentially) when dbUpdateDate is unavailable.
+        Comparator<V> byUpdateDate = Comparator.comparing(Version::getDbUpdateDate, Comparator.nullsFirst(Comparator.naturalOrder()));
+        return versions.max(byUpdateDate.thenComparing(Version::getId));
     }
 
     /**

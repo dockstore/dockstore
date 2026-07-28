@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Contains summary information about a Category.
@@ -33,13 +34,20 @@ public class CategorySummary implements Serializable {
     private String description;
     private String displayName;
     private String topic;
+    private EntryVersion.Curator curator;
+    private boolean aiManaged;
+    private Map<String, String> metadata;
 
-    public CategorySummary(long id, String name, String description, String displayName, String topic) {
+    @SuppressWarnings("checkstyle:parameternumber")
+    public CategorySummary(long id, String name, String description, String displayName, String topic, EntryVersion.Curator curator, boolean aiManaged, Map<String, String> metadata) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.displayName = displayName;
         this.topic = topic;
+        this.curator = curator;
+        this.aiManaged = aiManaged;
+        this.metadata = metadata;
     }
 
     public long getId() {
@@ -59,6 +67,18 @@ public class CategorySummary implements Serializable {
     }
 
     public String getTopic() {
-        return (topic);
+        return topic;
+    }
+
+    public EntryVersion.Curator getCurator() {
+        return curator;
+    }
+
+    public boolean isAiManaged() {
+        return aiManaged;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
     }
 }

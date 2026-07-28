@@ -61,6 +61,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -83,6 +84,7 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -107,27 +109,29 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
     @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
     @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select distinct new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName, organization.avatarUrl) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED' and col.deleted = false"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select distinct new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select distinct new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.title, organization.id, organization.name, organization.displayName, organization.avatarUrl) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED' and col.deleted = false"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select distinct new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.title, cat.topic, entry.curator, cat.organization.name = 'dockstoreai', cat.metadata) from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryId", query = "select distinct cat from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds", query = "select distinct entry.entry, cat from Category cat join cat.entries as entry where entry.entry.id in (:entryIds) and cat.deleted = false"),
-    @NamedQuery(name = "Entry.getAllCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName) from Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionBioWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionAppTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName) from AppTool a, Collection col join col.entries as e where col.id = :collectionId and e.version is null and a.id = e.entry.id and a.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionNotebooks", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(n.id, n.dbUpdateDate, 'notebook', n.sourceControl, n.organization, n.repository, n.workflowName) from Notebook n, Collection col join col.entries as e where col.id = :collectionId and e.version is null and n.id = e.entry.id and n.isPublished = true"),
-    @NamedQuery(name = "Entry.getBioWorkflowsLength", query = "SELECT COUNT(w.id) FROM BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getAppToolsLength", query = "SELECT COUNT(a.id) FROM AppTool a, Collection col join col.entries as e where col.id = :collectionId and a.id = e.entry.id and a.isPublished = true"),
-    @NamedQuery(name = "Entry.getServicesLength", query = "SELECT COUNT(s.id) FROM Service s, Collection col join col.entries as e where col.id = :collectionId and s.id = e.entry.id and s.isPublished = true"),
-    @NamedQuery(name = "Entry.getNotebooksLength", query = "SELECT COUNT(n.id) FROM Notebook n, Collection col join col.entries as e where col.id = :collectionId and n.id = e.entry.id and n.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname) from Tool t, Collection col join col.entries as e where col.id = :collectionId and t.id = e.entry.id and e.version is null and t.isPublished = true"),
-    @NamedQuery(name = "Entry.getToolsLength", query = "SELECT COUNT(t.id) FROM Tool t, Collection col join col.entries as e where col.id = :collectionId and t.id = e.entry.id and t.isPublished = true"),
-    @NamedQuery(name = "Entry.getAllCollectionWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and  v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionBioWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, BioWorkflow w, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionAppToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName, v.name, v.versionMetadata.verified) from Version v, AppTool a, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and a.id = e.entry.id and a.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionNotebooksWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(n.id, n.dbUpdateDate, 'notebook', n.sourceControl, n.organization, n.repository, n.workflowName, v.name, v.versionMetadata.verified) from Version v, Notebook n, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and n.id = e.entry.id and n.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionServicesWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified) from Version v, Service w, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
-    @NamedQuery(name = "Entry.getCollectionToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname, v.name, v.versionMetadata.verified) from Version v, Tool t, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and t.id = e.entry.id and t.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategorySummaryPairsByEntryIds", query = "select distinct entry.entry.id, new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.title, cat.topic, entry.curator, cat.organization.name = 'dockstoreai', cat.metadata) from Category cat join cat.entries as entry where entry.entry.id in (:entryIds) and cat.deleted = false"),
+    @NamedQuery(name = "Entry.getAllCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName, e.curator) from Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionBioWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName, e.curator) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionAppTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName, e.curator) from AppTool a, Collection col join col.entries as e where col.id = :collectionId and e.version is null and a.id = e.entry.id and a.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionNotebooks", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(n.id, n.dbUpdateDate, 'notebook', n.sourceControl, n.organization, n.repository, n.workflowName, e.curator) from Notebook n, Collection col join col.entries as e where col.id = :collectionId and e.version is null and n.id = e.entry.id and n.isPublished = true"),
+
+    @NamedQuery(name = "Entry.getBioWorkflowsLengthBulk", query = "SELECT new io.dockstore.webservice.core.database.CollectionLength(col.id, COUNT(w.id)) FROM BioWorkflow w, Collection col join col.entries as e where col.id in :collectionIds and w.id = e.entry.id and w.isPublished = true group by col.id"),
+    @NamedQuery(name = "Entry.getToolsLengthBulk", query = "SELECT new io.dockstore.webservice.core.database.CollectionLength(col.id, COUNT(t.id)) FROM Tool t, Collection col join col.entries as e where col.id in :collectionIds and t.id = e.entry.id and t.isPublished = true group by col.id"),
+    @NamedQuery(name = "Entry.getAppToolsLengthBulk", query = "SELECT new io.dockstore.webservice.core.database.CollectionLength(col.id, COUNT(a.id)) FROM AppTool a, Collection col join col.entries as e where col.id in (:collectionIds) and a.id = e.entry.id and a.isPublished = true group by col.id"),
+    @NamedQuery(name = "Entry.getServicesLengthBulk", query = "SELECT new io.dockstore.webservice.core.database.CollectionLength(col.id, COUNT(s.id)) FROM Service s, Collection col join col.entries as e where col.id in :collectionIds and s.id = e.entry.id and s.isPublished = true group by col.id"),
+    @NamedQuery(name = "Entry.getNotebooksLengthBulk", query = "SELECT new io.dockstore.webservice.core.database.CollectionLength(col.id, COUNT(n.id)) FROM Notebook n, Collection col join col.entries as e where col.id in :collectionIds and n.id = e.entry.id and n.isPublished = true group by col.id"),
+
+    @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName, e.curator) from Service w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname, e.curator) from Tool t, Collection col join col.entries as e where col.id = :collectionId and t.id = e.entry.id and e.version is null and t.isPublished = true"),
+    @NamedQuery(name = "Entry.getAllCollectionWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, case type(w) when BioWorkflow then 'workflow' when AppTool then 'apptool' when Notebook then 'notebook' when Service then 'service' else 'unsupported' end, w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified, e.curator) from Version v, Workflow w, Collection col join col.entries as e where type(w) in (BioWorkflow, AppTool, Notebook, Service) and  v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionBioWorkflowsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified, e.curator) from Version v, BioWorkflow w, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionAppToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(a.id, a.dbUpdateDate, 'apptool', a.sourceControl, a.organization, a.repository, a.workflowName, v.name, v.versionMetadata.verified, e.curator) from Version v, AppTool a, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and a.id = e.entry.id and a.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionNotebooksWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(n.id, n.dbUpdateDate, 'notebook', n.sourceControl, n.organization, n.repository, n.workflowName, v.name, v.versionMetadata.verified, e.curator) from Version v, Notebook n, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and n.id = e.entry.id and n.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionServicesWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName, v.name, v.versionMetadata.verified, e.curator) from Version v, Service w, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
+    @NamedQuery(name = "Entry.getCollectionToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname, v.name, v.versionMetadata.verified, e.curator) from Version v, Tool t, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and t.id = e.entry.id and t.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
@@ -136,7 +140,11 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
             + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus is not null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
     @NamedQuery(name = Entry.GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
-    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL")
+    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE AND e.archived = false AND e.topicManual IS NULL AND e.topicAutomatic IS NULL AND e.topicAI IS NULL"),
+    @NamedQuery(name = Entry.FIND_ENTRIES_TO_CATEGORIZE, query = "SELECT e FROM Entry e JOIN e.entryMetadata m WHERE e.isPublished = TRUE AND (m.lastCategorizedDate IS NULL OR (e.dbUpdateDate > m.lastCategorizedDate AND m.lastCategorizedDate < :cutoff)) AND EXISTS (SELECT 1 FROM Version v WHERE v.parent = e AND v.versionMetadata.hidden = FALSE AND v.valid = TRUE) ORDER BY m.lastCategorizedDate ASC NULLS FIRST, e.id ASC"),
+    @NamedQuery(name = Entry.COUNT_ENTRIES_TO_CATEGORIZE, query = "SELECT COUNT(e.id) FROM Entry e JOIN e.entryMetadata m WHERE e.isPublished = TRUE AND (m.lastCategorizedDate IS NULL OR (e.dbUpdateDate > m.lastCategorizedDate AND m.lastCategorizedDate < :cutoff)) AND EXISTS (SELECT 1 FROM Version v WHERE v.parent = e AND v.versionMetadata.hidden = FALSE AND v.valid = TRUE)"),
+    @NamedQuery(name = Entry.FIND_PUBLISHED_ENTRIES, query = "SELECT e FROM Entry e WHERE e.isPublished = TRUE ORDER BY e.id"),
+    @NamedQuery(name = Entry.COUNT_PUBLISHED_ENTRIES, query = "SELECT COUNT(e.id) FROM Entry e WHERE e.isPublished = TRUE")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -159,6 +167,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
     public static final String GET_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.getPublishedEntriesWithNoTopics";
     public static final String COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS = "Entry.countPublishedEntriesWithNoTopics";
+    public static final String FIND_ENTRIES_TO_CATEGORIZE = "Entry.findEntriesToCategorize";
+    public static final String COUNT_ENTRIES_TO_CATEGORIZE = "Entry.countEntriesToCategorize";
+    public static final String FIND_PUBLISHED_ENTRIES = "Entry.findPublishedEntries";
+    public static final String COUNT_PUBLISHED_ENTRIES = "Entry.countPublishedEntries";
     private static final int TOPIC_LENGTH = 250;
 
     /**
@@ -308,7 +320,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Transient
     @JsonIgnore
-    private List<Category> categories = new ArrayList<>();
+    private List<CategorySummary> categorySummaries = new ArrayList<>();
 
     @Transient
     @JsonIgnore
@@ -367,6 +379,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The aggregated metrics for executions of this entry, grouped by platform", position = 26)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true, fetch = FetchType.LAZY, optional = false)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private EntryMetadata entryMetadata = new EntryMetadata();
+
     public enum GitVisibility {
         /**
          * There was a failed attempt to determine visibility
@@ -393,12 +411,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
+        entryMetadata.parent = this;
     }
 
     public Entry(long id) {
         this.id = id;
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
+        entryMetadata.parent = this;
     }
 
     public abstract Entry<?, ?> createEmptyEntry();
@@ -830,12 +850,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
      * @return
      */
-    public List<Category> getCategories() {
-        return (categories);
+    public List<CategorySummary> getCategorySummaries() {
+        return (categorySummaries);
     }
 
-    public void setCategories(List<Category> categories) {
-        this.categories = categories;
+    public void setCategorySummaries(List<CategorySummary> categorySummaries) {
+        this.categorySummaries = categorySummaries;
     }
 
     /**
@@ -984,6 +1004,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
         this.metricsByPlatform = metricsByPlatform;
+    }
+
+    public EntryMetadata getEntryMetadata() {
+        if (entryMetadata == null) {
+            entryMetadata = new EntryMetadata();
+            entryMetadata.setId(this.id);
+        }
+        return entryMetadata;
+    }
+
+    public void setEntryMetadata(EntryMetadata entryMetadata) {
+        this.entryMetadata = entryMetadata;
     }
 
     @JsonProperty

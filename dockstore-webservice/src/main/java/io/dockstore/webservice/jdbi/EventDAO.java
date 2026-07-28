@@ -68,6 +68,22 @@ public class EventDAO extends AbstractDAO<Event> {
         return findEvents(loggedInUser, entryPredicateBuilder(entryIds), offset, limit);
     }
 
+    public Optional<Event> findLatestApproveOrRemoveFromCategoryEvent(long entryId, long categoryId) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Event> query = cb.createQuery(Event.class);
+        Root<Event> event = query.from(Event.class);
+
+        Predicate entryPredicate = entryPredicateBuilder(Set.of(entryId)).build(cb, event);
+        Predicate categoryPredicate = cb.equal(event.get("category").get("id"), categoryId);
+        Predicate typePredicate = event.get("type").in(Set.of(EventType.APPROVE_IN_CATEGORY, EventType.REMOVE_FROM_CATEGORY));
+
+        query.select(event);
+        query.where(cb.and(entryPredicate, categoryPredicate, typePredicate));
+        query.orderBy(cb.desc(event.get("id")));
+
+        return currentSession().createQuery(query).setMaxResults(1).uniqueResultOptional();
+    }
+
     public List<Event> findAllByOrganizationIds(User loggedInUser, Set<Long> organizationIds, Integer offset, int limit) {
         return findEvents(loggedInUser, organizationPredicateBuilder(organizationIds), offset, limit);
     }

@@ -27,6 +27,7 @@ import io.dockstore.webservice.jdbi.VersionDAO;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -55,20 +56,33 @@ class CollectionHelper {
         }
     }
 
+    /**
+     * Convenience wrapper for a single collection.
+     * @param collection
+     */
     public void evictAndSummarize(Collection collection) {
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.evict(collection);
-        // Ensure that entries is empty
-        // This is probably unnecessary
-        collection.setEntries(new HashSet<>());
-        collection.setWorkflowsLength(entryDAO.getBioWorkflowsLength(collection.getId()));
-        collection.setToolsLength(entryDAO.getToolsLength(collection.getId()) +  entryDAO.getAppToolsLength(collection.getId()));
-        collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
-        collection.setServicesLength(entryDAO.getServicesLength(collection.getId()));
+        evictAndSummarize(List.of(collection));
     }
 
-    public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
-        c.forEach(this::evictAndSummarize);
+    public void evictAndSummarize(List<? extends Collection> collections) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        List<Long> ids = collections.stream().map(Collection::getId).toList();
+        Map<Long, Long> appToolsLengthBulkMap = entryDAO.getAppToolsLengthBulk(ids);
+        Map<Long, Long> toolsLengthBulkMap = entryDAO.getToolsLengthBulk(ids);
+        Map<Long, Long> bioWorkflowsLengthMap = entryDAO.getBioWorkflowsLengthBulk(ids);
+        Map<Long, Long> notebooksLengthMap = entryDAO.getNotebooksLengthBulk(ids);
+        Map<Long, Long> servicesLengthBulkMap = entryDAO.getServicesLengthBulk(ids);
+
+
+        collections.forEach(collection -> {
+            currentSession.evict(collection);
+            collection.setEntries(new HashSet<>());
+            collection.setWorkflowsLength(bioWorkflowsLengthMap.getOrDefault(collection.getId(), 0L));
+            collection.setToolsLength(toolsLengthBulkMap.getOrDefault(collection.getId(), 0L) + appToolsLengthBulkMap.getOrDefault(collection.getId(), 0L));
+            collection.setServicesLength(servicesLengthBulkMap.getOrDefault(collection.getId(), 0L));
+            collection.setNotebooksLength(notebooksLengthMap.getOrDefault(collection.getId(), 0L));
+        });
+
     }
 
     public void evictAndAddEntries(Collection collection) {

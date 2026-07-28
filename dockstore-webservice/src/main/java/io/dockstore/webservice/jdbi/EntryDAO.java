@@ -35,7 +35,9 @@ import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.CollectionLength;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -45,6 +47,7 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import jakarta.persistence.metamodel.Attribute;
 import java.lang.reflect.ParameterizedType;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -75,6 +79,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int repoIndex = 2;
     final int entryNameIndex = 3;
     protected static final String ENTRY_IDS = "entryIds";
+    protected static final String COLLECTION_IDS = "collectionIds";
 
     private Class<T> typeOfT;
 
@@ -193,26 +198,23 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     /**
-     * Retrieve the list of categories containing each of the specified Entries.
+     * Retrieve the list of category summaries for each of the specified Entries.
      * @param entryIds a list of Entry IDs
-     * @return a map of each Entry contained by one-or-more Categories to a list of all Categories that contain it, any Entry contained by zero Categories is not included in the map
+     * @return a map of each Entry ID contained by one-or-more Categories to a list of all CategorySummaries for those Categories, any Entry contained by zero Categories is not included in the map
      */
-    public Map<Entry, List<Category>> findCategoriesByEntryIds(List<Long> entryIds) {
-        // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
-        // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
+    public Map<Long, List<CategorySummary>> findCategorySummariesByEntryIds(List<Long> entryIds) {
+        // run a query to determine the categories that contain the specified entries, where the result is a list of unique entryId/categorySummary pairs.
+        // for example, if Entry E is in categories C and D, the result would be [[E.id, C-summary], [E.id, D-summary]].
 
-        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList(
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategorySummaryPairsByEntryIds").setParameterList(
                 ENTRY_IDS, entryIds));
 
-        // convert the list of entry/category pairs to a map (as described in the javadoc above).
-        Map<Entry, List<Category>> entryToCategories = new HashMap<>();
-        results.forEach(result -> {
-            Entry entry = (Entry)result[0];
-            Category category = (Category)result[1];
-            entryToCategories.computeIfAbsent(entry, k -> new ArrayList<>()).add(category);
-        });
+        // convert the list of entryId/categorySummary pairs to a map (as described in the javadoc above).
+        Map<Long, List<CategorySummary>> entryIdToCategorySummaries = results.stream()
+            .collect(Collectors.groupingBy(result -> (Long)result[0],
+                Collectors.mapping(result -> (CategorySummary)result[1], Collectors.toList())));
 
-        return (entryToCategories);
+        return (entryIdToCategorySummaries);
     }
 
     public T findPublishedById(long id) {
@@ -252,18 +254,55 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getCollectionNotebooks", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
-    public long getBioWorkflowsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
-    }
-    public long getAppToolsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getAppToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
-    }
-    public long getNotebooksLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getNotebooksLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds
+     * @return
+     */
+    public Map<Long, Long> getBioWorkflowsLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getBioWorkflowsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds)
+            .getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
     }
 
-    public long getServicesLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getServicesLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getToolsLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+    }
+
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getAppToolsLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getAppToolsLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+    }
+
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getNotebooksLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getNotebooksLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
+    }
+
+    /**
+     * Map from collection id to collection length.
+     * @param collectionIds list of collection id to get the length of
+     * @return map from collection ids to lengths
+     */
+    public Map<Long, Long> getServicesLengthBulk(List<Long> collectionIds) {
+        List<CollectionLength> resultList = this.currentSession().createNamedQuery("Entry.getServicesLengthBulk", CollectionLength.class).setParameter(COLLECTION_IDS, collectionIds).getResultList();
+        return resultList.stream().collect(Collectors.toMap(CollectionLength::id, CollectionLength::length));
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
@@ -272,10 +311,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getCollectionTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
-    }
-
-    public long getToolsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
     /**
@@ -415,6 +450,36 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public long countPublishedEntriesWithNoTopics() {
         return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES_WITH_NO_TOPICS, Long.class).getSingleResult();
+    }
+
+    public List<Entry> findEntriesToCategorize(Timestamp cutoff, int offset, int limit) {
+        return this.currentSession().createNamedQuery(Entry.FIND_ENTRIES_TO_CATEGORIZE, Entry.class)
+            .setParameter("cutoff", cutoff)
+            .setFirstResult(offset)
+            .setMaxResults(limit)
+            .list();
+    }
+
+    public long countEntriesToCategorize(Timestamp cutoff) {
+        return this.currentSession().createNamedQuery(Entry.COUNT_ENTRIES_TO_CATEGORIZE, Long.class)
+            .setParameter("cutoff", cutoff)
+            .getSingleResult();
+    }
+
+    public List<EntryLiteAndVersionName> findPublishedEntries(int offset, int limit) {
+        List<Entry> entries = this.currentSession().createNamedQuery(Entry.FIND_PUBLISHED_ENTRIES, Entry.class)
+            .setFirstResult(offset)
+            .setMaxResults(limit)
+            .list();
+        return entries.stream()
+            .map(entry -> new EntryLiteAndVersionName(
+                entry.createEntryLite(),
+                EntryVersionHelper.determineRepresentativeVersion(entry).map(Version::getName).orElse("")))
+            .toList();
+    }
+
+    public long countPublishedEntries() {
+        return this.currentSession().createNamedQuery(Entry.COUNT_PUBLISHED_ENTRIES, Long.class).getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

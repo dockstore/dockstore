@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
+import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -25,9 +26,11 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.SyncStatus;
 import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.SourceFile;
@@ -39,6 +42,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -84,17 +88,20 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -367,6 +374,81 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
+    }
+
+    @GET
+    @Path("/{id}/categorySummaries")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "entryCategorySummaries", description = "Get the category summaries for the entry")
+    @ApiOperation(value = "Get the category summaries for the entry", response = CategorySummary.class, responseContainer = "List", hidden = true)
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved category summaries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = CategorySummary.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Entry must by published")
+    public List<CategorySummary> entryCategorySummaries(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return this.toolDAO.findCategorySummariesByEntryId(entry.getId());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{id}/lastCategorizedDate")
+    @Operation(operationId = "getLastCategorizedDate", description = "Get the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    public Timestamp getLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return entry.getEntryMetadata().getLastCategorizedDate();
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/lastCategorizedDate")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "setLastCategorizedDate", description = "Set the date of the last categorization of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully set the last categorized date", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Timestamp.class)))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public Timestamp setLastCategorizedDate(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
+            @Parameter(description = "Date in UTC epoch seconds; defaults to now") @QueryParam("whenSeconds") Long whenSeconds,
+            @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        Timestamp timestamp = whenSeconds != null ? new Timestamp(whenSeconds * 1000L) : new Timestamp(System.currentTimeMillis());
+        entry.getEntryMetadata().setLastCategorizedDate(timestamp);
+        return entry.getEntryMetadata().getLastCategorizedDate();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/toCategorize")
+    @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "findEntriesToCategorize", description = "Get published entries that are new and uncategorized, or that have changed since last categorization and were last categorized at least intervalSeconds seconds ago.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entries", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = EntryLiteAndVersionName.class))))
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public Response findEntriesToCategorize(@Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Interval in seconds; entries last categorized at least this many seconds ago are eligible for re-categorization if changed", required = true) @QueryParam("intervalSeconds") Long intervalSeconds,
+            @Parameter(description = "Pagination offset") @QueryParam("offset") @DefaultValue("0") int offset,
+            @Parameter(description = "Pagination limit") @QueryParam("limit") @DefaultValue("100") int limit) {
+        if (intervalSeconds == null) {
+            throw new CustomWebApplicationException("intervalSeconds query parameter is required", HttpStatus.SC_BAD_REQUEST);
+        }
+        Timestamp cutoff = new Timestamp(System.currentTimeMillis() - intervalSeconds * 1000L);
+        List<Entry> entries = toolDAO.findEntriesToCategorize(cutoff, offset, limit);
+        List<EntryLiteAndVersionName> result = entries.stream()
+            .map(entry -> new EntryLiteAndVersionName(
+                entry.createEntryLite(),
+                EntryVersionHelper.determineRepresentativeVersion(entry).map(Version::getName).orElse("")))
+            .toList();
+        long totalCount = toolDAO.countEntriesToCategorize(cutoff);
+        return Response.ok(result).header(X_TOTAL_COUNT, totalCount).build();
     }
 
     @GET

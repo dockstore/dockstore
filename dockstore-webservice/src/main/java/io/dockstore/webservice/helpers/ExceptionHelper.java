@@ -17,11 +17,14 @@
 
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.core.GitHubAppNotification.UNIQUE_NOTIFICATIONS;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import jakarta.persistence.PersistenceException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.hibernate.exception.ConstraintViolationException;
@@ -108,6 +111,10 @@ public class ExceptionHelper {
 
     private Optional<Info> mapConstraintViolationException(ConstraintViolationException c) {
         String message = mapConstraintName(c.getConstraintName());
+        // override github app notification constraint violations to be retryable since this has been observed to occur during simultaneous requests
+        if (Objects.equals(c.getConstraintName(), UNIQUE_NOTIFICATIONS)) {
+            return result(message, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
         return result(message, HttpStatus.SC_CONFLICT);
     }
 

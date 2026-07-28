@@ -1,0 +1,121 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2026 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.20.0">
+    <changeSet author="svonworl" id="create_entry_metadata">
+        <createTable tableName="entry_metadata">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastcategorizeddate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+        <sql>
+            INSERT INTO entry_metadata (id)
+            SELECT id FROM tool
+            UNION ALL
+            SELECT id FROM apptool
+            UNION ALL
+            SELECT id FROM notebook
+            UNION ALL
+            SELECT id FROM service
+            UNION ALL
+            SELECT id FROM workflow
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen" id="null_long_sentences">
+        <sql>update workflow set topicai = null where topicselection = 'AI' and length(topicai) = 250 and ispublished;</sql>
+    </changeSet>
+    <changeSet author="svonworl" id="addMetadataToCollection">
+        <addColumn tableName="collection">
+            <column name="metadata" type="JSONB"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="add_ai_categorizer_organization">
+        <sql dbms="postgresql">
+            insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('ai', 'AI', 'Each of this organization''s Collections is an AI-generated Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP);
+        </sql>
+        <!-- Add all existing admins, except for the webservice/ui integration test admin users, to the "ai" org. -->
+        <sql dbms="postgresql">
+            insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = 'ai'), id, 'ACCEPTED', 'ADMIN' from enduser where isadmin and username not in ('admin@admin.com', 'DockstoreTestUser', 'DockstoreTestUser2', 'user_admin', 'user_A');
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1778790708321-20">
+        <createTable tableName="pkce">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="state" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pkce_pkey"/>
+            </column>
+            <column name="verifier" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>  
+    <changeSet author="svonworl" id="rename_ai_organization">
+        <sql dbms="postgresql">
+            update organization set name = 'dockstoreai', displayname = 'Dockstore AI' where name = 'ai';
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="category_displayname_not_unique">
+        <sql dbms="postgresql">
+            drop index collection_displayname_index;
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid) where dtype = 'Collection' and not deleted;
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="increase_collection_name_length">
+        <modifyDataType tableName="collection" columnName="name" newDataType="varchar(90)"/>
+        <modifyDataType tableName="collection" columnName="displayname" newDataType="varchar(90)"/>
+    </changeSet>
+    <changeSet author="svonworl" id="add_curator_to_collection_entry_version">
+        <addColumn tableName="collection_entry_version">
+            <column name="curator" type="varchar(255)" value="USER">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql>
+            UPDATE collection_entry_version
+            SET curator = 'DOCKSTORE'
+            WHERE collection_id IN (SELECT id FROM collection WHERE dtype = 'Category')
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="add_categoryid_to_event">
+        <addColumn tableName="event">
+            <column name="categoryid" type="bigint"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="event" baseColumnNames="categoryid"
+                                 referencedTableName="collection" referencedColumnNames="id"
+                                 constraintName="fk_event_categoryid"/>
+    </changeSet>
+    <changeSet author="dyuen" id="unique_notifications">
+        <sql>
+            DELETE FROM github_app_notification n1 USING github_app_notification n2
+                   WHERE n1.id  > n2.id AND n1.organization=n2.organization AND n1.repository=n2.repository AND n1.sourcecontrol = n2.sourcecontrol AND n1.userid=n2.userid;
+        </sql>
+        <addUniqueConstraint columnNames="organization, repository, sourcecontrol, userid" constraintName="unique_notifications" tableName="github_app_notification"/>
+    </changeSet>
+    <changeSet author="svonworl" id="rename_collection_displayname_to_title">
+        <renameColumn tableName="collection" oldColumnName="displayname" newColumnName="title"/>
+        <sql dbms="postgresql">
+            drop index collection_displayname_index;
+            create unique index collection_title_index on collection (LOWER(title), organizationid) where dtype = 'Collection' and not deleted;
+        </sql>
+    </changeSet>
+</databaseChangeLog>

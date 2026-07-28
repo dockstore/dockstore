@@ -1,5 +1,5 @@
 <!--
-  ~    Copyright 2017 OICR
+  ~    Copyright 2026 OICR and UCSC
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.19</revision>
+        <revision>1.20</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <!--
@@ -47,7 +47,7 @@
         <postgresql.version>42.4.4</postgresql.version>
         <maven-surefire.version>3.5.3</maven-surefire.version>
         <maven-failsafe.version>3.5.3</maven-failsafe.version>
-        <maven-java.version>17</maven-java.version>
+        <maven-java.version>21</maven-java.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>

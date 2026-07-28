@@ -43,10 +43,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 /**
  * This describes a Dockstore collection that can be associated with an organization.
@@ -64,7 +67,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByTitleAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.title) = lower(:title) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
 })
 
@@ -86,8 +89,8 @@ public class Collection implements Serializable, Aliasable {
     private long id;
 
     @Column(nullable = false)
-    @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d]){0,38}")
-    @Size(min = 3, max = 39)
+    @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d]){0,89}")
+    @Size(min = 3, max = 90)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "alignment", position = 1)
     @Schema(description = "Name of the collection", requiredMode = RequiredMode.REQUIRED, example = "alignment")
     private String name;
@@ -99,9 +102,10 @@ public class Collection implements Serializable, Aliasable {
 
     @Column(nullable = false)
     @Pattern(regexp = "[\\w ,_\\-&()']*")
-    @Size(min = 3, max = 50)
+    @Size(min = 3, max = 90)
     @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
-    private String displayName;
+    @JsonProperty("displayName")
+    private String title;
 
     @Column
     @ApiModelProperty(value = "Short description of the collection", position = 4)
@@ -173,6 +177,11 @@ public class Collection implements Serializable, Aliasable {
     @Column
     private boolean deleted;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Schema(description = "Arbitrary metadata for this collection, settable only by admins and curators")
+    private Map<String, String> metadata;
+
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
     public String getOrganizationName() {
@@ -212,12 +221,16 @@ public class Collection implements Serializable, Aliasable {
         this.entries = entries.stream().map(EntryVersion::new).collect(Collectors.toSet());
     }
 
-    public void addEntry(Entry entry, Version version) {
-        this.entries.add(new EntryVersion(entry, version));
+    public void addEntry(Entry entry, Version version, EntryVersion.Curator curator) {
+        this.entries.add(new EntryVersion(entry, version, curator));
     }
 
     public void removeEntry(Long entryId, Long versionId) {
         this.entries.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
+    }
+
+    public Optional<EntryVersion> getEntry(Long entryId, Long versionId) {
+        return entries.stream().filter(ev -> ev.equals(entryId, versionId)).findFirst();
     }
 
     public Organization getOrganization() {
@@ -260,12 +273,12 @@ public class Collection implements Serializable, Aliasable {
         this.topic = topic;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getTitle() {
+        return title;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public void setWorkflowsLength(long pworkflowsLength) {
@@ -323,5 +336,13 @@ public class Collection implements Serializable, Aliasable {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
     }
 }

@@ -28,13 +28,17 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Category;
 import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.CollectionEntry;
 import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Event.TypeEnum;
 import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.OrganizationUser;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.EventSearchType;
@@ -106,7 +110,7 @@ public class OpenAPIOrganizationIT extends BaseIT {
         workflowsApi.refresh1(workflowByPathGithub.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null);
+        organizationsApiAdmin.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null, null, null);
         Collection addedCollection = organizationsApiAdmin.getCollectionById(organization.getId(), collection.getId());
 
         assertEquals("viral-ngs: complete pipelines", addedCollection.getEntries().get(0).getTopic());
@@ -138,5 +142,205 @@ public class OpenAPIOrganizationIT extends BaseIT {
             organizationsApiAdmin.createCollection(stubCollection, organization.getId());
         });
         assertEquals(HttpStatus.SC_BAD_REQUEST, apiException.getCode());
+    }
+
+    @Test
+    void testCollectionEntryCurator() {
+        final ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(adminClient);
+
+        Organization organization = organizationsApiAdmin.createOrganization(OrganizationIT.openApiStubOrgObject());
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        Collection collection = organizationsApiAdmin.createCollection(OrganizationIT.openApiStubCollectionObject(), organization.getId());
+
+        final ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines",
+                "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+
+        long organizationId = organization.getId();
+        long collectionId = collection.getId();
+        long workflowId = workflow.getId();
+
+        // refresh and publish workflow
+        workflowsApi.refresh1(workflowId, false);
+        workflowsApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // null curator defaults to USER for a regular (non-Category) collection
+        organizationsApiAdmin.addEntryToCollection(organizationId, collectionId, workflowId, null, null, null);
+        Collection modified = organizationsApiAdmin.getCollectionById(organizationId, collectionId);
+        assertEquals(CollectionEntry.CuratorEnum.USER, modified.getEntries().get(0).getCurator());
+
+        // admin can set curator to DOCKSTORE
+        organizationsApiAdmin.deleteEntryFromCollection(organizationId, collectionId, workflowId, null, null);
+        organizationsApiAdmin.addEntryToCollection(organizationId, collectionId, workflowId, null, "DOCKSTORE", null);
+        modified = organizationsApiAdmin.getCollectionById(organizationId, collectionId);
+        assertEquals(CollectionEntry.CuratorEnum.DOCKSTORE, modified.getEntries().get(0).getCurator());
+
+        // admin can set curator to AI
+        organizationsApiAdmin.deleteEntryFromCollection(organizationId, collectionId, workflowId, null, null);
+        organizationsApiAdmin.addEntryToCollection(organizationId, collectionId, workflowId, null, "AI", null);
+        modified = organizationsApiAdmin.getCollectionById(organizationId, collectionId);
+        assertEquals(CollectionEntry.CuratorEnum.AI, modified.getEntries().get(0).getCurator());
+
+        // a non-admin/curator org maintainer cannot set curator to a non-USER value
+        organizationsApiAdmin.deleteEntryFromCollection(organizationId, collectionId, workflowId, null, null);
+        io.dockstore.openapi.client.api.UsersApi usersApiOtherUser =
+                new io.dockstore.openapi.client.api.UsersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        long otherUserId = usersApiOtherUser.getUser().getId();
+        organizationsApiAdmin.addUserToOrg(OrganizationUser.RoleEnum.MAINTAINER.toString(), otherUserId, organizationId, "");
+        OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        organizationsApiOtherUser.acceptOrRejectInvitation(organizationId, true);
+        ApiException exception = assertThrows(ApiException.class, () ->
+                organizationsApiOtherUser.addEntryToCollection(organizationId, collectionId, workflowId, null, "DOCKSTORE", null));
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getCode());
+    }
+
+    @Test
+    void testDeleteAiCuratedEntryFromCategory() {
+        final ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(adminClient);
+        CategoriesApi categoriesApiAdmin = new CategoriesApi(adminClient);
+
+        Organization org = OrganizationIT.openApiStubOrgObject();
+        org.setCategorizer(true);
+        org = organizationsApiAdmin.createOrganization(org);
+        organizationsApiAdmin.approveOrganization(org.getId());
+        Collection category = organizationsApiAdmin.createCollection(OrganizationIT.openApiStubCollectionObject(), org.getId());
+        final long orgId = org.getId();
+        final long categoryId = category.getId();
+
+        final ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines",
+                "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        workflowsApi.refresh1(workflow.getId(), false);
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        final long workflowId = workflow.getId();
+
+        organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "AI", null);
+
+        // Non-owner cannot delete an AI-curated entry
+        CategoriesApi categoriesApiOther = new CategoriesApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        ApiException forbiddenEx = assertThrows(ApiException.class, () ->
+                categoriesApiOther.removeAiCuratedEntryFromCategory(categoryId, workflowId));
+        assertEquals(HttpStatus.SC_FORBIDDEN, forbiddenEx.getCode());
+
+        // Owner cannot delete an entry that is not AI-curated
+        organizationsApiAdmin.deleteEntryFromCollection(orgId, categoryId, workflowId, null, null);
+        organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "USER", null);
+        CategoriesApi categoriesApiUser2 = new CategoriesApi(userClient);
+        ApiException notAiEx = assertThrows(ApiException.class, () ->
+                categoriesApiUser2.removeAiCuratedEntryFromCategory(categoryId, workflowId));
+        assertEquals(HttpStatus.SC_FORBIDDEN, notAiEx.getCode());
+
+        // Nonexistent category returns NOT_FOUND
+        ApiException notFoundEx = assertThrows(ApiException.class, () ->
+                categoriesApiUser2.removeAiCuratedEntryFromCategory(Long.MAX_VALUE, workflowId));
+        assertEquals(HttpStatus.SC_NOT_FOUND, notFoundEx.getCode());
+
+        // Re-add with AI curator for the success case
+        organizationsApiAdmin.deleteEntryFromCollection(orgId, categoryId, workflowId, null, null);
+        organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "AI", null);
+
+        // Owner can delete an AI-curated entry
+        categoriesApiUser2.removeAiCuratedEntryFromCategory(categoryId, workflowId);
+        assertTrue(categoriesApiAdmin.getCategoryById(categoryId).getEntries().isEmpty());
+        long removeFromCategoryCount = testingPostgres.runSelectStatement(
+            "select count(*) from event where type = 'REMOVE_FROM_CATEGORY'", long.class);
+        assertEquals(1, removeFromCategoryCount, "There should be 1 REMOVE_FROM_CATEGORY event");
+    }
+
+    @Test
+    void testCannotReAddEntryAfterOwnerRemovesItFromCategory() {
+        final ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(adminClient);
+        CategoriesApi categoriesApiAdmin = new CategoriesApi(adminClient);
+
+        Organization org = OrganizationIT.openApiStubOrgObject();
+        org.setCategorizer(true);
+        org = organizationsApiAdmin.createOrganization(org);
+        organizationsApiAdmin.approveOrganization(org.getId());
+        Collection category = organizationsApiAdmin.createCollection(OrganizationIT.openApiStubCollectionObject(), org.getId());
+        final long orgId = org.getId();
+        final long categoryId = category.getId();
+
+        final ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines",
+                "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        workflowsApi.refresh1(workflow.getId(), false);
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        final long workflowId = workflow.getId();
+
+        // AI curates the entry into the category
+        organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "AI", null);
+
+        // Owner of the entry removes it from the category, generating a REMOVE_FROM_CATEGORY event
+        CategoriesApi categoriesApiUser2 = new CategoriesApi(userClient);
+        categoriesApiUser2.removeAiCuratedEntryFromCategory(categoryId, workflowId);
+        assertTrue(categoriesApiAdmin.getCategoryById(categoryId).getEntries().isEmpty());
+
+        // Re-adding the entry to the same category via AI curation should now be forbidden
+        ApiException aiReAddEx = assertThrows(ApiException.class, () ->
+                organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "AI", null));
+        assertEquals(HttpStatus.SC_FORBIDDEN, aiReAddEx.getCode());
+        assertTrue(categoriesApiAdmin.getCategoryById(categoryId).getEntries().isEmpty());
+
+        // Re-adding the entry with a non-AI curator (e.g. a human/DOCKSTORE curator) is still allowed
+        organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "USER", null);
+        assertEquals(1, categoriesApiAdmin.getCategoryById(categoryId).getEntries().size());
+    }
+
+    @Test
+    void testApproveAiCuratedEntryInCategory() {
+        final ApiClient adminClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(adminClient);
+        CategoriesApi categoriesApiAdmin = new CategoriesApi(adminClient);
+
+        Organization org = OrganizationIT.openApiStubOrgObject();
+        org.setCategorizer(true);
+        org = organizationsApiAdmin.createOrganization(org);
+        organizationsApiAdmin.approveOrganization(org.getId());
+        Collection category = organizationsApiAdmin.createCollection(OrganizationIT.openApiStubCollectionObject(), org.getId());
+        final long orgId = org.getId();
+        final long categoryId = category.getId();
+
+        final ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines",
+                "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        workflowsApi.refresh1(workflow.getId(), false);
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        final long workflowId = workflow.getId();
+
+        organizationsApiAdmin.addEntryToCollection(orgId, categoryId, workflowId, null, "AI", null);
+
+        // Non-owner cannot approve an AI-curated entry
+        CategoriesApi categoriesApiOther = new CategoriesApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
+        ApiException forbiddenEx = assertThrows(ApiException.class, () ->
+                categoriesApiOther.approveAiCuratedEntryInCategory(workflowId, categoryId, ""));
+        assertEquals(HttpStatus.SC_FORBIDDEN, forbiddenEx.getCode());
+
+        // Nonexistent category returns NOT_FOUND
+        CategoriesApi categoriesApiUser2 = new CategoriesApi(userClient);
+        ApiException notFoundEx = assertThrows(ApiException.class, () ->
+                categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, Long.MAX_VALUE, ""));
+        assertEquals(HttpStatus.SC_NOT_FOUND, notFoundEx.getCode());
+
+        // Owner can approve an AI-curated entry; curator changes from AI to USER
+        categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, categoryId, "");
+        Category updated = categoriesApiAdmin.getCategoryById(categoryId);
+        assertEquals(1, updated.getEntries().size());
+        assertEquals(CollectionEntry.CuratorEnum.USER, updated.getEntries().get(0).getCurator());
+        long approveInCategoryCount = testingPostgres.runSelectStatement(
+            "select count(*) from event where type = 'APPROVE_IN_CATEGORY'", long.class);
+        assertEquals(1, approveInCategoryCount, "There should be 1 APPROVE_IN_CATEGORY event");
+
+        // Cannot approve again: entry is no longer AI-curated
+        ApiException notAiEx = assertThrows(ApiException.class, () ->
+                categoriesApiUser2.approveAiCuratedEntryInCategory(workflowId, categoryId, ""));
+        assertEquals(HttpStatus.SC_FORBIDDEN, notAiEx.getCode());
     }
 }
