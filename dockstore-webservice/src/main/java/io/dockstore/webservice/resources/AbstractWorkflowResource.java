@@ -1405,7 +1405,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         final Workflow checker = workflow.getCheckerWorkflow();
         if (publish) {
             final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(Version::isValid);
-            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+
+            com.github.zafarkhaja.semver.Version wdl1 = com.github.zafarkhaja.semver.Version.of(1, 0);
+            final boolean wdl11 = workflow.getDescriptorType().equals(DescriptorLanguage.WDL) && workflow.getWorkflowVersions().stream().anyMatch(v -> v.getVersionMetadata().getDescriptorTypeVersions().stream().anyMatch(vm -> wdl1.isLowerThan(
+                com.github.zafarkhaja.semver.Version.parse(vm, false))));
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED)) || wdl11) {
                 workflow.setIsPublished(true);
                 publishChecker(checker, true, user);
             } else {
@@ -1424,7 +1428,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Returns all the GitHub usernames from a push payload. There are several usernames in the payload, which may all be the same, or
-     * might be different. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+     * might be different. See <a href="https://docs.github.com/en/webhooks/webhook-events-and-payloads#push">...</a>
      *
      * <ol>
      *     <li>sender.login - the user who triggered the event, e.g., I think, they created a new branch and pushed it</li>
