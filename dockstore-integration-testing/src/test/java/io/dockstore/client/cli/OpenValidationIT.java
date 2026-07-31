@@ -9,8 +9,6 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
-import io.dockstore.openapi.client.ApiClient;
-import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
@@ -47,24 +45,13 @@ class OpenValidationIT extends BaseIT {
 
 
     /**
-     * this method will set up the webservice and return the workflows api
-     *
-     * @return WorkflowsApi
-     * @throws ApiException
-     */
-    private WorkflowsApi setupWorkflowWebService() throws ApiException {
-        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        return new WorkflowsApi(client);
-    }
-
-    /**
      * Tests that we properly validate WDL workflows
      * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
      */
     @Test
     void testWdl11Workflow() {
         // Setup webservice and get workflows api
-        WorkflowsApi workflowsApi = setupWorkflowWebService();
+        WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         // Register a workflow
         handleGitHubRelease(workflowsApi, DockstoreTestUser2.TEST_WDL11_WORKFLOW, "refs/heads/master", USER_2_USERNAME);

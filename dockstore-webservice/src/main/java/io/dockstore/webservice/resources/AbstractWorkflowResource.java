@@ -1407,8 +1407,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(Version::isValid);
 
             com.github.zafarkhaja.semver.Version wdl1 = com.github.zafarkhaja.semver.Version.of(1, 0);
-            final boolean wdl11 = workflow.getDescriptorType().equals(DescriptorLanguage.WDL) && workflow.getWorkflowVersions().stream().anyMatch(v -> v.getVersionMetadata().getDescriptorTypeVersions().stream().anyMatch(vm -> wdl1.isLowerThan(
-                com.github.zafarkhaja.semver.Version.parse(vm, false))));
+            // workflow contains some wdl 1.1, we don't understand this yet so just wave it through for publishing. Semantic versioning does not understand draft versioning
+            final boolean wdl11 = workflow.getDescriptorType().equals(DescriptorLanguage.WDL) && workflow.getWorkflowVersions().stream().anyMatch(v -> v.getVersionMetadata().getDescriptorTypeVersions().stream().anyMatch(vm -> !vm.startsWith("draft")
+                 && wdl1.isLowerThan(com.github.zafarkhaja.semver.Version.parse(vm, false))));
             if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED)) || wdl11) {
                 workflow.setIsPublished(true);
                 publishChecker(checker, true, user);
