@@ -74,7 +74,7 @@ public final class RSSWriter {
         StartElement sElement = eventFactory.createStartElement("", "", name);
         eventWriter.add(sElement);
 
-        Characters characters = eventFactory.createCharacters(value);
+        Characters characters = eventFactory.createCharacters(value == null ? "" : value);
         eventWriter.add(characters);
 
         EndElement eElement = eventFactory.createEndElement("", "", name);
