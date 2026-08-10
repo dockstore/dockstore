@@ -9,6 +9,7 @@ import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
 import static io.dockstore.webservice.helpers.ZenodoHelper.automaticallyRegisterDockstoreDOI;
 
+import com.github.zafarkhaja.semver.ParseException;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
@@ -1408,8 +1409,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             com.github.zafarkhaja.semver.Version wdl1 = com.github.zafarkhaja.semver.Version.of(1, 0);
             // workflow contains some wdl 1.1, we don't understand this yet so just wave it through for publishing. Semantic versioning does not understand draft versioning
-            final boolean wdl11 = workflow.getDescriptorType().equals(DescriptorLanguage.WDL) && workflow.getWorkflowVersions().stream().anyMatch(v -> v.getVersionMetadata().getDescriptorTypeVersions().stream().anyMatch(vm -> !vm.startsWith("draft")
-                 && wdl1.isLowerThan(com.github.zafarkhaja.semver.Version.parse(vm, false))));
+            boolean wdl11;
+            try {
+                wdl11 = workflow.getDescriptorType().equals(DescriptorLanguage.WDL) && workflow.getWorkflowVersions().stream()
+                    .anyMatch(v -> v.getVersionMetadata().getDescriptorTypeVersions().stream().anyMatch(vm -> !vm.startsWith("draft")
+                        && wdl1.isLowerThan(com.github.zafarkhaja.semver.Version.parse(vm, false))));
+            } catch (IllegalArgumentException | ParseException e) {
+                wdl11 = false;
+            }
             if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED)) || wdl11) {
                 workflow.setIsPublished(true);
                 publishChecker(checker, true, user);
