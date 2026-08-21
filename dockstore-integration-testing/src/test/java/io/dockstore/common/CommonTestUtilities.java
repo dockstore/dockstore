@@ -29,18 +29,11 @@ import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.common.collect.Lists;
-import com.google.common.hash.Hashing;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -57,9 +50,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,11 +68,7 @@ import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
-import org.assertj.core.util.Files;
 import org.glassfish.jersey.client.ClientProperties;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.context.internal.ManagedSessionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +89,6 @@ public final class CommonTestUtilities {
      */
     public static final String CONFIDENTIAL_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstoreTest.yml").orElse(null);
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
-    public static final String BITBUCKET_TOKEN_CACHE = "/tmp/dockstore-bitbucket-token-cache/";
 
     private CommonTestUtilities() {
 
@@ -139,44 +125,21 @@ public final class CommonTestUtilities {
     }
 
     /**
-     * Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden) and optionally deletes BitBucket token
+     * Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden) and deletes BitBucket token
      *
      * @param support reference to testing instance of the dockstore web service
      * @param isNewApplication
-     * @param needBitBucketToken if false BitBucket token is deleted from database
      */
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) {
+        TestingPostgres testingPostgres) {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        }
-
-    }
-
-    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
-        dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, testingPostgres, false);
+        deleteBitBucketToken(testingPostgres);
     }
 
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
             String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
         dropAllAndRunMigration(listMigrations("test", "add_test_tools", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
-    }
-
-    /**
-     * Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-     * <p>
-     * Adds 2 published workflows to the database.
-     * @param support reference to testing instance of the dockstore web service
-     * @param isNewApplication
-     * @param dropwizardConfigurationFile
-     */
-    public static void dropAndCreateWithTestDataAndAdditionalToolsAndWorkflows(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-            String dropwizardConfigurationFile) {
-        LOG.info("Dropping and Recreating the database with non-confidential test data");
-        dropAllAndRunMigration(listMigrations("test", "add_test_tools", "testworkflow", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -231,53 +194,15 @@ public final class CommonTestUtilities {
         }
     }
 
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) {
-        cleanStatePrivate(support, isNewApplication, testingPostgres, needBitBucketToken, TestUser.TEST_USER1);
-    }
 
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 1 and optionally deleting BitBucket tokens
      *
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
-     * @param needBitBucketToken if false the bitbucket token will be deleted
-     */
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
-        boolean needBitBucketToken) {
-        cleanStatePrivate(support, testingPostgres, needBitBucketToken, TestUser.TEST_USER1);
-    }
-
-    /**
-     * Wrapper for dropping and recreating database from migrations for test confidential 1
-     *
-     * @param support reference to testing instance of the dockstore web service
-     * @param testingPostgres reference to the testing instance of Postgres
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres) {
-        LOG.info("Dropping and Recreating the database with confidential 1 test data");
-        cleanStatePrivate1(support, testingPostgres, false);
-    }
-
-    /**
-     * Drops and recreates database from migrations for test confidential 1
-     *
-     * @param support reference to testing instance of the dockstore web service
-     * @param configPath
-     */
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
-        boolean isNewApplication) {
-        cleanStatePrivate(support, configPath, isNewApplication, TestUser.TEST_USER1);
-    }
-
-    /**
-     * Drops and recreates database from migrations for test confidential 1
-     *
-     * @param support    reference to testing instance of the dockstore web service
-     * @param configPath
-     */
-    private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) {
-        cleanStatePrivate(support, configPath, TestUser.TEST_USER1);
+        cleanStatePrivate(support, testingPostgres, TestUser.TEST_USER1);
     }
 
     /**
@@ -293,19 +218,16 @@ public final class CommonTestUtilities {
     }
 
     /**
-     * Clean the database and reset it with a specific test user, but also manage the bitbucket tokens.
+     * Clean the database and reset it with a specific test user.
      *
-     * For efficiency, bitbucket tests should use this to preserve the bitbucket tokens to avoid them resetting with every test, breaking the cache.
      * @param support
      * @param testingPostgres
-     * @param needBitBucketToken
      * @param testUser
      */
-    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
-        boolean needBitBucketToken, TestUser testUser) {
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres, TestUser testUser) {
         LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
         cleanStatePrivate(support, CONFIDENTIAL_CONFIG_PATH, testUser);
-        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
+        handleBitBucketTokens(testingPostgres);
     }
 
     private static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath, TestUser user) {
@@ -313,47 +235,19 @@ public final class CommonTestUtilities {
     }
 
     /**
-     * Clean the database and reset it with a specific test user, but also manage the bitbucket tokens and set whether we want to restart the web service (I think).
+     * Clean the database and reset it with a specific test user and set whether we want to restart the web service (I think).
      *
-     * For efficiency, bitbucket tests should use this to preserve the bitbucket tokens to avoid them resetting with every test, breaking the cache.
      * @param support
      * @param isNewApplication
      * @param testingPostgres
-     * @param needBitBucketToken
      * @param testUser
      */
     public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken, TestUser testUser) {
+        TestingPostgres testingPostgres, TestUser testUser) {
         LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
 
         cleanStatePrivate(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication, testUser);
-        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
-    }
-
-    public static void cacheBitbucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
-        DockstoreWebserviceApplication application = support.getApplication();
-        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-        TokenDAO tokenDAO = new TokenDAO(sessionFactory);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
-        final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();
-        File cacheDirectory = new File(BITBUCKET_TOKEN_CACHE);
-        if (!cacheDirectory.exists()) {
-            Files.newFolder(BITBUCKET_TOKEN_CACHE);
-        }
-        for (Token token : allBitBucketTokens) {
-            // a token with an update time is not straight from the DB dump OR a token with a expiry date
-            if (token.getDbUpdateDate() != null || (token.getExpirationTime() != null) && Instant.now().isBefore(Instant.ofEpochMilli(token.getExpirationTime()))) {
-                final String serializedToken = gson.toJson(token);
-                try {
-                    FileUtils.writeStringToFile(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"), serializedToken,
-                        StandardCharsets.UTF_8, false);
-                } catch (IOException | UncheckedIOException e) {
-                    LOG.error("could not cache bitbucket token", e);
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+        handleBitBucketTokens(testingPostgres);
     }
 
     /**
@@ -469,47 +363,8 @@ public final class CommonTestUtilities {
         runMigration(migrations, application, configPath);
     }
 
-    private static void handleBitBucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres, boolean needBitBucketToken) {
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        } else {
-            DockstoreWebserviceApplication application = support.getApplication();
-            Session session = application.getHibernate().getSessionFactory().openSession();
-            ManagedSessionContext.bind(session);
-            //TODO restore bitbucket token from disk cache to reduce rate limit from busting cache with new access tokens
-            SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-            TokenDAO tokenDAO = new TokenDAO(sessionFactory);
-            final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
-            for (Token token : allBitBucketTokens) {
-                try {
-                    final String cacheCandidate = FileUtils.readFileToString(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"),
-                        StandardCharsets.UTF_8);
-                    final Token cachedToken = gson.fromJson(cacheCandidate, Token.class);
-                    if (cachedToken != null) {
-                        testingPostgres.runUpdateStatement(
-                            "update token set content = '" + cachedToken.getContent() + "', dbUpdateDate = '" + cachedToken.getDbUpdateDate().toLocalDateTime().toString() + "' where id = "
-                                + cachedToken.getId());
-                    }
-                } catch (IOException | UncheckedIOException | JsonSyntaxException e) {
-                    // probably ok
-                    LOG.debug("could not read bitbucket token", e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Wrapper for dropping and recreating database from migrations for test confidential 2
-     *
-     * @param support reference to testing instance of the dockstore web service
-     * @param testingPostgres reference to the testing instance of Postgres
-     * @param needBitBucketToken if false BitBucket token is deleted
-     */
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) {
-        cleanStatePrivate(support, isNewApplication, testingPostgres, needBitBucketToken, TestUser.TEST_USER2);
+    private static void handleBitBucketTokens(TestingPostgres testingPostgres) {
+        deleteBitBucketToken(testingPostgres);
     }
 
     /**
@@ -520,8 +375,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         TestingPostgres testingPostgres) {
-
-        cleanStatePrivate2(support, isNewApplication, testingPostgres, false);
+        cleanStatePrivate(support, isNewApplication, testingPostgres, TestUser.TEST_USER2);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
         // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
@@ -544,20 +398,11 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @param isNewApplication
      * @param testingPostgres reference to the testing instance of Postgres
-     * @param needBitBucketToken If false BitBucket tokens will be deleted
      */
-    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres,
-        boolean needBitBucketToken) {
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
         LOG.info("Dropping and Recreating the database with confidential 2 test data and additional tools");
         addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        }
-    }
-
-    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
-        addAdditionalToolsWithPrivate2(support,  isNewApplication, testingPostgres, false);
+        deleteBitBucketToken(testingPostgres);
     }
 
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
