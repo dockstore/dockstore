@@ -376,14 +376,14 @@ public class ElasticListener implements StateListenerInterface {
 
     private static List<CategorySummary> selectHumanCategorySummaries(List<CategorySummary> categorySummaries) {
         return categorySummaries.stream()
-            .filter(c -> !c.isAiManaged())
+            .filter(c -> !c.aiManaged())
             .toList();
     }
 
     private static List<CategorySummary> selectAiCategorySummaries(List<CategorySummary> categorySummaries, String ontologyName) {
         return categorySummaries.stream()
-            .filter(c -> c.isAiManaged())
-            .filter(c -> ontologyName.equals(c.getName()) || c.getName().startsWith(ontologyName + "-"))
+            .filter(c -> c.aiManaged())
+            .filter(c -> ontologyName.equals(c.name()) || c.name().startsWith(ontologyName + "-"))
             .toList();
     }
 
@@ -448,8 +448,8 @@ public class ElasticListener implements StateListenerInterface {
         Date lastChanged = ObjectUtils.firstNonNull(entry.getLastModifiedDate(), entry.getLastUpdated());
         double daysSinceLastChange = ChronoUnit.DAYS.between(lastChanged.toInstant(), Instant.now());
         boolean isArchived = entry.isArchived();
-        boolean curatedByDockstore = entry.getCategorySummaries().stream().anyMatch(cs -> cs.getCurator() == EntryVersion.Curator.DOCKSTORE);
-        boolean curatedByUser = entry.getCategorySummaries().stream().anyMatch(cs -> cs.getCurator() == EntryVersion.Curator.USER);
+        boolean curatedByDockstore = entry.getCategorySummaries().stream().anyMatch(cs -> cs.curator() == EntryVersion.Curator.DOCKSTORE);
+        boolean curatedByUser = entry.getCategorySummaries().stream().anyMatch(cs -> cs.curator() == EntryVersion.Curator.USER);
         // Combine the signals into a single numeric measurement.
         // Larger values indicate more "relevance".
         // The following coefficients are tuned to the current state of Dockstore, wherein the maximum

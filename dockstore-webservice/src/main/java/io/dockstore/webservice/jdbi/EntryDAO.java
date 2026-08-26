@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.CollectionEntryGenericSummary;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.EntryLiteAndVersionName;
@@ -179,6 +180,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryById(long id) {
         return this.currentSession().createNamedQuery("Entry.getGenericEntryById", Entry.class).setParameter("id", id).uniqueResult();
+    }
+
+    public CollectionEntryGenericSummary getCollectionEntryGenericSummary(long id) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionEntryGenericSummary", CollectionEntryGenericSummary.class).setParameter("id", id).uniqueResult();
     }
 
     public Entry<? extends Entry, ? extends Version>  getGenericEntryByAlias(String alias) {
