@@ -20,9 +20,13 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Contains summary information about a Category. This class is currently a property of CollectionEntry, and the method EntryDAO.findCategorySummariesByEntryId returns a list of CategorySummaries,
- * allowing us to precisely control the Category information returned with each Entry and eliminating the need to instantiate a full Category object, avoiding any possibility of incurring overhead due
- * to populating unnecessary properties, etc, and any possibly cyclical relationships.
+ * Contains summary information about a Category.
+ * This class is currently a property of CollectionEntry, and the method
+ * EntryDAO.findCategorySummariesByEntryId returns a list of CategorySummaries,
+ * allowing us to precisely control the Category information returned
+ * with each Entry and eliminating the need to instantiate a full Category
+ * object, avoiding any possibility of incurring overhead due to populating
+ * unnecessary properties, etc, and any possibly cyclical relationships.
  */
 public record CategorySummary(long id, String name, String description, String displayName, String topic, EntryVersion.Curator curator, boolean aiManaged, Map<String, String> metadata) implements
     Serializable {

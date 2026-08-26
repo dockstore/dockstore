@@ -19,7 +19,7 @@ package io.dockstore.webservice.core;
 import java.io.Serializable;
 
 /**
- * Contains some additional entry about a generic entry in a collection without havign to deal with the entire Entry.
+ * Contains some additional entry about a generic entry in a collection without having to deal with the entire Entry.
  */
 public record CollectionEntryGenericSummary(long id, Entry.TopicSelection topicSelection, boolean approvedAITopic, String topic) implements
     Serializable {
