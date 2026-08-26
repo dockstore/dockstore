@@ -892,7 +892,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         // check for incompatible format option and header combination
         boolean zipFormat = "zip".equalsIgnoreCase(format);
         boolean jsonOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.equals(MediaType.APPLICATION_JSON_TYPE));
-        if (zipFormat && jsonOnly) {
+        if ((zipFormat && jsonOnly) || type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
