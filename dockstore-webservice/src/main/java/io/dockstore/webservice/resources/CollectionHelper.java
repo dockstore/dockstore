@@ -20,7 +20,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
-import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.CollectionEntryGenericSummary;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
@@ -109,39 +109,35 @@ class CollectionHelper {
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionTools);
         collectionEntries.addAll(collectionToolsWithVersions);
+        Map<Long, List<CategorySummary>> categorySummaryMap = entryDAO.findCategorySummariesByEntryIds(collectionEntries.stream().map(CollectionEntry::getId).collect(Collectors.toList()));
         collectionEntries.forEach(entry -> {
             List<Label> labels = entryDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
             entry.setVerified(!versionDAO.findEntryVersionsWithVerifiedPlatforms(entry.getId()).isEmpty());
-            List<CategorySummary> summaries = entryDAO.findCategorySummariesByEntryId(entry.getId());
-            Entry<?, ?> genericEntry = entryDAO.getGenericEntryById(entry.getId());
-            entry.setTopicSelection(genericEntry.getTopicSelection());
-            entry.setIsApprovedAITopic(genericEntry.isApprovedAITopic());
-            entry.setTopic(genericEntry.getTopic());
+            List<CategorySummary> summaries = categorySummaryMap.get(entry.getId());
+            CollectionEntryGenericSummary collectionEntryGenericSummary = entryDAO.getCollectionEntryGenericSummary(entry.getId());
+            entry.setTopicSelection(collectionEntryGenericSummary.topicSelection());
+            entry.setIsApprovedAITopic(collectionEntryGenericSummary.approvedAITopic());
+            entry.setTopic(collectionEntryGenericSummary.topic());
             entry.setCategorySummaries(summaries);
             switch (entry.getEntryType()) {
-            case "tool":
-                entry.setDescriptorTypes(entryDAO.getToolsDescriptorTypes(entry.getId()));
-                break;
-            case "workflow":
-                entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
-                break;
-            case "apptool":
+            case "tool" -> entry.setDescriptorTypes(entryDAO.getToolsDescriptorTypes(entry.getId()));
+            case "workflow" -> entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
+            case "apptool" -> {
                 entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
                 // we get file descriptor types like workflows, but make the UI treat these as tools (so icon and url work)
                 entry.setEntryType("tool");
-                break;
-            case "notebook":
+            }
+            case "notebook" -> {
                 entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
                 entry.setEntryType("notebook");
-                break;
-            case "service":
+            }
+            case "service" -> {
                 entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
                 entry.setEntryType("service");
-                break;
-            default:
-                throw new UnsupportedOperationException("unexpected entry type when constructing collection");
+            }
+            default -> throw new UnsupportedOperationException("unexpected entry type when constructing collection");
             }
         });
         collection.setCollectionEntries(collectionEntries);

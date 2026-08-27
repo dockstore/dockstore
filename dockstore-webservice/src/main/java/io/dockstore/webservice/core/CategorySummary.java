@@ -28,57 +28,7 @@ import java.util.Map;
  * object, avoiding any possibility of incurring overhead due to populating
  * unnecessary properties, etc, and any possibly cyclical relationships.
  */
-public class CategorySummary implements Serializable {
-    private long id;
-    private String name;
-    private String description;
-    private String displayName;
-    private String topic;
-    private EntryVersion.Curator curator;
-    private boolean aiManaged;
-    private Map<String, String> metadata;
+public record CategorySummary(long id, String name, String description, String displayName, String topic, EntryVersion.Curator curator, boolean aiManaged, Map<String, String> metadata) implements
+    Serializable {
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public CategorySummary(long id, String name, String description, String displayName, String topic, EntryVersion.Curator curator, boolean aiManaged, Map<String, String> metadata) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.displayName = displayName;
-        this.topic = topic;
-        this.curator = curator;
-        this.aiManaged = aiManaged;
-        this.metadata = metadata;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getTopic() {
-        return topic;
-    }
-
-    public EntryVersion.Curator getCurator() {
-        return curator;
-    }
-
-    public boolean isAiManaged() {
-        return aiManaged;
-    }
-
-    public Map<String, String> getMetadata() {
-        return metadata;
-    }
 }
