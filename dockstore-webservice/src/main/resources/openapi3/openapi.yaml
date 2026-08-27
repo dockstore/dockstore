@@ -7823,8 +7823,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, metrics"
+      - description: "Comma-delimited list of fields to include: orcidputcodes, validations,\
+          \ aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -7994,8 +7994,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, metrics"
+      - description: "Comma-delimited list of fields to include: orcidputcodes, validations,\
+          \ aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -8137,8 +8137,8 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, metrics"
+      - description: "Comma-delimited list of fields to include: orcidputcodes, validations,\
+          \ aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -8463,8 +8463,8 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, metrics"
+      - description: "Comma-delimited list of fields to include: orcidputcodes, validations,\
+          \ aliases, images, authors, metrics"
         in: query
         name: include
         schema:
