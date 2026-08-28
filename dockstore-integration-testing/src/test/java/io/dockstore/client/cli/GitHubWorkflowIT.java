@@ -355,7 +355,7 @@ class GitHubWorkflowIT extends BaseIT {
         Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
 
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
         assertFalse(workflowVersions.isEmpty());
         boolean testedWDL = false;
 
@@ -372,7 +372,7 @@ class GitHubWorkflowIT extends BaseIT {
 
         // Test grabbing checksum on snapshot
         Workflow workflow2 = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorLanguage.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
-        WorkflowVersion snapshotVersion = workflow2.getWorkflowVersions().stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
+        WorkflowVersion snapshotVersion = workflowsApi.getWorkflowVersions(workflow2.getId()).stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(snapshotVersion.getId());
         assertNotNull(sourceFiles);
         snapshotWorkflowVersion(workflowsApi, workflow2, "1.0.1");
@@ -510,13 +510,14 @@ class GitHubWorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", BIOWORKFLOW, null);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
-        workflow.getWorkflowVersions().forEach(workflowVersion -> {
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openApiWorkflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
+        workflowVersions.forEach(workflowVersion -> {
             assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", openApiWorkflowsApi.getWorkflowVersionDescription(workflow.getId(), workflowVersion.getId()));
             assertEquals(1, workflowVersion.getAuthors().size());
             assertEquals("Peter Amstutz", workflowVersion.getAuthors().get(0).getName());
             assertEquals("peter.amstutz@curoverse.com", workflowVersion.getAuthors().get(0).getEmail());
         });
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        assertTrue(workflowVersions.stream().anyMatch(versions -> "master".equals(versions.getName())));
         assertEquals("master", workflow.getDefaultVersion(), "Default version should've been set to get metadata");
         assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
         assertEquals(1, workflow.getAuthors().size());
@@ -528,10 +529,10 @@ class GitHubWorkflowIT extends BaseIT {
         final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, "Peter Amstutz", false, "0", 10);
         assertFalse(toolsViaAuthor.isEmpty());
 
-        Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersion = workflowVersions.stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());
-        WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
         assertEquals(2, sourceFiles.size());
         assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/cat-job.json")));
@@ -545,8 +546,9 @@ class GitHubWorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub2 = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", BIOWORKFLOW, null);
         final Workflow workflow2 = userWorkflowsApi.refresh(workflowByPathGithub2.getId(), false);
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
-        Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2.getWorkflowVersions().stream()
+        List<WorkflowVersion> workflow2Versions = userWorkflowsApi.getWorkflowVersions(workflow2.getId());
+        assertTrue(workflow2Versions.stream().anyMatch(versions -> "master".equals(versions.getName())));
+        Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2Versions.stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion2.isPresent());
         WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();

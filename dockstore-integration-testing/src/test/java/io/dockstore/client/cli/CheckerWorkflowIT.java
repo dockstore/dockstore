@@ -332,7 +332,7 @@ class CheckerWorkflowIT extends BaseIT {
 
         // Should be able to download zip for first version
         Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId(), null);
-        workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
+        workflowApi.getWorkflowZip(checkerWorkflow.getId(), workflowApi.getWorkflowVersions(checkerWorkflow.getId()).get(0).getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
         refreshedEntry.getUsers().forEach(entryUser -> {

@@ -316,7 +316,7 @@ public class BaseIT {
     }
 
     static WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
-        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(workflow.getId()).stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
         workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
