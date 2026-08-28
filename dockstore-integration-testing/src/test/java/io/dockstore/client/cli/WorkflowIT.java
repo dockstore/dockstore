@@ -244,12 +244,13 @@ public class WorkflowIT extends BaseIT {
         Long cwlId = cwlWorkflow.getId();
         workflowApi.refresh(cwlId, false);
         Workflow workflow = workflowApi.getWorkflow(cwlId, null);
-        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
+        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(workflow.getId());
+        WorkflowVersion workflowWithLocalImport = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
         ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
         assertFalse(parsedInformation.isHasHTTPImports());
-        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
+        WorkflowVersion workflowWithHTTPImport = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
         ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertFalse(parsedInformationHTTP.isHasLocalImports());
@@ -260,7 +261,8 @@ public class WorkflowIT extends BaseIT {
         Long id = cwlChecker.getId();
         workflowApi.refresh(id, false);
         workflow = workflowApi.getWorkflow(id, null);
-        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
+        workflowVersions = workflowApi.getWorkflowVersions(id);
+        WorkflowVersion workflowWithBothImports = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
         parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());

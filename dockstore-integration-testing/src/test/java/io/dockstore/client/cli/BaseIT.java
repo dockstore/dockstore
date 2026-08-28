@@ -286,10 +286,11 @@ public class BaseIT {
 
         // Refresh should only update the version that is not synced
         workflow = workflowsApi.getWorkflow(workflow.getId(), "");
-        testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+        testBothVersion = workflowVersions.stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertFalse(testBothVersion.isSynced(), "Version should not be synced");
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        testBothVersion = workflowVersions.stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertTrue(testBothVersion.isSynced(), "Version should now be synced");
         assertEquals(correctDescriptorPath, testBothVersion.getWorkflowPath(), "Workflow version path should be set");
     }
@@ -320,7 +321,8 @@ public class BaseIT {
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
         workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
-        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+        return workflowVersions.stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
     }
 
 

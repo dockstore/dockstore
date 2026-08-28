@@ -41,6 +41,7 @@ import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.ModeEnum;
+import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.http.HttpStatus;
@@ -332,7 +333,8 @@ class CheckerWorkflowIT extends BaseIT {
 
         // Should be able to download zip for first version
         Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId(), null);
-        workflowApi.getWorkflowZip(checkerWorkflow.getId(), workflowApi.getWorkflowVersions(checkerWorkflow.getId()).get(0).getId());
+        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(checkerWorkflow.getId());
+        workflowApi.getWorkflowZip(checkerWorkflow.getId(), workflowVersions.get(0).getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
         refreshedEntry.getUsers().forEach(entryUser -> {
@@ -365,7 +367,7 @@ class CheckerWorkflowIT extends BaseIT {
         assertEquals(2, count7, "Two workflows should be published (one being the checker), there are " + count7);
 
         // Should still be able to download zip for first version
-        workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
+        workflowApi.getWorkflowZip(checkerWorkflow.getId(), workflowVersions.get(0).getId());
 
         // Unpublish workflow
         workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
