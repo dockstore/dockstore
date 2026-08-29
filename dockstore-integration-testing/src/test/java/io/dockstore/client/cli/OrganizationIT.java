@@ -3064,6 +3064,83 @@ public class OrganizationIT extends BaseIT {
      * Test Category deletion.
      */
     @Test
+    void testDeleteCollectionsWithMatchingNames() {
+        final io.dockstore.openapi.client.ApiClient webClientAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdmin);
+
+        // Create and approve an organization.
+        io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.createOrganization(openApiStubOrgObject());
+        long organizationId = organization.getId();
+        organizationsApiAdmin.approveOrganization(organizationId);
+
+        // Create collections with distinct names: two that will be deleted, three that will not.
+        for (String name : List.of("aaz", "zaa", "baa", "baaa", "baa123")) {
+            io.dockstore.openapi.client.model.Collection stub = new io.dockstore.openapi.client.model.Collection();
+            stub.setName(name);
+            stub.setDisplayName(name);
+            stub.setDescription("Test collection");
+            organizationsApiAdmin.createCollection(stub, organizationId);
+        }
+        assertEquals(5, organizationsApiAdmin.getCollectionsFromOrganization(organizationId, "").size());
+
+        // Non-admin/non-curator users cannot call the endpoint.
+        final io.dockstore.openapi.client.ApiClient webClientOtherUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOtherUser = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOtherUser);
+        try {
+            organizationsApiOtherUser.deleteCollectionsWithMatchingNames(organizationId, ".*");
+            fail("Non-admin/non-curator should not be able to delete collections.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+        assertEquals(5, organizationsApiAdmin.getCollectionsFromOrganization(organizationId, "").size());
+
+        // Nonexistent organization: code 404.
+        try {
+            organizationsApiAdmin.deleteCollectionsWithMatchingNames(NONEXISTENT_ID, ".*");
+            fail("Should fail with 404 for nonexistent organization.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
+        }
+
+        // Empty regex: code 400.
+        try {
+            organizationsApiAdmin.deleteCollectionsWithMatchingNames(organizationId, "");
+            fail("Should fail with 400 for empty regex.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+
+        // Invalid regex pattern: code 400.
+        try {
+            organizationsApiAdmin.deleteCollectionsWithMatchingNames(organizationId, "[invalid");
+            fail("Should fail with 400 for invalid regex.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+
+        // Regex matching no collections → empty result, collections unchanged.
+        List<String> deleted = organizationsApiAdmin.deleteCollectionsWithMatchingNames(organizationId, "zzzz.*");
+        assertEquals(0, deleted.size());
+        assertEquals(5, organizationsApiAdmin.getCollectionsFromOrganization(organizationId, "").size());
+
+        // Delete collections whose names fully match "baa.*".
+        deleted = organizationsApiAdmin.deleteCollectionsWithMatchingNames(organizationId, "baa.*");
+        assertEquals(3, deleted.size());
+        assertTrue(deleted.containsAll(List.of("baa", "baaa", "baa123")));
+
+        // The two non-matching collections should remain.
+        List<io.dockstore.openapi.client.model.Collection> remaining = organizationsApiAdmin.getCollectionsFromOrganization(organizationId, "");
+        assertEquals(2, remaining.size());
+        List<String> remainingNames = remaining.stream().map(io.dockstore.openapi.client.model.Collection::getName).toList();
+        assertTrue(remainingNames.containsAll(List.of("aaz", "zaa")));
+
+        // A DELETE_COLLECTION event should have been generated for each deleted collection.
+        List<io.dockstore.openapi.client.model.Event> events = organizationsApiAdmin.getOrganizationEvents(organizationId, 0, Integer.MAX_VALUE);
+        long deleteEventCount = events.stream().filter(e -> e.getType() == io.dockstore.openapi.client.model.Event.TypeEnum.DELETE_COLLECTION).count();
+        assertEquals(3, deleteEventCount);
+    }
+
+    @Test
     void testCategoryDeletion() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 

@@ -5324,6 +5324,43 @@ paths:
       tags:
       - organizations
   /organizations/{organizationId}/collections:
+    delete:
+      description: Delete all collections belonging to the given organization whose
+        names match the provided Java regular expression. Returns the list of deleted
+        collection names. Admin/curator only.
+      operationId: deleteCollectionsWithMatchingNames
+      parameters:
+      - description: Organization ID.
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Java regular expression to match collection names against.
+        in: query
+        name: regex
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: OK
+        "400":
+          description: BAD REQUEST
+        "404":
+          description: NOT FOUND
+      security:
+      - BEARER: []
+      summary: Delete collections with names matching a regexp.
+      tags:
+      - organizations
     get:
       description: Retrieve all collections for an organization. Supports optional
         authentication.
