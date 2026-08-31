@@ -1957,6 +1957,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (checkIncludes(include, METRICS)) {
             Hibernate.initialize(workflowVersion.getMetricsByPlatform());
         }
+        // TODO: should this be lazy?
+        //  on one hand a decent number of tests switching over from unbounded versions rely on this and it's just a 1:1 relationship
+        Hibernate.initialize(workflowVersion.getVersionMetadata().getParsedInformationSet());
     }
 
     private Class<? extends Workflow> workflowSubClass(Boolean services, WorkflowSubClass subClass) {
