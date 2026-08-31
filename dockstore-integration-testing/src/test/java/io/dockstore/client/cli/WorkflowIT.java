@@ -199,20 +199,22 @@ public class WorkflowIT extends BaseIT {
     void testWDLLanguageParsingInformation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+
         Workflow wdl = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "WDL",
                         DescriptorLanguage.WDL.toString(), "/test.json");
         Long id = wdl.getId();
         workflowApi.refresh(id, false);
-        Workflow workflow = workflowApi.getWorkflow(id, null);
-        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openWorkflowApi.getWorkflowVersions(id, null, null, null, null, null);
+        io.dockstore.openapi.client.model.WorkflowVersion workflowWithLocalImport = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
-        ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
+        io.dockstore.openapi.client.model.ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
         assertFalse(parsedInformation.isHasHTTPImports());
-        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
+        io.dockstore.openapi.client.model.WorkflowVersion workflowWithHTTPImport = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
-        ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
+        io.dockstore.openapi.client.model.ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertFalse(parsedInformationHTTP.isHasLocalImports());
         assertTrue(parsedInformationHTTP.isHasHTTPImports());
 
@@ -221,8 +223,9 @@ public class WorkflowIT extends BaseIT {
                         DescriptorLanguage.WDL.toString(), "/test.json");
         id = wdlChecker.getId();
         workflowApi.refresh(id, false);
-        workflow = workflowApi.getWorkflow(id, null);
-        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
+        Workflow workflow = workflowApi.getWorkflow(id, null);
+        workflowVersions = openWorkflowApi.getWorkflowVersions(id, null, null, null, null, null);
+        io.dockstore.openapi.client.model.WorkflowVersion workflowWithBothImports = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
         parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
@@ -298,6 +301,7 @@ public class WorkflowIT extends BaseIT {
     void testTableToolAndDagContent() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/cwl-gene-prioritization", "", "cwl", SourceControl.GITHUB, "/Dockstore.cwl", true);
         assertEquals("Other", workflow.getLicenseInformation().getLicenseName());
@@ -367,7 +371,7 @@ public class WorkflowIT extends BaseIT {
 
         // Test freezing versions (uses a different workflow that has versioned images)
         workflow = manualRegisterAndPublish(workflowApi, "dockstore-testing/hello_world", "", CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
-        WorkflowVersion frozenVersion = snapshotWorkflowVersion(workflowApi, workflow, "1.0.1");
+        io.dockstore.openapi.client.model.WorkflowVersion frozenVersion = snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "1.0.1");
         String frozenDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         String frozenToolTableJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         assertNotNull(frozenDagJson);
@@ -764,12 +768,13 @@ public class WorkflowIT extends BaseIT {
     void testSnapshotImageFailures() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         Workflow workflow = manualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
         String errorMessage = "Snapshot for version %s failed because not all images are specified using a digest nor a valid tag.";
 
         // Test that the snapshot fails for a workflow version containing an image with no tag
         try {
-            snapshotWorkflowVersion(workflowsApi, workflow, "noTagImage");
+            snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "noTagImage");
             fail("Should not be able to snapshot a workflow version containing an image with no tag.");
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains(String.format(errorMessage, "noTagImage")));
@@ -777,7 +782,7 @@ public class WorkflowIT extends BaseIT {
 
         // Test that the snapshot fails for a workflow version containing an image with the 'latest' tag
         try {
-            snapshotWorkflowVersion(workflowsApi, workflow, "latestTagImage");
+            snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "latestTagImage");
             fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains(String.format(errorMessage, "latestTagImage")));
@@ -785,7 +790,7 @@ public class WorkflowIT extends BaseIT {
 
         // Test that the snapshot fails for a workflow version containing an image specified using a parameter
         try {
-            snapshotWorkflowVersion(workflowsApi, workflow, "parameterImage");
+            snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "parameterImage");
             fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains(String.format(errorMessage, "parameterImage")));
@@ -802,6 +807,7 @@ public class WorkflowIT extends BaseIT {
     void testNestedWdlWorkflow() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         // Set up postgres
 
@@ -819,10 +825,10 @@ public class WorkflowIT extends BaseIT {
 
         // Confirm that correct number of sourcefiles are found
         githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId(), null);
-        List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
+        List<io.dockstore.openapi.client.model.WorkflowVersion> versions = openWorkflowApi.getWorkflowVersions(githubWorkflow.getId(), null, null,  null, null, null);
         assertEquals(2, versions.size(), "There should be two versions");
 
-        Optional<WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop"))
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop"))
             .findFirst();
         if (loopVersion.isPresent()) {
             assertEquals(2, fileDAO.findSourceFilesByVersion(loopVersion.get().getId()).size(), "There should be two sourcefiles");
@@ -830,7 +836,7 @@ public class WorkflowIT extends BaseIT {
             fail("Could not find version infinite-loop");
         }
 
-        Optional<WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master"))
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master"))
             .findFirst();
         if (masterVersion.isPresent()) {
             assertEquals(3, fileDAO.findSourceFilesByVersion(masterVersion.get().getId()).size(), "There should be three sourcefiles");
@@ -1068,6 +1074,9 @@ public class WorkflowIT extends BaseIT {
     void testWorkflowVersionAliasesAreReturned() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
                 "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
@@ -1091,73 +1100,86 @@ public class WorkflowIT extends BaseIT {
         // Do not include the validation parameter that requests workflow version aliases be included in the returned object
         // So the aliases portion of the returned object should be null
         Workflow workflowById = workflowApi.getWorkflow(workflow.getId(), null);
-        Optional<WorkflowVersion> optionalWorkflowVersionById = workflowById.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openWorkflowApi.getWorkflowVersions(workflowById.getId(), null, null, null, null, null);
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionById = workflowVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionById.isPresent());
-        WorkflowVersion workflowVersionById = optionalWorkflowVersionById.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionById = optionalWorkflowVersionById.get();
         assertNull(workflowVersionById.getAliases(), "Getting workflow version via workflow ID has null alias");
 
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflow.getId(), null);
         assertNotNull(publishedWorkflow, "did not get published workflow");
-        Optional<WorkflowVersion> optionalWorkflowVersionByPublished = publishedWorkflow.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflow.getId(), null, null, null, null, null);
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPublished = publishedWorkflowVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublished.isPresent());
-        WorkflowVersion workflowVersionByPublished = optionalWorkflowVersionByPublished.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByPublished = optionalWorkflowVersionByPublished.get();
         assertNull(workflowVersionByPublished.getAliases(), "Getting workflow version via published workflow has null alias");
 
         final Workflow workflowByPath = workflowApi
-                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "versions");
+                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowByPathVersions = openWorkflowApi.getWorkflowVersions(workflowByPath.getId(), null, null, null, null, null);
         assertNotNull(workflowByPath, "did not get published workflow by path");
-        Optional<WorkflowVersion> optionalWorkflowVersionByPath = workflowByPath.getWorkflowVersions().stream()
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPath = workflowByPathVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPath.isPresent());
-        WorkflowVersion workflowVersionByPath = optionalWorkflowVersionByPath.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByPath = optionalWorkflowVersionByPath.get();
         assertNull(workflowVersionByPath.getAliases(), "Getting workflow version via workflow path has null alias");
 
         final Workflow publishedWorkflowByPath = workflowApi
-                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "versions",  null);
+                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null,  null);
         assertNotNull(publishedWorkflowByPath, "did not get published workflow by path");
-        Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPath = publishedWorkflowByPath.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowByPathVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowByPath.getId(), null, null, null, null, null);
+
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPublishedByPath = publishedWorkflowByPathVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublishedByPath.isPresent());
-        WorkflowVersion workflowVersionByPublishedByPath = optionalWorkflowVersionByPublishedByPath.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByPublishedByPath = optionalWorkflowVersionByPublishedByPath.get();
         assertNull(workflowVersionByPublishedByPath.getAliases(), "Getting workflow version via published workflow has null alias");
 
 
 
         // Include the validation parameter that requests workflow version aliases be included in the returned object
-        Workflow workflowByIdValidation = workflowApi.getWorkflow(workflow.getId(), "aliases");
-        Optional<WorkflowVersion> optionalWorkflowVersionByIdValidation = workflowByIdValidation.getWorkflowVersions().stream()
+        Workflow workflowByIdValidation = workflowApi.getWorkflow(workflow.getId(), null);
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowByIdValidationVersions = openWorkflowApi.getWorkflowVersions(workflowByIdValidation.getId(), null, null, null, null, "aliases");
+
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByIdValidation = workflowByIdValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByIdValidation.isPresent());
-        WorkflowVersion workflowVersionByIdValidation = optionalWorkflowVersionByIdValidation.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByIdValidation = optionalWorkflowVersionByIdValidation.get();
         assertFalse(MapUtils.isEmpty(workflowVersionByIdValidation.getAliases()), "Getting workflow version via workflow ID has null or empty alias");
 
         final Workflow publishedWorkflowValidation = workflowApi.getPublishedWorkflow(workflow.getId(), "aliases");
         assertNotNull(publishedWorkflowValidation, "did not get published workflow");
-        Optional<WorkflowVersion> optionalWorkflowVersionByPublishedValidation = publishedWorkflowValidation.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowValidationVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowValidation.getId(), null, null, null, null, "aliases");
+
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPublishedValidation = publishedWorkflowValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublishedValidation.isPresent());
-        WorkflowVersion workflowVersionByPublishedValidation = optionalWorkflowVersionByPublishedValidation.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByPublishedValidation = optionalWorkflowVersionByPublishedValidation.get();
         assertFalse(MapUtils.isEmpty(workflowVersionByPublishedValidation.getAliases()), "Getting workflow version via published workflow has null or empty alias");
 
         final Workflow workflowByPathValidation = workflowApi
                 .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "aliases");
         assertNotNull(workflowByPathValidation, "did not get published workflow by path");
-        Optional<WorkflowVersion> optionalWorkflowVersionByPathValidation = workflowByPathValidation.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowByPathValidationVersions = openWorkflowApi.getWorkflowVersions(workflowByPathValidation.getId(), null, null, null, null, "aliases");
+
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPathValidation = workflowByPathValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPathValidation.isPresent());
-        WorkflowVersion workflowVersionByPathValidation = optionalWorkflowVersionByPathValidation.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByPathValidation = optionalWorkflowVersionByPathValidation.get();
         assertFalse(MapUtils.isEmpty(workflowVersionByPathValidation.getAliases()), "Getting workflow version via workflow path has null or empty alias");
 
 
         final Workflow publishedWorkflowByPathValidation = workflowApi
                 .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "aliases", null);
         assertNotNull(publishedWorkflowByPathValidation, "did not get published workflow by path");
-        Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPathValidation = publishedWorkflowByPathValidation.getWorkflowVersions().stream()
+        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowByPathValidationVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowByPathValidation.getId(), null, null, null, null, "aliases");
+
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPublishedByPathValidation = publishedWorkflowByPathValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublishedByPathValidation.isPresent());
-        WorkflowVersion workflowVersionByPublishedByPathValidation = optionalWorkflowVersionByPublishedByPathValidation.get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersionByPublishedByPathValidation = optionalWorkflowVersionByPublishedByPathValidation.get();
         assertFalse(MapUtils.isEmpty(workflowVersionByPublishedByPathValidation.getAliases()), "Getting workflow version via published workflow has null alias");
 
     }

@@ -201,8 +201,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String METRICS = "metrics";
     private static final String ENTRY_METRICS = "entrymetrics";
     private static final String VERSION_INCLUDE = VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + AUTHORS + ", " + METRICS;
-    private static final List<String> VERSION_INCLUDE_LIST = List.of(VERSION_INCLUDE.split(", "));
-    private static final String WORKFLOW_INCLUDE = ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
+    private static final String WORKFLOW_INCLUDE = ORCID_PUT_CODES + ", " + ENTRY_METRICS;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE;
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
