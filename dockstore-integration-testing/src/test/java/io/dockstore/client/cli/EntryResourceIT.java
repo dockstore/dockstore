@@ -64,7 +64,7 @@ class EntryResourceIT extends BaseIT {
         assertTrue(workflows.size() > 0);
 
         Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
-        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         Long workflowVersionId = workflowVersions.get(0).getId();
 
         // The provided workflow should have a description

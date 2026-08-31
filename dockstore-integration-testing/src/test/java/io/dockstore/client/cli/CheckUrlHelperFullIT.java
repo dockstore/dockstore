@@ -171,7 +171,7 @@ public class CheckUrlHelperFullIT {
 
     private WorkflowVersion getWorkflowVersion(WorkflowsApi client) {
         Workflow workflow = getFoobar1Workflow(client);
-        Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("0.1")).findFirst();
+        Optional<WorkflowVersion> first = client.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream().filter(version -> version.getName().equals("0.1")).findFirst();
         return first.get();
     }
     private Long rowsWithPublicAccessibleData() {
