@@ -123,8 +123,8 @@ class ValidationIT extends BaseIT {
         return false;
     }
 
-    protected boolean isWorkflowVersionValid(io.dockstore.openapi.client.model.Workflow workflow, String name) {
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
+    protected boolean isWorkflowVersionValid(io.dockstore.openapi.client.model.Workflow workflow, final String name, io.dockstore.openapi.client.api.WorkflowsApi client) {
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersion = client.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream()
                 .filter(version -> Objects.equals(name, version.getName())).findFirst();
 
         if (workflowVersion.isPresent()) {
@@ -421,7 +421,7 @@ class ValidationIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
         io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
-        assertFalse(isWorkflowVersionValid(service, "missingFile"), "Should be invalid due to missing file in dockstore.yml");
+        assertFalse(isWorkflowVersionValid(service, "missingFile", client), "Should be invalid due to missing file in dockstore.yml");
     }
 
     @Test

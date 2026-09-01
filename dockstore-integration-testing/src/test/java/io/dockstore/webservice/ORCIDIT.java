@@ -104,7 +104,7 @@ public class ORCIDIT extends BaseIT {
         handleGitHubRelease(workflowsApi, DockstoreTestUser2.TEST_AUTHORS, "refs/heads/main", USER_2_USERNAME);
         // WDL workflow
         Workflow workflow = workflowsApi.getWorkflowByPath(wdlWorkflowRepoPath, WorkflowSubClass.BIOWORKFLOW, "versions,authors");
-        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(2, version.getAuthors().size());
         assertEquals(2, version.getOrcidAuthors().size());
 
@@ -140,7 +140,7 @@ public class ORCIDIT extends BaseIT {
         workflowsApi.refresh1(workflowId, false);
         assertTrue(workflows.size() > 0);
         Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
-        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         Long workflowVersionId = workflowVersions.get(0).getId();
 
         try {
@@ -244,7 +244,7 @@ public class ORCIDIT extends BaseIT {
         Long workflowId = workflow.getId();
         workflowsApi.refresh1(workflowId, false);
         workflow = workflowsApi.getWorkflow(workflowId, null);
-        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         Long workflowVersionId = workflowVersions.get(0).getId();
 
         // Give otherUser access to the workflow to mimic being part of the same GitHub organization as the first user

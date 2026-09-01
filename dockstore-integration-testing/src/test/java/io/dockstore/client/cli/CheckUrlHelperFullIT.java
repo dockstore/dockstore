@@ -147,20 +147,20 @@ public class CheckUrlHelperFullIT {
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
         // Confirm the above worked cleared out the publicaccessibletestparameterfile
         wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
-        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
+        workflowsApi.getWorkflowVersions(wdlWorkflow.getId(), null, null, null, null, null).forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
         cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
-        cwlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
+        workflowsApi.getWorkflowVersions(cwlWorkflow.getId(), null, null, null, null, null).forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
 
         final Integer processed = entriesApi.updateOpenData(Boolean.TRUE);
         assertEquals(2, processed);
 
         wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
-        final WorkflowVersion wdlOneZeroZero = wdlWorkflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("1.0.0"))
+        final WorkflowVersion wdlOneZeroZero = workflowsApi.getWorkflowVersions(wdlWorkflow.getId(), null, null, null, null, null).stream().filter(wv -> wv.getName().equals("1.0.0"))
                 .findFirst().get();
         assertTrue(wdlOneZeroZero.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Version 1.0.0 has no file inputs, should be open");
 
         cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
-        final WorkflowVersion testCwl = cwlWorkflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("testCWL"))
+        final WorkflowVersion testCwl = workflowsApi.getWorkflowVersions(cwlWorkflow.getId(), null, null, null, null, null).stream().filter(wv -> wv.getName().equals("testCWL"))
                 .findFirst().get();
         assertFalse(testCwl.getVersionMetadata().isPublicAccessibleTestParameterFile(), "testCWL has a file input, but no test parameter file, should not be open");
     }

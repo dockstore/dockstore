@@ -223,7 +223,6 @@ public class WorkflowIT extends BaseIT {
                         DescriptorLanguage.WDL.toString(), "/test.json");
         id = wdlChecker.getId();
         workflowApi.refresh(id, false);
-        Workflow workflow = workflowApi.getWorkflow(id, null);
         workflowVersions = openWorkflowApi.getWorkflowVersions(id, null, null, null, null, null);
         io.dockstore.openapi.client.model.WorkflowVersion workflowWithBothImports = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
@@ -776,7 +775,7 @@ public class WorkflowIT extends BaseIT {
         try {
             snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "noTagImage");
             fail("Should not be able to snapshot a workflow version containing an image with no tag.");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains(String.format(errorMessage, "noTagImage")));
         }
 
@@ -784,7 +783,7 @@ public class WorkflowIT extends BaseIT {
         try {
             snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "latestTagImage");
             fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains(String.format(errorMessage, "latestTagImage")));
         }
 
@@ -792,7 +791,7 @@ public class WorkflowIT extends BaseIT {
         try {
             snapshotWorkflowVersion(openWorkflowApi, workflow.getId(), "parameterImage");
             fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains(String.format(errorMessage, "parameterImage")));
         }
     }

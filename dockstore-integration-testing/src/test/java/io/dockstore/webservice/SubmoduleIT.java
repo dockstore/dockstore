@@ -58,8 +58,8 @@ class SubmoduleIT extends BaseIT {
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.10-test", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
-        assertTrue(foobar.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
+        assertTrue(workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).stream().allMatch(WorkflowVersion::isValid));
         // these files are in a different repo entirely
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
@@ -75,8 +75,8 @@ class SubmoduleIT extends BaseIT {
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.11-no-submodule-https-imports", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
-        assertTrue(foobar.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
+        assertTrue(workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).stream().allMatch(WorkflowVersion::isValid));
         // this tag removes a common local import in a local import resulting in a huge load of https imports
         assertEquals(EXPECTED_NUM_SOURCEFILES - 1, sourcefiles.size());
     }
@@ -89,8 +89,8 @@ class SubmoduleIT extends BaseIT {
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.11-no-submodule", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
-        assertTrue(foobar.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
+        assertTrue(workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).stream().allMatch(WorkflowVersion::isValid));
         // this test really just checks that the contents are more or less the same as when there is a submodule
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
@@ -104,7 +104,7 @@ class SubmoduleIT extends BaseIT {
 
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.10-test", USER_2_USERNAME);
         Workflow foobarWithSubmodules = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final List<SourceFile> sourcefilesWithSubmodules = workflowClient.getWorkflowVersionsSourcefiles(foobarWithSubmodules.getId(), foobarWithSubmodules.getWorkflowVersions().get(0).getId(), null);
+        final List<SourceFile> sourcefilesWithSubmodules = workflowClient.getWorkflowVersionsSourcefiles(foobarWithSubmodules.getId(), workflowClient.getWorkflowVersions(foobarWithSubmodules.getId(), null, null, null, null, null).get(0).getId(), null);
         List<String> subNormalPaths = sourcefilesWithSubmodules.stream().map(SourceFile::getPath).sorted().toList();
         List<String> subNormalContent = sourcefilesWithSubmodules.stream().filter(s -> !s.getType().equals(TypeEnum.DOCKSTORE_YML)).map(SourceFile::getContent).sorted().toList();
         List<String> subAbsolutePaths = sourcefilesWithSubmodules.stream().map(SourceFile::getAbsolutePath).sorted().toList();
@@ -122,8 +122,8 @@ class SubmoduleIT extends BaseIT {
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.11-submodule-in-submodule", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        assertTrue(foobar.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
-        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
+        assertTrue(workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).stream().allMatch(WorkflowVersion::isValid));
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
         // these files are in a different repo entirely
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
@@ -142,8 +142,8 @@ class SubmoduleIT extends BaseIT {
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.11-bitbucket-submodule", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        assertTrue(foobar.getWorkflowVersions().stream().noneMatch(WorkflowVersion::isValid));
-        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
+        assertTrue(workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).stream().noneMatch(WorkflowVersion::isValid));
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
         // these files are not present
         assertFalse(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertFalse(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
