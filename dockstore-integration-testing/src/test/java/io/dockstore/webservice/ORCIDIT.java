@@ -103,8 +103,8 @@ public class ORCIDIT extends BaseIT {
         // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
         handleGitHubRelease(workflowsApi, DockstoreTestUser2.TEST_AUTHORS, "refs/heads/main", USER_2_USERNAME);
         // WDL workflow
-        Workflow workflow = workflowsApi.getWorkflowByPath(wdlWorkflowRepoPath, WorkflowSubClass.BIOWORKFLOW, "versions,authors");
-        WorkflowVersion version = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream().filter(v -> v.getName().equals("main")).findFirst().get();
+        Workflow workflow = workflowsApi.getWorkflowByPath(wdlWorkflowRepoPath, WorkflowSubClass.BIOWORKFLOW, "authors");
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, "authors").stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(2, version.getAuthors().size());
         assertEquals(2, version.getOrcidAuthors().size());
 
