@@ -196,14 +196,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
-    private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
     private static final String ORCID_PUT_CODES = "orcidputcodes";
     private static final String METRICS = "metrics";
     private static final String ENTRY_METRICS = "entrymetrics";
     private static final String VERSION_INCLUDE = VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + AUTHORS + ", " + METRICS;
-    private static final List<String> VERSION_INCLUDE_LIST = List.of(VERSION_INCLUDE.split(", "));
-    private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
+    private static final String WORKFLOW_INCLUDE = ORCID_PUT_CODES + ", " + ENTRY_METRICS;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE;
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
@@ -390,9 +388,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
-        // This should be removed once we have a workflows/{workflowId}/version/{versionId} endpoint
-        workflow.getWorkflowVersions().forEach(version -> Hibernate.initialize(version.getVersionMetadata().getParsedInformationSet()));
-        initializeAdditionalFields(include, workflow);
+        initializeAdditionalWorkflowFields(include, workflow);
         return workflow;
     }
 
@@ -781,7 +777,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkNotNullEntry(workflow);
-        initializeAdditionalFields(include, workflow);
+        initializeAdditionalWorkflowFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return filterContainersForHiddenTags(workflow);
     }
@@ -901,7 +897,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanExamine(user, workflow);
         Hibernate.initialize(workflow.getAliases());
-        initializeAdditionalFields(include, workflow);
+        initializeAdditionalWorkflowFields(include, workflow);
         return workflow;
     }
 
@@ -1128,7 +1124,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
 
         Hibernate.initialize(workflow.getAliases());
-        initializeAdditionalFields(include, workflow, false);
+        initializeAdditionalWorkflowFields(include, workflow);
         setWorkflowVersionSubset(workflow, include, versionName);
         filterContainersForHiddenTags(workflow);
         return workflow;
@@ -1916,40 +1912,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * If include contains validations field, initialize the workflows validations for all of its workflow versions If include contains aliases field, initialize the aliases for all of its workflow
-     * versions If include contains images field, initialize the images for all of its workflow versions If include contains versions field, initialize the versions for the workflow If include
-     * contains authors field, initialize the authors for all of its workflow versions If include contains orcid_put_codes field, initialize the authors for all of its workflow versions
-     *
-     * @param include
-     * @param workflow
-     */
-    private void initializeAdditionalFields(String include, Workflow workflow) {
-        initializeAdditionalFields(include, workflow, true);
-    }
-
-    /**
-     * Initialize some of the lazy fields of the specified workflow and its versions.
-     * If include contains versions field, initialize the versions for the workflow.
+     * Initialize some lazy fields of the specified workflow. Will intentionally not initialize versions as of <a href="https://ucsc-cgl.atlassian.net/browse/SEAB-5761">SEAB-5761</a>
      * If include contains validations field, initialize the workflows validations for all of its workflow versions.
      * If include contains aliases field, initialize the aliases for all of its workflow versions.
      * If include contains images field, initialize the images for all of its workflow versions.
      * If include contains authors field, initialize the authors for all of its workflow versions.
      * If include contains orcid_put_codes field, initialize the authors for all of its workflow versions.
-     * Do not initialize any workflow versions if initializeVersions is false.
      *
      * @param include
      * @param workflow
-     * @param initializeVersions
      */
-    private void initializeAdditionalFields(String include, Workflow workflow, boolean initializeVersions) {
-        final boolean containsVersionIncludes = VERSION_INCLUDE_LIST.stream().anyMatch(versionInclude -> checkIncludes(include, versionInclude));
-        if (containsVersionIncludes && initializeVersions) {
-            workflow.getWorkflowVersions().forEach(workflowVersion -> initializeAdditionalFields(include, workflowVersion));
-        }
-
-        if (checkIncludes(include, VERSIONS) && initializeVersions) {
-            Hibernate.initialize(workflow.getWorkflowVersions());
-        }
+    private void initializeAdditionalWorkflowFields(String include, Workflow workflow) {
         if (checkIncludes(include, ORCID_PUT_CODES)) {
             Hibernate.initialize(workflow.getUserIdToOrcidPutCode());
         }
@@ -1959,8 +1932,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * If include contains validations field, initialize the validations for the workflow version If include contains aliases field, initialize the aliases for the workflow version If include contains
-     * images field, initialize the images for the workflow version If include contains authors field, initialize the authors for the workflow version
+     * This is called by endpoints that deal with speciic versions of workflows.
+     * If include contains validations field, initialize the validations for the workflow version
+     * If include contains aliases field, initialize the aliases for the workflow version
+     * If include contains images field, initialize the images for the workflow version
+     * If include contains authors field, initialize the authors for the workflow version
      *
      * @param include
      * @param workflowVersion
@@ -1981,6 +1957,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (checkIncludes(include, METRICS)) {
             Hibernate.initialize(workflowVersion.getMetricsByPlatform());
         }
+        // TODO: should this be lazy?
+        // on one hand a decent number of tests switching over from unbounded versions rely on this and it's just a 1:1 relationship
+        Hibernate.initialize(workflowVersion.getVersionMetadata().getParsedInformationSet());
     }
 
     private Class<? extends Workflow> workflowSubClass(Boolean services, WorkflowSubClass subClass) {

@@ -234,6 +234,7 @@ public class BaseIT {
     static void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         String correctDescriptorPath = "/Dockstore.cwl";
         String incorrectDescriptorPath = "/Dockstore2.cwl";
@@ -286,12 +287,15 @@ public class BaseIT {
 
         // Refresh should only update the version that is not synced
         workflow = workflowsApi.getWorkflow(workflow.getId(), "");
-        testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+        testBothVersion = workflowVersions.stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertFalse(testBothVersion.isSynced(), "Version should not be synced");
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
-        assertTrue(testBothVersion.isSynced(), "Version should now be synced");
-        assertEquals(correctDescriptorPath, testBothVersion.getWorkflowPath(), "Workflow version path should be set");
+        List<io.dockstore.openapi.client.model.WorkflowVersion> openWorkflowVersions = openWorkflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
+        io.dockstore.openapi.client.model.WorkflowVersion openTestBothVersion = openWorkflowVersions.stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest))
+            .findFirst().get();
+        assertTrue(openTestBothVersion.isSynced(), "Version should now be synced");
+        assertEquals(correctDescriptorPath, openTestBothVersion.getWorkflowPath(), "Workflow version path should be set");
     }
 
     static void refreshByOrganizationReplacement(io.dockstore.openapi.client.api.WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
@@ -315,15 +319,15 @@ public class BaseIT {
         return ownerWorkflowApi.refresh(workflow.getId(), false);
     }
 
-    static WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
-        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+    static io.dockstore.openapi.client.model.WorkflowVersion snapshotWorkflowVersion(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, long workflowId, String versionName) {
+        io.dockstore.openapi.client.model.WorkflowVersion version = workflowsApi.getWorkflowVersions(workflowId, null, null, null, null, "images").stream().filter(v -> v.getName().equals(versionName))
+            .findFirst().get();
         version.setFrozen(true);
-        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
-        workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
-        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        workflowsApi.updateWorkflowVersion(workflowId, Collections.singletonList(version));
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflowId, null, null, null, null, null);
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = workflowVersions.stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        return workflowsApi.getWorkflowVersionById(workflowId, workflowVersion.getId(), "images");
     }
-
-
 
     protected final String curatorUsername = "curator@curator.com";
 

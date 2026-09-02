@@ -30,6 +30,7 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.common.collect.Lists;
 import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -607,8 +608,8 @@ public final class CommonTestUtilities {
         return hostedWorkflow;
     }
 
-    public static Optional<WorkflowVersion> getWorkflowVersion(Workflow workflow, String versionName) {
-        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst();
+    public static Optional<WorkflowVersion> getWorkflowVersion(Workflow workflow, String versionName, WorkflowsApi workflowsApi) {
+        return workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream().filter(v -> v.getName().equals(versionName)).findFirst();
     }
 
     /**

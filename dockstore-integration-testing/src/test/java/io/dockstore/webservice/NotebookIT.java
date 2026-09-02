@@ -157,8 +157,9 @@ class NotebookIT extends BaseIT {
         assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
         assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
-        assertEquals(1, notebook.getWorkflowVersions().size());
-        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        List<WorkflowVersion> notebookVersions = workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null);
+        assertEquals(1, notebookVersions.size());
+        WorkflowVersion version = notebookVersions.get(0);
         assertEquals("/notebook.ipynb", version.getWorkflowPath());
         assertTrue(version.isValid());
         assertEquals(Set.of("Author One", "Author Two"), version.getAuthors().stream().map(Author::getName).collect(Collectors.toSet()));
@@ -176,7 +177,7 @@ class NotebookIT extends BaseIT {
         String path = simpleRepoPath + "/simple";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
-        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).get(0);
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
     }
@@ -192,8 +193,8 @@ class NotebookIT extends BaseIT {
         assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
         assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
-        assertEquals(1, notebook.getWorkflowVersions().size());
-        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertEquals(1, workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).size());
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).get(0);
         assertTrue(version.isValid());
         assertEquals(List.of("3.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
@@ -205,8 +206,8 @@ class NotebookIT extends BaseIT {
         handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/corrupt-ipynb-v1", USER_2_USERNAME);
         // The update should be "successful" but there should be a negative validation on the notebook file.
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
-        assertEquals(1, notebook.getWorkflowVersions().size());
-        assertFalse(notebook.getWorkflowVersions().get(0).isValid());
+        assertEquals(1, workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).size());
+        assertFalse(workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).get(0).isValid());
     }
 
     @Test
@@ -244,8 +245,8 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
         String path = simpleRepoPath + "/" + name;
-        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
-        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, null);
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).get(0);
         return workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
     }
 
@@ -290,8 +291,8 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/with-kernel-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
-        assertEquals(1, notebook.getWorkflowVersions().size());
-        assertEquals("quay.io/seqware/seqware_full/1.1", notebook.getWorkflowVersions().get(0).getKernelImagePath());
+        assertEquals(1, workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).size());
+        assertEquals("quay.io/seqware/seqware_full/1.1", workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).get(0).getKernelImagePath());
     }
 
     @Test
@@ -316,7 +317,7 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/with-tagged-kernel-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
-        WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        WorkflowVersion version = workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).stream().filter(WorkflowVersion::isValid).findFirst().get();
         // Publish the notebook
         PublishRequest publishRequest = new PublishRequest();
         publishRequest.setPublish(true);
@@ -328,7 +329,7 @@ class NotebookIT extends BaseIT {
         workflowsApi.updateWorkflowVersion(notebook.getId(), List.of(version));
         // Confirm that the version is frozen and the Image is stored
         notebook = workflowsApi.getWorkflow(notebook.getId(), null);
-        version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        version = workflowsApi.getWorkflowVersions(notebook.getId(), null, null, null, null, null).stream().filter(WorkflowVersion::isValid).findFirst().get();
         assertTrue(version.isFrozen());
         assertEquals(1, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
     }
