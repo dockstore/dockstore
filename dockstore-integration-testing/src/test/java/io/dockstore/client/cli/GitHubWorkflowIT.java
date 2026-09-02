@@ -259,7 +259,7 @@ class GitHubWorkflowIT extends BaseIT {
         Workflow workflow = manualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
         io.dockstore.openapi.client.model.WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "quayMultiArchImages");
         // This multi-arch image was created using the buildx method
-        List<io.dockstore.openapi.client.model.Image> buildxImages = version.getImages().stream().filter(image -> "skopeo/stable".equals(image.getRepository())).toList();
+        List<Image> buildxImages = version.getImages().stream().filter(image -> "skopeo/stable".equals(image.getRepository())).toList();
         assertTrue(buildxImages.size() >= 4, "Should have at least 4 images for skopeo/stable@sha256:656733c60ea7a8e45f2c7f0c86b24fc9f388d44c5a7d6d482ec59fbabcdb4eee image");
         // This multi-arch image was created using the docker manifest method
         List<Image> dockerManifestImages = version.getImages().stream().filter(image -> "openshift-release-dev/ocp-release".equals(image.getRepository())).toList();

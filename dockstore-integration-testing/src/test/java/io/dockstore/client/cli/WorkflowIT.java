@@ -262,7 +262,6 @@ public class WorkflowIT extends BaseIT {
                         CWL.toString(), "/test.json");
         Long id = cwlChecker.getId();
         workflowApi.refresh(id, false);
-        workflow = workflowApi.getWorkflow(id, null);
         workflowVersions = workflowApi.getWorkflowVersions(id);
         WorkflowVersion workflowWithBothImports = workflowVersions.stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
@@ -1150,7 +1149,8 @@ public class WorkflowIT extends BaseIT {
 
         final Workflow publishedWorkflowValidation = workflowApi.getPublishedWorkflow(workflow.getId(), "aliases");
         assertNotNull(publishedWorkflowValidation, "did not get published workflow");
-        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowValidationVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowValidation.getId(), null, null, null, null, "aliases");
+        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowValidationVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowValidation.getId(), null, null, null, null,
+            "aliases");
 
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPublishedValidation = publishedWorkflowValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
@@ -1161,7 +1161,8 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathValidation = workflowApi
                 .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "aliases");
         assertNotNull(workflowByPathValidation, "did not get published workflow by path");
-        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowByPathValidationVersions = openWorkflowApi.getWorkflowVersions(workflowByPathValidation.getId(), null, null, null, null, "aliases");
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowByPathValidationVersions = openWorkflowApi.getWorkflowVersions(workflowByPathValidation.getId(), null, null, null, null,
+            "aliases");
 
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPathValidation = workflowByPathValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
@@ -1173,7 +1174,8 @@ public class WorkflowIT extends BaseIT {
         final Workflow publishedWorkflowByPathValidation = workflowApi
                 .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "aliases", null);
         assertNotNull(publishedWorkflowByPathValidation, "did not get published workflow by path");
-        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowByPathValidationVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowByPathValidation.getId(), null, null, null, null, "aliases");
+        List<io.dockstore.openapi.client.model.WorkflowVersion> publishedWorkflowByPathValidationVersions = openWorkflowApi.getWorkflowVersions(publishedWorkflowByPathValidation.getId(), null, null,
+            null, null, "aliases");
 
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersionByPublishedByPathValidation = publishedWorkflowByPathValidationVersions.stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();

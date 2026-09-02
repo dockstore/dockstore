@@ -218,7 +218,7 @@ class CRUDClientIT extends BaseIT {
             // Setting it to null afterwards to compare with the getWorkflow endpoint since that one doesn't return user profiles
             user.setUserProfiles(null);
         });
-        assertTrue(hostedTool.getId() != 0, "workflow was not created with a valid if");
+        assertNotEquals(0, hostedTool.getId(), "workflow was not created with a valid if");
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
         Workflow container = oldApi.getWorkflow(hostedTool.getId(), null);

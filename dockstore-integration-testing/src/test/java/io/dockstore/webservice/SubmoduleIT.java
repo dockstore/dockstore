@@ -58,7 +58,8 @@ class SubmoduleIT extends BaseIT {
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.10-test", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(),
+            workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).get(0).getId(), null);
         assertTrue(workflowClient.getWorkflowVersions(foobar.getId(), null, null, null, null, null).stream().allMatch(WorkflowVersion::isValid));
         // these files are in a different repo entirely
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
@@ -104,7 +105,8 @@ class SubmoduleIT extends BaseIT {
 
         handleGitHubRelease(workflowClient, DockstoreTesting.WDL_HUMANWGS, "refs/tags/v0.10-test", USER_2_USERNAME);
         Workflow foobarWithSubmodules = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WDL_HUMANWGS + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
-        final List<SourceFile> sourcefilesWithSubmodules = workflowClient.getWorkflowVersionsSourcefiles(foobarWithSubmodules.getId(), workflowClient.getWorkflowVersions(foobarWithSubmodules.getId(), null, null, null, null, null).get(0).getId(), null);
+        final List<SourceFile> sourcefilesWithSubmodules = workflowClient.getWorkflowVersionsSourcefiles(foobarWithSubmodules.getId(),
+            workflowClient.getWorkflowVersions(foobarWithSubmodules.getId(), null, null, null, null, null).get(0).getId(), null);
         List<String> subNormalPaths = sourcefilesWithSubmodules.stream().map(SourceFile::getPath).sorted().toList();
         List<String> subNormalContent = sourcefilesWithSubmodules.stream().filter(s -> !s.getType().equals(TypeEnum.DOCKSTORE_YML)).map(SourceFile::getContent).sorted().toList();
         List<String> subAbsolutePaths = sourcefilesWithSubmodules.stream().map(SourceFile::getAbsolutePath).sorted().toList();

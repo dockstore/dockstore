@@ -320,7 +320,8 @@ public class BaseIT {
     }
 
     static io.dockstore.openapi.client.model.WorkflowVersion snapshotWorkflowVersion(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, long workflowId, String versionName) {
-        io.dockstore.openapi.client.model.WorkflowVersion version = workflowsApi.getWorkflowVersions(workflowId,  null, null, null, null, "images").stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        io.dockstore.openapi.client.model.WorkflowVersion version = workflowsApi.getWorkflowVersions(workflowId, null, null, null, null, "images").stream().filter(v -> v.getName().equals(versionName))
+            .findFirst().get();
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflowId, Collections.singletonList(version));
         List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflowId, null, null, null, null, null);
