@@ -361,6 +361,11 @@ POM as their parent.
                 <artifactId>aws-encryption-sdk-java</artifactId>
                 <version>2.4.1</version>
             </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>apache-client</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
 
             <!-- https://mvnrepository.com/artifact/org.junit/junit-bom -->
             <dependency>
