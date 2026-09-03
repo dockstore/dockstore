@@ -30,7 +30,7 @@ Lists of 346 third-party dependencies.
      (Apache License, Version 2.0) Apache HttpComponents Core HTTP/2 (org.apache.httpcomponents.core5:httpcore5-h2:5.4 - https://hc.apache.org/httpcomponents-core-5.4.x/5.4/httpcore5-h2/)
      (Apache License, Version 2.0) Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
      (Apache License, Version 2.0) Apache HttpCore NIO (org.apache.httpcomponents:httpcore-nio:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
-     (Apache-2.0) Apache Log4j API (org.apache.logging.log4j:log4j-api:2.23.1 - https://logging.apache.org/log4j/2.x/log4j/log4j-api/)
+     (Apache-2.0) Apache Log4j API (org.apache.logging.log4j:log4j-api:2.25.5 - https://logging.apache.org/log4j/2.x/)
      (MIT) argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
      (Apache 2.0) async-http-client-backend (com.softwaremill.sttp:async-http-client-backend_2.13:1.7.2 - http://softwaremill.com/open-source)
      (Apache 2.0) async-http-client-backend-cats (com.softwaremill.sttp:async-http-client-backend-cats_2.13:1.7.2 - http://softwaremill.com/open-source)
