@@ -202,6 +202,13 @@
             <artifactId>localstack-utils</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- needed by TestUtils.getClientS3V2() -->
+        <!-- Source: https://mvnrepository.com/artifact/software.amazon.awssdk/apache-client -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
