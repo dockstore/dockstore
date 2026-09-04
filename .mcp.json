@@ -6,6 +6,10 @@
       "headers": {
         "Authorization": "Bearer ${GITHUB_PAT}"
       }
+    },
+    "aws": {
+      "type": "http",
+      "url": "https://aws-mcp.us-east-1.api.aws/mcp"
     }
   }
 }
