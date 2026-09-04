@@ -72,3 +72,4 @@ dockstore-webservice/src/main/resources/openapi3/unsortedopenapi.yaml
 
 # this gets generated
 bom-internal/.flattened-pom.xml
+.env
