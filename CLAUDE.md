@@ -7,7 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Dockstore is the web service (backend) component of dockstore.org — a registry for sharing tools and
 workflows described in CWL, WDL, Nextflow, or Galaxy, packaged in Docker. It's a leading implementor of
 GA4GH's Tool Registry Service (TRS) API. The related Angular UI lives in a separate repo
-(`dockstore/dockstore-ui2`), as does the CLI (`dockstore/cli`) — this repo only contains the backend.
+(`dockstore/dockstore-ui2`), as does the CLI (`dockstore/cli`) — this repo only contains the backend. User-facing
+documentation lives in a separate repo, `dockstore/dockstore-documentation`, and the project has a discussion
+forum at https://discuss.dockstore.org/.
 
 ## Dependency conventions
 
@@ -16,6 +18,12 @@ an opinion on (configuration, health checks, metrics, bundles, etc.) over ad hoc
 prefer, in order: (1) built-in Java 17/21 features, (2) a third-party library already pulled in via Maven
 elsewhere in the project, (3) a new third-party dependency — only reach for a new one when neither of the above
 covers the need.
+
+## Branching
+
+The repo follows Hubflow (gitflow) conventions: `develop` is the main integration branch (this repo's default
+branch for PRs), with work done on `feature/*` branches (e.g. `feature/http5_aws`) branched from and merged back
+into `develop`, `hotfix/*` branches for urgent fixes, and `release/*` branches cut for releases.
 
 ## Build
 
@@ -80,6 +88,12 @@ CircleCI (`.circleci/config.yml`) builds and shards the test suite (including de
 tests changed via `scripts/generate-test-lists.sh`). Add `[skipTests]` to a commit message to skip the test shards
 for changes that don't affect code (deploys still run on every tag, so this isn't the same as `[skip ci]`).
 
+### Versioning
+
+Components generally follow semantic versioning; the version is split into `revision`/`changelist` properties in
+`pom.xml` (e.g. `1.21` + `.0-SNAPSHOT`). Pre-release identifiers (`alpha`, `rc`, etc., passed via `-Dchangelist=...`
+as in the build example above) are used for releases to the staging environment.
+
 ## Architecture
 
 ### Module responsibilities
@@ -108,7 +122,10 @@ for changes that don't affect code (deploys still run on every tag, so this isn'
 - **core/** — JPA/Hibernate entities (Workflow, Tool/DockerRepo, Organization, Collection, User, Token, etc.), with
   subpackages for source-specific metadata (`github`/`gitlab`/`dockerhub`/`webhook`) and secondary concerns
   (`metrics`, `tooltester`, `languageparsing`, `dag`, `database` — DB-level projections/views).
-- **jdbi/** — DAO layer (one DAO per entity, JDBI-based) sitting between resources and core entities.
+- **jdbi/** — DAO layer (one DAO per entity, JDBI-based) sitting between resources and core entities. For
+  performance, prefer pushing work down the stack: do it in Postgres (e.g. a named/native query) if possible,
+  otherwise in a JPA query, and only fall back to filtering/transforming in Java code when neither covers it.
+  Many DAOs/entities already have `@NamedQuery`/`@NamedNativeQuery` examples to follow.
 - **languages/** — per-workflow-language handling: `LanguageHandlerInterface`/`AbstractLanguageHandler` implemented
   by `CWLHandler`, `WDLHandler`, `NextflowHandler`, `JupyterHandler`, with `LanguageHandlerFactory` dispatching
   by descriptor type, and `LanguagePluginHandler` bridging to plugins built against
