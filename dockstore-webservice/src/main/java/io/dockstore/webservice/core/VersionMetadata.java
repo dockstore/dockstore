@@ -64,15 +64,19 @@ public class VersionMetadata {
 
     private static final String PUBLIC_ACCESSIBLE_DESCRIPTION = "Whether the version has everything needed to run without restricted access permissions";
 
+    @JsonIgnore
     @Column(columnDefinition =  "boolean default false")
     protected boolean verified;
 
+    @JsonIgnore
     @Column()
     protected String verifiedSource;
 
+    @JsonIgnore
     @Column()
     protected String verifiedPlatforms;
 
+    @JsonIgnore
     @Column()
     @Pattern(regexp = "10\\.[^/]++/.++")
     @Deprecated(since = "1.16")
@@ -87,9 +91,11 @@ public class VersionMetadata {
     @Schema(description = "The DOIs for the version of the entry")
     protected Map<DoiInitiator, Doi> dois = new HashMap<>();
 
+    @JsonIgnore
     @Column()
     protected boolean hidden;
 
+    @JsonIgnore
     @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
     @Enumerated(EnumType.STRING)
     protected Version.DOIStatus doiStatus;
@@ -100,6 +106,7 @@ public class VersionMetadata {
     @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     protected  String description;
 
+    @JsonIgnore
     @Column(name = "description_source")
     @Enumerated(EnumType.STRING)
     protected DescriptionSource descriptionSource;
@@ -198,8 +205,70 @@ public class VersionMetadata {
         this.userIdToOrcidPutCode = userIdToOrcidPutCode;
     }
 
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public String getVerifiedSource() {
+        return verifiedSource;
+    }
+
+    public void setVerifiedSource(String verifiedSource) {
+        this.verifiedSource = verifiedSource;
+    }
+
+    public String getVerifiedPlatforms() {
+        return verifiedPlatforms;
+    }
+
+    public void setVerifiedPlatforms(String verifiedPlatforms) {
+        this.verifiedPlatforms = verifiedPlatforms;
+    }
+
+    @Deprecated(since = "1.16")
+    public String getDoiURL() {
+        return doiURL;
+    }
+
+    @Deprecated(since = "1.16")
+    public void setDoiURL(String doiURL) {
+        this.doiURL = doiURL;
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
+
+    public Version.DOIStatus getDoiStatus() {
+        return doiStatus;
+    }
+
+    public void setDoiStatus(Version.DOIStatus doiStatus) {
+        this.doiStatus = doiStatus;
+    }
+
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public DescriptionSource getDescriptionSource() {
+        return descriptionSource;
+    }
+
+    public void setDescriptionSource(DescriptionSource descriptionSource) {
+        this.descriptionSource = descriptionSource;
     }
 
     public Boolean getPublicAccessibleTestParameterFile() {

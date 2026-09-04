@@ -170,10 +170,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
-    // Warning: this is eagerly loaded because of two reasons:
-    // the 4 @ApiModelProperty that uses version metadata
-    // This OneToOne
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true, fetch = FetchType.LAZY, optional = false)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private VersionMetadata versionMetadata = new VersionMetadata();
@@ -257,29 +254,29 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
-        versionMetadata.doiStatus = DOIStatus.NOT_REQUESTED;
+        versionMetadata.setDoiStatus(DOIStatus.NOT_REQUESTED);
         versionMetadata.parent = this;
     }
 
     @ApiModelProperty(value = "Whether this version has been verified or not", position = 16)
     public boolean isVerified() {
-        return this.versionMetadata.verified;
+        return this.getVersionMetadata().isVerified();
     }
 
     @ApiModelProperty(value = "Verified source for the version", position = 17)
     @Deprecated
     public String getVerifiedSource() {
-        return this.getVersionMetadata().verifiedSource;
+        return this.getVersionMetadata().getVerifiedSource();
     }
 
     @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
-        return convertJsonToStringArray(getVersionMetadata().verifiedSource);
+        return convertJsonToStringArray(getVersionMetadata().getVerifiedSource());
     }
 
     @Schema(description = "Verified platforms for the version")
     public String[] getVerifiedPlatforms() {
-        return convertJsonToStringArray(getVersionMetadata().verifiedPlatforms);
+        return convertJsonToStringArray(getVersionMetadata().getVerifiedPlatforms());
     }
 
     private static String[] convertJsonToStringArray(String json) {
@@ -308,7 +305,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     void updateByUser(final Version<?> version) {
-        this.getVersionMetadata().hidden = version.isHidden();
+        this.getVersionMetadata().setHidden(version.isHidden());
         this.setDoiStatus(version.getDoiStatus());
         if (!this.isFrozen()) {
             if (version.frozen && this.sourceFiles.isEmpty()) {
@@ -379,11 +376,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JsonProperty
     @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 18)
     public boolean isHidden() {
-        return versionMetadata.hidden;
+        return getVersionMetadata().isHidden();
     }
 
     public void setHidden(boolean hidden) {
-        this.getVersionMetadata().hidden = hidden;
+        this.getVersionMetadata().setHidden(hidden);
     }
 
     @JsonProperty
@@ -415,9 +412,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void updateVerified() {
-        this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
-        this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
-        this.getVersionMetadata().verifiedPlatforms = calculateVerifiedPlatforms(this.getSourceFiles());
+        this.getVersionMetadata().setVerified(calculateVerified(this.getSourceFiles()));
+        this.getVersionMetadata().setVerifiedSource(calculateVerifiedSource(this.getSourceFiles()));
+        this.getVersionMetadata().setVerifiedPlatforms(calculateVerifiedPlatforms(this.getSourceFiles()));
     }
 
     private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
@@ -464,36 +461,36 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 19)
     @Deprecated(since = "1.16")
     public String getDoiURL() {
-        return versionMetadata.doiURL;
+        return getVersionMetadata().getDoiURL();
     }
 
     @Deprecated(since = "1.16")
     public void setDoiURL(String doiURL) {
-        this.getVersionMetadata().doiURL = doiURL;
+        this.getVersionMetadata().setDoiURL(doiURL);
     }
 
     @JsonProperty
     @Schema(description = "The DOIs for the version of the entry")
     public Map<DoiInitiator, Doi> getDois() {
-        return versionMetadata.dois;
+        return getVersionMetadata().getDois();
     }
 
     public void setDois(Map<DoiInitiator, Doi> dois) {
-        versionMetadata.dois.clear();
-        versionMetadata.dois.putAll(dois);
+        getVersionMetadata().getDois().clear();
+        getVersionMetadata().getDois().putAll(dois);
     }
 
     @JsonIgnore // Don't surface this, just a helper method
     public Doi getDefaultDoi() {
-        return getDoiBasedOnOrderOfPrecedence(versionMetadata.dois);
+        return getDoiBasedOnOrderOfPrecedence(getVersionMetadata().getDois());
     }
 
     @ApiModelProperty(value = "This indicates the DOI status", position = 20)
     public DOIStatus getDoiStatus() {
-        return versionMetadata.doiStatus;
+        return getVersionMetadata().getDoiStatus();
     }
 
-    // Warning: these 4 are forcing eager loaded version metadata
+    // Warning: these 4 force the lazily loaded version metadata to be initialized
     @ApiModelProperty(position = 21)
     public String getAuthor() {
         Optional<Author> author = this.authors.stream().findFirst();
@@ -507,12 +504,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JsonIgnore
     @ApiModelProperty(position = 22)
     public String getDescription() {
-        return this.getVersionMetadata().description;
+        return this.getVersionMetadata().getDescription();
     }
 
     @ApiModelProperty(position = 23)
     public DescriptionSource getDescriptionSource() {
-        return this.getVersionMetadata().descriptionSource;
+        return this.getVersionMetadata().getDescriptionSource();
     }
 
     @ApiModelProperty(position = 24)
@@ -534,12 +531,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
-        this.getVersionMetadata().doiStatus = doiStatus;
+        this.getVersionMetadata().setDoiStatus(doiStatus);
     }
 
     public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
-        this.getVersionMetadata().description = newDescription;
-        this.getVersionMetadata().descriptionSource = newDescriptionSource;
+        this.getVersionMetadata().setDescription(newDescription);
+        this.getVersionMetadata().setDescriptionSource(newDescriptionSource);
     }
 
     public void addAuthor(final Author author) {
@@ -644,8 +641,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      * @param newVersionMetadata    Newest metadata from source control
      */
     public void setVersionMetadata(VersionMetadata newVersionMetadata) {
-        this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
-        this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
+        this.setDescriptionAndDescriptionSource(newVersionMetadata.getDescription(), newVersionMetadata.getDescriptionSource());
+        this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.getParsedInformationSet());
     }
 
     @Schema(hidden = true)
