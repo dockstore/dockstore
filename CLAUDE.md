@@ -47,7 +47,10 @@ Modules (in `pom.xml`, build order matters): `bom-internal`, `dockstore-common`,
 is build output, not source — this includes the `pom.xml` files under `generated/src/main/resources/`, which are
 produced from each submodule's own root `pom.xml`. To change a dependency/version that flows into a generated
 `pom.xml`, edit it in `bom-internal` first (the shared bill-of-materials), then in the specific submodule's root
-`pom.xml` if the change only applies there.
+`pom.xml` if the change only applies there. When validating a dependency/version change, always build the whole
+project from the root (e.g. `./mvnw clean install -DskipTests`) rather than building individual modules with
+`-pl`/`-am` — a partial-reactor build regenerates `generated/` `pom.xml` files (and `THIRD-PARTY-LICENSES.txt`)
+incorrectly, since they're derived from the full module set.
 
 ### Test categories (JUnit 5 `@Tag`)
 
