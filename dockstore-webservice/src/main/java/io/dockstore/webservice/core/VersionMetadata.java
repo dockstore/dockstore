@@ -46,7 +46,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
@@ -60,7 +63,10 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Table(name = "version_metadata")
+@BatchSize(size = VersionMetadata.BATCH_SIZE)
 public class VersionMetadata {
+
+    public static final int BATCH_SIZE = 25;
 
     private static final String PUBLIC_ACCESSIBLE_DESCRIPTION = "Whether the version has everything needed to run without restricted access permissions";
 
@@ -85,6 +91,8 @@ public class VersionMetadata {
     @MapKeyEnumerated(EnumType.STRING)
     @Size(max = MAX_NUMBER_OF_DOI_INITIATORS)
     @Schema(description = "The DOIs for the version of the entry")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = BATCH_SIZE)
     protected Map<DoiInitiator, Doi> dois = new HashMap<>();
 
     @Column()
@@ -105,7 +113,7 @@ public class VersionMetadata {
     protected DescriptionSource descriptionSource;
 
     @MapsId
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id")
     protected Version parent;
 
@@ -115,6 +123,8 @@ public class VersionMetadata {
             name = "PARSED_INFORMATION",
             joinColumns = @JoinColumn(name = "VERSION_METADATA_ID")
     )
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = BATCH_SIZE)
     protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
 
     @ElementCollection(targetClass = OrcidPutCode.class, fetch = FetchType.EAGER)
@@ -123,6 +133,8 @@ public class VersionMetadata {
     @MapKeyColumn(name = "userid", columnDefinition = "bigint")
     @ApiModelProperty(value = "The presence of the put code for a userid indicates the version was exported to ORCID for the corresponding Dockstore user.")
     @Schema(description = "The presence of the put code for a userid indicates the version was exported to ORCID for the corresponding Dockstore user.")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = BATCH_SIZE)
     protected Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
 
     @Id
