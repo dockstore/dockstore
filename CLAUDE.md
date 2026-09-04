@@ -42,7 +42,12 @@ Modules (in `pom.xml`, build order matters): `bom-internal`, `dockstore-common`,
 
 `swagger-java-client` and `openapi-java-client` are largely generated (via swagger-codegen-maven-plugin) from
 `dockstore-webservice/src/main/resources/swagger.yaml` / the OpenAPI spec — don't hand-edit generated sources under
-`generated/`; regenerate by pointing the plugin's `inputSpec` at the updated spec instead.
+`generated/`; regenerate by pointing the plugin's `inputSpec` at the updated spec instead. More generally, any
+`generated/` directory anywhere in the repo (e.g. `dockstore-common/generated/`, `dockstore-webservice/generated/`)
+is build output, not source — this includes the `pom.xml` files under `generated/src/main/resources/`, which are
+produced from each submodule's own root `pom.xml`. To change a dependency/version that flows into a generated
+`pom.xml`, edit it in `bom-internal` first (the shared bill-of-materials), then in the specific submodule's root
+`pom.xml` if the change only applies there.
 
 ### Test categories (JUnit 5 `@Tag`)
 
@@ -120,7 +125,7 @@ as in the build example above) are used for releases to the staging environment.
   base class, since resources need to extend different entity-specific abstract classes
   (`AbstractWorkflowResource`, `AbstractHostedEntryResource`).
 - **core/** — JPA/Hibernate entities (Workflow, Tool/DockerRepo, Organization, Collection, User, Token, etc.), with
-  subpackages for source-specific metadata (`github`/`gitlab`/`dockerhub`/`webhook`) and secondary concerns
+  subpackages for source-specific metadata (`gitlab`/`dockerhub`/`webhook`) and secondary concerns
   (`metrics`, `tooltester`, `languageparsing`, `dag`, `database` — DB-level projections/views).
 - **jdbi/** — DAO layer (one DAO per entity, JDBI-based) sitting between resources and core entities. For
   performance, prefer pushing work down the stack: do it in Postgres (e.g. a named/native query) if possible,
@@ -149,6 +154,6 @@ generated client modules.
   `resources/` and shared entity base classes in `core/` before adding new per-type logic; most new entry-type
   behavior is a matter of extending those, not writing new parallel code paths.
 - Source control integration (GitHub/GitLab/Bitbucket refresh, webhooks) flows through `helpers/` clients into
-  `AbstractWorkflowResource`/`HostedWorkflowResource` and the `core/webhook` and `core/{github,gitlab}` packages.
+  `AbstractWorkflowResource`/`HostedWorkflowResource` and the `core/webhook` and `core/gitlab` packages.
 - Language parsing/validation is dispatched through `LanguageHandlerFactory` — when adding support for a new
   descriptor-language feature, check whether it needs to change in every `*Handler` implementation or just one.
