@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.21.0-alpha.4
+  version: 1.21.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -7823,7 +7823,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: orcidputcodes, entrymetrics"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -7993,7 +7994,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: orcidputcodes, entrymetrics"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -8135,7 +8137,8 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "Comma-delimited list of fields to include: orcidputcodes, entrymetrics"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -8460,7 +8463,8 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "Comma-delimited list of fields to include: orcidputcodes, entrymetrics"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
