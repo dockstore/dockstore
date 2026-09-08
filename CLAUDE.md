@@ -25,6 +25,11 @@ The repo follows Hubflow (gitflow) conventions: `develop` is the main integratio
 branch for PRs), with work done on `feature/*` branches (e.g. `feature/http5_aws`) branched from and merged back
 into `develop`, `hotfix/*` branches for urgent fixes, and `release/*` branches cut for releases.
 
+## Pull requests
+
+When creating a PR, always create it in draft mode. A human developer must be the one to mark it ready for
+review/move it out of draft state — Claude Code should not do this itself.
+
 ## Build
 
 This is a multi-module Maven project (Java 21). Use the wrapper if Maven isn't installed locally.
