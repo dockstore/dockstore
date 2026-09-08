@@ -240,16 +240,17 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         mtaNf = workflowApi.getWorkflow(mtaNf.getId(), null);
         assertTrue(mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0, "a workflow lacks a date");
         assertNotNull(mtaNf, "Nextflow workflow not found after update");
-        assertTrue(mtaNf.getWorkflowVersions().size() >= 2, "nextflow workflow should have at least two versions");
+        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(mtaNf.getId());
+        assertTrue(workflowVersions.size() >= 2, "nextflow workflow should have at least two versions");
 
-        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> fileDAO.findSourceFilesByVersion(version.getId()).size()).sum();
+        int numOfSourceFiles = workflowVersions.stream().mapToInt(version -> fileDAO.findSourceFilesByVersion(version.getId()).size()).sum();
         assertTrue(numOfSourceFiles >= 2, "nextflow workflow should have at least two sourcefiles");
 
-        long scriptCount = mtaNf.getWorkflowVersions().stream()
+        long scriptCount = workflowVersions.stream()
             .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW).count())
             .sum();
 
-        long configCount = mtaNf.getWorkflowVersions().stream()
+        long configCount = workflowVersions.stream()
             .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW_CONFIG).count())
             .sum();
         assertTrue(scriptCount >= 1 && configCount >= 1, "nextflow workflow should have at least one config file and one script file");

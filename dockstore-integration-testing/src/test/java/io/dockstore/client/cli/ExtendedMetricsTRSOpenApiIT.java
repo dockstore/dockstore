@@ -586,7 +586,8 @@ final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         platformToMetrics.put(platform1, metrics);
         extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, "metrics");
+        WorkflowVersion workflowVersion = workflowVersions.stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
         assertNotNull(workflowVersion);
         assertEquals(1, workflowVersion.getMetricsByPlatform().size());
 
@@ -643,11 +644,10 @@ final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         platformToMetrics.put(platform2, metrics);
         extendedGa4GhApi.aggregatedMetricsPut(platformToMetrics, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
-        workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
-
+        workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, "metrics");
+        workflowVersion = workflowVersions.stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
         assertNotNull(workflowVersion);
         assertEquals(2, workflowVersion.getMetricsByPlatform().size(), "Version should have metrics for 2 platforms");
-
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform1));
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform2));
 
