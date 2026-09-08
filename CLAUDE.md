@@ -27,14 +27,15 @@ into `develop`, `hotfix/*` branches for urgent fixes, and `release/*` branches c
 
 ## Build
 
-This is a multi-module Maven project (Java 21). Use the wrapper if Maven isn't installed locally.
+This is a multi-module Maven project (Java 21). Always invoke the Maven wrapper (`./mvnw`), never a system-installed
+`mvn`, so everyone builds with the project's pinned Maven version.
 
 ```
-./mvnw clean install                              # build all modules
-mvn clean install -Punit-tests                    # build + run only unit tests (fast, no confidential data needed)
-mvn clean install -Pintegration-tests             # requires the confidential test data bundle (CI / team members only)
-mvn clean install -Dtest=SomeClassName test        # run a single test class
-mvn clean install -Dtest=SomeClassName#someMethod test  # run a single test method
+./mvnw clean install                                     # build all modules
+./mvnw clean install -Punit-tests                         # build + run only unit tests (fast, no confidential data needed)
+./mvnw clean install -Pintegration-tests                  # requires the confidential test data bundle (CI / team members only)
+./mvnw clean install -Dtest=SomeClassName test             # run a single test class
+./mvnw clean install -Dtest=SomeClassName#someMethod test  # run a single test method
 ```
 
 Modules (in `pom.xml`, build order matters): `bom-internal`, `dockstore-common`, `dockstore-language-plugin-parent`,
