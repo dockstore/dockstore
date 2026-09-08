@@ -199,22 +199,20 @@ public class WorkflowIT extends BaseIT {
     void testWDLLanguageParsingInformation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
-
         Workflow wdl = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "WDL",
                         DescriptorLanguage.WDL.toString(), "/test.json");
         Long id = wdl.getId();
         workflowApi.refresh(id, false);
-        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openWorkflowApi.getWorkflowVersions(id, null, null, null, null, null);
-        io.dockstore.openapi.client.model.WorkflowVersion workflowWithLocalImport = workflowVersions.stream()
+        Workflow workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
                 .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
-        io.dockstore.openapi.client.model.ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
+        ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
         assertFalse(parsedInformation.isHasHTTPImports());
-        io.dockstore.openapi.client.model.WorkflowVersion workflowWithHTTPImport = workflowVersions.stream()
+        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
-        io.dockstore.openapi.client.model.ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
+        ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertFalse(parsedInformationHTTP.isHasLocalImports());
         assertTrue(parsedInformationHTTP.isHasHTTPImports());
 
@@ -223,8 +221,8 @@ public class WorkflowIT extends BaseIT {
                         DescriptorLanguage.WDL.toString(), "/test.json");
         id = wdlChecker.getId();
         workflowApi.refresh(id, false);
-        workflowVersions = openWorkflowApi.getWorkflowVersions(id, null, null, null, null, null);
-        io.dockstore.openapi.client.model.WorkflowVersion workflowWithBothImports = workflowVersions.stream()
+        workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
         parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
@@ -246,13 +244,12 @@ public class WorkflowIT extends BaseIT {
         Long cwlId = cwlWorkflow.getId();
         workflowApi.refresh(cwlId, false);
         Workflow workflow = workflowApi.getWorkflow(cwlId, null);
-        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(workflow.getId());
-        WorkflowVersion workflowWithLocalImport = workflowVersions.stream()
+        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
                 .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
         ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
         assertFalse(parsedInformation.isHasHTTPImports());
-        WorkflowVersion workflowWithHTTPImport = workflowVersions.stream()
+        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
         ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
         assertFalse(parsedInformationHTTP.isHasLocalImports());
@@ -262,8 +259,8 @@ public class WorkflowIT extends BaseIT {
                         CWL.toString(), "/test.json");
         Long id = cwlChecker.getId();
         workflowApi.refresh(id, false);
-        workflowVersions = workflowApi.getWorkflowVersions(id);
-        WorkflowVersion workflowWithBothImports = workflowVersions.stream()
+        workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
                 .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
         parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
         assertTrue(parsedInformation.isHasLocalImports());
