@@ -22,8 +22,7 @@ import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import java.util.List;
 import java.util.Map;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -51,7 +50,7 @@ public final class LocalStackTestUtilities {
      */
     public static LocalStackContainer createS3Container() {
         return new LocalStackContainer(DockerImageName.parse("localstack/localstack:" + IMAGE_TAG))
-                .withServices(Service.S3)
+                .withServices("s3")
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig()
                         .withPortBindings(new PortBinding(Ports.Binding.bindPort(PORT), new ExposedPort(PORT))));
     }
