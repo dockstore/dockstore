@@ -19,19 +19,16 @@ package io.dockstore.webservice.metrics;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
-import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import cloud.localstack.ServiceName;
-import cloud.localstack.awssdkv2.TestUtils;
-import cloud.localstack.docker.LocalstackDockerExtension;
-import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LocalStackTest;
+import io.dockstore.common.LocalStackTestUtilities;
 import io.dockstore.common.Partner;
+import io.dockstore.common.S3ClientHelper;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.common.metrics.MetricsDataS3Client;
@@ -57,13 +54,17 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@ExtendWith(LocalstackDockerExtension.class)
+@Testcontainers
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 public class MetricsDataS3ClientIT {
+
+    @Container
+    private static final LocalStackContainer LOCALSTACK = LocalStackTestUtilities.createS3Container();
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
@@ -83,7 +84,7 @@ public class MetricsDataS3ClientIT {
         metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
 
         // Create a bucket to be used for tests
-        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
+        s3Client = S3ClientHelper.createS3Client(LocalStackTestUtilities.ENDPOINT_OVERRIDE); // Use localstack S3Client
         createBucket(s3Client, bucketName);
         deleteBucketContents(s3Client, bucketName); // This is here just in case a test was stopped before tearDown could clean up the bucket
     }

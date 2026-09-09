@@ -19,21 +19,21 @@ package io.dockstore.webservice.helpers;
 
 import static io.dockstore.common.LocalStackTestUtilities.AWS_REGION_ENV_VAR;
 import static io.dockstore.common.LocalStackTestUtilities.ENDPOINT_OVERRIDE;
-import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import cloud.localstack.ServiceName;
-import cloud.localstack.docker.LocalstackDockerExtension;
-import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import io.dockstore.common.LocalStackTest;
+import io.dockstore.common.LocalStackTestUtilities;
 import io.dockstore.common.S3ClientHelper;
 import java.net.URISyntaxException;
 import java.util.List;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
@@ -42,10 +42,13 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-@ExtendWith({ LocalstackDockerExtension.class, SystemStubsExtension.class })
+@Testcontainers
+@ExtendWith(SystemStubsExtension.class)
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 class S3ClientHelperIT {
+    @Container
+    private static final LocalStackContainer LOCALSTACK = LocalStackTestUtilities.createS3Container();
+
     @SystemStub
     private static EnvironmentVariables environmentVariables;
 

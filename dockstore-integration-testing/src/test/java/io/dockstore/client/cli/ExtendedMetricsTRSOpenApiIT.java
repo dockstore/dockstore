@@ -17,7 +17,6 @@
 
 package io.dockstore.client.cli;
 
-import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
@@ -47,10 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import cloud.localstack.ServiceName;
-import cloud.localstack.awssdkv2.TestUtils;
-import cloud.localstack.docker.LocalstackDockerExtension;
-import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -60,6 +55,7 @@ import io.dockstore.common.LocalStackTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Partner;
 import io.dockstore.common.Registry;
+import io.dockstore.common.S3ClientHelper;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.common.metrics.MetricsDataMetadata;
@@ -120,6 +116,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.services.s3.S3Client;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -130,8 +129,8 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
  * Extra confidential integration tests, focuses on proposed metrics GA4GH extensions
  * {@link BaseIT}
  */
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
-@ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class, LocalstackDockerExtension.class })
+@Testcontainers
+@ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class })
 @Tag(ConfidentialTest.NAME)
 @Tag(LocalStackTest.NAME)
 final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
@@ -141,6 +140,9 @@ final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMetricsTRSOpenApiIT.class);
     public static final String MINUTES_EXECUTION = "5";
+
+    @Container
+    private static final LocalStackContainer LOCALSTACK = LocalStackTestUtilities.createS3Container();
 
     private static String bucketName;
     private static MetricsDataS3Client metricsDataClient;
@@ -158,7 +160,7 @@ final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
         metricsDataClient = new MetricsDataS3Client(bucketName, LocalStackTestUtilities.ENDPOINT_OVERRIDE);
         // Create a bucket to be used for tests
-        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
+        s3Client = S3ClientHelper.createS3Client(LocalStackTestUtilities.ENDPOINT_OVERRIDE); // Use localstack S3Client
         createBucket(s3Client, bucketName);
         deleteBucketContents(s3Client, bucketName); // This is here just in case a test was stopped before tearDown could clean up the bucket
     }
