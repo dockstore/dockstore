@@ -274,9 +274,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      * @return
      */
     private boolean isRateLimited(final boolean rateLimited, ApiException e, String message) {
-        if (LOG.isWarnEnabled()) {
-            LOG.warn("%s: apiexception on %s%s".formatted(gitUsername, message, e.getMessage()), e);
-        }
+        LOG.atWarn().setCause(e).log(() -> "%s: apiexception on %s%s".formatted(gitUsername, message, e.getMessage()));
         // this is not so critical to warrant a http error code
         boolean newlyRateLimited = false;
         if (e.getCode() == Status.TOO_MANY_REQUESTS.getStatusCode()) {

@@ -152,7 +152,8 @@ class ExtendedNextflowIT extends BaseIT {
 
         // see what state the metadata is in, before the fix (#5919) this will remain as foobar
         io.dockstore.openapi.client.model.Workflow workflowByPath = openWorkflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, "versions");
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> opennfcore = workflowByPath.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore"))
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openWorkflowApi.getWorkflowVersions(workflowByPath.getId(), null, null, null, null, null);
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> opennfcore = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore"))
             .findFirst();
         assertTrue(opennfcore.isPresent() &&  "Nextflow !>=23.04.1".equals(opennfcore.get().getVersionMetadata().getEngineVersions().get(0)));
     }

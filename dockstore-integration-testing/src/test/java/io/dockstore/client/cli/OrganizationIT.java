@@ -2221,6 +2221,7 @@ public class OrganizationIT extends BaseIT {
         // Setup user who creates Organization and collection
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         //set up admin user
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -2247,8 +2248,8 @@ public class OrganizationIT extends BaseIT {
 
         // Add workflow to collection, should then have 3 workflows included regardless of versions
         organizationsApi.addEntryToCollection(orgId, collectionId, workflow2.getId(), null);
-        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(0).getId());
-        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(1).getId());
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).get(0).getId());
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).get(1).getId());
 
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
         long workflowsCount = addedCollection.getWorkflowsLength();
@@ -3009,6 +3010,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
         addCollection("test", "dockstore");
@@ -3017,10 +3019,10 @@ public class OrganizationIT extends BaseIT {
         Workflow workflow = createWorkflow1();
         long id = workflow.getId();
         assertEquals(0, entriesApi.entryCategories(id).size());
-        addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
+        addToCollection("test", "dockstore", workflow, workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).get(0).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
         assertEquals(1, categoriesApi.getCategories("test", "entries", null, null).get(0).getEntries().size());
-        addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(1).getId());
+        addToCollection("test", "dockstore", workflow, workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).get(1).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
         assertEquals(2, categoriesApi.getCategories("test", "entries", null, null).get(0).getEntries().size());
     }
@@ -3071,6 +3073,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         // Add two categories.
         addCollection("test", "dockstore");
@@ -3079,8 +3082,8 @@ public class OrganizationIT extends BaseIT {
 
         // Add a workflow to the categories.
         Workflow workflow = createWorkflow1();
-        addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
-        addToCollection("test2", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
+        addToCollection("test", "dockstore", workflow, workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).get(0).getId());
+        addToCollection("test2", "dockstore", workflow, workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).get(0).getId());
         assertEquals(2, entriesApi.entryCategories(workflow.getId()).size());
 
         // Delete a category.

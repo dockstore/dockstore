@@ -1025,9 +1025,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Workflow {} has been created.", Utilities.cleanForLogging(dockstoreWorkflowPath));
-            }
+            LOG.atInfo().log(() -> "Workflow " + Utilities.cleanForLogging(dockstoreWorkflowPath) + " has been created.");
         } else {
             workflowToUpdate = existingWorkflow.get();
             gitHubSourceCodeRepo.updateWorkflowInfo(workflowToUpdate, repository); // Update info that can change between GitHub releases
@@ -1231,10 +1229,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             Instant endTime = Instant.now();
             long timeElasped = Duration.between(startTime, endTime).toSeconds();
-            if (LOG.isInfoEnabled()) {
-                LOG.info(
-                    "Processing .dockstore.yml workflow version {} for repo: {} took {} seconds", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), timeElasped);
-            }
+            LOG.atInfo().log(() -> "Processing .dockstore.yml workflow version " + Utilities.cleanForLogging(gitReference) + " for repo: " + Utilities.cleanForLogging(repository) + " took "
+                + timeElasped + " seconds");
 
             return updatedWorkflowVersion;
 
