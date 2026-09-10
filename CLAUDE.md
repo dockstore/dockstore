@@ -32,14 +32,15 @@ review/move it out of draft state — Claude Code should not do this itself.
 
 ## Build
 
-This is a multi-module Maven project (Java 21). Use the wrapper if Maven isn't installed locally.
+This is a multi-module Maven project (Java 21). Always invoke the Maven wrapper (`./mvnw`), never a system-installed
+`mvn`, so everyone builds with the project's pinned Maven version.
 
 ```
-./mvnw clean install                              # build all modules
-mvn clean install -Punit-tests                    # build + run only unit tests (fast, no confidential data needed)
-mvn clean install -Pintegration-tests             # requires the confidential test data bundle (CI / team members only)
-mvn clean install -Dtest=SomeClassName test        # run a single test class
-mvn clean install -Dtest=SomeClassName#someMethod test  # run a single test method
+./mvnw clean install                                     # build all modules
+./mvnw clean install -Punit-tests                         # build + run only unit tests (fast, no confidential data needed)
+./mvnw clean install -Pintegration-tests                  # requires the confidential test data bundle (CI / team members only)
+./mvnw clean install -Dtest=SomeClassName test             # run a single test class
+./mvnw clean install -Dtest=SomeClassName#someMethod test  # run a single test method
 ```
 
 Modules (in `pom.xml`, build order matters): `bom-internal`, `dockstore-common`, `dockstore-language-plugin-parent`,
@@ -52,7 +53,10 @@ Modules (in `pom.xml`, build order matters): `bom-internal`, `dockstore-common`,
 is build output, not source — this includes the `pom.xml` files under `generated/src/main/resources/`, which are
 produced from each submodule's own root `pom.xml`. To change a dependency/version that flows into a generated
 `pom.xml`, edit it in `bom-internal` first (the shared bill-of-materials), then in the specific submodule's root
-`pom.xml` if the change only applies there.
+`pom.xml` if the change only applies there. When validating a dependency/version change, always build the whole
+project from the root (e.g. `./mvnw clean install -DskipTests`) rather than building individual modules with
+`-pl`/`-am` — a partial-reactor build regenerates `generated/` `pom.xml` files (and `THIRD-PARTY-LICENSES.txt`)
+incorrectly, since they're derived from the full module set.
 
 ### Test categories (JUnit 5 `@Tag`)
 

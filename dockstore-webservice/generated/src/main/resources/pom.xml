@@ -304,7 +304,7 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <version>42.7.12</version>
+      <version>42.7.13</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -358,7 +358,7 @@
     <dependency>
       <groupId>org.checkerframework</groupId>
       <artifactId>checker-qual</artifactId>
-      <version>3.49.5</version>
+      <version>3.55.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
