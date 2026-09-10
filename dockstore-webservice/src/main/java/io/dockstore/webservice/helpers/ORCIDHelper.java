@@ -118,9 +118,7 @@ public final class ORCIDHelper {
 
                 HttpResponse<String> response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() != HttpStatus.SC_OK) {
-                    if (LOG.isErrorEnabled()) {
-                        LOG.error("Could not get ORCID access token: {}", response.body());
-                    }
+                    LOG.atError().log(() -> "Could not get ORCID access token: " + response.body());
                     return Optional.empty();
                 }
 
@@ -317,9 +315,7 @@ public final class ORCIDHelper {
                 if (response.statusCode() == HttpStatus.SC_NOT_FOUND) {
                     LOG.error("ORCID iD {} not found", id);
                 } else {
-                    if (LOG.isErrorEnabled()) {
-                        LOG.error("Could not get ORCID record with iD {}: {}", id, response.body());
-                    }
+                    LOG.atError().log(() -> "Could not get ORCID record with iD " + id + ": " + response.body());
                 }
                 return Optional.empty();
             }

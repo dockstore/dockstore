@@ -471,16 +471,12 @@ public abstract class SourceCodeRepoInterface {
     public void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
-        if (Strings.isNullOrEmpty(filePath) && LOG.isInfoEnabled()) {
-            String message = String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch));
-            LOG.info(message);
+        if (Strings.isNullOrEmpty(filePath)) {
+            LOG.atInfo().log(() -> String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch)));
         }
         if (sourceFiles == null || sourceFiles.isEmpty()) {
-            if (LOG.isInfoEnabled()) {
-                String message = String
-                    .format("%s : Error getting descriptor for %s with path %s", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch), Utilities.cleanForLogging(filePath));
-                LOG.info(message);
-            }
+            LOG.atInfo().log(() -> String
+                .format("%s : Error getting descriptor for %s with path %s", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch), Utilities.cleanForLogging(filePath)));
             if (version.getReference() != null) {
                 String readMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
                 if (StringUtils.isNotBlank(readMeContent)) {

@@ -2085,9 +2085,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + gitRegistry + ":" + repository + ".git";
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Adding {}", Utilities.cleanForLogging(gitUrl));
-        }
+        LOG.atInfo().log(() -> "Adding " + Utilities.cleanForLogging(gitUrl));
 
         // Create a workflow
         final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
@@ -2150,9 +2148,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Deleting {}", Utilities.cleanForLogging(gitUrl));
-        }
+        LOG.atInfo().log(() -> "Deleting " + Utilities.cleanForLogging(gitUrl));
 
         final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
         if (existingWorkflow.isEmpty()) {
@@ -2244,9 +2240,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = payload.getRepository().getFullName();
         final String gitReference = payload.getRef();
         final String afterCommit = payload.getAfter();
-        if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
-        }
+        LOG.atInfo().log(() -> String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         githubWebhookRelease(repository, gitHubUsernamesFromPushPayload(payload), gitReference, installationId, deliveryId, afterCommit, true);
     }
 
@@ -2279,12 +2273,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final List<String> repositories = (added ? payload.getRepositoriesAdded() : payload.getRepositoriesRemoved())
             .stream().map(WebhookRepository::getFullName).toList();
 
-        if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app %s the repositories %s (%s)",
-                added ? "installed on" : "uninstalled from",
-                Utilities.cleanForLogging(String.join(", ", repositories)),
-                Utilities.cleanForLogging(username)));
-        }
+        LOG.atInfo().log(() -> String.format("GitHub app %s the repositories %s (%s)",
+            added ? "installed on" : "uninstalled from",
+            Utilities.cleanForLogging(String.join(", ", repositories)),
+            Utilities.cleanForLogging(username)));
 
         // record installation event as lambda event
         // TODO do this in transaction
@@ -2320,10 +2312,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
                 } else {
                     for (String gitReference: releasableReferences) {
-                        if (LOG.isInfoEnabled()) {
-                            LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
-                                Utilities.cleanForLogging(username)));
-                        }
+                        LOG.atInfo().log(() -> String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                            Utilities.cleanForLogging(username)));
                         githubWebhookRelease(repository, new GitHubUsernames(username, Set.of()), gitReference, installationId, deliveryId, null, false);
                     }
                 }
@@ -2350,9 +2340,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
         @Parameter(name = "installationId", description = "GitHub App installation ID", required = false) @QueryParam("installationId") Long installationId,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId) {
-        if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
-        }
+        LOG.atInfo().log(() -> String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         githubWebhookDelete(repository, gitReference, username, installationId, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }

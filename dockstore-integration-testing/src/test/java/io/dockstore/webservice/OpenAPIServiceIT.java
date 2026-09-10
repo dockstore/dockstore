@@ -38,6 +38,7 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
@@ -104,14 +105,15 @@ public class OpenAPIServiceIT extends BaseIT {
         handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, null);
 
         final long validFileCount = testingPostgres.runSelectStatement("select count(*) from validation where valid", long.class);
         assertEquals(2, validFileCount, "Both the service's files should be valid");
 
         assertNotNull(service);
-        assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
-        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(service.getWorkflowVersions().get(0).getId());
+        List<WorkflowVersion> serviceVersions = client.getWorkflowVersions(service.getId(), null, null, null, null, null);
+        assertEquals(1, serviceVersions.size(), "Should have a new version");
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(serviceVersions.get(0).getId());
         assertEquals(3, sourceFiles.size(), "Should have 3 source files");
 
         long users = testingPostgres.runSelectStatement("select count(*) from user_entry where entryid = '" + service.getId() + "'", long.class);
@@ -137,11 +139,13 @@ public class OpenAPIServiceIT extends BaseIT {
         // A service with descriptortypesubclass set to "n/a" can be updated
         testingPostgres.runUpdateStatement("update service set descriptortypesubclass = 'n/a'");
         testingPostgres.runUpdateStatement("delete from workflowversion wv where wv.parentid in (select id from service)");
-        Workflow naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
-        assertEquals(0, naService.getWorkflowVersions().size(), "WorkflowVersions size should be reset to 0 via SQL");
+        Workflow naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, null);
+        List<WorkflowVersion> naServiceVersions = client.getWorkflowVersions(naService.getId(), null, null, null, null, null);
+        assertEquals(0, naServiceVersions.size(), "WorkflowVersions size should be reset to 0 via SQL");
         handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
-        naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
-        assertEquals(1, naService.getWorkflowVersions().size(), "WorkflowVersions size should be 1 after GitHub releease");
+        naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, null);
+        naServiceVersions = client.getWorkflowVersions(naService.getId(), null, null, null, null, null);
+        assertEquals(1, naServiceVersions.size(), "WorkflowVersions size should be 1 after GitHub releease");
     }
 
     @Test

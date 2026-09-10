@@ -229,7 +229,8 @@ class GalaxyPluginIT {
         io.dockstore.openapi.client.api.WorkflowsApi workflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         handleGitHubRelease(workflowApi, DockstoreTestUser2.WORKFLOW_TESTING_REPO, "refs/heads/validTestParameterFiles", BaseIT.USER_2_USERNAME);
         io.dockstore.openapi.client.model.Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + DockstoreTestUser2.WORKFLOW_TESTING_REPO + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", WorkflowSubClass.BIOWORKFLOW, "versions");
-        WorkflowVersion version = workflow.getWorkflowVersions().get(0);
+        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
+        WorkflowVersion version = workflowVersions.get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")), "Test file should have the expected path");
     }
