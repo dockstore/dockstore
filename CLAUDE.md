@@ -30,6 +30,10 @@ into `develop`, `hotfix/*` branches for urgent fixes, and `release/*` branches c
 When creating a PR, always create it in draft mode. A human developer must be the one to mark it ready for
 review/move it out of draft state — Claude Code should not do this itself.
 
+Keep the freeform "Description" and "Review Instructions" sections brief — one paragraph each, or two for a
+genuinely complicated fix, not multi-paragraph writeups. (The "Security and Privacy" checklist section is
+separate and must still be copied verbatim per the section below.)
+
 ## Build
 
 This is a multi-module Maven project (Java 21). Always invoke the Maven wrapper (`./mvnw`), never a system-installed
