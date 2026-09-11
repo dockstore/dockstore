@@ -17,8 +17,13 @@
 
 package io.dockstore.common;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import java.util.List;
 import java.util.Map;
+import org.testcontainers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
@@ -31,10 +36,24 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 public final class LocalStackTestUtilities {
     public static final String IMAGE_TAG = "3.8.1";
-    public static final String ENDPOINT_OVERRIDE = "https://s3.localhost.localstack.cloud:4566";
+    public static final int PORT = 4566;
+    public static final String ENDPOINT_OVERRIDE = "https://s3.localhost.localstack.cloud:" + PORT;
     public static final String AWS_REGION_ENV_VAR = "AWS_REGION";
 
     private LocalStackTestUtilities() {}
+
+    /**
+     * Creates (but does not start) a LocalStack container providing the S3 service. The container's port is bound to the fixed
+     * host port {@link #PORT} (rather than a randomly-assigned one) so that {@link #ENDPOINT_OVERRIDE} remains valid regardless
+     * of which test class starts it. Intended to be used as a JUnit 5 {@code @Container}-annotated field, which takes care of
+     * starting and stopping the container.
+     */
+    public static LocalStackContainer createS3Container() {
+        return new LocalStackContainer(DockerImageName.parse("localstack/localstack:" + IMAGE_TAG))
+                .withServices("s3")
+                .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig()
+                        .withPortBindings(new PortBinding(Ports.Binding.bindPort(PORT), new ExposedPort(PORT))));
+    }
 
     public static void createBucket(S3Client s3Client, String bucketName) {
         CreateBucketRequest request = CreateBucketRequest.builder().bucket(bucketName).build();

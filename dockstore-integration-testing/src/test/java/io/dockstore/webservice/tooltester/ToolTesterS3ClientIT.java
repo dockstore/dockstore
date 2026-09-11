@@ -17,7 +17,6 @@
 
 package io.dockstore.webservice.tooltester;
 
-import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.webservice.core.tooltester.ObjectMetadataEnum.RUNNER;
@@ -26,9 +25,6 @@ import static io.dockstore.webservice.core.tooltester.ObjectMetadataEnum.TOOL_ID
 import static io.dockstore.webservice.core.tooltester.ObjectMetadataEnum.VERSION_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import cloud.localstack.ServiceName;
-import cloud.localstack.docker.LocalstackDockerExtension;
-import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.common.collect.Maps;
 import io.dockstore.common.LocalStackTest;
 import io.dockstore.common.LocalStackTestUtilities;
@@ -42,15 +38,20 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@ExtendWith(LocalstackDockerExtension.class)
+@Testcontainers
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 })
 class ToolTesterS3ClientIT {
 
     public static final String BUCKET_NAME = "dockstore.tooltester.backup";
+
+    @Container
+    private static final LocalStackContainer LOCALSTACK = LocalStackTestUtilities.createS3Container();
+
     private static S3Client s3Client;
     private static ToolTesterS3Client toolTesterS3Client;
 

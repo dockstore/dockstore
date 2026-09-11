@@ -80,6 +80,7 @@ POM as their parent.
         <cromwell.version>85</cromwell.version>
         <jackson.version>2.22.1</jackson.version>
         <docker-client.version>3.7.1</docker-client.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <system-stubs.version>2.1.7</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
         <bouncycastle.version>1.84</bouncycastle.version>
@@ -691,40 +692,24 @@ POM as their parent.
                 <artifactId>commons-io</artifactId>
                 <version>2.21.0</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/cloud.localstack/localstack-utils -->
+            <!-- https://mvnrepository.com/artifact/org.testcontainers/testcontainers-bom -->
             <dependency>
-                <groupId>cloud.localstack</groupId>
-                <artifactId>localstack-utils</artifactId>
-                <version>0.2.23</version>
-                <scope>test</scope>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- managed exclusion: jib-core is only needed for testcontainers' Dockerfile-image-building support (unused here),
+                 and its old transitive versions of google-auth-library-oauth2-http/asm conflict with versions used elsewhere -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>com.amazonaws</groupId>
-                        <artifactId>aws-java-sdk-kinesis</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.amazonaws</groupId>
-                        <artifactId>aws-java-sdk-simpleworkflow</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.amazonaws</groupId>
-                        <artifactId>aws-java-sdk-dynamodb</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.amazonaws</groupId>
-                        <artifactId>aws-java-sdk-s3</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.amazon.ion</groupId>
-                        <artifactId>ion-java</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-core</artifactId>
+                        <groupId>com.google.cloud.tools</groupId>
+                        <artifactId>jib-core</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
