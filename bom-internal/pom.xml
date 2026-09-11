@@ -897,6 +897,13 @@ POM as their parent.
                 <artifactId>scala-compiler</artifactId>
                 <version>${scala.version}</version>
             </dependency>
+            <!-- SEAB-7754: pulled in transitively via scala-compiler; override to fix
+                 GHSA-47qp-hqvx-6r3f and GHSA-2r2c-cx56-8933 (fixed in 3.30.14+) -->
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>3.30.17</version>
+            </dependency>
             <dependency>
                 <groupId>org.scalacheck</groupId>
                 <artifactId>scalacheck_2.12</artifactId>
