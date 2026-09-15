@@ -5,6 +5,17 @@ FROM eclipse-temurin:21.0.11_10-jdk-jammy
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends
+
+# Explicitly upgrade perl-base and verify it is at least the version fixing
+# CVE-2026-57433, CVE-2026-13221, and CVE-2026-12087 (SEAB-7756). apt-get
+# upgrade above already pulls the latest available perl-base, but this fails
+# the build loudly if a cached/older archive would otherwise leave a
+# vulnerable version in place instead of silently shipping it.
+RUN apt-get update \
+    && apt-get install -y --only-upgrade perl-base \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' perl-base)" ge 5.34.0-3ubuntu1.8
 # Note locale settings seem redundant, temurin already has en_US.UTF-8 set
 #    locales \
 #    && apt-get clean \
