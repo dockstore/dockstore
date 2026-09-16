@@ -32,27 +32,28 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Event;
+import io.dockstore.openapi.client.model.Event.TypeEnum;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tag;
+import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.openapi.model.DescriptorType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EventsApi;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Event;
-import io.swagger.client.model.Event.TypeEnum;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.Tool;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -93,6 +94,61 @@ public class BasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    private static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
+        String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
+        DockstoreTool newTool = new DockstoreTool();
+        newTool.setNamespace(namespace);
+        newTool.setName(name);
+        newTool.setToolname(toolName);
+        newTool.setDefaultCwlPath(cwlPath);
+        newTool.setDefaultWdlPath(wdlPath);
+        newTool.setDefaultDockerfilePath(dockerfilePath);
+        newTool.setGitUrl(gitUrl);
+        newTool.setRegistry(registry);
+        newTool.setRegistryString(registry.getValue());
+        newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        newTool.setPrivateAccess(isPrivate);
+        newTool.setToolMaintainerEmail(email);
+        if (customDockerPath != null) {
+            newTool.setRegistryString(customDockerPath);
+        }
+
+        if (!Registry.QUAY_IO.name().equals(registry.name())) {
+            Tag tag = new Tag();
+            tag.setReference(gitReference);
+            tag.setName(versionName);
+            tag.setDockerfilePath(dockerfilePath);
+            tag.setCwlPath(cwlPath);
+            tag.setWdlPath(wdlPath);
+            List<Tag> tags = new ArrayList<>();
+            tags.add(tag);
+            newTool.setWorkflowVersions(tags);
+        }
+
+        // Manually register
+        DockstoreTool tool = containersApi.registerManual(newTool);
+
+        // Refresh
+        tool = containersApi.refresh(tool.getId());
+
+        // Publish
+        if (toPublish) {
+            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+            assertTrue(tool.isIsPublished());
+        }
+        return tool;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    private static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
+        String versionName, boolean toPublish) {
+        return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
+            gitReference, versionName, toPublish, false, null, null);
+    }
+
 
     /*
      * General-ish tests
@@ -100,7 +156,7 @@ public class BasicIT extends BaseIT {
 
     @Test
     void testDisallowedOrgRefresh() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         try {
             usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
@@ -115,21 +171,21 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testRegistrationWithNonLowerCase() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", WorkflowSubClass.BIOWORKFLOW, "");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
 
     @Test
     void testRefreshToolNoVersions() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
         tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
@@ -150,7 +206,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testRefreshWorkflow() throws Exception {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
@@ -163,15 +219,15 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", WorkflowSubClass.BIOWORKFLOW, "");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh individual workflow
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -194,7 +250,7 @@ public class BasicIT extends BaseIT {
 
         // refresh without github token
         try {
-            workflow = workflowsApi.refresh(workflow.getId(), false);
+            workflow = workflowsApi.refresh1(workflow.getId(), false);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("No GitHub or Google token found"));
         }
@@ -205,7 +261,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testVersionTagDockerhub() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
@@ -217,7 +273,7 @@ public class BasicIT extends BaseIT {
         assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned");
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starEntry(starRequest, tool.getId());
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).stream()
             .filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY).collect(Collectors.toList());
         assertTrue(events.isEmpty(), "Should not be an event for the non-tag version that was automatically created for the newly registered tool");
@@ -263,7 +319,7 @@ public class BasicIT extends BaseIT {
     void testRecentEventsByUser() {
 
         // Create API client for user
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
@@ -282,7 +338,7 @@ public class BasicIT extends BaseIT {
         // Star the tool that was registered above
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starEntry(starRequest, tool.getId());
 
         // create some more events so we can test ordering
         PublishRequest publishRequest = new PublishRequest();
@@ -301,7 +357,7 @@ public class BasicIT extends BaseIT {
         Event event = events.get(0);
 
         // Create a second client and query for the starred event from the first user
-        ApiClient client2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EventsApi client2EventsApi = new EventsApi(client2);
 
         // Get events by user id
@@ -327,7 +383,7 @@ public class BasicIT extends BaseIT {
     void testRecentEventsByUserWithNullInput() {
 
         // Create a second client and query for the starred event from the first user
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EventsApi eventsApi = new EventsApi(client);
 
         // This should throw an error because no user exists with ID -1
@@ -345,7 +401,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualQuaySameAsAutoQuay() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
 
@@ -364,7 +420,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualQuayToAutoSamePathDifferentGitRepo() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "alternate",
@@ -382,7 +438,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualQuayToAutoNoAutoWithoutToolname() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
@@ -405,7 +461,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualQuayManualBuild() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
@@ -423,7 +479,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualQuayNoTags() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
@@ -441,7 +497,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testQuayNoAutobuild() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", "");
@@ -470,7 +526,7 @@ public class BasicIT extends BaseIT {
     @Test
     void testAddQuayRepoOfNonOwnedOrg() {
         // Repo user isn't part of org
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
@@ -514,7 +570,7 @@ public class BasicIT extends BaseIT {
         assertEquals(currentNumberOfTags - 1, afterDeletionTags);
 
         // Refresh the tool
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
         toolsApi.refresh(tool.getId());
@@ -539,13 +595,13 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testUpdateToolDefaultVersionDuringRefresh() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
         assertEquals("latest", tool.getDefaultVersion(), "manualRegisterAndPublish does a refresh, it should automatically set the default version");
-        tool = toolsApi.updateToolDefaultVersion(tool.getId(), "test");
+        tool = toolsApi.updateDefaultVersion(tool.getId(), "test");
         assertEquals("test", tool.getDefaultVersion(), "Should be able to overwrite previous default version");
         tool = toolsApi.refresh(tool.getId());
         assertEquals("test", tool.getDefaultVersion(), "Refresh should not have set it back to the automatic one");
@@ -557,11 +613,11 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testQuayGithubQuickRegisterWithWDL() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
         tool = toolsApi.refresh(tool.getId());
-        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
         assertEquals(1, count, "the given entry should be published");
@@ -573,7 +629,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testSetDefaultTag() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         // Update tool with default version that has metadata
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
@@ -592,13 +648,13 @@ public class BasicIT extends BaseIT {
         assertEquals(1, count2, "the tool should have any metadata set (author)");
 
         // check author explicitly for old-style tools
-        Ga4GhApi ga4GhApi = new Ga4GhApi(client);
-        final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, "Dockstore Test User", null, "0", 10);
+        Ga4Ghv20Api ga4GhApi = new Ga4Ghv20Api(client);
+        final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, "Dockstore Test User", null, "0", 10);
         assertFalse(toolsViaAuthor.isEmpty());
 
         // multiple matching authors for a workflow breaks things if they correspond to an 'actualdefaultversion'
         testingPostgres.runUpdateStatement("INSERT INTO author (name, versionid, email) VALUES ('Dockstore Test User', 5, 'foo@foo.com')");
-        final List<Tool> toolsViaAuthor2 = ga4GhApi.toolsGet(null, null, null, null, null, null, null, "Dockstore", null, "0", 10);
+        final List<Tool> toolsViaAuthor2 = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, "Dockstore", null, "0", 10);
         assertFalse(toolsViaAuthor2.isEmpty());
 
         // Invalidate tags
@@ -606,7 +662,7 @@ public class BasicIT extends BaseIT {
 
         // Shouldn't be able to publish
         try {
-            toolsApi.publish(toolId, CommonTestUtilities.createPublishRequest(true));
+            toolsApi.publish(toolId, CommonTestUtilities.createOpenAPIPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
@@ -621,7 +677,7 @@ public class BasicIT extends BaseIT {
     @Test
     void testManualPublishToolNoDescriptorPaths() {
         // Manual publish, should fail
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish
@@ -638,10 +694,10 @@ public class BasicIT extends BaseIT {
 
     @Test
     void testBrokenPath() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
-            workflowsApi.getWorkflowByPath("potato", BIOWORKFLOW, "potato");
+            workflowsApi.getWorkflowByPath("potato", WorkflowSubClass.BIOWORKFLOW, "potato");
             fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
             assertEquals("Entry not found.", e.getMessage());
@@ -653,7 +709,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testQuayDirtyBit() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
@@ -706,7 +762,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testTestJson() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
@@ -727,9 +783,9 @@ public class BasicIT extends BaseIT {
         List<String> toRemove = new ArrayList<>();
         toRemove.add("notreal.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "master", "cwl");
         try {
-            toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+            toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "master", "cwl");
             fail("Should've have thrown an error when deleting non-existent file");
         } catch (ApiException e) {
             assertEquals(HttpStatus.NOT_FOUND_404, e.getCode(), "Should have returned a 404 when deleting non-existent file");
@@ -746,8 +802,8 @@ public class BasicIT extends BaseIT {
         toRemove = new ArrayList<>();
         toRemove.add("test2.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
-        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "master", "cwl");
+        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "master", "cwl");
         toolsApi.refresh(existingTool.getId());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -757,7 +813,7 @@ public class BasicIT extends BaseIT {
         toAdd = new ArrayList<>();
         toAdd.add("test.wdl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "wdl", "", "wdltest");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "wdltest", "wdl");
         toolsApi.refresh(existingTool.getId());
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
@@ -766,7 +822,7 @@ public class BasicIT extends BaseIT {
         toAdd = new ArrayList<>();
         toAdd.add("test.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "wdltest");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "wdltest", "cwl");
         toolsApi.refresh(existingTool.getId());
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals(2, count5, "there should be two sourcefiles that are test parameter files, there are " + count5);
@@ -788,8 +844,8 @@ public class BasicIT extends BaseIT {
 
     @Test
     void testTestParameterOtherUsers() {
-        final ApiClient correctWebClient = getWebClient(BaseIT.USER_1_USERNAME, testingPostgres);
-        final ApiClient otherWebClient = getWebClient(BaseIT.OTHER_USERNAME, testingPostgres);
+        final ApiClient correctWebClient = getOpenAPIWebClient(BaseIT.USER_1_USERNAME, testingPostgres);
+        final ApiClient otherWebClient = getOpenAPIWebClient(BaseIT.OTHER_USERNAME, testingPostgres);
 
         ContainersApi containersApi = new ContainersApi(correctWebClient);
         final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", null);
@@ -800,22 +856,22 @@ public class BasicIT extends BaseIT {
         assertEquals(0, count, "there should be no sourcefiles that are test parameter files, there are " + count);
 
         containersApi
-            .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "",
-                "master");
+            .addTestParameterFiles(containerByToolPath.getId(), "", Collections.singletonList("/test.json"), "master",
+                DescriptorType.CWL.toString());
 
         boolean shouldFail = false;
         try {
             final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
-            containersApi1.addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
-                DescriptorType.CWL.toString(), "", "master");
+            containersApi1.addTestParameterFiles(containerByToolPath.getId(), "", Collections.singletonList("/test2.cwl.json"), "master",
+                DescriptorType.CWL.toString());
         } catch (Exception e) {
             shouldFail = true;
         }
         assertTrue(shouldFail);
 
         containersApi
-            .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(),
-                "", "master");
+            .addTestParameterFiles(containerByToolPath.getId(), "", Collections.singletonList("/test2.cwl.json"), "master",
+                DescriptorType.CWL.toString());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals(2, count3, "there should be one sourcefile that is a test parameter file, there are " + count3);
@@ -825,16 +881,16 @@ public class BasicIT extends BaseIT {
         try {
             final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
             containersApi1.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
-                DescriptorType.CWL.toString(), "master");
+                "master", DescriptorType.CWL.toString());
         } catch (Exception e) {
             shouldFail = true;
         }
         assertTrue(shouldFail);
         containersApi
-            .deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(),
-                "master");
+            .deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), "master",
+                DescriptorType.CWL.toString());
         containersApi.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
-            DescriptorType.CWL.toString(), "master");
+            "master", DescriptorType.CWL.toString());
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals(0, count4, "there should be one sourcefile that is a test parameter file, there are " + count4);
@@ -845,7 +901,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testPrivateManualPublish() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish private repo with tool maintainer email
@@ -888,7 +944,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testPublicToPrivateToPublicTool() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish public repo
@@ -926,7 +982,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testDefaultToEmailInDescriptorForPrivateRepos() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish public repo
@@ -976,7 +1032,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testPrivateManualPublishNoToolMaintainerEmail() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish private repo without tool maintainer email
@@ -997,7 +1053,7 @@ public class BasicIT extends BaseIT {
     @Test
     @org.junit.jupiter.api.Tag(SlowTest.NAME)
     void testManualPublishGitlabDocker() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish
@@ -1019,7 +1075,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualPublishPrivateAccessAmazonECR() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
@@ -1052,7 +1108,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualPublishPrivateAccessUpdateAmazonECR() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish a private Amazon ECR tool
@@ -1104,7 +1160,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualPublishDuplicatePublicAmazonECR() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Scenario 1:
@@ -1146,7 +1202,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualPublishDuplicatePrivateAmazonECR() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Scenario 1:
@@ -1189,7 +1245,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testGetContainerByPathsAmazonECR() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool;
         DockstoreTool foundTool;
@@ -1328,7 +1384,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualPublishSevenBridgesTool() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish
@@ -1357,7 +1413,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish correct path
@@ -1390,7 +1446,7 @@ public class BasicIT extends BaseIT {
     @Test
     void testManualPublishPrivateOnlyRegistryAsPublic() {
         // Manual publish
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
@@ -1410,7 +1466,7 @@ public class BasicIT extends BaseIT {
     @Test
     void testManualPublishCustomDockerPathRegistry() {
         // Manual publish
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
@@ -1426,10 +1482,9 @@ public class BasicIT extends BaseIT {
 
     @Test
     void testGettingSourceFilesForTag() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        io.dockstore.openapi.client.api.ContainertagsApi toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(openAPIWebClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
 
         // Sourcefiles for tags
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
@@ -1469,23 +1524,23 @@ public class BasicIT extends BaseIT {
         try {
             sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
             fail("Shouldn't be able to get a tag's sourcefiles if it doesn't belong to the tool.");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
+        } catch (ApiException ex) {
             assertEquals("Version " + tool2tag.getId() + " does not exist for this entry", ex.getMessage());
         }
 
 
         // check that sourcefiles can't be viewed by another user if they aren't published
-        final io.dockstore.openapi.client.ApiClient user2OpenAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.ContainertagsApi user2toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(user2OpenAPIWebClient);
+        final ApiClient user2WebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ContainertagsApi user2toolTagsApi = new ContainertagsApi(user2WebClient);
         try {
             sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
             fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
+        } catch (ApiException ex) {
             assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // sourcefiles can be viewed by others once published
-        tool = toolApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+        tool = toolApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
         assertNotNull(sourceFiles);
         assertEquals(3, sourceFiles.size());

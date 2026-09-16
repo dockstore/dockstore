@@ -31,21 +31,21 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Limits;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Limits;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -112,7 +112,7 @@ class LimitedCRUDClientIT {
 
         // Tests can run in any order, and the CachingAuthenticator is not cleared between tests
         // Reset limits for user between tests so it's not set when it's not supposed to be.
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         usersApi.setUserLimits(user.getId(), new Limits());
@@ -120,7 +120,7 @@ class LimitedCRUDClientIT {
 
     @Test
     void testToolCreation() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
@@ -154,7 +154,7 @@ class LimitedCRUDClientIT {
 
     @Test
     void testOverrideEntryLimit() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
 
         // Change limits for current user
@@ -181,45 +181,45 @@ class LimitedCRUDClientIT {
 
     @Test
     void testToolVersionCreation() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
-        api.editHostedTool(hostedTool.getId(), sourceFiles);
+        api.editHostedTool(sourceFiles, hostedTool.getId());
 
         // test repeated workflow version creation up to limit
         for (int i = 1; i < SYSTEM_LIMIT; i++) {
             sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
-            api.editHostedTool(hostedTool.getId(), sourceFiles);
+            api.editHostedTool(sourceFiles, hostedTool.getId());
         }
 
-        assertThrows(ApiException.class, () ->  api.editHostedTool(hostedTool.getId(), sourceFiles));
+        assertThrows(ApiException.class, () ->  api.editHostedTool(sourceFiles, hostedTool.getId()));
     }
 
     @Test
     void testGettingDescriptorType() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
                 .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.toString(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
-        hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
+        hostedTool = api.editHostedTool(sourceFiles, hostedTool.getId());
         assertEquals(CWL.toString(), hostedTool.getDescriptorType().get(0));
 
         sourceFiles = generateSourceFiles(WDL);
-        hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
+        hostedTool = api.editHostedTool(sourceFiles, hostedTool.getId());
         assertEquals(2, hostedTool.getDescriptorType().size());
         assertNotSame(hostedTool.getDescriptorType().get(0), hostedTool.getDescriptorType().get(1));
     }
 
     @Test
     void testOverrideVersionLimit() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
 
         // Change limits for current user
         UsersApi usersApi = new UsersApi(webClient);
@@ -233,25 +233,25 @@ class LimitedCRUDClientIT {
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
-        api.editHostedTool(hostedTool.getId(), sourceFiles);
+        api.editHostedTool(sourceFiles, hostedTool.getId());
 
         // a few updates with no actual changes shouldn't break anything since they are ignored
         for (int i = 1; i <= NEW_LIMITS - 1; i++) {
-            api.editHostedTool(hostedTool.getId(), sourceFiles);
+            api.editHostedTool(sourceFiles, hostedTool.getId());
         }
 
         // test repeated workflow version creation up to limit
         for (int i = 1; i <= NEW_LIMITS - 1; i++) {
             sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
-            api.editHostedTool(hostedTool.getId(), sourceFiles);
+            api.editHostedTool(sourceFiles, hostedTool.getId());
         }
 
-        assertThrows(ApiException.class, () -> api.editHostedTool(hostedTool.getId(), sourceFiles));
+        assertThrows(ApiException.class, () -> api.editHostedTool(sourceFiles, hostedTool.getId()));
     }
 
     @Test
     void testUploadZipHonorsVersionLimit() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
         // Created workflow, no versions

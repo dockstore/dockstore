@@ -28,6 +28,10 @@ import java.util.Optional;
 
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override
+    // The generated JAX-RS stub for this GA4GH v1 endpoint (io.swagger.api.MetadataApiV1) only carries legacy
+    // io.swagger.annotations (which document the MetadataV1 response type), not io.swagger.v3.oas.annotations;
+    // as a result openapi.yaml has no schema for this response and the openapi-generated client's metadataGet1()
+    // returns void. Tests that need to inspect the response body must still use the swagger client for this call.
     public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
         MetadataV20beta metadata = new MetadataV20beta();
         metadata.setCountry("CAN");

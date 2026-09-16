@@ -29,12 +29,12 @@ import io.dockstore.common.RegressionTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestUtility;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Workflow;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -242,7 +242,7 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     @Test
     void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -253,13 +253,13 @@ class GeneralWorkflowRegressionIT extends BaseIT {
                 "/test.json");
 
         // Publish github workflow
-        Workflow workflow = workflowApi.refresh(githubWorkflow.getId(), false);
+        Workflow workflow = workflowApi.refresh1(githubWorkflow.getId(), false);
 
         assertTrue(workflow.getDescription().contains("this is a readme file"), "Description should fall back to README file.");
         //update the default workflow path to be hello.cwl , the workflow path in workflow versions should also be changes
         workflow.setWorkflowPath("/hello.cwl");
         workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
-        workflowApi.refresh(githubWorkflow.getId(), false);
+        workflowApi.refresh1(githubWorkflow.getId(), false);
 
         // Set up DB
 

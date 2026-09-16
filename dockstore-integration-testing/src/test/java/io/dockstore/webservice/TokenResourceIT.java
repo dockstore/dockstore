@@ -16,7 +16,6 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME1;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME2;
 import static io.dockstore.common.Hoverfly.GOOGLE_ACCOUNT_USERNAME1;
@@ -43,6 +42,10 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.HoverflyTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.TokensApi;
+import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -54,10 +57,6 @@ import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.specto.hoverfly.junit5.HoverflyExtension;
 import io.specto.hoverfly.junit5.api.HoverflyCore;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.TokensApi;
-import io.swagger.client.api.UsersApi;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -171,9 +170,9 @@ public class TokenResourceIT {
     @Test
     void getGoogleTokenNewUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi tokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         insertPKCENoCheck();
-        io.swagger.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
+        io.dockstore.openapi.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
 
         // check that the user has the correct two tokens
         List<Token> tokens = tokenDAO.findByUserId(token.getUserId());
@@ -185,12 +184,12 @@ public class TokenResourceIT {
         Token fakeExistingDockstoreToken = getFakeExistingDockstoreToken();
         // looks like we take on the gmail username when no other is provided
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, token.getUsername());
-        assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
+        assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource().toString());
         assertEquals(100, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Collections.singletonList(TokenType.GOOGLE_COM.toString()));
 
         // check that the tokens work
-        ApiClient webClient = getWebClient(false, "n/a", testingPostgres);
+        ApiClient webClient = getOpenAPIWebClient(false, "n/a", testingPostgres);
         UsersApi userApi = new UsersApi(webClient);
         tokensApi = new TokensApi(webClient);
 
@@ -226,13 +225,13 @@ public class TokenResourceIT {
     @Test
     void testNinjaedGitHubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi tokensApi1 = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         insertPKCENoCheck();
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         long count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
         assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
 
-        UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
+        UsersApi usersApi1 = new UsersApi(getOpenAPIWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
         // registering user 1 again should fail
         boolean shouldFail = false;
@@ -258,19 +257,19 @@ public class TokenResourceIT {
         // re-create deleted PKCE information
         insertPKCENoCheck();
         // now register user2, should autogenerate a name
-        TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
-        io.swagger.client.model.TokenAuth token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
+        TokensApi tokensApi2 = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
+        io.dockstore.openapi.client.model.TokenAuth token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
         count = testingPostgres.runSelectStatement("select count(*) from PKCE", long.class);
         assertEquals(0, count, "PKCE cache should be clear after token is exchanged");
 
-        UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername(), testingPostgres));
+        UsersApi usersApi2 = new UsersApi(getOpenAPIWebClient(true, token.getUsername(), testingPostgres));
         assertNotEquals(CUSTOM_USERNAME2, usersApi2.getUser().getUsername());
         assertEquals("better.name", usersApi2.changeUsername("better.name").getUsername());
     }
     @Test
     void testNullGithubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi tokensApi1 = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         try {
             tokensApi1.addToken("");
             fail("Should not be able to add a null github token");
@@ -282,7 +281,7 @@ public class TokenResourceIT {
     @Test
     void testAddGithubUserWithInvalidJson(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi tokensApi1 = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         try {
             tokensApi1.addToken("garbagetest");
             fail("Invalid request body provided");
@@ -301,7 +300,7 @@ public class TokenResourceIT {
     @Test
     void loginRegisterTestWithMultipleAccounts(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         insertPKCEWithCheck();
         createAccount1(unAuthenticatedTokensApi);
         // re-create PKCE info
@@ -311,28 +310,28 @@ public class TokenResourceIT {
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
 
         // Change Account 1 username to CUSTOM_USERNAME2
-        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
-        io.swagger.client.model.User user = mainUsersApi.changeUsername(CUSTOM_USERNAME2);
+        UsersApi mainUsersApi = new UsersApi(getOpenAPIWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
+        io.dockstore.openapi.client.model.User user = mainUsersApi.changeUsername(CUSTOM_USERNAME2);
         assertEquals(CUSTOM_USERNAME2, user.getUsername());
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
 
         // Login with Google still works
-        io.swagger.client.model.TokenAuth token = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        io.dockstore.openapi.client.model.TokenAuth token = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         assertEquals(CUSTOM_USERNAME2, token.getUsername());
-        assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource());
+        assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource().toString());
 
         insertPKCEWithCheck();
         // Login with GitHub still works
-        io.swagger.client.model.TokenAuth fakeGitHubCode = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, false));
+        io.dockstore.openapi.client.model.TokenAuth fakeGitHubCode = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, false));
         assertEquals(CUSTOM_USERNAME2, fakeGitHubCode.getUsername());
-        assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource());
+        assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource().toString());
     }
 
     @Test
     void adminsAndCuratorsMayNotLoginWithGoogle(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         insertPKCEWithCheck();
         createAccount1(unAuthenticatedTokensApi);
         setAdmin(true);
@@ -367,7 +366,7 @@ public class TokenResourceIT {
     @Test
     void recreateAccountsAfterSelfDestruct(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         insertPKCENoCheck();
         createAccount1(unAuthenticatedTokensApi);
         insertPKCENoCheck();
@@ -381,16 +380,16 @@ public class TokenResourceIT {
      * @param unAuthenticatedTokensApi TokensApi without any authentication
      */
     private void createAccount1(TokensApi unAuthenticatedTokensApi) {
-        io.swagger.client.model.TokenAuth account1DockstoreToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
+        io.dockstore.openapi.client.model.TokenAuth account1DockstoreToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, account1DockstoreToken.getUsername());
         User testUser = userDAO.findById(account1DockstoreToken.getUserId());
         testUser.setUsername(CUSTOM_USERNAME1);
-        TokensApi mainUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
-        mainUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
+        TokensApi mainUserTokensApi = new TokensApi(getOpenAPIWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
+        mainUserTokensApi.addGithubToken(getFakeCode(SUFFIX1), null);
     }
 
     private void createAccount2(TokensApi unAuthenticatedTokensApi) {
-        io.swagger.client.model.TokenAuth otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX4, true));
+        io.dockstore.openapi.client.model.TokenAuth otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX4, true));
         assertEquals(GOOGLE_ACCOUNT_USERNAME2, otherGoogleUserToken.getUsername());
         User testUser = userDAO.findById(otherGoogleUserToken.getUserId());
         testUser.setUsername(CUSTOM_USERNAME2);
@@ -424,12 +423,12 @@ public class TokenResourceIT {
      * GOOGLE_ACCOUNT_USERNAME1 Google account and CUSTOM_USERNAME1 GitHub account
      */
     private void registerNewUsersAfterSelfDestruct(TokensApi unAuthenticatedTokensApi) {
-        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
+        UsersApi mainUsersApi = new UsersApi(getOpenAPIWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
         Boolean aBoolean = mainUsersApi.selfDestruct(null);
         assertTrue(aBoolean);
-        io.swagger.client.model.TokenAuth recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
+        io.dockstore.openapi.client.model.TokenAuth recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
         insertPKCEWithCheck();
-        io.swagger.client.model.TokenAuth recreatedGitHubToken = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
+        io.dockstore.openapi.client.model.TokenAuth recreatedGitHubToken = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
         assertNotSame(recreatedGitHubToken.getUserId(), recreatedGoogleToken.getUserId());
     }
 
@@ -439,7 +438,7 @@ public class TokenResourceIT {
      * Trying to link GOOGLE_ACCOUNT_USERNAME1 Google account to Dockstore account 2 should fail
      */
     private void addUnavailableGoogleTokenToGitHubUser() {
-        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
+        TokensApi otherUserTokensApi = new TokensApi(getOpenAPIWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         // Cannot add token to other user with the same Google account
         try {
             otherUserTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -457,9 +456,9 @@ public class TokenResourceIT {
      * Trying to link GITHUB_ACCOUNT_USERNAME GitHub account to Dockstore account 1 should fail
      */
     private void addUnavailableGitHubTokenToGoogleUser() {
-        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2, testingPostgres));
+        TokensApi otherUserTokensApi = new TokensApi(getOpenAPIWebClient(true, GOOGLE_ACCOUNT_USERNAME2, testingPostgres));
         try {
-            otherUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
+            otherUserTokensApi.addGithubToken(getFakeCode(SUFFIX1), null);
             fail();
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
@@ -490,20 +489,20 @@ public class TokenResourceIT {
     @Disabled("this is probably different now, todo")
     void getGoogleTokenCase135(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
-        io.swagger.client.model.TokenAuth case5Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        TokensApi tokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
+        io.dockstore.openapi.client.model.TokenAuth case5Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 5 check (No Google account, no GitHub account)
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, case5Token.getUsername());
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
-        io.swagger.client.model.TokenAuth case3Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        io.dockstore.openapi.client.model.TokenAuth case3Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 3 check (Google account with Google token, no GitHub account)
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, case3Token.getUsername());
-        TokensApi googleTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
+        TokensApi googleTokensApi = new TokensApi(getOpenAPIWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
         googleTokensApi.deleteToken(case3Token.getId());
         // Google account dockstore token
         checkTokenCount(initialTokenCount + 1);
-        io.swagger.client.model.TokenAuth case1Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        io.dockstore.openapi.client.model.TokenAuth case1Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 1 check (Google account without Google token, no GitHub account)
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, case1Token.getUsername());
     }
@@ -530,27 +529,27 @@ public class TokenResourceIT {
     @Disabled("this is probably different now, todo")
     void getGoogleTokenCase24(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
-        io.swagger.client.model.TokenAuth token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        TokensApi unauthenticatedTokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
+        io.dockstore.openapi.client.model.TokenAuth token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Check token properly added (redundant assertion)
         long googleUserID = token.getUserId();
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, token.getUsername());
 
-        TokensApi gitHubTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
+        TokensApi gitHubTokensApi = new TokensApi(getOpenAPIWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
         gitHubTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // GitHub account Google token, Google account dockstore token, Google account Google token
         checkTokenCount(initialTokenCount + 3);
-        io.swagger.client.model.TokenAuth case4Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        io.dockstore.openapi.client.model.TokenAuth case4Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 4 (Google account with Google token, GitHub account with Google token)
         assertEquals(GOOGLE_ACCOUNT_USERNAME1, case4Token.getUsername());
-        TokensApi googleUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
+        TokensApi googleUserTokensApi = new TokensApi(getOpenAPIWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
 
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(googleUserID);
 
         googleUserTokensApi.deleteToken(googleByUserId.get(0).getId());
-        io.swagger.client.model.TokenAuth case2Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        io.dockstore.openapi.client.model.TokenAuth case2Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 2 Google account without Google token, GitHub account with Google token
         assertEquals(GITHUB_ACCOUNT_USERNAME, case2Token.getUsername());
     }
@@ -577,12 +576,12 @@ public class TokenResourceIT {
     @Disabled("this is probably different now, todo")
     void getGoogleTokenCase6(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
-        TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
+        TokensApi tokensApi = new TokensApi(getOpenAPIWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
-        TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        TokensApi unauthenticatedTokensApi = new TokensApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         // GitHub account Google token
         checkTokenCount(initialTokenCount + 1);
-        io.swagger.client.model.TokenAuth case6Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        io.dockstore.openapi.client.model.TokenAuth case6Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
         // Case 6 check (No Google account, have GitHub account with Google token)
         assertEquals(GITHUB_ACCOUNT_USERNAME, case6Token.getUsername());
@@ -609,8 +608,8 @@ public class TokenResourceIT {
         assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
         insertPKCENoCheck();
-        TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
-        io.swagger.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+        TokensApi tokensApi = new TokensApi(getOpenAPIWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
+        io.dockstore.openapi.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(token.getUserId());
@@ -622,7 +621,7 @@ public class TokenResourceIT {
         Token fakeExistingDockstoreToken = getFakeExistingDockstoreToken();
         // looks like we retain the old github username when no other is provided
         assertEquals(GITHUB_ACCOUNT_USERNAME, token.getUsername());
-        assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
+        assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource().toString());
         assertEquals(2, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
     }
@@ -640,7 +639,7 @@ public class TokenResourceIT {
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
         insertPKCENoCheck();
-        TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername(), testingPostgres));
+        TokensApi tokensApi = new TokensApi(getOpenAPIWebClient(true, getFakeUser().getUsername(), testingPostgres));
         tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
         // fake user should start with the previously created google token
@@ -650,7 +649,7 @@ public class TokenResourceIT {
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
         // going back to the first user, we want to add a github token to their profile
-        io.swagger.client.model.TokenUser token = tokensApi.addGithubToken(getFakeCode(SUFFIX1));
+        io.dockstore.openapi.client.model.TokenUser token = tokensApi.addGithubToken(getFakeCode(SUFFIX1), null);
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(id);
@@ -663,7 +662,7 @@ public class TokenResourceIT {
         Token fakeExistingDockstoreToken = getFakeExistingDockstoreToken();
         // looks like we retain the old github username when no other is provided
         assertEquals(GITHUB_ACCOUNT_USERNAME, token.getUsername());
-        assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
+        assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource().toString());
         assertEquals(2, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
     }

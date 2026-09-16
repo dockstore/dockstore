@@ -34,16 +34,16 @@ import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.model.Tool;
 import java.util.List;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -204,7 +204,7 @@ public class OpenAPIServiceIT extends BaseIT {
         assertNotSame(returnedWorkflow.getId(), returnedService.getId());
 
         // test GA4GH retrieval
-        Ga4GhApi ga4GhApi = new Ga4GhApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        Ga4Ghv20Api ga4GhApi = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         final Tool tool1 = ga4GhApi.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE);
         final Tool tool2 = ga4GhApi.toolsIdGet(EntryTypeMetadata.SERVICE.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE);
         assertNotSame(tool1.getId(), tool2.getId());

@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Image;
-import io.swagger.client.model.Tag;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Image;
+import io.dockstore.openapi.client.model.Tag;
 import java.util.List;
 
 class GeneralWorkflowBaseIT extends BaseIT {

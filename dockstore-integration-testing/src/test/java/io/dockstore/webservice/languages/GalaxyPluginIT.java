@@ -16,7 +16,6 @@
 package io.dockstore.webservice.languages;
 
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,16 +25,20 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
-import io.dockstore.common.Utilities;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.Pair;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DescriptorLanguageBean;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -45,14 +48,7 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.openapi.model.DescriptorTypeWithPlain;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiResponse;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DescriptorLanguageBean;
-import io.swagger.client.model.Workflow;
 import jakarta.ws.rs.core.GenericType;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -60,8 +56,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -152,7 +149,7 @@ class GalaxyPluginIT {
 
     @Test
     void testGalaxyLanguagePlugin() {
-        MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
+        MetadataApi metadataApi = new MetadataApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // should have default languages plus galaxy via plugin
         assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
@@ -165,7 +162,7 @@ class GalaxyPluginIT {
 
     @Test
     void testFilterByDescriptorType() {
-        final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow wdlWorkflow = workflowApi
@@ -174,16 +171,12 @@ class GalaxyPluginIT {
         Workflow galaxyWorkflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/galaxy-workflow-dockstore-example-1", "/Dockstore.gxwf.yml",
                         "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
-        workflowApi.refresh(wdlWorkflow.getId(), false);
-        workflowApi.refresh(galaxyWorkflow.getId(), false);
-        workflowApi.publish(wdlWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        workflowApi.publish(galaxyWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.refresh1(wdlWorkflow.getId(), false);
+        workflowApi.refresh1(galaxyWorkflow.getId(), false);
+        workflowApi.publish1(wdlWorkflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        workflowApi.publish1(galaxyWorkflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        io.dockstore.openapi.client.ApiClient newWebClient = new io.dockstore.openapi.client.ApiClient();
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        newWebClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(newWebClient);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         final List<Tool> allStuffGalaxy = ga4Ghv20Api
                 .toolsGet(null, null, null, "galaxy", null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> allStuffWdl = ga4Ghv20Api
@@ -197,30 +190,40 @@ class GalaxyPluginIT {
 
     @Test
     void testGalaxyWorkflow() {
-        final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // unintuitively, this repo has workflows in both nextflow and galaxy
         Workflow workflowByPathGithub = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/galaxy-workflows", "/base_search_v0.1.json", "",
             "galaxy", "");
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+        final Workflow refreshGithub = workflowApi.refresh1(workflowByPathGithub.getId(), false);
 
-        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
+        byte[] response = invokeGetAPI(webClient,
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.PLAIN_GALAXY
-                + "/descriptor/base_search_v0.1.json", new GenericType<>() {
-                }, webClient, "text/plain");
-        String content1 = new String(response.getData());
+                + "/descriptor/base_search_v0.1.json");
+        String content1 = new String(response);
         // looks like a workflow file from galaxy
         assertTrue(content1.contains("toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_head_tool/1.1.0"));
-        ApiResponse<byte[]> response2 = CommonTestUtilities.invokeAPI(
+        byte[] response2 = invokeGetAPI(webClient,
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refreshGithub.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/master"
                 + "/" + DescriptorTypeWithPlain.PLAIN_GXFORMAT2
-                + "/descriptor/base_search_v0.1.json", new GenericType<>() {
-                }, webClient, "text/plain");
-        String content2 = new String(response2.getData());
+                + "/descriptor/base_search_v0.1.json");
+        String content2 = new String(response2);
         // check that both approaches result in the same content
         assertEquals(content1, content2);
+    }
+
+    /**
+     * The openapi-generated {@code ApiClient.invokeAPI} returns the body directly rather than an
+     * {@code ApiResponse} wrapper (that type doesn't exist in the openapi client), so this thin helper
+     * replaces {@code CommonTestUtilities.invokeAPI}, which is swagger-client-only, for the plain-text
+     * GA4GH descriptor endpoints exercised above.
+     */
+    private static byte[] invokeGetAPI(ApiClient client, String path) {
+        return client.invokeAPI(path, "GET", new ArrayList<Pair>(), null, new HashMap<>(), new HashMap<>(), "text/plain",
+            "text/plain", new String[] { "BEARER" }, new GenericType<byte[]>() {
+            });
     }
 
     @Test

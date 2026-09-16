@@ -34,39 +34,39 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.Ga4Ghv1Api;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Config;
+import io.dockstore.openapi.client.model.DescriptorLanguageBean;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Entry;
+import io.dockstore.openapi.client.model.Permission;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.RegistryBean;
+import io.dockstore.openapi.client.model.SharedWorkflows;
+import io.dockstore.openapi.client.model.SharedWorkflows.RoleEnum;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tag;
+import io.dockstore.openapi.client.model.TokenUser;
+import io.dockstore.openapi.client.model.ToolDescriptor;
+import io.dockstore.openapi.client.model.ToolDockerfile;
+import io.dockstore.openapi.client.model.ToolVersionV1;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.Ga4Ghv1Api;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Config;
-import io.swagger.client.model.DescriptorLanguageBean;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Entry;
-import io.swagger.client.model.MetadataV1;
-import io.swagger.client.model.Permission;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.RegistryBean;
-import io.swagger.client.model.SharedWorkflows;
-import io.swagger.client.model.SharedWorkflows.RoleEnum;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.TokenUser;
-import io.swagger.client.model.ToolDescriptor;
-import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersionV1;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -134,7 +134,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testListUsersTools() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
@@ -145,7 +145,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testFailedContainerRegistration() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
@@ -170,53 +170,53 @@ class SwaggerClientIT extends BaseIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createOpenAPIPublishRequest(true);
         assertThrows(ApiException.class,  () ->  containersApi.publish(containerId, pub));
     }
 
     @Test
     void testToolLabelling() throws ApiException {
-        ContainersApi userApi1 = new ContainersApi(getWebClient(true, false));
-        ContainersApi userApi2 = new ContainersApi(getWebClient(false, false));
+        ContainersApi userApi1 = new ContainersApi(getOpenAPIWebClient("potato", testingPostgres));
+        ContainersApi userApi2 = new ContainersApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
 
         DockstoreTool container = userApi1.getContainerByToolPath("quay.io/test_org/test2", null);
         assertFalse(container.isIsPublished());
 
         long containerId = container.getId();
-        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        userApi1.updateLabels(containerId, "", "foo,spam,phone");
         container = userApi1.getContainerByToolPath("quay.io/test_org/test2", null);
         assertEquals(3, container.getLabels().size());
-        assertThrows(ApiException.class,  () ->  userApi2.updateLabels(containerId, "foobar", ""));
+        assertThrows(ApiException.class,  () ->  userApi2.updateLabels(containerId, "", "foobar"));
     }
 
     @Test
     void testWorkflowLabelling() throws ApiException {
 
-        WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
-        WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
+        WorkflowsApi userApi1 = new WorkflowsApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
+        WorkflowsApi userApi2 = new WorkflowsApi(getOpenAPIWebClient(OTHER_USERNAME, testingPostgres));
 
-        Workflow workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        Workflow workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
 
         // Note db workflow seems to have no owner. Only owner should be able to update label, regardless of whether user is admin
-        assertThrows(ApiException.class,  () ->  userApi1.updateLabels(containerId, "foo,spam,phone", ""));
+        assertThrows(ApiException.class,  () ->  userApi1.updateLabels1(containerId, "", "foo,spam,phone"));
 
         // make one user the owner to test updating label
         testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 1 + ", " + workflow.getId() + ")");
-        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        userApi1.updateLabels1(containerId, "", "foo,spam,phone");
 
         // updating label should fail since user is not owner
-        workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         assertEquals(3, workflow.getLabels().size());
-        assertThrows(ApiException.class,  () ->  userApi2.updateLabels(containerId, "foobar", ""));
+        assertThrows(ApiException.class,  () ->  userApi2.updateLabels1(containerId, "", "foobar"));
     }
 
     @Test
     @Disabled("this old test doesn't seem to set the github user token properly")
     void testSuccessfulManualImageRegistration() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
 
         DockstoreTool c = getContainerWithoutSourcefiles();
@@ -254,7 +254,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testFailedDuplicateManualImageRegistration() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
 
         final DockstoreTool container = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
@@ -265,7 +265,7 @@ class SwaggerClientIT extends BaseIT {
     @Test
     void testGA4GHPath() throws IOException {
         // we need to explicitly test the path rather than use the swagger generated client classes to enforce the path
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final String basePath = client.getBasePath();
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools");
         final List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
@@ -278,54 +278,56 @@ class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    void testGA4GHMetadata() throws ApiException {
-        ApiClient client = getAdminWebClient();
-        Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
-        final MetadataV1 metadata = toolApi.metadataGet();
+    void testGA4GHMetadata() throws io.swagger.client.ApiException {
+        // GA4GH v1 /metadata has no response schema in openapi.yaml (unlike swagger.yaml), so the openapi-generated
+        // Ga4Ghv1Api.metadataGet1() returns void; the swagger client is the only one that can read the response body.
+        io.swagger.client.ApiClient client = BaseIT.getWebClient(ADMIN_USERNAME, testingPostgres);
+        io.swagger.client.api.Ga4Ghv1Api toolApi = new io.swagger.client.api.Ga4Ghv1Api(client);
+        final io.swagger.client.model.MetadataV1 metadata = toolApi.metadataGet();
         assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
 
     @Test
     void testGA4GHListContainers() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
+        List<io.dockstore.openapi.client.model.ToolV1> tools = toolApi.toolsGetV1(null, null, null, null, null, null, null, null, null);
         assertEquals(3, tools.size());
 
         // test a few constraints
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
+        tools = toolApi.toolsGetV1(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGetV1(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.getDockerPath(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGetV1(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(0, tools.size());
-        tools = toolApi.toolsGet(null, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGetV1(null, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(null, null, null, null, null, "Foo", null, null, null);
+        tools = toolApi.toolsGetV1(null, null, null, null, null, "Foo", null, null, null);
         assertEquals(0, tools.size());
     }
 
     @Test
     void testGetSpecificTool() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        final io.dockstore.openapi.client.model.ToolV1 tool = toolApi.toolsIdGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
         assertEquals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, tool.getId());
         // get versions
-        final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertEquals(1, toolVersions.size());
 
-        final ToolVersionV1 master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
+        final ToolVersionV1 master = toolApi.versionIdGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
         assertNotNull(master);
         try {
-            final ToolVersionV1 foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
+            final ToolVersionV1 foobar = toolApi.versionIdGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertNotNull(foobar); // this should be unreachable
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
@@ -334,13 +336,13 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testAddDuplicateTagsForTool() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         ContainertagsApi containertagsApi = new ContainertagsApi(client);
         final DockstoreTool dockstoreTool = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        io.dockstore.openapi.client.model.ToolV1 tool = toolApi.toolsIdGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
         assertEquals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, tool.getId());
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
@@ -362,16 +364,16 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testGetFiles() throws IOException, ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final ToolDockerfile toolDockerfile = toolApi
-            .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
+            .dockerfileGetV1("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         ToolDescriptor cwl = toolApi
-            .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+            .descriptorGetV1("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
@@ -404,7 +406,7 @@ class SwaggerClientIT extends BaseIT {
     @Test
     @Disabled("Can't test publish repos that don't exist")
     void testContainerRegistration() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
@@ -421,7 +423,7 @@ class SwaggerClientIT extends BaseIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createOpenAPIPublishRequest(true);
 
         container = containersApi.publish(containerId, pub);
         assertTrue(container.isIsPublished());
@@ -429,7 +431,7 @@ class SwaggerClientIT extends BaseIT {
         containers = containersApi.allPublishedContainers(null, null, null, null, null);
         assertEquals(2, containers.size());
 
-        pub = CommonTestUtilities.createPublishRequest(false);
+        pub = CommonTestUtilities.createOpenAPIPublishRequest(false);
 
         container = containersApi.publish(containerId, pub);
         assertFalse(container.isIsPublished());
@@ -437,7 +439,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testContainerSearch() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
@@ -456,7 +458,7 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testGetPublishedToolsWithInvalidSortCol() {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
@@ -467,7 +469,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testHidingTags() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
         ContainersApi containersApi = new ContainersApi(client);
         // Tool contains 2 versions, 1 is hidden
@@ -475,7 +477,7 @@ class SwaggerClientIT extends BaseIT {
 
         assertEquals(2, c.getWorkflowVersions().size(), "should see all tags even if hidden as an admin");
 
-        ApiClient muggleClient = getWebClient();
+        ApiClient muggleClient = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
         assertEquals(1, registeredContainer.getWorkflowVersions().size(), "should only see non-hidden tags as a regular user");
@@ -483,7 +485,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testListTokens() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
@@ -495,20 +497,20 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testStarUnpublishedTool() throws ApiException {
-        ApiClient client = getWebClient(true, true);
+        ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test1", null);
         long containerId = container.getId();
         assertEquals(1, containerId);
 
-        containersApi.publish(containerId, CommonTestUtilities.createPublishRequest(false));
-        final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME, testingPostgres);
+        containersApi.publish(containerId, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        final ApiClient otherWebClient = getOpenAPIWebClient(GITHUB_ACCOUNT_USERNAME, testingPostgres);
         assertNotNull(new UsersApi(otherWebClient).getUser());
         boolean expectedFailure = false;
         try {
             // should not be able to star unpublished entries as a different user
             ContainersApi otherContainersApi = new ContainersApi(otherWebClient);
-            otherContainersApi.starEntry(containerId, STAR_REQUEST);
+            otherContainersApi.starEntry(STAR_REQUEST, containerId);
         } catch (ApiException e) {
             expectedFailure = true;
         }
@@ -522,17 +524,17 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testStarringUnpublishedTool() throws ApiException {
-        ApiClient apiClient = getWebClient();
+        ApiClient apiClient = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(apiClient);
         try {
-            containersApi.starEntry(1L, STAR_REQUEST);
+            containersApi.starEntry(STAR_REQUEST, 1L);
             fail("Should've encountered problems for trying to star an unpublished tool");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Forbidden"), "Should've gotten a forbidden message");
             assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode(), "Should've gotten a status message");
         }
         try {
-            containersApi.starEntry(1L, UNSTAR_REQUEST);
+            containersApi.starEntry(UNSTAR_REQUEST, 1L);
             fail("Should've encountered problems for trying to unstar an unpublished tool");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("cannot unstar"), "Should've gotten a forbidden message");
@@ -547,21 +549,21 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testStarringUnpublishedWorkflow() throws ApiException {
-        ApiClient apiClient = getWebClient();
+        ApiClient apiClient = getOpenAPIWebClient("potato", testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        ApiClient adminApiClient = getAdminWebClient();
+        ApiClient adminApiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(false);
-        adminWorkflowsApi.publish(11L, publishRequest);
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(false);
+        adminWorkflowsApi.publish1(11L, publishRequest);
         try {
-            workflowsApi.starEntry(11L, STAR_REQUEST);
+            workflowsApi.starEntry1(11L, STAR_REQUEST);
             fail("Should've encountered problems for trying to star an unpublished workflow");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Forbidden"), "Should've gotten a forbidden message");
             assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode(), "Should've gotten a status message");
         }
         try {
-            workflowsApi.starEntry(11L, UNSTAR_REQUEST);
+            workflowsApi.starEntry1(11L, UNSTAR_REQUEST);
             fail("Should've encountered problems for trying to unstar an unpublished workflow");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("cannot unstar"), "Should've gotten a forbidden message");
@@ -577,7 +579,7 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testStarStarredTool() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         testingPostgres.runUpdateStatement("update tool set ispublished = true, waseverpublic = true;");
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
@@ -586,11 +588,11 @@ class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
         assertEquals(2, containerId);
 
-        containersApi.starEntry(containerId, STAR_REQUEST);
+        containersApi.starEntry(STAR_REQUEST, containerId);
         List<User> starredUsers = containersApi.getStarredUsers(container.getId());
         assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull(user.getUserProfiles(), "User profile is not lazy loaded in starred users"));
-        assertThrows(ApiException.class,  () -> containersApi.starEntry(containerId, STAR_REQUEST));
+        assertThrows(ApiException.class,  () -> containersApi.starEntry(STAR_REQUEST, containerId));
     }
 
     /**
@@ -601,13 +603,13 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testUnstarUnstarredTool() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
         assertNotNull(container.getUsers(), "Upon checkUser(), a container with lazy loaded users should still get users");
         long containerId = container.getId();
         assertEquals(2, containerId);
-        assertThrows(ApiException.class,  () -> containersApi.starEntry(containerId, UNSTAR_REQUEST));
+        assertThrows(ApiException.class,  () -> containersApi.starEntry(UNSTAR_REQUEST, containerId));
     }
 
     /**
@@ -618,16 +620,16 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testStarStarredWorkflow() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
-        workflowsApi.starEntry(workflowId, STAR_REQUEST);
-        List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
+        workflowsApi.starEntry1(workflowId, STAR_REQUEST);
+        List<User> starredUsers = workflowsApi.getStarredUsers1(workflow.getId());
         assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull(user.getUserProfiles(), "User profile is not lazy loaded in starred users"));
-        assertThrows(ApiException.class,  () ->  workflowsApi.starEntry(workflowId, STAR_REQUEST));
+        assertThrows(ApiException.class,  () ->  workflowsApi.starEntry1(workflowId, STAR_REQUEST));
     }
 
     /**
@@ -637,7 +639,7 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testNotFoundWorkflow() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
             workflowsApi.getPublishedWorkflow(47L, null);
@@ -655,12 +657,12 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testUnstarUnstarredWorkflow() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getOpenAPIWebClient("potato", testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
-        assertThrows(ApiException.class,  () -> workflowApi.starEntry(11L, UNSTAR_REQUEST));
+        assertThrows(ApiException.class,  () -> workflowApi.starEntry1(11L, UNSTAR_REQUEST));
     }
 
     /**
@@ -671,7 +673,7 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testStarredToolsOrder() throws ApiException {
-        ApiClient apiClient = getAdminWebClient();
+        ApiClient apiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(apiClient);
         ContainersApi containersApi = new ContainersApi(apiClient);
         List<Long> containerIds1 = Arrays.asList((long)1, (long)2, (long)3, (long)4, (long)5);
@@ -686,7 +688,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testEnumMetadataEndpoints() throws ApiException {
-        ApiClient apiClient = getWebClient();
+        ApiClient apiClient = getOpenAPIWebClient("potato", testingPostgres);
         MetadataApi metadataApi = new MetadataApi(apiClient);
         final List<RegistryBean> dockerRegistries = metadataApi.getDockerRegistries();
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
@@ -702,15 +704,15 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testCacheMetadataEndpoint() throws ApiException {
-        ApiClient apiClient = getWebClient();
+        ApiClient apiClient = getOpenAPIWebClient("potato", testingPostgres);
         MetadataApi metadataApi = new MetadataApi(apiClient);
-        final Map<String, Object> cachePerformance = metadataApi.getCachePerformance();
+        final Map<String, String> cachePerformance = metadataApi.getCachePerformance();
         assertNotNull(cachePerformance);
     }
 
     @Test
     void testRSSPlusSiteMap() throws ApiException, IOException, ParserConfigurationException, SAXException {
-        ApiClient apiClient = getWebClient();
+        ApiClient apiClient = getOpenAPIWebClient("potato", testingPostgres);
         MetadataApi metadataApi = new MetadataApi(apiClient);
         String rssFeed = metadataApi.rssFeed();
         String sitemap = metadataApi.sitemap();
@@ -741,7 +743,7 @@ class SwaggerClientIT extends BaseIT {
     }
 
     private void registerHostedWorkflow(String s) {
-        final ApiClient userWebClient = getWebClient(true, true);
+        final ApiClient userWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null);
         assertThrows(ApiException.class,  () -> userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null));
@@ -749,7 +751,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testDuplicateHostedToolCreation() {
-        final ApiClient userWebClient = getWebClient(true, true);
+        final ApiClient userWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
             .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null);
@@ -759,7 +761,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testUploadZip() {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getOpenAPIWebClient("potato", testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
@@ -769,7 +771,7 @@ class SwaggerClientIT extends BaseIT {
         final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
         // A version should now exist.
 
-        assertEquals(1, workflowsApi.getWorkflowVersions(updatedWorkflow.getId()).size());
+        assertEquals(1, workflowsApi.getWorkflowVersions(updatedWorkflow.getId(), null, null, null, null, null).size());
     }
 
     /**
@@ -777,7 +779,7 @@ class SwaggerClientIT extends BaseIT {
      */
     @Test
     void testConfig() {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getOpenAPIWebClient("potato", testingPostgres);
         final MetadataApi metadataApi = new MetadataApi(webClient);
         final Config config = metadataApi.getConfig();
         assertEquals("read:org,user:email", config.getGitHubScope());
@@ -793,13 +795,13 @@ class SwaggerClientIT extends BaseIT {
     @Test
     void testSharing() {
         // Setup for sharing
-        final ApiClient user1WebClient = getWebClient(true, true); // Admin user
-        final ApiClient user2WebClient = getWebClient(true, false);
+        final ApiClient user1WebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres); // Admin user
+        final ApiClient user2WebClient = getOpenAPIWebClient("potato", testingPostgres);
         final HostedApi user1HostedApi = new HostedApi(user1WebClient);
         final HostedApi user2HostedApi = new HostedApi(user2WebClient);
         final WorkflowsApi user1WorkflowsApi = new WorkflowsApi(user1WebClient);
         final WorkflowsApi user2WorkflowsApi = new WorkflowsApi(user2WebClient);
-        final WorkflowsApi anonWorkflowsApi = new WorkflowsApi(getAnonymousWebClient());
+        final WorkflowsApi anonWorkflowsApi = new WorkflowsApi(getAnonymousOpenAPIWebClient());
         final UsersApi users2Api = new UsersApi(user2WebClient);
         final User user2 = users2Api.getUser();
 
@@ -819,7 +821,7 @@ class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, BIOWORKFLOW, null);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, WorkflowSubClass.BIOWORKFLOW, null);
             fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             assertEquals(403, e.getCode());
@@ -837,12 +839,12 @@ class SwaggerClientIT extends BaseIT {
         assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, BIOWORKFLOW, null);
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, WorkflowSubClass.BIOWORKFLOW, null);
         user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
         try {
-            user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.emptyList());
+            user2HostedApi.editHostedWorkflow(Collections.emptyList(), hostedWorkflow1.getId());
             fail("User 2 can unexpectedly edit a readonly workflow");
         } catch (ApiException ex) {
             assertEquals(403, ex.getCode());
@@ -852,17 +854,19 @@ class SwaggerClientIT extends BaseIT {
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.WRITER);
         // Edit should now work!
         final Workflow workflow = user2HostedApi
-            .editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
-        List<WorkflowVersion> workflowVersions = user2WorkflowsApi.getWorkflowVersions(workflow.getId());
+            .editHostedWorkflow(Collections.singletonList(createCwlWorkflow()), hostedWorkflow1.getId());
+        List<WorkflowVersion> workflowVersions = user2WorkflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
 
         // Deleting the version should not fail
-        Workflow deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
+        // deleteHostedWorkflowVersion() returns the generic Entry type in the openapi client (unlike the swagger client,
+        // which returned the concrete Workflow).
+        io.dockstore.openapi.client.model.Entry deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
         assertEquals(0, deleteVersionFromWorkflow1.getWorkflowVersions().size());
 
         // Publishing the workflow should fail
-        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         try {
-            user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
+            user2WorkflowsApi.publish1(hostedWorkflow1.getId(), publishRequest);
             fail("User 2 can unexpectedly publish a read/write workflow");
         } catch (ApiException ex) {
             assertEquals(403, ex.getCode());
@@ -872,8 +876,8 @@ class SwaggerClientIT extends BaseIT {
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.OWNER);
 
         // Should be able to publish after adding a version
-        user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
-        user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
+        user2HostedApi.editHostedWorkflow(Collections.singletonList(createCwlWorkflow()), hostedWorkflow1.getId());
+        user2WorkflowsApi.publish1(hostedWorkflow1.getId(), publishRequest);
         checkAnonymousUser(anonWorkflowsApi, hostedWorkflow1);
 
         // Next, User 1 shares a second workflow with user 2 as a reader only
@@ -899,12 +903,12 @@ class SwaggerClientIT extends BaseIT {
         final Permission permission = new Permission();
         permission.setEmail(user);
         permission.setRole(role);
-        workflowsApi.addWorkflowPermission(path, permission, BIOWORKFLOW);
+        workflowsApi.addWorkflowPermission(WorkflowSubClass.BIOWORKFLOW, path, permission);
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), BIOWORKFLOW, null);
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, null);
             fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             assertEquals(401, ex.getCode());
@@ -923,7 +927,7 @@ class SwaggerClientIT extends BaseIT {
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi) throws ApiException {
         containerIds.forEach(containerId -> {
             try {
-                containersApi.starEntry(containerId, STAR_REQUEST);
+                containersApi.starEntry(STAR_REQUEST, containerId);
             } catch (ApiException e) {
                 fail("Couldn't star entry");
             }
@@ -935,7 +939,7 @@ class SwaggerClientIT extends BaseIT {
         }
         containerIds.parallelStream().forEach(containerId -> {
             try {
-                containersApi.starEntry(containerId, UNSTAR_REQUEST);
+                containersApi.starEntry(UNSTAR_REQUEST, containerId);
             } catch (ApiException e) {
                 fail("Couldn't unstar entry");
             }
