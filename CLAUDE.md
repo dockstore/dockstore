@@ -34,6 +34,21 @@ Keep the freeform "Description" and "Review Instructions" sections brief — one
 genuinely complicated fix, not multi-paragraph writeups. (The "Security and Privacy" checklist section is
 separate and must still be copied verbatim per the section below.)
 
+### Using CI and review feedback to guide work
+
+When diagnosing a failing build or iterating on an open PR, pull in whatever signal is actually available
+rather than guessing:
+
+- If `gh` or a GitHub MCP server is available, use GitHub Actions build results (check runs, job logs) to
+  guide diagnosis and fixes.
+- If a CircleCI MCP server is available, use its results (workflow/job status, test failures, logs) to guide
+  diagnosis and fixes.
+- Codacy findings aren't reliably fetchable through available tooling. If Codacy results seem significant to
+  the task, prompt the user to copy-paste them rather than guessing at what Codacy flagged.
+- Code review comments left by human developers are high-priority direction — investigate each one and
+  propose concrete solutions, even without an explicit instruction to do so. Bot-authored comments (Codacy,
+  Copilot Autofix, etc.) are useful but secondary to human reviewer comments.
+
 ## Build
 
 This is a multi-module Maven project (Java 21). Always invoke the Maven wrapper (`./mvnw`), never a system-installed
