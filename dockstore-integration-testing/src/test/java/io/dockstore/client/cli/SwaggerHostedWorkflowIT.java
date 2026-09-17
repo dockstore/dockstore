@@ -27,16 +27,16 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.testing.ResourceHelpers;
 import io.openapi.model.DescriptorType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -59,13 +59,11 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This tests various operations having to do with hosted workflows.
- * @deprecated uses swagger client, prefer the openapi client in SwaggerWorkflowIT
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
-@Deprecated
 class SwaggerHostedWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
 
@@ -92,7 +90,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
     }
     @Test
     void testHostedEditAndDelete() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = manualRegisterAndPublish(workflowApi, DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "", "cwl", SourceControl.GITHUB,
@@ -109,7 +107,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
 
         // using hosted apis to edit normal workflow should fail
         try {
-            hostedApi.editHostedWorkflow(workflow.getId(), new ArrayList<>());
+            hostedApi.editHostedWorkflow(new ArrayList<>(), workflow.getId());
             Assertions.fail("Should throw API exception");
         } catch (ApiException e) {
             Assertions.assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
@@ -118,19 +116,19 @@ class SwaggerHostedWorkflowIT extends BaseIT {
 
     @Test
     void testHiddenAndDefaultVersions() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
 
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         WorkflowVersion version = workflowVersions.stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get();
         version.setHidden(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
 
         try {
-            workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+            workflow = workflowsApi.updateDefaultVersion1(workflow.getId(), version.getName());
             Assertions.fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             Assertions.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -139,7 +137,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         // Set the default version to a non-hidden version
         version.setHidden(false);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
-        workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+        workflow = workflowsApi.updateDefaultVersion1(workflow.getId(), version.getName());
 
         // Should not be able to hide a default version
         version.setHidden(true);
@@ -151,15 +149,15 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         }
 
         // Test same for hosted workflows
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
-        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
 
-        WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
+        WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null, null, null, null).get(0);
         hostedVersion.setHidden(true);
         try {
             workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
@@ -172,13 +170,13 @@ class SwaggerHostedWorkflowIT extends BaseIT {
             cwlVersion: v1.0
 
             class: Workflow""");
-        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).stream().filter(v -> v.getName().equals("1")).findFirst().get();
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null, null, null, null).stream().filter(v -> v.getName().equals("1")).findFirst().get();
         hostedVersion.setHidden(true);
         workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
 
         try {
-            workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), hostedVersion.getName());
+            workflowsApi.updateDefaultVersion1(hostedWorkflow.getId(), hostedVersion.getName());
             Assertions.fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             Assertions.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -187,32 +185,32 @@ class SwaggerHostedWorkflowIT extends BaseIT {
 
     @Test
     void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow("name", null, "garbage type", null, null));
+        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow(null, "name", "garbage type", null, null));
 
     }
     @Test
     void testDuplicateHostedWorkflowCreation() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
-        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null), "already exists");
+        hostedApi.createHostedWorkflow(null, "name", DescriptorType.CWL.toString(), null, null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow(null, "name", DescriptorType.CWL.toString(), null, null), "already exists");
     }
 
     @Test
     void testDuplicateHostedToolCreation() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
-        assertThrows(ApiException.class, () -> hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null), "already exists");
+        hostedApi.createHostedTool(Registry.DOCKER_HUB.getDockerPath(), "name", DescriptorType.CWL.toString(), "namespace", null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedTool(Registry.DOCKER_HUB.getDockerPath(), "name", DescriptorType.CWL.toString(), "namespace", null), "already exists");
     }
 
     @Test
     void testHostedWorkflowMetadata() throws IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "name", DescriptorType.CWL.toString(), null, null);
         Assertions.assertNotNull(hostedWorkflow.getLastModifiedDate());
         Assertions.assertNotNull(hostedWorkflow.getLastUpdated());
 
@@ -232,13 +230,13 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         source2.setContent("foo");
         source2.setAbsolutePath("/revtool.cwl");
         source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        hostedApi.editHostedWorkflow(Lists.newArrayList(source, source1, source2), hostedWorkflow.getId());
 
         source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source1.setContent("food");
         source2.setContent("food");
         final Workflow updatedHostedWorkflow = hostedApi
-            .editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+            .editHostedWorkflow(Lists.newArrayList(source, source1, source2), hostedWorkflow.getId());
         Assertions.assertNotNull(updatedHostedWorkflow.getLastModifiedDate());
         Assertions.assertNotNull(updatedHostedWorkflow.getLastUpdated());
 
@@ -249,7 +247,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
         source2.setContent(
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
-        Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        Workflow workflow = hostedApi.editHostedWorkflow(Lists.newArrayList(source, source1, source2), hostedWorkflow.getId());
         Assertions.assertFalse(workflow.getInputFileFormats().isEmpty());
         Assertions.assertFalse(workflow.getOutputFileFormats().isEmpty());
     }

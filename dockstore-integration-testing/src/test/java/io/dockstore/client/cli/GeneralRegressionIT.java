@@ -26,11 +26,11 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.model.DockstoreTool;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -95,7 +95,7 @@ class GeneralRegressionIT extends BaseIT {
      * @throws ApiException comes back from a web service error
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         return new ContainersApi(client);
     }
 

@@ -1173,7 +1173,7 @@ public class DockerRepoResource
     // If the tool has Amazon ECR's private docker path, *.dkr.ecr.*.amazonaws.com, the tool must be private
     private void checkAmazonECRPrivateAccess(String amazonECRDockerPath, boolean privateAccess) {
         // Public Amazon ECR tool (public.ecr.aws docker path) can't be set to private
-        if (Registry.AMAZON_ECR.getDockerPath().equals(amazonECRDockerPath) && privateAccess) {
+        if (amazonECRDockerPath.startsWith(Registry.AMAZON_ECR.getDockerPath()) && privateAccess) {
             throw new CustomWebApplicationException("The public Amazon ECR tool cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
         }
 

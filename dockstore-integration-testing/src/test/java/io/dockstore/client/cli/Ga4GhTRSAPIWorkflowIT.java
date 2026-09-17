@@ -31,7 +31,27 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.Ga4Ghv20BetaApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Entry;
+import io.dockstore.openapi.client.model.FileFormat;
+import io.dockstore.openapi.client.model.FileWrapperV20beta;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Tag.ReferenceTypeEnum;
+import io.dockstore.openapi.client.model.ToolFileV20beta;
+import io.dockstore.openapi.client.model.ToolFileV20beta.FileTypeEnum;
+import io.dockstore.openapi.client.model.ToolV20beta;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.FileDAO;
@@ -39,28 +59,6 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.DescriptorTypeWithPlain;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.ApiResponse;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.EntriesApi;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Entry;
-import io.swagger.client.model.FileFormat;
-import io.swagger.client.model.FileWrapper;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag.ReferenceTypeEnum;
-import io.swagger.client.model.TokenUser;
-import io.swagger.client.model.Tool;
-import io.swagger.client.model.ToolFile;
-import io.swagger.client.model.ToolFile.FileTypeEnum;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.DescriptorTypeEnum;
-import io.swagger.client.model.WorkflowVersion;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import java.io.File;
@@ -139,15 +137,21 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      */
     @Test
     void testGa4ghEndpointForComplexWdlWorkflow() throws IOException {
-        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
-        Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
+        // The raw zip-download check below needs response headers (content-type) that only the swagger client's
+        // ApiResponse/invokeAPI exposes -- the openapi client's invokeAPI returns the body directly with no
+        // ApiResponse wrapper and no *WithHttpInfo method variants, so this test keeps one swagger client around for that.
+        final io.swagger.client.ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        io.swagger.client.api.WorkflowsApi ownerWorkflowApi = new io.swagger.client.api.WorkflowsApi(ownerWebClient);
+        io.swagger.client.model.Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
         ownerWorkflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(true));
         final List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(refresh.getWorkflowVersions().stream()
             .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getId());
-        final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
-        final List<ToolFile> files = ga4GhApi
-            .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
+
+        final ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        // check on the beta TRS endpoint (/api/ga4gh/v2), which is what the swagger client's Ga4GhApi hit
+        final Ga4Ghv20BetaApi ga4Ghv20BetaApi = new Ga4Ghv20BetaApi(openAPIWebClient);
+        final List<ToolFileV20beta> files = ga4Ghv20BetaApi
+            .toolsIdVersionsVersionIdTypeFilesGet1("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
         assertEquals(1, files.stream().filter(f -> f.getFileType() == FileTypeEnum.PRIMARY_DESCRIPTOR).count());
         assertEquals(sourceFiles.size() - 1, files.stream().filter(f -> f.getFileType() == FileTypeEnum.SECONDARY_DESCRIPTOR).count());
         files.forEach(file -> {
@@ -157,10 +161,10 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         });
 
         // test zip download via GA4GH TRS 2.0.1
-        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIWebClient);
         final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
             DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
-        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
+        io.swagger.client.ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
                 + "/files?format=zip", new GenericType<byte[]>() {
@@ -168,7 +172,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         checkOnZipFile(response, DescriptorLanguage.WDL);
     }
 
-    private static void checkOnJsonFile(ApiResponse<byte[]> response) {
+    private static void checkOnJsonFile(io.swagger.client.ApiResponse<byte[]> response) {
         assertTrue(CommonTestUtilities.getContentType(response).startsWith("application/json"));
         String json = new String(response.getData());
         try {
@@ -182,7 +186,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         }
     }
 
-    private static void checkOnZipFile(ApiResponse<byte[]> response, DescriptorLanguage language) throws IOException {
+    private static void checkOnZipFile(io.swagger.client.ApiResponse<byte[]> response, DescriptorLanguage language) throws IOException {
         assertEquals("application/zip", CommonTestUtilities.getContentType(response));
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), response.getData());
@@ -206,13 +210,11 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         long userId = 1;
 
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi openAPIWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
-        refreshByOrganizationReplacement(openAPIWorkflowApi, openAPIWebClient);
+        refreshByOrganizationReplacement(workflowApi, webClient);
 
         List<Workflow> workflows = usersApi.userWorkflows(userId);
 
@@ -234,13 +236,13 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
-        workflowApi.refresh(mtaNf.getId(), false);
+        workflowApi.refresh1(mtaNf.getId(), false);
         // publish this way? (why is the auto-generated variable private?)
-        workflowApi.publish(mtaNf.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish1(mtaNf.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         mtaNf = workflowApi.getWorkflow(mtaNf.getId(), null);
         assertTrue(mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0, "a workflow lacks a date");
         assertNotNull(mtaNf, "Nextflow workflow not found after update");
-        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(mtaNf.getId());
+        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(mtaNf.getId(), null, null, null, null, null);
         assertTrue(workflowVersions.size() >= 2, "nextflow workflow should have at least two versions");
 
         int numOfSourceFiles = workflowVersions.stream().mapToInt(version -> fileDAO.findSourceFilesByVersion(version.getId()).size()).sum();
@@ -256,10 +258,10 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         assertTrue(scriptCount >= 1 && configCount >= 1, "nextflow workflow should have at least one config file and one script file");
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
+        Ga4Ghv20BetaApi ga4Ghv2Api = new Ga4Ghv20BetaApi(webClient);
+        List<ToolV20beta> toolV2s = ga4Ghv2Api.toolsGet1(null, null, null, null, null, null, null, null, null, null, null);
         String mtaWorkflowID = "#workflow/github.com/DockstoreTestUser2/mta-nf";
-        Tool toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
+        ToolV20beta toolV2 = ga4Ghv2Api.toolsIdGet1(mtaWorkflowID);
         assertTrue(toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects.equals(tool.getId(), mtaWorkflowID)), "could get mta as part of list");
         assertNotNull(toolV2, "could get mta as a specific tool");
 
@@ -290,21 +292,21 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      */
     @Test
     void testMoreCWLImportsStructure() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi
             .manualRegister("github", "DockstoreTestUser2/workflow-seq-import", "/cwls/chksum_seqval_wf_interleaved_fq.cwl", "", "cwl",
                 "/examples/chksum_seqval_wf_interleaved_fq.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, null);
 
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
+        workflowApi.refresh1(workflowByPathGithub.getId(), false);
         assertEquals("GNU General Public License v3.0", workflowByPathGithub.getLicenseInformation().getLicenseName());
-        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish1(workflowByPathGithub.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        FileWrapper toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0");
+        Ga4Ghv20BetaApi ga4Ghv2Api = new Ga4Ghv20BetaApi(webClient);
+        FileWrapperV20beta toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty());
         // check slashed paths
@@ -319,20 +321,20 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     // working on https://github.com/dockstore/dockstore/issues/3335
     @Test
     void testWeirdPathCase() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi
             .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
                 "");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, null);
 
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.refresh1(workflowByPathGithub.getId(), false);
+        workflowApi.publish1(workflowByPathGithub.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        FileWrapper toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("WDL", "#workflow/github.com/dockstore-testing/viral-pipelines", "test_path");
+        Ga4Ghv20BetaApi ga4Ghv2Api = new Ga4Ghv20BetaApi(webClient);
+        FileWrapperV20beta toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet1("WDL", "#workflow/github.com/dockstore-testing/viral-pipelines", "test_path");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty());
         // check relative path below the main descriptor
@@ -349,7 +351,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      */
     @Test
     void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = new DockstoreTool();
@@ -365,7 +367,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         registeredTool = toolApi.refresh(registeredTool.getId());
 
         // Make publish request (true)
-        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         toolApi.publish(registeredTool.getId(), publishRequest);
 
         // look that branches and tags are typed correctly for tools
@@ -385,9 +387,9 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         assertTrue(allHaveCommitIds, "not all tools seem to have commit ids");
 
         // check on URLs for workflows via ga4gh calls
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        FileWrapper toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1");
+        Ga4Ghv20BetaApi ga4Ghv2Api = new Ga4Ghv20BetaApi(webClient);
+        FileWrapperV20beta toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet1("CWL", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty());
         // check slashed paths (this doesn't seem to make sense, the leading slash seems to indicate this is relative to the root)
@@ -413,27 +415,27 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * @throws IOException
      * @throws URISyntaxException
      */
-    private void checkForRelativeFile(Ga4GhApi ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
+    private void checkForRelativeFile(Ga4Ghv20BetaApi ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
         throws IOException, URISyntaxException {
-        FileWrapper toolDescriptor;
+        FileWrapperV20beta toolDescriptor;
         String content;
         toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", dockstoreTestUser2RelativeImportsTool, reference, filename);
+            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet1("CWL", dockstoreTestUser2RelativeImportsTool, reference, filename);
         content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty());
     }
 
     @Test
     void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, null);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
 
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
+        final Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), false);
 
         // Test that the secondary file's input file formats are recognized (secondary file is varscan_cnv.cwl)
         List<FileFormat> fileFormats = workflow.getInputFileFormats();
@@ -457,29 +459,29 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         // test out methods to access secondary files
 
         final List<SourceFile> masterImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "master");
         assertEquals(3, masterImports.size(), "should find 3 imports, found " + masterImports.size());
         final List<SourceFile> rootImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "rootTest");
         assertEquals(0, rootImports.size(), "should find 0 imports, found " + rootImports.size());
 
         // next, change a path for the root imports version
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         workflowVersions.stream().filter(v -> v.getName().equals("rootTest")).findFirst().get().setWorkflowPath("/cnv.cwl");
         workflowApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
+        workflowApi.refresh1(workflowByPathGithub.getId(), false);
         final List<SourceFile> newMasterImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "master");
         assertEquals(3, newMasterImports.size(), "should find 3 imports, found " + newMasterImports.size());
         final List<SourceFile> newRootImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "rootTest");
         assertEquals(3, newRootImports.size(), "should find 3 imports, found " + newRootImports.size());
 
-        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        FileWrapper toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        Ga4Ghv20BetaApi ga4Ghv2Api = new Ga4Ghv20BetaApi(webClient);
+        FileWrapperV20beta toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty());
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
@@ -487,27 +489,30 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         // checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
         // test json should use relative path with ".."
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "../test.json");
-        List<ToolFile> toolFiles = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        List<ToolFileV20beta> toolFiles = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeFilesGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         assertTrue(toolFiles.size() >= 5, "should have at least 5 files");
         assertTrue(toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5, "all files should have relative paths");
 
         // check on urls created for test files
-        List<FileWrapper> toolTests = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        List<FileWrapperV20beta> toolTests = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeTestsGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         assertTrue(toolTests.size() > 0, "could not find tool tests");
-        for (FileWrapper test : toolTests) {
+        for (FileWrapperV20beta test : toolTests) {
             content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
             assertFalse(content.isEmpty());
         }
     }
 
     @Test
-    void testDifferentCaseForZipDownload() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+    void testDifferentCaseForZipDownload() throws io.swagger.client.ApiException, URISyntaxException, IOException {
+        // This test is purely about raw content-negotiation (checking response Content-Type across
+        // Accept-header combinations), which needs ApiResponse/invokeAPI header access that only the
+        // swagger client provides (the openapi client's invokeAPI returns the body directly, no headers) -- kept on swagger client entirely.
+        final io.swagger.client.ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        io.swagger.client.api.WorkflowsApi workflowApi = new io.swagger.client.api.WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
+        final io.swagger.client.model.Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
@@ -518,7 +523,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         GenericType<byte[]> byteArrayType = new GenericType<>() {};
 
         // zip parameter with wildcard media type, should get zip
-        ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
+        io.swagger.client.ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.MEDIA_TYPE_WILDCARD);
         checkOnZipFile(response, DescriptorLanguage.CWL);
 
         // zip parameter with even more wildcard media type, should get zip
@@ -537,24 +542,24 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         try {
             CommonTestUtilities.invokeAPI(trsPath + "?format=zip", byteArrayType, webClient, MediaType.APPLICATION_JSON);
             fail("should have died with bad request");
-        } catch (ApiException e) {
+        } catch (io.swagger.client.ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
     }
 
     @Test
     void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
-        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        WorkflowsApi workflowApi = new WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, null);
+        workflowApi.refresh1(workflowByPathGithub.getId(), false);
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null, testingPostgres));
+        Ga4Ghv20BetaApi anonymousGa4Ghv2Api = new Ga4Ghv20BetaApi(CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api
-                .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+                .toolsIdVersionsVersionIdTypeFilesGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         } catch (ApiException e) {
             thrownException = true;
         }
@@ -563,24 +568,24 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         boolean thrownListException = false;
         try {
             anonymousGa4Ghv2Api
-                .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+                .toolsIdVersionsVersionIdTypeTestsGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         } catch (ApiException e) {
             thrownListException = true;
         }
         assert (thrownListException);
 
         // can get content via admin user
-        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        Ga4Ghv20BetaApi adminGa4Ghv2Api = new Ga4Ghv20BetaApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
-        List<ToolFile> toolFiles = adminGa4Ghv2Api
-            .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        List<ToolFileV20beta> toolFiles = adminGa4Ghv2Api
+            .toolsIdVersionsVersionIdTypeFilesGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         assertTrue(toolFiles.size() >= 5, "should have at least 5 files");
 
         // cannot get relative paths anonymously
         toolFiles.forEach(file -> {
             boolean thrownInnerException = false;
             try {
-                anonymousGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL",
+                anonymousGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet1("CWL",
                     "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", file.getPath());
             } catch (ApiException e) {
                 thrownInnerException = true;
@@ -591,16 +596,16 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         final AtomicInteger count = new AtomicInteger(0);
         // can get relative paths with admin user
         toolFiles.forEach(file -> {
-            if (file.getFileType() == ToolFile.FileTypeEnum.TEST_FILE) {
+            if (file.getFileType() == FileTypeEnum.TEST_FILE) {
                 // enable later with a simplification to TRS
-                FileWrapper test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL",
+                FileWrapperV20beta test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet1("CWL",
                     "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", file.getPath());
                 assertFalse(test.getContent().isEmpty());
                 count.incrementAndGet();
-            } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR
-                || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
+            } else if (file.getFileType() == FileTypeEnum.PRIMARY_DESCRIPTOR
+                || file.getFileType() == FileTypeEnum.SECONDARY_DESCRIPTOR) {
                 // annoyingly, some files are tool tests, some are tooldescriptor
-                FileWrapper toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL",
+                FileWrapperV20beta toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet1("CWL",
                     "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", file.getPath());
                 assertFalse(toolDescriptor.getContent().isEmpty());
                 count.incrementAndGet();
@@ -613,22 +618,22 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
     @Test
     void testAliasOperations() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, null);
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        final Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         Workflow md5workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker",
             "/checker-workflow-wrapping-workflow.cwl", "test", "cwl", null);
-        workflowApi.refresh(md5workflow.getId(), false);
-        workflowApi.publish(md5workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.refresh1(md5workflow.getId(), false);
+        workflowApi.publish1(md5workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // give the workflow a few aliases
         EntriesApi genericApi = new EntriesApi(webClient);
-        Entry entry = genericApi.addAliases(workflow.getId(), "awesome workflow, spam, test workflow");
+        Entry entry = genericApi.addAliases1(workflow.getId(), "awesome workflow, spam, test workflow");
         assertTrue(entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases()
             .containsKey("test workflow"), "entry is missing expected aliases");
 
@@ -636,21 +641,21 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         assertNotNull(workflowById.getAliases(), "Getting workflow by ID has null alias");
 
         // check that the aliases work in TRS search
-        Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
+        Ga4Ghv20BetaApi ga4GhApi = new Ga4Ghv20BetaApi(webClient);
         // this generated code is mucho silly
-        List<Tool> workflows = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, null, 100);
+        List<ToolV20beta> workflows = ga4GhApi.toolsGet1(null, null, null, null, null, null, null, null, null, null, 100);
         assertEquals(2, workflows.size(), "expected workflows not found");
-        List<Tool> awesomeWorkflow = ga4GhApi.toolsGet(null, "awesome workflow", null, null, null, null, null, null, null, null, 100);
+        List<ToolV20beta> awesomeWorkflow = ga4GhApi.toolsGet1(null, "awesome workflow", null, null, null, null, null, null, null, null, 100);
         assertTrue(awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3, "workflow was not found or didn't have expected aliases");
         // add a few new aliases
-        entry = genericApi.addAliases(workflow.getId(), "foobar, another workflow");
+        entry = genericApi.addAliases1(workflow.getId(), "foobar, another workflow");
         assertTrue(entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5, "entry is missing expected aliases");
 
         // try to add duplicates; this is not allowed
         boolean throwsError = false;
         try {
             // add a few new aliases
-            entry = genericApi.addAliases(workflow.getId(), "another workflow");
+            entry = genericApi.addAliases1(workflow.getId(), "another workflow");
         } catch (ApiException ex) {
             throwsError = true;
         }
@@ -660,7 +665,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         }
 
         // Get workflow by alias
-        io.dockstore.openapi.client.model.Entry aliasWorkflow = new io.dockstore.openapi.client.api.EntriesApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres)).getEntryByAlias("foobar");
+        Entry aliasWorkflow = new EntriesApi(webClient).getEntryByAlias("foobar");
         assertNotNull(aliasWorkflow, "Should retrieve the workflow by alias");
     }
 
@@ -677,29 +682,29 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         SUPPORT.getConfiguration().setAuthorizerType("sam");
         ToolsApiServiceImpl.setAuthorizer(PermissionsFactory.createAuthorizer(tokenDAO, SUPPORT.getConfiguration()));
 
-        ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, null);
+        workflowApi.refresh1(workflowByPathGithub.getId(), false);
+        workflowApi.publish1(workflowByPathGithub.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        ApiClient otherUserWebClient = getWebClient(OTHER_USERNAME, testingPostgres);
+        ApiClient otherUserWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         UsersApi otherUserUsersApi = new UsersApi(otherUserWebClient);
-        Ga4GhApi otherUserGa4Ghv2Api = new Ga4GhApi(otherUserWebClient);
+        Ga4Ghv20BetaApi otherUserGa4Ghv2Api = new Ga4Ghv20BetaApi(otherUserWebClient);
         // Check that user has no Google token
         assertTrue(otherUserUsersApi.getUserTokens(otherUserUsersApi.getUser().getId()).stream()
-                .map(TokenUser::getTokenSource)
+                .map(tokenUser -> tokenUser.getTokenSource().toString())
                 .noneMatch(tokenSource -> TokenType.GOOGLE_COM.toString().equals(tokenSource)));
-        FileWrapper toolDescriptor = otherUserGa4Ghv2Api
-                .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
+        FileWrapperV20beta toolDescriptor = otherUserGa4Ghv2Api
+                .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty()); // An authenticated user with no Google token should be able to get the tool descriptor
         // Add a fake Google token. This mimics an expired Google refresh token
         testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
                 + String.format("(9001, 'fakeToken', 'fakeRefreshToken', 'google.com', %s, '%s', null)", otherUserUsersApi.getUser().getId(), otherUserUsersApi.getUser().getUsername()));
         toolDescriptor = otherUserGa4Ghv2Api
-                .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
+                .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet1("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
         content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty()); // An authenticated user with an expired Google refresh token should be able to get the tool descriptor
     }

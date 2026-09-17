@@ -11,19 +11,19 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Event;
+import io.dockstore.openapi.client.model.Event.TypeEnum;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tag;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EventsApi;
-import io.swagger.client.api.OrganizationsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Event;
-import io.swagger.client.model.Event.TypeEnum;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tag;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -63,13 +63,13 @@ class EventResourceIT extends BaseIT {
 
     @Test
     void eventResourcePaginationTest() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
-                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned in starred entries mode");
@@ -79,7 +79,7 @@ class EventResourceIT extends BaseIT {
 
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starEntry(starRequest, tool.getId());
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0)
             .stream().filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY && e.getType() != TypeEnum.UNPUBLISH_ENTRY)
             .collect(Collectors.toList());
@@ -90,9 +90,10 @@ class EventResourceIT extends BaseIT {
         for (int i = 0; i < EventDAO.MAX_LIMIT + 10; i++) {
             randomTagNames.add(RandomStringUtils.randomAlphanumeric(255));
         }
+        final long toolId = tool.getId();
         randomTagNames.forEach(randomTagName -> {
             List<Tag> randomTags = getRandomTags(randomTagName);
-            toolTagsApi.addTags(tool.getId(), randomTags);
+            toolTagsApi.addTags(toolId, randomTags);
         });
         try {
             events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT + 1, 0);
@@ -116,17 +117,14 @@ class EventResourceIT extends BaseIT {
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null);
         assertEquals(10, events.size(), "Should have used the default limit");
 
-        // test in openapi and whether jsonfilters work
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.EventsApi openEventsApi = new io.dockstore.openapi.client.api.EventsApi(webClient);
-        final List<io.dockstore.openapi.client.model.Event> openEvents = openEventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
+        // check whether jsonfilters work
+        final List<Event> openEvents = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
         // getting the versions though events leads to null versions (i.e. grabbing an event that links to a tool, shouldn't grab all versions too)
         assertTrue(openEvents.size() > 10);
         assertTrue(openEvents.stream().allMatch(event -> event.getTool().getWorkflowVersions() == null));
         // but getting them normally should not be (i.e. we should be able to get versions normally)
-        io.dockstore.openapi.client.api.ContainertagsApi openTagApi = new io.dockstore.openapi.client.api.ContainertagsApi(webClient);
         openEvents.forEach(e -> {
-            final List<io.dockstore.openapi.client.model.Tag> tagsByPath = openTagApi.getTagsByPath(e.getTool().getId());
+            final List<Tag> tagsByPath = toolTagsApi.getTagsByPath(e.getTool().getId());
             assertTrue(tagsByPath.size() > 0);
         });
     }
@@ -144,11 +142,11 @@ class EventResourceIT extends BaseIT {
 
     @Test
     void testEventVisibility() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         EventsApi eventsApi = new EventsApi(client);
         ContainersApi toolsApi = new ContainersApi(client);
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
-        ApiClient otherClient = getWebClient(OTHER_USERNAME, testingPostgres);
+        ApiClient otherClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         EventsApi otherEventsApi = new EventsApi(otherClient);
         long creatorId = 1;
         long entryId = 1;
@@ -159,13 +157,15 @@ class EventResourceIT extends BaseIT {
         assertTrue(eventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).isEmpty());
 
         // publish the entry and confirm it is published
-        toolsApi.publish(entryId, CommonTestUtilities.createPublishRequest(true));
+        toolsApi.publish(entryId, CommonTestUtilities.createOpenAPIPublishRequest(true));
         assertTrue(toolsApi.getContainer(entryId, null).isIsPublished());
 
         // create a collection and add the entry to it
-        long organizationId = OrganizationIT.createOrg(organizationsApi).getId();
-        long collectionId = organizationsApi.createCollection(organizationId, OrganizationIT.stubCollectionObject()).getId();
-        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
+        long organizationId = OrganizationIT.createOpenAPIOrg(organizationsApi).getId();
+        long collectionId = organizationsApi.createCollection(OrganizationIT.openApiStubCollectionObject(), organizationId).getId();
+        // curator (null -> resource default) and reindex (true, matching the resource's @DefaultValue) are params the openapi
+        // client exposes that the (unregenerated) swagger client's addEntryToCollection predates and does not have
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null, null, true);
 
         // create a synthetic "ADD_VERSION_TO_ENTRY" event
         testingPostgres.runUpdateStatement(String.format("insert into event (id, initiatorUserId, type, toolId, versionId) values (%d, %d, '%s', %d, %d)", eventId++, creatorId, TypeEnum.ADD_VERSION_TO_ENTRY, entryId, versionId));
@@ -181,7 +181,7 @@ class EventResourceIT extends BaseIT {
 
         // unpublish the workflow
         // adds an UNPUBLISH_ENTRY event
-        toolsApi.publish(entryId, CommonTestUtilities.createPublishRequest(false));
+        toolsApi.publish(entryId, CommonTestUtilities.createOpenAPIPublishRequest(false));
 
         // check event visibility to initiator and others
         // since the entry is not published, the ADD_VERSION_TO_ENTRY event should no longer be visible to others

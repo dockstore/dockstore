@@ -1,6 +1,6 @@
 package io.dockstore.webservice;
 
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -11,13 +11,13 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -87,9 +87,9 @@ class ConfigurationIT {
     }
 
     private void createWorkflow(String sourceFilePath) {
-        ApiClient webClient = getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres);
+        ApiClient webClient = getOpenAPIWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeWorkflow" + ID.incrementAndGet(), null, DescriptorLanguage.CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow(null, "awesomeWorkflow" + ID.incrementAndGet(), DescriptorLanguage.CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent("cwlVersion: v1.0\nclass: Workflow");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -100,7 +100,7 @@ class ConfigurationIT {
         file2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         file2.setPath(sourceFilePath);
         file2.setAbsolutePath(sourceFilePath);
-        api.editHostedWorkflow(hostedWorkflow.getId(), List.of(file, file2));
+        api.editHostedWorkflow(List.of(file, file2), hostedWorkflow.getId());
     }
 
     private void testGoodSourceFilePath(String path) {

@@ -30,19 +30,20 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.OrganizationsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Collection;
-import io.swagger.client.model.EntryUpdateTime;
-import io.swagger.client.model.Organization;
-import io.swagger.client.model.OrganizationUpdateTime;
-import io.swagger.client.model.Profile;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.EntryUpdateTime;
+import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.OrganizationUpdateTime;
+import io.dockstore.openapi.client.model.Profile;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import java.util.List;
 import java.util.Objects;
 import org.apache.http.HttpStatus;
@@ -59,14 +60,11 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
  * Tests operations from the UserResource
  *
  * @author dyuen
- * @deprecated uses old swagger-based clients, new tests should only use openapi
- *
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-@Deprecated(since = "1.14")
 class UserResourceSwaggerIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
     private static final String INSTALLATION_ID = "1179416";
@@ -87,7 +85,7 @@ class UserResourceSwaggerIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
-        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        WorkflowsApi workflowApi = new WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
                 DescriptorLanguage.WDL.getShortName(), "");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
@@ -116,14 +114,14 @@ class UserResourceSwaggerIT extends BaseIT {
 
     @Test
     void testChangingNameFail() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         assertThrows(ApiException.class, () -> userApi.changeUsername("1direction"));
     }
 
     @Test
     void testChangingNameFail2() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         assertThrows(ApiException.class, () -> userApi.changeUsername("foo@gmail.com"));
     }
@@ -131,7 +129,7 @@ class UserResourceSwaggerIT extends BaseIT {
     @Test
     void testUserProfileLoading() throws ApiException {
         // Get the user
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
 
         // Profiles are lazy loaded, and should not be present by default
@@ -145,20 +143,20 @@ class UserResourceSwaggerIT extends BaseIT {
 
     @Test
     void testChangingNameSuccess() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo");
         assertEquals("foo", userApi.getUser().getUsername());
 
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
-        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
+        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow(null, "hosted1", "cwl", null, null);
         assertEquals("foo", hostedWorkflow.getOrganization(), "Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization());
     }
 
     @Test
     void testUserTermination() throws ApiException {
-        ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
@@ -211,7 +209,7 @@ class UserResourceSwaggerIT extends BaseIT {
      */
     @Test
     void testChangeUsernameAfterOrgCreation() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
 
         // Can change username when not a member of any organisations
@@ -226,9 +224,9 @@ class UserResourceSwaggerIT extends BaseIT {
 
     @Test
     void testAdminLevelSelfDestruct() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminUserApi = new UsersApi(adminWebClient);
 
         long userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
@@ -252,9 +250,9 @@ class UserResourceSwaggerIT extends BaseIT {
 
     @Test
     void testDeletedUsernameReuse() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminUserApi = new UsersApi(adminWebClient);
 
         User user = userApi.getUser();
@@ -292,7 +290,7 @@ class UserResourceSwaggerIT extends BaseIT {
      */
     @Test
     void testLoggedInHomepageEndpoints() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -304,8 +302,8 @@ class UserResourceSwaggerIT extends BaseIT {
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
-        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", BIOWORKFLOW, null);
-        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
+        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", WorkflowSubClass.BIOWORKFLOW, null);
+        Workflow refreshedWorkflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
         assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
@@ -327,7 +325,7 @@ class UserResourceSwaggerIT extends BaseIT {
 
         // Add collection to foobar2
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
-        organizationsApi.createCollection(foobarOrgTwo.getId(), createCollection());
+        organizationsApi.createCollection(createCollection(), foobarOrgTwo.getId());
 
         // foobar2 should be the most recent
         organizations = userApi.getUserDockstoreOrganizations(10, null);
@@ -356,7 +354,7 @@ class UserResourceSwaggerIT extends BaseIT {
 
     @Test
     void testUpdateUserMetadataFromGithub() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
