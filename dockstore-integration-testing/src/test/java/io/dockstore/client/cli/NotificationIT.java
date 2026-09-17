@@ -14,6 +14,7 @@ import io.dockstore.openapi.client.model.PublicNotification;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -21,13 +22,25 @@ import org.junit.jupiter.api.Test;
 class NotificationIT extends BaseIT {
 
     // set up test apis as it would be for an admin and a regular user
-    private final ApiClient webClientAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-    private final CurationApi curationApiAdmin = new CurationApi(webClientAdmin);
+    private ApiClient webClientAdmin;
+    private CurationApi curationApiAdmin;
 
-    private final ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
-    private final CurationApi curationApiUser = new CurationApi(webClientUser);
+    private ApiClient webClientUser;
+    private CurationApi curationApiUser;
 
     private final String currentMsg = "ayy";
+
+    @BeforeEach
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        // the DB is reset by the superclass method above, so the API clients (which rely on tokens looked up
+        // in the DB) must be constructed after that reset, not as eagerly-initialized instance fields
+        super.resetDBBetweenTests();
+        webClientAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        curationApiAdmin = new CurationApi(webClientAdmin);
+        webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        curationApiUser = new CurationApi(webClientUser);
+    }
 
     private PublicNotification testNotification() {
         PublicNotification notification = new PublicNotification();

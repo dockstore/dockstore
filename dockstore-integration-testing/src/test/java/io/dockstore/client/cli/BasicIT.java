@@ -106,7 +106,9 @@ public class BasicIT extends BaseIT {
             usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
             fail("Refresh by organization should fail");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Missing the required parameter"), "Should see error message");
+            // the openapi client (unlike the swagger client) doesn't validate dockerRegistry as required client-side,
+            // so this now surfaces as the server's own validation error instead of a client-side one
+            assertTrue(e.getMessage().contains("A repository is required"), "Should see error message");
         }
     }
 

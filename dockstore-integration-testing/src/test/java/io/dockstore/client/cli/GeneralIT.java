@@ -218,7 +218,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         try {
-            toolApi.updateLabels(tool.getId(), "docker-hub,quay.io", "");
+            toolApi.updateLabels(tool.getId(), "", "docker-hub,quay.io");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Invalid label format"));
         }
@@ -234,10 +234,10 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
 
         // Test adding/removing labels for different containers
-        toolApi.updateLabels(tool.getId(), "quay,github", "");
-        toolApi.updateLabels(tool.getId(), "github,dockerhub", "");
-        toolApi.updateLabels(tool.getId(), "alternate,github,dockerhub", "");
-        toolApi.updateLabels(tool.getId(), "alternate,dockerhub", "");
+        toolApi.updateLabels(tool.getId(), "", "quay,github");
+        toolApi.updateLabels(tool.getId(), "", "github,dockerhub");
+        toolApi.updateLabels(tool.getId(), "", "alternate,github,dockerhub");
+        toolApi.updateLabels(tool.getId(), "", "alternate,dockerhub");
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
         assertEquals(2, count, "there should be 2 labels for the given container, there are " + count);
@@ -1297,13 +1297,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // cannot add or delete test files for frozen versions
         try {
-            toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "1.0");
+            toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "1.0", "cwl");
             fail("could delete test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
         }
         try {
-            toolsApi.addTestParameterFiles(refresh.getId(), "cwl", Lists.newArrayList("foo"), "", "1.0");
+            toolsApi.addTestParameterFiles(refresh.getId(), "", Lists.newArrayList("foo"), "1.0", "cwl");
             fail("could add test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));

@@ -128,6 +128,8 @@ class CRUDClientIT extends BaseIT {
         hostedTool.setAliases(null);
         container.setAliases(null);
         hostedTool.setUserIdToOrcidPutCode(null); // Setting to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
+        hostedTool.setMetricsByPlatform(null); // createHostedTool() populates an empty map here, getContainer() leaves it null
+        container.setMetricsByPlatform(null);
         assertEquals(container, hostedTool);
     }
 
@@ -231,6 +233,8 @@ class CRUDClientIT extends BaseIT {
         hostedTool.setWorkflowVersions(null);
         container.setWorkflowVersions(null);
         hostedTool.setUserIdToOrcidPutCode(null); // Setting it to null to compare with the getWorkflow endpoint since that one doesn't return orcid put codes
+        hostedTool.setMetricsByPlatform(null); // createHostedWorkflow() populates an empty map here, getWorkflow() leaves it null
+        container.setMetricsByPlatform(null);
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull(user.getUserProfiles(), "getWorkflow() endpoint should not have user profiles"));
         assertEquals(container, hostedTool);

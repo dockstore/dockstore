@@ -141,6 +141,8 @@ class LimitedCRUDClientIT {
         hostedTool.setAliases(null);
         container.setAliases(null);
         hostedTool.setUserIdToOrcidPutCode(null); // Setting it to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
+        hostedTool.setMetricsByPlatform(null); // createHostedTool() populates an empty map here, getContainer() leaves it null
+        container.setMetricsByPlatform(null);
         assertEquals(container, hostedTool);
 
         // test repeated workflow creation up to limit

@@ -199,7 +199,7 @@ class SwaggerServiceIT extends BaseIT {
 
         // try some standard things we would like services to be able to do
         client.starEntry1(invoke.getServiceID(), new StarRequest().star(true));
-        client.updateLabels1(invoke.getServiceID(), "foo,batman,chicken", "");
+        client.updateLabels1(invoke.getServiceID(), "", "foo,batman,chicken");
 
         // did it happen?
         final io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
