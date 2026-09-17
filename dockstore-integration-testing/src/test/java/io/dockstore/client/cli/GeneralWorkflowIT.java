@@ -870,7 +870,7 @@ class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // manual publish
-        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore.test.user2/dockstore-workflow-md5sum-unified", "testname",
+        openManualRegisterAndPublish(workflowsApi, "dockstore.test.user2/dockstore-workflow-md5sum-unified", "testname",
             "wdl", SourceControl.GITLAB, "/checker.wdl", true);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -891,7 +891,7 @@ class GeneralWorkflowIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/test_workflow_wdl", "testname", "wdl",
+        openManualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/test_workflow_wdl", "testname", "wdl",
             SourceControl.GITHUB, "/hello.wdl", false);
 
         // Check for WDL files
@@ -968,7 +968,7 @@ class GeneralWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
 
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", DescriptorLanguage.CWL.getShortName(),
+        openManualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", DescriptorLanguage.CWL.getShortName(),
                 SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Check that user has been updated

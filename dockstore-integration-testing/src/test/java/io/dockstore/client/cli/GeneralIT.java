@@ -353,9 +353,9 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
 
-    io.dockstore.openapi.client.model.DockstoreTool createManualGitLabTool() {
-        io.dockstore.openapi.client.model.DockstoreTool tool = new io.dockstore.openapi.client.model.DockstoreTool();
-        tool.setMode(io.dockstore.openapi.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+    DockstoreTool createManualGitLabTool() {
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("dockstore-tool-bamstats");
         tool.setNamespace("NatalieEO");
         tool.setRegistryString(Registry.GITLAB.getDockerPath());
@@ -818,10 +818,9 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         return tool;
     }
 
-    private io.dockstore.openapi.client.model.DockstoreTool addGitLabTag(io.dockstore.openapi.client.model.DockstoreTool tool,
-        io.dockstore.openapi.client.api.ContainertagsApi toolTagsApi, io.dockstore.openapi.client.api.ContainersApi toolApi) {
-        List<io.dockstore.openapi.client.model.Tag> tags = new ArrayList<>();
-        io.dockstore.openapi.client.model.Tag tag = new io.dockstore.openapi.client.model.Tag();
+    private DockstoreTool addGitLabTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
         tag.setName("latest");
         tag.setReference("master");
         tags.add(tag);
@@ -1127,15 +1126,15 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testGrabChecksumFromGitLab() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.ContainersApi toolApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
-        io.dockstore.openapi.client.api.ContainertagsApi toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(webClient);
-        io.dockstore.openapi.client.model.DockstoreTool tool = createManualGitLabTool();
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = createManualGitLabTool();
 
         tool = toolApi.registerManual(tool);
 
         tool = addGitLabTag(tool, toolTagsApi, toolApi);
-        List<io.dockstore.openapi.client.model.Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(tags);
 
         // Check for case where user deletes tag and creates new one of same name.
@@ -1145,7 +1144,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         // mimic getting an registry being slow/now responding and verify we do not delete the image information we already have by going to an invalid url.
         testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@gitlab.com:NatalieEO/dockstore-tool-bamstats.git'");
         toolApi.refresh(tool.getId());
-        List<io.dockstore.openapi.client.model.Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(updatedTags);
     }
 

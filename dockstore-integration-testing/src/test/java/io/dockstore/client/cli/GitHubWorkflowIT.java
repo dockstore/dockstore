@@ -38,7 +38,6 @@ import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
-import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Image;
@@ -123,8 +122,6 @@ class GitHubWorkflowIT extends BaseIT {
         // should start with nothing published
         assertTrue(workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).isEmpty(), "should start with nothing published ");
         // refresh just for the current user
-        UsersApi usersApi = new UsersApi(webClient);
-
         refreshByOrganizationReplacement(workflowApi, webClient);
 
         assertTrue(workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).isEmpty(), "should remain with nothing published ");
@@ -494,7 +491,8 @@ class GitHubWorkflowIT extends BaseIT {
 
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
-        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/JointGenotypingWf.wdl", true);
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "",
+            DescriptorType.WDL.toString(), SourceControl.GITHUB, "/JointGenotypingWf.wdl", true);
         WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.1.2");
         assertEquals(10, version.getImages().size(), "Should 10 images in this workflow");
         verifyImageChecksumsAreSaved(version);

@@ -860,7 +860,7 @@ class SwaggerClientIT extends BaseIT {
         // Deleting the version should not fail
         // deleteHostedWorkflowVersion() returns the generic Entry type in the openapi client (unlike the swagger client,
         // which returned the concrete Workflow).
-        io.dockstore.openapi.client.model.Entry deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
+        Entry deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
         assertEquals(0, deleteVersionFromWorkflow1.getWorkflowVersions().size());
 
         // Publishing the workflow should fail
