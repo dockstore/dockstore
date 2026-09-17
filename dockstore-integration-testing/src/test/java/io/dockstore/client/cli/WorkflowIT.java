@@ -343,7 +343,7 @@ public class WorkflowIT extends BaseIT {
         long userId = 1;
         workflow = workflowApi.refresh1(workflow.getId(), true);
 
-        final List<io.dockstore.openapi.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
+        usersApi.userWorkflows(userId);
         branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
         assertNull(branchDagJson);
         branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
