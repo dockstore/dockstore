@@ -30,6 +30,13 @@ into `develop`, `hotfix/*` branches for urgent fixes, and `release/*` branches c
 When creating a PR, always create it in draft mode. A human developer must be the one to mark it ready for
 review/move it out of draft state — Claude Code should not do this itself.
 
+Always check with the user before pushing changes to GitHub, even to a branch/PR already being worked on in
+the conversation — a push can kick off a long CI build or interrupt one that's already running.
+
+When a GitHub MCP server or `gh` is available, diff the current work against `develop` (or whatever branch the
+PR targets) and try to minimize stylistic or otherwise-minor changes that inflate the diff and make it harder
+to review, unless those changes fix something a Codacy finding or other code-quality check actually flagged.
+
 Keep the freeform "Description" and "Review Instructions" sections brief — one paragraph each, or two for a
 genuinely complicated fix, not multi-paragraph writeups. (The "Security and Privacy" checklist section is
 separate and must still be copied verbatim per the section below.)
