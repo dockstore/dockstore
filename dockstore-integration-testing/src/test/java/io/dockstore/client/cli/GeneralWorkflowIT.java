@@ -922,7 +922,7 @@ class GeneralWorkflowIT extends BaseIT {
         toAdd.add("test.cwl.json");
         toAdd.add("test2.cwl.json");
         toAdd.add("fake.cwl.json");
-        List<SourceFile> master = workflowsApi.addTestParameterFiles1(workflow.getId(), "", toAdd, "master");
+        workflowsApi.addTestParameterFiles1(workflow.getId(), "", toAdd, "master");
         List<String> toDelete = new ArrayList<>();
         toDelete.add("notreal.cwl.json");
         try {
