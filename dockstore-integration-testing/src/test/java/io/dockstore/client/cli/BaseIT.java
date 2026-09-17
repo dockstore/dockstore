@@ -102,10 +102,7 @@ public class BaseIT {
         newTool.setDefaultDockerfilePath(dockerfilePath);
         newTool.setGitUrl(gitUrl);
         newTool.setRegistry(registry);
-        // Tool.setRegistryProvider() on the server only unconditionally fills in the docker path for
-        // GITLAB/QUAY_IO/DOCKER_HUB; for AMAZON_ECR it only does so if registry_string is already non-null,
-        // and it's a no-op for SEVEN_BRIDGES/GITHUB_CONTAINER_REGISTRY, so registry_string must always be sent.
-        newTool.setRegistryString(Registry.valueOf(registry.name()).getDockerPath());
+        newTool.setRegistryString(registry.getValue());
         newTool.setMode(MANUAL_IMAGE_PATH);
         newTool.setPrivateAccess(isPrivate);
         newTool.setToolMaintainerEmail(email);
