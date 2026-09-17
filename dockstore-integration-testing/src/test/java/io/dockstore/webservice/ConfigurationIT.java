@@ -89,7 +89,7 @@ class ConfigurationIT {
     private void createWorkflow(String sourceFilePath) {
         ApiClient webClient = getOpenAPIWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeWorkflow" + ID.incrementAndGet(), null, DescriptorLanguage.CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow(null, "awesomeWorkflow" + ID.incrementAndGet(), DescriptorLanguage.CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent("cwlVersion: v1.0\nclass: Workflow");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);

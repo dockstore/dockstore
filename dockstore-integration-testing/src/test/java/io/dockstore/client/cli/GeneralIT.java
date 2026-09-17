@@ -522,7 +522,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
-        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, DescriptorLanguage.WDL.toString(), null, null);
+        Workflow workflow = hostedApi.createHostedWorkflow(null, "wdlHosted", DescriptorLanguage.WDL.toString(), null, null);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
         sourceFile.setContent("workflow potato {\n}");
@@ -547,7 +547,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         assertEquals(2, fileTypes.size());
         assertNotSame(fileTypes.get(0), fileTypes.get(1));
 
-        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        DockstoreTool tool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "hostedTool", DescriptorLanguage.CWL.toString(), "namespace", null);
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setPath("/Dockerfile");
@@ -679,7 +679,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         // Test the same for hosted tools
-        DockstoreTool hostedTool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "hostedTool", DescriptorLanguage.CWL.toString(), "namespace", null);
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setPath("/Dockerfile");
@@ -1592,7 +1592,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
         try {
-            openApiHosted.createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            openApiHosted.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
             fail("Should not be able to create a tool");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));

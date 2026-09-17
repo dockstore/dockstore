@@ -1503,13 +1503,13 @@ public class OrganizationIT extends BaseIT {
         Organization organization = createOrg(organizationsApi);
 
         // there should be no collections inside
-        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "").size();
         assertEquals(0, numberOfCollections);
 
         Collection stubCollection1 = stubCollectionObject();
         organizationsApi.createCollection(stubCollection1, organization.getId());
 
-        numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "").size();
         assertEquals(1, numberOfCollections);
 
         // Test collectionsLength works for starred orgs. https://ucsc-cgl.atlassian.net/browse/SEAB-3136
@@ -2256,7 +2256,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals(3, workflowsCount);
 
         //testing the query is working properly by using GET {organizationId}/collections
-        List<Collection> collectionsFromOrganization = organizationsApi.getCollectionsFromOrganization(orgId, null);
+        List<Collection> collectionsFromOrganization = organizationsApi.getCollectionsFromOrganization(orgId, "");
         assertEquals(3, (long)collectionsFromOrganization.stream().filter(col -> col.getId().equals(collectionId)).findFirst().get().getWorkflowsLength());
 
 

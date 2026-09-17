@@ -111,7 +111,7 @@ class CRUDClientIT extends BaseIT {
         ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         assertNotNull(hostedTool, "tool was not created properly");
         assertEquals("git@dockstore.org:quay.io/coolNamespace/awesomeTool.git", hostedTool.getGitUrl(), "Should have git URL set");
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
@@ -136,7 +136,7 @@ class CRUDClientIT extends BaseIT {
     void testToolEditing() throws IOException {
         HostedApi api = new HostedApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile
             .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
@@ -212,7 +212,7 @@ class CRUDClientIT extends BaseIT {
     void testWorkflowCreation() {
         ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", null, CWL.getShortName(), null, null);
+        Workflow hostedTool = api.createHostedWorkflow(null, "awesomeWorkflow", CWL.getShortName(), null, null);
         assertNotNull(hostedTool, "workflow was not created properly");
         // createHostedWorkflow() endpoint is safe to have user profiles because that profile is your own
         assertEquals(1, hostedTool.getUsers().size());
@@ -242,7 +242,7 @@ class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -343,7 +343,7 @@ class CRUDClientIT extends BaseIT {
     void testDeletingFrozenVersion() throws IOException {
         HostedApi api = new HostedApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -367,7 +367,7 @@ class CRUDClientIT extends BaseIT {
     void testWorkflowEditingWithAuthorMetadataCWL() throws IOException {
         HostedApi api = new HostedApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils
             .readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
@@ -385,7 +385,7 @@ class CRUDClientIT extends BaseIT {
     void testWorkflowEditingWithAuthorMetadataWDL() throws IOException {
         HostedApi api = new HostedApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
@@ -404,7 +404,7 @@ class CRUDClientIT extends BaseIT {
     void testValidHostedFileNames() throws IOException {
         HostedApi api = new HostedApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
-                .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString(), null, null);
+                .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.WDL.toString(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
@@ -438,20 +438,18 @@ class CRUDClientIT extends BaseIT {
     void testToolCreationInvalidDescriptorType() {
         ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
-        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace",
-            "anotherName");
-        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.getDockerPath().toLowerCase(), WDL.getShortName(), "coolNamespace", null);
-        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.getDockerPath().toLowerCase(), WDL.getShortName(), "coolNamespace",
-            "anotherName");
+        api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeToolCwl", CWL.getShortName(), "coolNamespace", null);
+        api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeToolCwl", CWL.getShortName(), "coolNamespace", "anotherName");
+        api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeToolWdl", WDL.getShortName(), "coolNamespace", null);
+        api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeToolWdl", WDL.getShortName(), "coolNamespace", "anotherName");
 
         // Invalid descriptor type does not matter for tools
         try {
-            api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
+            api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeToolCwll", "cwll", "coolNamespace", null);
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
-        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), null, "coolNamespace", null);
+        api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeToolCwll", null, "coolNamespace", null);
     }
 
     /**
@@ -463,7 +461,7 @@ class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         ApiException apiException = assertThrows(ApiException.class, () -> {
             DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
             assertTrue(refreshedTool.getUsers().size() > 0, "There should be at least one user of the workflow");
@@ -481,7 +479,7 @@ class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         DockstoreTool newTool = new DockstoreTool();
         // need to modify something that does not make sense now but isn't ignored
         newTool.setMode(ModeEnum.MANUAL_IMAGE_PATH);
@@ -502,7 +500,7 @@ class CRUDClientIT extends BaseIT {
 
         // Add a tool with a version
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile
             .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
@@ -550,7 +548,7 @@ class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
 
         // Add a workflow with a version
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -575,7 +573,7 @@ class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         assertThrows(ApiException.class,  () -> containersApi
             .addTestParameterFiles(hostedTool.getId(), "", new ArrayList<>(), "1", DescriptorLanguage.CWL.toString().toLowerCase()));
     }
@@ -589,7 +587,7 @@ class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         assertThrows(ApiException.class,  () ->  containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), "1", DescriptorLanguage.CWL.toString()));
     }
 
@@ -600,9 +598,9 @@ class CRUDClientIT extends BaseIT {
     void testWorkflowCreationInvalidDescriptorType() {
         ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        api.createHostedWorkflow("awesomeToolCwl", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
-        api.createHostedWorkflow("awesomeToolWdl", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
-        assertThrows(ApiException.class,  () ->  api.createHostedWorkflow("awesomeToolCwll", null, "cwll", null, null));
+        api.createHostedWorkflow(null, "awesomeToolCwl", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+        api.createHostedWorkflow(null, "awesomeToolWdl", DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
+        assertThrows(ApiException.class,  () ->  api.createHostedWorkflow(null, "awesomeToolCwll", "cwll", null, null));
     }
 
     /**
@@ -614,7 +612,7 @@ class CRUDClientIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         assertThrows(ApiException.class,  () -> workflowApi.refresh1(hostedWorkflow.getId(), false));
     }
 
@@ -628,7 +626,7 @@ class CRUDClientIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         Workflow newWorkflow = new Workflow();
         assertThrows(ApiException.class,  () -> workflowApi.updateWorkflow(hostedWorkflow.getId(), newWorkflow));
     }
@@ -642,7 +640,7 @@ class CRUDClientIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         Workflow newWorkflow = new Workflow();
         assertThrows(ApiException.class,  () -> workflowApi.updateWorkflowPath(hostedWorkflow.getId(), newWorkflow));
     }
@@ -656,7 +654,7 @@ class CRUDClientIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         assertThrows(ApiException.class,  () ->  workflowApi.addTestParameterFiles1(hostedWorkflow.getId(), "", new ArrayList<>(), "1"));
     }
 
@@ -669,7 +667,7 @@ class CRUDClientIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi
-            .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+            .createHostedWorkflow(null, "awesomeTool", DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         assertThrows(ApiException.class,  () ->   workflowApi.deleteTestParameterFiles1(hostedWorkflow.getId(), new ArrayList<>(), "1"));
     }
 

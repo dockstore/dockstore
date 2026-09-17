@@ -150,7 +150,7 @@ class UserResourceSwaggerIT extends BaseIT {
 
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
-        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
+        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow(null, "hosted1", "cwl", null, null);
         assertEquals("foo", hostedWorkflow.getOrganization(), "Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization());
     }
 

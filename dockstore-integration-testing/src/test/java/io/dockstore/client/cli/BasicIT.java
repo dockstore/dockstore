@@ -107,7 +107,6 @@ public class BasicIT extends BaseIT {
         newTool.setDefaultDockerfilePath(dockerfilePath);
         newTool.setGitUrl(gitUrl);
         newTool.setRegistry(registry);
-        newTool.setRegistryString(registry.getValue());
         newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         newTool.setPrivateAccess(isPrivate);
         newTool.setToolMaintainerEmail(email);

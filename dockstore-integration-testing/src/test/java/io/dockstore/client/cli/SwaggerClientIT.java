@@ -745,8 +745,8 @@ class SwaggerClientIT extends BaseIT {
     private void registerHostedWorkflow(String s) {
         final ApiClient userWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null);
-        assertThrows(ApiException.class,  () -> userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null));
+        userHostedApi.createHostedWorkflow(s, "hosted1", "cwl", s, null);
+        assertThrows(ApiException.class,  () -> userHostedApi.createHostedWorkflow(s, "hosted1", "cwl", s, null));
     }
 
     @Test
@@ -754,9 +754,9 @@ class SwaggerClientIT extends BaseIT {
         final ApiClient userWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "hosted1", CWL.getShortName(), "dockstore.org", null);
         assertThrows(ApiException.class,  () -> userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null));
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "hosted1", CWL.getShortName(), "dockstore.org", null));
     }
 
     @Test
@@ -764,7 +764,7 @@ class SwaggerClientIT extends BaseIT {
         final ApiClient webClient = getOpenAPIWebClient("potato", testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
+        final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("something", "hosted", "wdl", "something", null);
         // Created workflow, no versions
         assertEquals(0, hostedWorkflow.getWorkflowVersions().size());
         final String smartseqZip = ResourceHelpers.resourceFilePath("smartseq.zip");
@@ -810,8 +810,8 @@ class SwaggerClientIT extends BaseIT {
         SharedWorkflows secondShared;
 
         // Create two hosted workflows
-        final Workflow hostedWorkflow1 = user1HostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
-        final Workflow hostedWorkflow2 = user1HostedApi.createHostedWorkflow("hosted2", null, "wdl", null, null);
+        final Workflow hostedWorkflow1 = user1HostedApi.createHostedWorkflow(null, "hosted1", "cwl", null, null);
+        final Workflow hostedWorkflow2 = user1HostedApi.createHostedWorkflow(null, "hosted2", "wdl", null, null);
 
         final String fullWorkflowPath1 = hostedWorkflow1.getFullWorkflowPath();
         final String fullWorkflowPath2 = hostedWorkflow2.getFullWorkflowPath();

@@ -586,7 +586,7 @@ public class WorkflowIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow refresh = workflowApi.refresh1(workflow.getId(), false);
         assertFalse(refresh.isIsPublished());
         // note: the openapi client's registerCheckerWorkflow has its parameters in a different order than the swagger client's
-        workflowApi.registerCheckerWorkflow(workflow.getId(), "checker-workflow-wrapping-workflow.cwl", "cwl", "checker-input-cwl.json");
+        workflowApi.registerCheckerWorkflow(workflow.getId(), "cwl", "checker-workflow-wrapping-workflow.cwl", "checker-input-cwl.json");
         workflowApi.refresh1(workflow.getId(), false);
 
         final String fileWithIncorrectCredentials = ResourceHelpers.resourceFilePath("config_file.txt");
@@ -910,14 +910,14 @@ public class WorkflowIT extends BaseIT {
         // test out methods to access secondary files
         // note: openapi-generator suffixed these methods with "1" to disambiguate from the equivalent EntriesApi/ContainersApi operations
         final List<io.dockstore.openapi.client.model.SourceFile> masterImports = workflowApi
-            .secondaryDescriptors1(workflow.getId(), "master", CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), CWL.toString(), "master");
         assertEquals(2, masterImports.size(), "should find 2 imports, found " + masterImports.size());
-        final io.dockstore.openapi.client.model.SourceFile master = workflowApi.primaryDescriptor1(workflow.getId(), "master", CWL.toString());
+        final io.dockstore.openapi.client.model.SourceFile master = workflowApi.primaryDescriptor1(workflow.getId(), CWL.toString(), "master");
         assertTrue(master.getContent().contains("untar") && master.getContent().contains("compile"), "master content incorrect");
 
         // get secondary files by path
         io.dockstore.openapi.client.model.SourceFile argumentsTool = workflowApi
-            .secondaryDescriptorPath1(workflow.getId(), "arguments.cwl", "master", CWL.toString());
+            .secondaryDescriptorPath1(workflow.getId(), "arguments.cwl", CWL.toString(), "master");
         assertTrue(argumentsTool.getContent().contains("Example trivial wrapper for Java 7 compiler"), "argumentstool content incorrect");
     }
 

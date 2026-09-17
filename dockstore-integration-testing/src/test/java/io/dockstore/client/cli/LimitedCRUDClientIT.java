@@ -123,7 +123,7 @@ class LimitedCRUDClientIT {
         ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         assertNotNull(hostedTool, "tool was not created properly");
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals(1, hostedTool.getUsers().size(), "One user should belong to this tool, yourself");
@@ -145,11 +145,10 @@ class LimitedCRUDClientIT {
 
         // test repeated workflow creation up to limit
         for (int i = 1; i < SYSTEM_LIMIT; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace",
-                null);
+            api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool" + i, CWL.getShortName(), "coolNamespace", null);
         }
 
-        assertThrows(ApiException.class, () -> api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null));
+        assertThrows(ApiException.class, () -> api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool" + 10, CWL.getShortName(), "coolNamespace", null));
     }
 
     @Test
@@ -164,19 +163,17 @@ class LimitedCRUDClientIT {
         limits.setHostedEntryCountLimit(NEW_LIMITS);
         usersApi.setUserLimits(user.getId(), limits);
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
         assertNotNull(hostedTool, "tool was not created properly");
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals(1, hostedTool.getUsers().size(), "One user should belong to this tool, yourself");
 
         // test repeated workflow creation up to limit
         for (int i = 1; i <= NEW_LIMITS - 1; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace",
-                null);
+            api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool" + i, CWL.getShortName(), "coolNamespace", null);
         }
 
-        assertThrows(ApiException.class, () -> api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(),
-            "coolNamespace", null));
+        assertThrows(ApiException.class, () -> api.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool" + NEW_LIMITS, CWL.getShortName(), "coolNamespace", null));
     }
 
     @Test
@@ -184,7 +181,7 @@ class LimitedCRUDClientIT {
         ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
@@ -204,7 +201,7 @@ class LimitedCRUDClientIT {
         ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-                .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.toString(), "coolNamespace", null);
+                .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.toString(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
@@ -230,7 +227,7 @@ class LimitedCRUDClientIT {
 
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
         api.editHostedTool(sourceFiles, hostedTool.getId());
@@ -253,7 +250,7 @@ class LimitedCRUDClientIT {
     void testUploadZipHonorsVersionLimit() {
         ApiClient webClient = BaseIT.getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
-        final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
+        final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("something", "hosted", "wdl", "something", null);
         // Created workflow, no versions
         File smartSeqFile = new File(ResourceHelpers.resourceFilePath("smartseq.zip"));
         for (int i = 0; i < SYSTEM_LIMIT; i++) {

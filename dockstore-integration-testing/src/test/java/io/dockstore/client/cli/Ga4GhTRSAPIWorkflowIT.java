@@ -459,10 +459,10 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         // test out methods to access secondary files
 
         final List<SourceFile> masterImports = workflowApi
-            .secondaryDescriptors1(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "master");
         assertEquals(3, masterImports.size(), "should find 3 imports, found " + masterImports.size());
         final List<SourceFile> rootImports = workflowApi
-            .secondaryDescriptors1(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "rootTest");
         assertEquals(0, rootImports.size(), "should find 0 imports, found " + rootImports.size());
 
         // next, change a path for the root imports version
@@ -471,10 +471,10 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         workflowApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
         workflowApi.refresh1(workflowByPathGithub.getId(), false);
         final List<SourceFile> newMasterImports = workflowApi
-            .secondaryDescriptors1(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "master");
         assertEquals(3, newMasterImports.size(), "should find 3 imports, found " + newMasterImports.size());
         final List<SourceFile> newRootImports = workflowApi
-            .secondaryDescriptors1(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors1(workflow.getId(), DescriptorLanguage.CWL.toString(), "rootTest");
         assertEquals(3, newRootImports.size(), "should find 3 imports, found " + newRootImports.size());
 
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));

@@ -149,7 +149,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         }
 
         // Test same for hosted workflows
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -187,30 +187,30 @@ class SwaggerHostedWorkflowIT extends BaseIT {
     void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow("name", null, "garbage type", null, null));
+        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow(null, "name", "garbage type", null, null));
 
     }
     @Test
     void testDuplicateHostedWorkflowCreation() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
-        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null), "already exists");
+        hostedApi.createHostedWorkflow(null, "name", DescriptorType.CWL.toString(), null, null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow(null, "name", DescriptorType.CWL.toString(), null, null), "already exists");
     }
 
     @Test
     void testDuplicateHostedToolCreation() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
-        assertThrows(ApiException.class, () -> hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null), "already exists");
+        hostedApi.createHostedTool(Registry.DOCKER_HUB.getDockerPath(), "name", DescriptorType.CWL.toString(), "namespace", null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedTool(Registry.DOCKER_HUB.getDockerPath(), "name", DescriptorType.CWL.toString(), "namespace", null), "already exists");
     }
 
     @Test
     void testHostedWorkflowMetadata() throws IOException {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "name", DescriptorType.CWL.toString(), null, null);
         Assertions.assertNotNull(hostedWorkflow.getLastModifiedDate());
         Assertions.assertNotNull(hostedWorkflow.getLastUpdated());
 
