@@ -15,6 +15,7 @@
  */
 package io.dockstore.client.cli;
 
+import static io.dockstore.openapi.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -32,6 +33,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -87,11 +89,11 @@ public class BaseIT {
     public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    static io.dockstore.openapi.client.model.DockstoreTool manualRegisterAndPublish(
+    static DockstoreTool manualRegisterAndPublish(
         io.dockstore.openapi.client.api.ContainersApi containersApi, String namespace, String name, String toolName, String gitUrl,
-        String cwlPath, String wdlPath, String dockerfilePath, io.dockstore.openapi.client.model.DockstoreTool.RegistryEnum registry,
+        String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry,
         String gitReference, String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
-        io.dockstore.openapi.client.model.DockstoreTool newTool = new io.dockstore.openapi.client.model.DockstoreTool();
+        DockstoreTool newTool = new DockstoreTool();
         newTool.setNamespace(namespace);
         newTool.setName(name);
         newTool.setToolname(toolName);
@@ -104,7 +106,7 @@ public class BaseIT {
         // GITLAB/QUAY_IO/DOCKER_HUB; for AMAZON_ECR it only does so if registry_string is already non-null,
         // and it's a no-op for SEVEN_BRIDGES/GITHUB_CONTAINER_REGISTRY, so registry_string must always be sent.
         newTool.setRegistryString(Registry.valueOf(registry.name()).getDockerPath());
-        newTool.setMode(io.dockstore.openapi.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        newTool.setMode(MANUAL_IMAGE_PATH);
         newTool.setPrivateAccess(isPrivate);
         newTool.setToolMaintainerEmail(email);
         if (customDockerPath != null) {
@@ -124,7 +126,7 @@ public class BaseIT {
         }
 
         // Manually register
-        io.dockstore.openapi.client.model.DockstoreTool tool = containersApi.registerManual(newTool);
+        DockstoreTool tool = containersApi.registerManual(newTool);
 
         // Refresh
         tool = containersApi.refresh(tool.getId());
@@ -138,9 +140,9 @@ public class BaseIT {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    static io.dockstore.openapi.client.model.DockstoreTool manualRegisterAndPublish(
+    static DockstoreTool manualRegisterAndPublish(
         io.dockstore.openapi.client.api.ContainersApi containersApi, String namespace, String name, String toolName, String gitUrl,
-        String cwlPath, String wdlPath, String dockerfilePath, io.dockstore.openapi.client.model.DockstoreTool.RegistryEnum registry,
+        String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry,
         String gitReference, String versionName, boolean toPublish) {
         return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
             gitReference, versionName, toPublish, false, null, null);

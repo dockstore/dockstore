@@ -21,11 +21,8 @@ import org.junit.jupiter.api.Test;
 @Tag(ConfidentialTest.NAME)
 class NotificationIT extends BaseIT {
 
-    // set up test apis as it would be for an admin and a regular user
-    private ApiClient webClientAdmin;
     private CurationApi curationApiAdmin;
 
-    private ApiClient webClientUser;
     private CurationApi curationApiUser;
 
     private final String currentMsg = "ayy";
@@ -36,9 +33,10 @@ class NotificationIT extends BaseIT {
         // the DB is reset by the superclass method above, so the API clients (which rely on tokens looked up
         // in the DB) must be constructed after that reset, not as eagerly-initialized instance fields
         super.resetDBBetweenTests();
-        webClientAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        // set up test apis as it would be for an admin and a regular user
+        ApiClient webClientAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         curationApiAdmin = new CurationApi(webClientAdmin);
-        webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         curationApiUser = new CurationApi(webClientUser);
     }
 

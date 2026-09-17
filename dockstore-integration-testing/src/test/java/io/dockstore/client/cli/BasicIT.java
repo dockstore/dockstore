@@ -1035,10 +1035,13 @@ public class BasicIT extends BaseIT {
         }
 
         try {
-            // Try to manual publish a private Amazon ECR tool using a public Amazon ECR image
+            // Try to manual publish a private Amazon ECR tool using a public Amazon ECR image.
+            // Note: the server's public/private check (DockerRepoResource.checkAmazonECRPrivateAccess) does an
+            // exact match against the canonical "public.ecr.aws" docker path, so that's what must be sent here
+            // (a path with extra repo segments, e.g. "public.ecr.aws/ubuntu/ubuntu", won't match).
             manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                     "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "public.ecr.aws/ubuntu/ubuntu");
+                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "public.ecr.aws");
             fail("Should not be able to register a private tool using a public Amazon ECR image.");
         } catch (ApiException e) {
             assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
