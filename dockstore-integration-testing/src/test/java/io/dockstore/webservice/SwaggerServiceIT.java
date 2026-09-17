@@ -213,7 +213,7 @@ class SwaggerServiceIT extends BaseIT {
         final ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, "potato", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         // did it happen?
-        final io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+        client.getWorkflow(invoke.getServiceID(), "");
     }
 
     private class CreateContent {
