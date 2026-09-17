@@ -147,6 +147,62 @@ public class BaseIT {
             gitReference, versionName, toPublish, false, null, null);
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    static io.dockstore.openapi.client.model.DockstoreTool manualRegisterAndPublish(
+        io.dockstore.openapi.client.api.ContainersApi containersApi, String namespace, String name, String toolName, String gitUrl,
+        String cwlPath, String wdlPath, String dockerfilePath, io.dockstore.openapi.client.model.DockstoreTool.RegistryEnum registry,
+        String gitReference, String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
+        io.dockstore.openapi.client.model.DockstoreTool newTool = new io.dockstore.openapi.client.model.DockstoreTool();
+        newTool.setNamespace(namespace);
+        newTool.setName(name);
+        newTool.setToolname(toolName);
+        newTool.setDefaultCwlPath(cwlPath);
+        newTool.setDefaultWdlPath(wdlPath);
+        newTool.setDefaultDockerfilePath(dockerfilePath);
+        newTool.setGitUrl(gitUrl);
+        newTool.setRegistry(registry);
+        newTool.setMode(io.dockstore.openapi.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        newTool.setPrivateAccess(isPrivate);
+        newTool.setToolMaintainerEmail(email);
+        if (customDockerPath != null) {
+            newTool.setRegistryString(customDockerPath);
+        }
+
+        if (!Registry.QUAY_IO.name().equals(registry.name())) {
+            io.dockstore.openapi.client.model.Tag tag = new io.dockstore.openapi.client.model.Tag();
+            tag.setReference(gitReference);
+            tag.setName(versionName);
+            tag.setDockerfilePath(dockerfilePath);
+            tag.setCwlPath(cwlPath);
+            tag.setWdlPath(wdlPath);
+            List<io.dockstore.openapi.client.model.Tag> tags = new ArrayList<>();
+            tags.add(tag);
+            newTool.setWorkflowVersions(tags);
+        }
+
+        // Manually register
+        io.dockstore.openapi.client.model.DockstoreTool tool = containersApi.registerManual(newTool);
+
+        // Refresh
+        tool = containersApi.refresh(tool.getId());
+
+        // Publish
+        if (toPublish) {
+            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+            assertTrue(tool.isIsPublished());
+        }
+        return tool;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    static io.dockstore.openapi.client.model.DockstoreTool manualRegisterAndPublish(
+        io.dockstore.openapi.client.api.ContainersApi containersApi, String namespace, String name, String toolName, String gitUrl,
+        String cwlPath, String wdlPath, String dockerfilePath, io.dockstore.openapi.client.model.DockstoreTool.RegistryEnum registry,
+        String gitReference, String versionName, boolean toPublish) {
+        return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
+            gitReference, versionName, toPublish, false, null, null);
+    }
+
     /**
      * Manually register and publish a workflow with the given path and name
      *

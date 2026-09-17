@@ -67,28 +67,9 @@ class EventResourceIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
-        DockstoreTool newTool = new DockstoreTool();
-        newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        newTool.setNamespace("dockstoretestuser");
-        newTool.setName("dockerhubandgithub");
-        newTool.setToolname("regular");
-        newTool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
-        newTool.setDefaultCwlPath("/Dockstore.cwl");
-        newTool.setDefaultWdlPath("/Dockstore.wdl");
-        newTool.setDefaultDockerfilePath("/Dockerfile");
-        newTool.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
-        newTool.setRegistryString(DockstoreTool.RegistryEnum.DOCKER_HUB.getValue());
-        Tag tag = new Tag();
-        tag.setReference("master");
-        tag.setName("latest");
-        tag.setDockerfilePath("/Dockerfile");
-        tag.setCwlPath("/Dockstore.cwl");
-        tag.setWdlPath("/Dockstore.wdl");
-        newTool.setWorkflowVersions(new ArrayList<>(List.of(tag)));
-        DockstoreTool tool = toolsApi.registerManual(newTool);
-        tool = toolsApi.refresh(tool.getId());
-        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-        assertTrue(tool.isIsPublished());
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned in starred entries mode");

@@ -94,61 +94,6 @@ public class BasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
-        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
-        String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
-        DockstoreTool newTool = new DockstoreTool();
-        newTool.setNamespace(namespace);
-        newTool.setName(name);
-        newTool.setToolname(toolName);
-        newTool.setDefaultCwlPath(cwlPath);
-        newTool.setDefaultWdlPath(wdlPath);
-        newTool.setDefaultDockerfilePath(dockerfilePath);
-        newTool.setGitUrl(gitUrl);
-        newTool.setRegistry(registry);
-        newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        newTool.setPrivateAccess(isPrivate);
-        newTool.setToolMaintainerEmail(email);
-        if (customDockerPath != null) {
-            newTool.setRegistryString(customDockerPath);
-        }
-
-        if (!Registry.QUAY_IO.name().equals(registry.name())) {
-            Tag tag = new Tag();
-            tag.setReference(gitReference);
-            tag.setName(versionName);
-            tag.setDockerfilePath(dockerfilePath);
-            tag.setCwlPath(cwlPath);
-            tag.setWdlPath(wdlPath);
-            List<Tag> tags = new ArrayList<>();
-            tags.add(tag);
-            newTool.setWorkflowVersions(tags);
-        }
-
-        // Manually register
-        DockstoreTool tool = containersApi.registerManual(newTool);
-
-        // Refresh
-        tool = containersApi.refresh(tool.getId());
-
-        // Publish
-        if (toPublish) {
-            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-            assertTrue(tool.isIsPublished());
-        }
-        return tool;
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
-        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
-        String versionName, boolean toPublish) {
-        return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
-            gitReference, versionName, toPublish, false, null, null);
-    }
-
-
     /*
      * General-ish tests
      */

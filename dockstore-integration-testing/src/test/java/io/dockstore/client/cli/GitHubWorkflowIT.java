@@ -35,12 +35,20 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Image;
 import io.dockstore.openapi.client.model.ImageData;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolVersion;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
@@ -108,14 +116,14 @@ class GitHubWorkflowIT extends BaseIT {
      * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
-    void testPublishingAndListingOfPublished() throws io.dockstore.openapi.client.ApiException {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+    void testPublishingAndListingOfPublished() throws ApiException {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
         assertTrue(workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).isEmpty(), "should start with nothing published ");
         // refresh just for the current user
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
 
         refreshByOrganizationReplacement(workflowApi, webClient);
 
@@ -127,18 +135,18 @@ class GitHubWorkflowIT extends BaseIT {
 
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
-        final io.dockstore.openapi.client.model.Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+        final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
         // refresh targeted
         workflowApi.refresh1(workflowByPath.getId(), false);
 
         // publish one
-        final io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         workflowApi.publish1(workflowByPath.getId(), publishRequest);
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size(),
             "should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size());
-        final io.dockstore.openapi.client.model.Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
+        final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
         assertNotNull(publishedWorkflow, "did not get published workflow");
-        final io.dockstore.openapi.client.model.Workflow publishedWorkflowByPath = workflowApi
+        final Workflow publishedWorkflowByPath = workflowApi
             .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null,  null);
         assertNotNull(publishedWorkflowByPath, "did not get published workflow");
 
@@ -146,24 +154,24 @@ class GitHubWorkflowIT extends BaseIT {
         Lists.newArrayList("github.com/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
                 "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "github.com/DockstoreTestUser2/parameter_test_workflow")
             .forEach(path -> {
-                io.dockstore.openapi.client.model.Workflow workflow = workflowApi.getWorkflowByPath(path, WorkflowSubClass.BIOWORKFLOW, null);
+                Workflow workflow = workflowApi.getWorkflowByPath(path, WorkflowSubClass.BIOWORKFLOW, null);
                 workflowApi.refresh1(workflow.getId(), false);
                 workflowApi.publish1(workflow.getId(), publishRequest);
             });
-        List<io.dockstore.openapi.client.model.Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null);
+        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null);
         // test offset
         assertEquals(workflowApi.allPublishedWorkflows(1, null, null, null, null, false, null).get(0).getId(), workflows.get(1).getId(), "offset does not seem to be working");
         // test limit
         assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null, false, null).size());
         // test custom sort column
-        List<io.dockstore.openapi.client.model.Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc", false, null);
-        List<io.dockstore.openapi.client.model.Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc", false, null);
+        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc", false, null);
+        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc", false, null);
         assertEquals(ascId.get(0).getId(), descId.get(descId.size() - 1).getId(), "sort by id does not seem to be working");
         // test filter
-        List<io.dockstore.openapi.client.model.Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale", "stars", null, false, null);
+        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale", "stars", null, false, null);
         assertEquals(1, filteredLowercase.size());
         filteredLowercase.forEach(workflow -> assertNull(workflow.getAliases()));
-        List<io.dockstore.openapi.client.model.Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE", "stars", null, false, null);
+        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE", "stars", null, false, null);
         assertEquals(1, filteredUppercase.size());
         assertEquals(filteredLowercase, filteredUppercase);
 
@@ -179,7 +187,7 @@ class GitHubWorkflowIT extends BaseIT {
 
         // Create an app tool and publish it
         GitHubAppHelper.registerAppTool(webClient);
-        io.dockstore.openapi.client.model.Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, WorkflowSubClass.APPTOOL, "versions");
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, WorkflowSubClass.APPTOOL, "versions");
         workflowApi.publish1(appTool.getId(), publishRequest);
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
             WorkflowSubClass.APPTOOL).size(), "There should be 1 app tool published");
@@ -197,18 +205,18 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void testGetPublishedWorkflowsWithInvalidSortCol() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
 
         GitHubAppHelper.registerAppTool(webClient);
-        io.dockstore.openapi.client.model.Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, WorkflowSubClass.APPTOOL, "versions");
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, WorkflowSubClass.APPTOOL, "versions");
         workflowApi.publish1(appTool.getId(), publishRequest);
 
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
                 WorkflowSubClass.APPTOOL).size(), "There should be 1 app tool published");
 
-        io.dockstore.openapi.client.ApiException exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
+        ApiException exception = assertThrows(ApiException.class, () -> workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
                     WorkflowSubClass.APPTOOL));
         assertTrue(exception.getMessage().contains(INVALID_SORTCOL_MESSAGE));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
@@ -219,15 +227,15 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void testGettingImagesFromQuay() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
         //Check image info is grabbed
-        io.dockstore.openapi.client.model.Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.0.1");
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.0.1");
         assertEquals(1, version.getImages().size(), "Should only be one image in this workflow");
         verifyImageChecksumsAreSaved(version);
 
@@ -236,7 +244,7 @@ class GitHubWorkflowIT extends BaseIT {
 
         // Test that a workflow version that contains duplicate images will not store multiples
         workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/zhanghj-8555114", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/main.cwl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.0");
+        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.0");
         assertEquals(3, versionWithDuplicateImages.getImages().size(), "Should have grabbed 3 images");
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
@@ -245,14 +253,14 @@ class GitHubWorkflowIT extends BaseIT {
 
     @Test
     void testGettingMultiArchImagesFromQuay() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
-        io.dockstore.openapi.client.model.Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "quayMultiArchImages");
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "quayMultiArchImages");
         // This multi-arch image was created using the buildx method
         List<Image> buildxImages = version.getImages().stream().filter(image -> "skopeo/stable".equals(image.getRepository())).toList();
         assertTrue(buildxImages.size() >= 4, "Should have at least 4 images for skopeo/stable@sha256:656733c60ea7a8e45f2c7f0c86b24fc9f388d44c5a7d6d482ec59fbabcdb4eee image");
@@ -293,7 +301,7 @@ class GitHubWorkflowIT extends BaseIT {
         assertTrue(snapshotInList, "Snapshotted version should be in the list");
     }
 
-    private void verifyImageChecksumsAreSaved(io.dockstore.openapi.client.model.WorkflowVersion version) {
+    private void verifyImageChecksumsAreSaved(WorkflowVersion version) {
         assertFalse(version.getImages().isEmpty());
         version.getImages().forEach(image -> image.getChecksums().forEach(checksum -> {
             assertFalse(checksum.getChecksum().isEmpty());
@@ -304,17 +312,17 @@ class GitHubWorkflowIT extends BaseIT {
 
     @Test
     void testGettingImagesFromGitHubContainerRegistry() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
         // Test that a versioned multi-architecture image gets an image per architecture: ghcr.io/homebrew/core/python/3.9:3.9.6 -> 5 OS/Arch images
         // Test that a specific architecture image referenced in the following format is grabbed correctly: ghcr.io/<owner>/<image_name>:<tag>@sha256:<digest>
         // Test that an image referenced by digest is grabbed correctly
-        io.dockstore.openapi.client.model.Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "ghcrImages");
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "ghcrImages");
         assertTrue(version.getImages().size() >= 7, "Should have at least 7 images. There are " + version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
@@ -324,16 +332,16 @@ class GitHubWorkflowIT extends BaseIT {
 
     @Test
     void testGettingImagesFromAmazonECR() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
         // Test that a versioned multi-architecture image gets an image per architecture: public.ecr.aws/ubuntu/ubuntu:18.04 -> 5 OS/Arch images
         // Test that an image referenced by digest is grabbed correctly
-        io.dockstore.openapi.client.model.Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "ecrImages");
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "ecrImages");
         assertTrue(version.getImages().size() >= 6, "Should have at least 6 images. There are " + version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
@@ -347,20 +355,20 @@ class GitHubWorkflowIT extends BaseIT {
     @Test
     void testChecksumsForSourceFiles() {
         // Test grabbing checksum on refresh
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
 
         workflow = workflowsApi.refresh1(workflow.getId(), false);
-        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         assertFalse(workflowVersions.isEmpty());
         boolean testedWDL = false;
 
-        for (io.dockstore.openapi.client.model.WorkflowVersion workflowVersion : workflowVersions) {
+        for (WorkflowVersion workflowVersion : workflowVersions) {
             if (workflowVersion.getName().equals("testBoth") || workflowVersion.getName().equals("testWDL")) {
                 testedWDL = true;
                 List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
@@ -372,8 +380,8 @@ class GitHubWorkflowIT extends BaseIT {
         assertTrue(testedWDL);
 
         // Test grabbing checksum on snapshot
-        io.dockstore.openapi.client.model.Workflow workflow2 = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorLanguage.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion snapshotVersion = workflowsApi.getWorkflowVersions(workflow2.getId(), null, null, null, null, null).stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
+        Workflow workflow2 = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorLanguage.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion snapshotVersion = workflowsApi.getWorkflowVersions(workflow2.getId(), null, null, null, null, null).stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(snapshotVersion.getId());
         assertNotNull(sourceFiles);
         snapshotWorkflowVersion(openWorkflowsApi, workflow2.getId(), "1.0.1");
@@ -383,7 +391,7 @@ class GitHubWorkflowIT extends BaseIT {
         workflowsApi.refresh1(workflow2.getId(), false);
 
         // Test TRS conversion
-        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("#workflow/github.com/dockstore-testing/hello_world",
+        FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("#workflow/github.com/dockstore-testing/hello_world",
             DescriptorLanguage.CWL.toString(), "1.0.1");
         verifyTRSSourcefileConversion(fileWrapper);
 
@@ -400,7 +408,7 @@ class GitHubWorkflowIT extends BaseIT {
 
     }
 
-    private void verifyTRSSourcefileConversion(final io.dockstore.openapi.client.model.FileWrapper fileWrapper) {
+    private void verifyTRSSourcefileConversion(final FileWrapper fileWrapper) {
         assertEquals(1, fileWrapper.getChecksum().size());
         fileWrapper.getChecksum().forEach(checksum -> {
             assertFalse(checksum.getChecksum().isEmpty());
@@ -429,16 +437,16 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void testTRSImageName() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
-        io.dockstore.openapi.client.model.WorkflowVersion snapshotVersion;
+        WorkflowVersion snapshotVersion;
         ToolVersion trsVersion;
 
-        io.dockstore.openapi.client.model.Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "",
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, DockstoreTesting.HELLO_WDL_WORKFLOW, "",
             DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         // Workflow with Quay image specified using a tag
@@ -478,16 +486,16 @@ class GitHubWorkflowIT extends BaseIT {
 
     @Test
     void testGettingImagesFromDockerHub() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIClient);
+        WorkflowsApi openWorkflowsApi = new WorkflowsApi(openAPIClient);
 
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
-        io.dockstore.openapi.client.model.Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/JointGenotypingWf.wdl", true);
-        io.dockstore.openapi.client.model.WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.1.2");
+        Workflow workflow = openManualRegisterAndPublish(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/JointGenotypingWf.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.1.2");
         assertEquals(10, version.getImages().size(), "Should 10 images in this workflow");
         verifyImageChecksumsAreSaved(version);
 
@@ -504,17 +512,17 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void cwlVersion11() {
-        final io.dockstore.openapi.client.ApiClient userApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi userWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(userApiClient);
-        final io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi =
-            new io.dockstore.openapi.client.api.WorkflowsApi(
+        final ApiClient userApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
+        final WorkflowsApi openApiWorkflowsApi =
+            new WorkflowsApi(
                 getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/metadata.cwl", "metadata", "cwl",
             "/cwl/v1.1/cat-job.json");
-        final io.dockstore.openapi.client.model.Workflow workflowByPathGithub = userWorkflowsApi
+        final Workflow workflowByPathGithub = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", WorkflowSubClass.BIOWORKFLOW, null);
-        final io.dockstore.openapi.client.model.Workflow workflow = userWorkflowsApi.refresh1(workflowByPathGithub.getId(), true);
-        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openApiWorkflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
+        final Workflow workflow = userWorkflowsApi.refresh1(workflowByPathGithub.getId(), true);
+        List<WorkflowVersion> workflowVersions = openApiWorkflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         workflowVersions.forEach(workflowVersion -> {
             assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", openApiWorkflowsApi.getWorkflowVersionDescription(workflow.getId(), workflowVersion.getId()));
             assertEquals(1, workflowVersion.getAuthors().size());
@@ -533,10 +541,10 @@ class GitHubWorkflowIT extends BaseIT {
         final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, "Peter Amstutz", false, "0", 10);
         assertFalse(toolsViaAuthor.isEmpty());
 
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersion = workflowVersions.stream()
+        Optional<WorkflowVersion> optionalWorkflowVersion = workflowVersions.stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());
-        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
+        WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
         assertEquals(2, sourceFiles.size());
         assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/cat-job.json")));
@@ -547,15 +555,15 @@ class GitHubWorkflowIT extends BaseIT {
         userWorkflowsApi
             .manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/count-lines1-wf.cwl", "count-lines1-wf", "cwl",
                 "/cwl/v1.1/wc-job.json");
-        final io.dockstore.openapi.client.model.Workflow workflowByPathGithub2 = userWorkflowsApi
+        final Workflow workflowByPathGithub2 = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", WorkflowSubClass.BIOWORKFLOW, null);
-        final io.dockstore.openapi.client.model.Workflow workflow2 = userWorkflowsApi.refresh1(workflowByPathGithub2.getId(), false);
-        List<io.dockstore.openapi.client.model.WorkflowVersion> workflow2Versions = userWorkflowsApi.getWorkflowVersions(workflow2.getId(), null, null, null, null, null);
+        final Workflow workflow2 = userWorkflowsApi.refresh1(workflowByPathGithub2.getId(), false);
+        List<WorkflowVersion> workflow2Versions = userWorkflowsApi.getWorkflowVersions(workflow2.getId(), null, null, null, null, null);
         assertTrue(workflow2Versions.stream().anyMatch(versions -> "master".equals(versions.getName())));
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> optionalWorkflowVersion2 = workflow2Versions.stream()
+        Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2Versions.stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion2.isPresent());
-        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();
+        WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();
         // Check validation works.  It should be valid
         assertTrue(workflowVersion2.isValid());
         userWorkflowsApi.publish1(workflowByPathGithub2.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
@@ -566,19 +574,19 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void testGetAllWorkflowByPath() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         String path = "github.com/DockstoreTestUser2/nested-wdl";
 
-        io.dockstore.openapi.client.model.Workflow workflow1 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+        Workflow workflow1 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
             "/Dockstore.wdl", "workflow1", "wdl", "/test.json");
         assertEquals(path, workflow1.getPath());
 
-        io.dockstore.openapi.client.model.Workflow workflow2 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+        Workflow workflow2 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
             "/Dockstore.wdl", "workflow2", "wdl", "/test.json");
         assertEquals(path, workflow2.getPath());
 
-        List<io.dockstore.openapi.client.model.Workflow> foundWorkflows = workflowsApi.getAllWorkflowByPath(path);
+        List<Workflow> foundWorkflows = workflowsApi.getAllWorkflowByPath(path);
         assertEquals(2, foundWorkflows.size());
     }
 
@@ -587,23 +595,23 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void testGetAllPublishedWorkflowByPath() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         String path = "github.com/" + DockstoreTesting.HELLO_WORLD;
 
-        List<io.dockstore.openapi.client.model.Workflow> foundWorkflows = workflowsApi.getAllPublishedWorkflowByPath(path);
+        List<Workflow> foundWorkflows = workflowsApi.getAllPublishedWorkflowByPath(path);
         assertTrue(foundWorkflows.isEmpty());
 
         // Create a published workflow, workflow1
-        io.dockstore.openapi.client.model.Workflow workflow1 = workflowsApi.manualRegister("github", DockstoreTesting.HELLO_WORLD,
+        Workflow workflow1 = workflowsApi.manualRegister("github", DockstoreTesting.HELLO_WORLD,
                 "/hello_world.cwl", "workflow1", DescriptorType.CWL.toString(), "/test.json");
         assertEquals(path, workflow1.getPath());
         workflowsApi.refresh1(workflow1.getId(), false);
-        final io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         workflowsApi.publish1(workflow1.getId(), publishRequest);
 
         // Create a published workflow, workflow2
-        io.dockstore.openapi.client.model.Workflow workflow2 = workflowsApi.manualRegister("github", DockstoreTesting.HELLO_WORLD,
+        Workflow workflow2 = workflowsApi.manualRegister("github", DockstoreTesting.HELLO_WORLD,
                 "/hello_world.cwl", "workflow2", DescriptorType.CWL.toString(), "/test.json");
         assertEquals(path, workflow2.getPath());
         workflowsApi.refresh1(workflow2.getId(), false);
@@ -623,14 +631,14 @@ class GitHubWorkflowIT extends BaseIT {
      */
     @Test
     void testGetWorkflowByPath() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         // Find a workflow with no workflow name
-        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+        Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
             "/Dockstore.wdl", null, "wdl", "/test.json");
         assertEquals("github.com/DockstoreTestUser2/nested-wdl", workflow.getFullWorkflowPath());
-        io.dockstore.openapi.client.model.Workflow foundWorkflow = workflowsApi.getWorkflowByPath(workflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, "");
+        Workflow foundWorkflow = workflowsApi.getWorkflowByPath(workflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, "");
         assertEquals(workflow.getId(), foundWorkflow.getId());
 
         // Find a workflow with a workflow name
