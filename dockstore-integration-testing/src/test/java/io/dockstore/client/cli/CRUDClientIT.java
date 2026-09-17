@@ -554,7 +554,7 @@ class CRUDClientIT extends BaseIT {
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
-        Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> first = openApiWorkflowsApi.getWorkflowVersions(hostedWorkflow.getId(), null, null, null, null, null).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
