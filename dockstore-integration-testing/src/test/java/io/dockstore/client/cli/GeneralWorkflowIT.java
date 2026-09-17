@@ -40,7 +40,6 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
-import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.WorkflowVersion;
