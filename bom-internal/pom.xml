@@ -472,6 +472,12 @@ POM as their parent.
                 <artifactId>httpcore5</artifactId>
                 <version>5.4.3</version>
             </dependency>
+            <!-- override transitive version pulled in via docker-client.version -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.6.3</version>
+            </dependency>
             <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-dependencies</artifactId>
