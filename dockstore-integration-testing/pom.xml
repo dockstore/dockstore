@@ -82,7 +82,15 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>${project.version}</version>
+            <!-- since we're phasing this out, we will start not building it and just pinning the last version we want to maintain
+            eventually hoping to remove it entirely -->
+            <version>1.20.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dockstore</groupId>
+                    <artifactId>dockstore-webservice</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
