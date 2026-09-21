@@ -1,0 +1,28 @@
+name: Validate openapi.yaml
+
+on: [push]
+
+
+jobs:
+  test_swagger_editor_validator_remote:
+    runs-on: ubuntu-24.04
+    name: Swagger Editor Validator Remote
+
+    # swaggerexpert/swagger-editor-validate only supports Swagger Editor v4's DOM,
+    # and editor.swagger.io moved to v5, so we run our own v4 instance instead.
+    # https://github.com/swaggerexpert/swagger-editor-validate/issues/766
+    services:
+      swagger-editor:
+        image: swaggerapi/swagger-editor:v4-latest
+        ports:
+          - 80:8080
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Wait for Swagger Editor to be ready
+        run: timeout 30s bash -c 'until curl -f http://localhost/ > /dev/null 2>&1; do sleep 2; done'
+      - name: Validate OpenAPI definition
+        uses: swaggerexpert/swagger-editor-validate@v1
+        with:
+          swagger-editor-url: http://localhost/
+          definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.yaml
