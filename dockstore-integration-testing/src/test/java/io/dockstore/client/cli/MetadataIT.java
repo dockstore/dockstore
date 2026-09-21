@@ -1,18 +1,14 @@
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.PipHelper;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.ApiResponse;
-import io.swagger.client.Pair;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.MetadataApi;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,55 +26,28 @@ class MetadataIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    public ApiClient apiClient = getWebClient();
-
-    public ApiResponse<Object> get_request(String endpoint, List<Pair> queryParams) {
-        return apiClient.invokeAPI(endpoint, "GET", queryParams, null, new HashMap<>(), new HashMap<>(), "application/json",
-                "application/json", new String[] { "BEARER" }, null);
-
-    }
-
-    public List<Pair> queryParams() {
-        List<Pair> queryParams = new ArrayList<>();
-        queryParams.addAll(apiClient.parameterToPairs("", "python_version", "3"));
-        queryParams.addAll(apiClient.parameterToPairs("", "runner", "cwltool"));
-        queryParams.addAll(apiClient.parameterToPairs("", "output", "json"));
-        return queryParams;
-    }
+    public MetadataApi metadataApi = new MetadataApi(getAnonymousOpenAPIWebClient());
 
     @Test
     void testValidClientVersion() {
-        String endpoint = "/metadata/runner_dependencies";
-        List<Pair> queryParams = this.queryParams();
-        queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0"));
-        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
-        assertEquals(HttpStatus.OK_200, response.getStatusCode());
+        // The openapi-generated client, unlike the swagger one, doesn't expose a "WithHttpInfo" variant that
+        // returns the raw status code; a successful call not throwing is sufficient confirmation of a 200.
+        assertDoesNotThrow(() -> metadataApi.getRunnerDependencies("1.13.0", "3", "cwltool", "json"));
     }
 
     @Test
     void testPrereleaseClientVersion() {
-        String endpoint = "/metadata/runner_dependencies";
-        List<Pair> queryParams = this.queryParams();
-        queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0-alpha.7"));
-        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
-        assertEquals(HttpStatus.OK_200, response.getStatusCode());
+        assertDoesNotThrow(() -> metadataApi.getRunnerDependencies("1.13.0-alpha.7", "3", "cwltool", "json"));
     }
 
     @Test
     void testDevelopmentSemanticVersion() {
-        String endpoint = "/metadata/runner_dependencies";
-        List<Pair> queryParams = this.queryParams();
-        queryParams.addAll(apiClient.parameterToPairs("", "client_version", PipHelper.DEV_SEM_VER));
-        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
-        assertEquals(HttpStatus.OK_200, response.getStatusCode());
+        assertDoesNotThrow(() -> metadataApi.getRunnerDependencies(PipHelper.DEV_SEM_VER, "3", "cwltool", "json"));
     }
 
     @Test
     void testInvalidClientVersion() {
-        String endpoint = "/metadata/runner_dependencies";
-        List<Pair> queryParams = this.queryParams();
-        queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.2"));
-        ApiException exception = assertThrows(ApiException.class, () -> this.get_request(endpoint, queryParams));
+        ApiException exception = assertThrows(ApiException.class, () -> metadataApi.getRunnerDependencies("1.2", "3", "cwltool", "json"));
         assertEquals(HttpStatus.BAD_REQUEST_400, exception.getCode());
         assertEquals("Invalid value for client version: `1.2`. Value must be like `1.13.0`)", exception.getResponseBody());
     }

@@ -15,7 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,12 +25,12 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.model.DescriptorLanguageBean;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.model.DescriptorLanguageBean;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -100,7 +100,7 @@ class NoPluginIT {
 
     @Test
     void testNoLanguagePlugins() {
-        MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
+        MetadataApi metadataApi = new MetadataApi(getOpenAPIWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // by default, Dockstore should handle CWL, WDL, NEXTFLOW but no plugin languages
         assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));

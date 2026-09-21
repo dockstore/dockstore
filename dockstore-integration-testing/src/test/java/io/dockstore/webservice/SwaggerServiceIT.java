@@ -28,6 +28,11 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.User;
@@ -37,11 +42,6 @@ import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.client.JerseyClientBuilder;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tool;
 import jakarta.ws.rs.client.Client;
 import java.util.HashSet;
 import java.util.List;
@@ -64,9 +64,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * @author dyuen
- * @deprecated uses swagger client classes, prefer {@link OpenAPIServiceIT}
  */
-@Deprecated(since = "1.15")
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
@@ -173,9 +171,9 @@ class SwaggerServiceIT extends BaseIT {
     @Disabled("https://github.com/dockstore/dockstore/pull/4720")
     void testTRSOutputOfService() {
         new CreateContent().invoke();
-        final ApiClient webClient = getWebClient(true, false);
-        Ga4GhApi client = new Ga4GhApi(webClient);
-        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
+        final ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, "potato", testingPostgres);
+        Ga4Ghv20Api client = new Ga4Ghv20Api(webClient);
+        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
         // TODO: change boolean once services are exposed
         boolean servicesExposedInTRS = false;
@@ -187,10 +185,10 @@ class SwaggerServiceIT extends BaseIT {
     @Test
     void testProprietaryAPI() {
         final CreateContent invoke = new CreateContent().invoke();
-        final ApiClient webClient = getWebClient(true, false);
+        final ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, "potato", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true, null);
-        final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false, null);
+        final List<io.dockstore.openapi.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true, null);
+        final List<io.dockstore.openapi.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false, null);
         assertTrue(workflows.size() >= 2 && workflows.stream()
             .noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
@@ -200,11 +198,11 @@ class SwaggerServiceIT extends BaseIT {
             .allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
         // try some standard things we would like services to be able to do
-        client.starEntry(invoke.getServiceID(), new StarRequest().star(true));
-        client.updateLabels(invoke.getServiceID(), "foo,batman,chicken", "");
+        client.starEntry1(invoke.getServiceID(), new StarRequest().star(true));
+        client.updateLabels1(invoke.getServiceID(), "", "foo,batman,chicken");
 
         // did it happen?
-        final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+        final io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
         assertFalse(workflow.getStarredUsers().isEmpty());
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
     }
@@ -212,10 +210,10 @@ class SwaggerServiceIT extends BaseIT {
     @Test
     void testGeneralDefaultPathMechanism() {
         final CreateContent invoke = new CreateContent().invoke();
-        final ApiClient webClient = getWebClient(true, false);
+        final ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, "potato", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         // did it happen?
-        final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+        client.getWorkflow(invoke.getServiceID(), "");
     }
 
     private class CreateContent {

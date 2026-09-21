@@ -15,7 +15,7 @@
  */
 package io.dockstore.client.cli;
 
-import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
+import static io.dockstore.openapi.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -33,20 +33,16 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.resources.WorkflowSubClass;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
-import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.ModeEnum;
-import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,9 +89,10 @@ public class BaseIT {
     public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
-        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
-        String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
+    static DockstoreTool manualRegisterAndPublish(
+        io.dockstore.openapi.client.api.ContainersApi containersApi, String namespace, String name, String toolName, String gitUrl,
+        String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry,
+        String gitReference, String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
         DockstoreTool newTool = new DockstoreTool();
         newTool.setNamespace(namespace);
         newTool.setName(name);
@@ -114,13 +111,13 @@ public class BaseIT {
         }
 
         if (!Registry.QUAY_IO.name().equals(registry.name())) {
-            Tag tag = new Tag();
+            io.dockstore.openapi.client.model.Tag tag = new io.dockstore.openapi.client.model.Tag();
             tag.setReference(gitReference);
             tag.setName(versionName);
             tag.setDockerfilePath(dockerfilePath);
             tag.setCwlPath(cwlPath);
             tag.setWdlPath(wdlPath);
-            List<Tag> tags = new ArrayList<>();
+            List<io.dockstore.openapi.client.model.Tag> tags = new ArrayList<>();
             tags.add(tag);
             newTool.setWorkflowVersions(tags);
         }
@@ -133,16 +130,17 @@ public class BaseIT {
 
         // Publish
         if (toPublish) {
-            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
             assertTrue(tool.isIsPublished());
         }
         return tool;
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
-        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
-        String versionName, boolean toPublish) {
+    static DockstoreTool manualRegisterAndPublish(
+        io.dockstore.openapi.client.api.ContainersApi containersApi, String namespace, String name, String toolName, String gitUrl,
+        String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry,
+        String gitReference, String versionName, boolean toPublish) {
         return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
             gitReference, versionName, toPublish, false, null, null);
     }
@@ -159,26 +157,6 @@ public class BaseIT {
      * @param toPublish
      * @return Published workflow
      */
-    static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
-        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
-        // Manually register
-        Workflow workflow = workflowsApi
-            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
-                "/test.json");
-        assertEquals(ModeEnum.STUB, workflow.getMode());
-
-        // Refresh
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-        assertEquals(ModeEnum.FULL, workflow.getMode());
-
-        // Publish
-        if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-            assertTrue(workflow.isIsPublished());
-        }
-        return workflow;
-    }
-
     static io.dockstore.openapi.client.model.Workflow manualRegisterAndPublish(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
         // Manually register
@@ -232,9 +210,7 @@ public class BaseIT {
     }
 
     static void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         String correctDescriptorPath = "/Dockstore.cwl";
         String incorrectDescriptorPath = "/Dockstore2.cwl";
@@ -246,24 +222,24 @@ public class BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // Smart refresh individual that is valid (should add versions that doesn't exist)
-        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, BIOWORKFLOW, "");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, io.dockstore.openapi.client.model.WorkflowSubClass.BIOWORKFLOW, "");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // All versions should be synced
         workflow.getWorkflowVersions().forEach(workflowVersion -> assertTrue(workflowVersion.isSynced()));
 
         // When the commit ID is null, a refresh should occur
-        WorkflowVersion oldVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        io.dockstore.openapi.client.model.WorkflowVersion oldVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         testingPostgres.runUpdateStatement("update workflowversion set commitid = NULL where name = '" + versionOfInterest + "'");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-        WorkflowVersion updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        io.dockstore.openapi.client.model.WorkflowVersion updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertNotNull(updatedVersion.getCommitID());
         assertNotEquals(oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate(), versionOfInterest + " version should be updated (different dbupdatetime)");
 
         // When the commit ID is different, a refresh should occur
         oldVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         testingPostgres.runUpdateStatement("update workflowversion set commitid = 'dj90jd9jd230d3j9' where name = '" + versionOfInterest + "'");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
         updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertNotNull(updatedVersion.getCommitID());
         assertNotEquals(oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate(), versionOfInterest + " version should be updated (different dbupdatetime)");
@@ -272,26 +248,26 @@ public class BaseIT {
         workflow.setWorkflowPath(incorrectDescriptorPath);
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflow.getWorkflowVersions().forEach(workflowVersion -> assertFalse(workflowVersion.isSynced()));
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // All versions should be synced and updated
         workflow.getWorkflowVersions().forEach(workflowVersion -> assertTrue(workflowVersion.isSynced()));
         workflow.getWorkflowVersions().forEach(workflowVersion -> Objects.equals(workflowVersion.getWorkflowPath(), incorrectDescriptorPath));
 
         // Update the version to have the correct path
-        WorkflowVersion testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        io.dockstore.openapi.client.model.WorkflowVersion testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         testBothVersion.setWorkflowPath(correctDescriptorPath);
-        List<WorkflowVersion> versions = new ArrayList<>();
+        List<io.dockstore.openapi.client.model.WorkflowVersion> versions = new ArrayList<>();
         versions.add(testBothVersion);
         workflowsApi.updateWorkflowVersion(workflow.getId(), versions);
 
         // Refresh should only update the version that is not synced
         workflow = workflowsApi.getWorkflow(workflow.getId(), "");
-        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         testBothVersion = workflowVersions.stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertFalse(testBothVersion.isSynced(), "Version should not be synced");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-        List<io.dockstore.openapi.client.model.WorkflowVersion> openWorkflowVersions = openWorkflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        List<io.dockstore.openapi.client.model.WorkflowVersion> openWorkflowVersions = workflowsApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         io.dockstore.openapi.client.model.WorkflowVersion openTestBothVersion = openWorkflowVersions.stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest))
             .findFirst().get();
         assertTrue(openTestBothVersion.isSynced(), "Version should now be synced");

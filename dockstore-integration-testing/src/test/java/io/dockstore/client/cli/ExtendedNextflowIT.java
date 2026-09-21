@@ -28,15 +28,15 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.Session;
@@ -84,7 +84,7 @@ class ExtendedNextflowIT extends BaseIT {
     @Test
     void testNextflowSecondaryFiles() {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
-        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -95,14 +95,14 @@ class ExtendedNextflowIT extends BaseIT {
         assertNotSame("", workflow.getWorkflowName());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+        final Workflow refreshGithub = workflowApi.refresh1(workflowByPathGithub.getId(), false);
 
         // Tests that nf-core nextflow.config files can be parsed
         List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get().getId());
@@ -119,7 +119,7 @@ class ExtendedNextflowIT extends BaseIT {
     @Test
     void testNextflowYml() {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
-        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/ampa-nf", "/nextflow.config", "",
@@ -127,14 +127,14 @@ class ExtendedNextflowIT extends BaseIT {
         assertNotSame("", workflow.getWorkflowName());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
-        Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+        Workflow refreshGithub = workflowApi.refresh1(workflowByPathGithub.getId(), false);
 
         // check that metadata made it through properly
         Optional<WorkflowVersion> nfcore = refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore")).findFirst();
@@ -144,16 +144,13 @@ class ExtendedNextflowIT extends BaseIT {
         testingPostgres.runUpdateStatement("update version_metadata set engineversions = 'foobar'");
 
         // do a github release  and see if the engine version changes
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
-
-        handleGitHubRelease(openWorkflowApi, WORKFLOW_NEXTFLOW_DOCKSTORE_YML, "refs/heads/nfcore", USER_1_USERNAME);
+        handleGitHubRelease(workflowApi, WORKFLOW_NEXTFLOW_DOCKSTORE_YML, "refs/heads/nfcore", USER_1_USERNAME);
 
 
         // see what state the metadata is in, before the fix (#5919) this will remain as foobar
-        io.dockstore.openapi.client.model.Workflow workflowByPath = openWorkflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, "versions");
-        List<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersions = openWorkflowApi.getWorkflowVersions(workflowByPath.getId(), null, null, null, null, null);
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> opennfcore = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore"))
+        Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TESTING_NEXTFLOW_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, "versions");
+        List<WorkflowVersion> workflowVersions = workflowApi.getWorkflowVersions(workflowByPath.getId(), null, null, null, null, null);
+        Optional<WorkflowVersion> opennfcore = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals("nfcore"))
             .findFirst();
         assertTrue(opennfcore.isPresent() &&  "Nextflow !>=23.04.1".equals(opennfcore.get().getVersionMetadata().getEngineVersions().get(0)));
     }

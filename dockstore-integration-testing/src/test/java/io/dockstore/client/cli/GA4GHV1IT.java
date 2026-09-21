@@ -24,12 +24,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
+import io.dockstore.openapi.client.model.ToolClass;
+import io.dockstore.openapi.client.model.ToolDockerfile;
+import io.dockstore.openapi.client.model.ToolTestsV1;
+import io.dockstore.openapi.client.model.ToolV1;
+import io.dockstore.openapi.client.model.ToolVersionV1;
+// MetadataV1 has no openapi.yaml-side response schema for /api/ga4gh/v1/metadata (it's declared as an
+// untyped `content: application/json: {}` there, vs. a concrete `$ref: MetadataV1` in swagger.yaml), so
+// the openapi-generated client has no typed model for it; testMetadata() below must keep using the swagger client's model.
 import io.swagger.client.model.MetadataV1;
-import io.swagger.client.model.ToolClass;
-import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolTestsV1;
-import io.swagger.client.model.ToolV1;
-import io.swagger.client.model.ToolVersionV1;
 import io.swagger.model.ToolDescriptor;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MultivaluedHashMap;

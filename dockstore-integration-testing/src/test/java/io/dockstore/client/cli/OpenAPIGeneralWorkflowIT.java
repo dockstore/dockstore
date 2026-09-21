@@ -71,7 +71,7 @@ class OpenAPIGeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testAddingWorkflowForumUrlAndTopic() throws io.swagger.client.ApiException {
+    void testAddingWorkflowForumUrlAndTopic() throws io.dockstore.openapi.client.ApiException {
         // Set up webservice
         ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);

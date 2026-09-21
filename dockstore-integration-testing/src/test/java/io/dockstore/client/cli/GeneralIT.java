@@ -43,32 +43,32 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
+import io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.FileWrapper;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
+import io.dockstore.openapi.client.model.Tag;
+import io.dockstore.openapi.client.model.Tag.DoiStatusEnum;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.languages.WDLHandler;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.SourceFile.TypeEnum;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.Tag.DoiStatusEnum;
-import io.swagger.client.model.Workflow;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URL;
@@ -179,7 +179,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         return new ContainersApi(client);
     }
 
@@ -214,11 +214,11 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testLabelIncorrectInput() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         try {
-            toolApi.updateLabels(tool.getId(), "docker-hub,quay.io", "");
+            toolApi.updateLabels(tool.getId(), "", "docker-hub,quay.io");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Invalid label format"));
         }
@@ -229,15 +229,15 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testAddEditRemoveLabel() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
 
         // Test adding/removing labels for different containers
-        toolApi.updateLabels(tool.getId(), "quay,github", "");
-        toolApi.updateLabels(tool.getId(), "github,dockerhub", "");
-        toolApi.updateLabels(tool.getId(), "alternate,github,dockerhub", "");
-        toolApi.updateLabels(tool.getId(), "alternate,dockerhub", "");
+        toolApi.updateLabels(tool.getId(), "", "quay,github");
+        toolApi.updateLabels(tool.getId(), "", "github,dockerhub");
+        toolApi.updateLabels(tool.getId(), "", "alternate,github,dockerhub");
+        toolApi.updateLabels(tool.getId(), "", "alternate,dockerhub");
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
         assertEquals(2, count, "there should be 2 labels for the given container, there are " + count);
@@ -254,7 +254,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testVersionTagWDLCWLAndDockerfilePathsAlteration() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -300,7 +300,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testVersionTagRemoveAutoContainer() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -321,7 +321,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testVersionTagAddAutoContainer() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -354,9 +354,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
 
     DockstoreTool createManualGitLabTool() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        ContainersApi toolApi = new ContainersApi(webClient);
-        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = new DockstoreTool();
         tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("dockstore-tool-bamstats");
@@ -373,7 +370,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testAddVersionTagManualContainer() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = createManualTool();
@@ -393,7 +390,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testSourceFileChecksums() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
@@ -407,7 +404,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         List<Tag> tags = tool.getWorkflowVersions();
         verifySourcefileChecksums(tags);
 
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         // Dockerfile
         List<FileWrapper> fileWrappers = ga4Ghv20Api.toolsIdVersionsVersionIdContainerfileGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
@@ -470,14 +467,14 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     void testGettingVerifiedVersions() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
         Workflow workflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
-        workflow = workflowApi.refresh(workflow.getId(), false);
+        workflow = workflowApi.refresh1(workflow.getId(), false);
         long workflowVersionId = workflow.getWorkflowVersions().stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get().getId();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersionId);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
@@ -509,8 +506,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         // verified platforms can be viewed by others once published
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        workflowApi.publish1(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         assertEquals(1, versionsVerified.size());
     }
@@ -518,21 +515,21 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Test
     void testGettingVersionsFileTypes() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
-        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, DescriptorLanguage.WDL.toString(), null, null);
+        Workflow workflow = hostedApi.createHostedWorkflow(null, "wdlHosted", DescriptorLanguage.WDL.toString(), null, null);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
         sourceFile.setContent("workflow potato {\n}");
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
-        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
+        workflow = hostedApi.editHostedWorkflow(Lists.newArrayList(sourceFile), workflow.getId());
         WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
@@ -544,13 +541,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         testFile.setPath("/test.wdl.json");
         testFile.setAbsolutePath("/test.wdl.json");
 
-        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
+        workflow = hostedApi.editHostedWorkflow(Lists.newArrayList(sourceFile, testFile), workflow.getId());
         workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId(),  null, null, null, null, null).stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
         fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
         assertNotSame(fileTypes.get(0), fileTypes.get(1));
 
-        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        DockstoreTool tool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "hostedTool", DescriptorLanguage.CWL.toString(), "namespace", null);
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setPath("/Dockerfile");
@@ -566,7 +563,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         testcwl.setContent("{}");
         testcwl.setPath("/test.cwl.json");
         testcwl.setAbsolutePath("/test.cwl.json");
-        tool = hostedApi.editHostedTool(tool.getId(), Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile));
+        tool = hostedApi.editHostedTool(Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile), tool.getId());
 
         fileTypes = entriesApi.getVersionsFileTypes(tool.getId(), tool.getWorkflowVersions().get(0).getId());
         assertEquals(5, fileTypes.size());
@@ -586,8 +583,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         // file types can be viewed by others once published
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        workflowApi.publish1(workflow.getId(), publishRequest);
         fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
         assertNotSame(fileTypes.get(0), fileTypes.get(1));
@@ -597,7 +594,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Test
     void testMigrationForDescriptorType() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -617,7 +614,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     void testRefreshingGetsDescriptorType() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.ContainersApi openToolApi = new io.dockstore.openapi.client.api.ContainersApi(client);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -649,7 +646,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testHiddenAndDefaultTags() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -661,7 +658,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
 
         try {
-            tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+            tool = toolApi.updateDefaultVersion(tool.getId(), tag.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -670,7 +667,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         // Set the default version to a non-hidden version
         tag.setHidden(false);
         toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
-        tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+        tool = toolApi.updateDefaultVersion(tool.getId(), tag.getName());
 
         // Should not be able to hide a default version
         tag.setHidden(true);
@@ -682,7 +679,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         // Test the same for hosted tools
-        DockstoreTool hostedTool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "hostedTool", DescriptorLanguage.CWL.toString(), "namespace", null);
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setPath("/Dockerfile");
@@ -693,7 +690,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         cwl.setPath("/Dockstore.cwl");
         cwl.setAbsolutePath("/Dockstore.cwl");
-        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+        hostedTool = hostedApi.editHostedTool(Lists.newArrayList(cwl, dockerfile), hostedTool.getId());
 
         Tag hostedTag = hostedTool.getWorkflowVersions().get(0);
         hostedTag.setHidden(true);
@@ -705,13 +702,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         cwl.setContent("class: CommandLineTool\n\ncwlVersion: v1.0");
-        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+        hostedTool = hostedApi.editHostedTool(Lists.newArrayList(cwl, dockerfile), hostedTool.getId());
         hostedTag = hostedTool.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
         hostedTag.setHidden(true);
         toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
 
         try {
-            toolApi.updateToolDefaultVersion(hostedTool.getId(), hostedTag.getName());
+            toolApi.updateDefaultVersion(hostedTool.getId(), hostedTag.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -724,7 +721,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testVersionTagHide() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -765,7 +762,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testVersionTagWDL() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
@@ -834,7 +831,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testToolDelete() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = createManualTool();
@@ -853,7 +850,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testVersionTagDelete() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         // Register tool
@@ -885,7 +882,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testGetIncorrectContainer() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         try {
             DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null);
@@ -899,7 +896,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testGetOtherUsersContainer() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         try {
             DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/test_org/test1", null);
@@ -913,7 +910,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testUserPrivilege() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = createManualTool();
@@ -1062,7 +1059,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testAnnotatedGitHubTag() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
 
@@ -1101,13 +1098,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void ga4ghImageType() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         tool = toolApi.refresh(tool.getId());
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
 
@@ -1129,7 +1126,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testGrabChecksumFromGitLab() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = createManualGitLabTool();
@@ -1300,13 +1297,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // cannot add or delete test files for frozen versions
         try {
-            toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "1.0");
+            toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "1.0", "cwl");
             fail("could delete test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
         }
         try {
-            toolsApi.addTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "", "1.0");
+            toolsApi.addTestParameterFiles(refresh.getId(), "", Lists.newArrayList("foo"), "1.0", "cwl");
             fail("could add test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
@@ -1467,7 +1464,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testManualToolNameValidation() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         DockstoreTool tool = createManualTool();
 
@@ -1486,7 +1483,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Test
     void testCheckUser() {
         // Authorized user should pass
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
         assertTrue(userOneExists, "User DockstoreTestUser2 should exist");
@@ -1496,7 +1493,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         assertFalse(fakeUserExists);
 
         // Unauthorized user should fail
-        ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
+        ApiClient unauthClient = CommonTestUtilities.getOpenAPIWebClient(false, "", testingPostgres);
         UsersApi unauthUserApi = new UsersApi(unauthClient);
         boolean failed = false;
         try {
@@ -1512,7 +1509,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void sillyContainerZipFile() throws IOException {
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
+        final ApiClient anonWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
         boolean success = false;
         try {
@@ -1529,13 +1526,13 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void downloadZipFileTestAuth() throws IOException {
-        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient ownerWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
+        final ApiClient anonWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getOpenAPIWebClient(true, OTHER_USERNAME, testingPostgres);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
@@ -1568,7 +1565,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         // Publish
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         ownerContainersApi.publish(toolId, publishRequest);
 
         // Try downloading published
@@ -1594,7 +1591,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
         try {
-            openApiHosted.createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            openApiHosted.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
             fail("Should not be able to create a tool");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));

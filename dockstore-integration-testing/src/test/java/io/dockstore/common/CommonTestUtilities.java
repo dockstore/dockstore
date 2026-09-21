@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -31,6 +32,7 @@ import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.common.collect.Lists;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -168,6 +170,14 @@ public final class CommonTestUtilities {
         if (authenticated) {
             client.addDefaultHeader("Authorization", getDockstoreToken(testingPostgres, username));
         }
+        // The server's Tool.setRegistryProvider()/setRegistry() resolve the persisted registry value based on
+        // whichever of "registry"/"registry_string" Jackson deserializes last, which depends on JSON key order.
+        // The swagger-generated DockstoreTool model happened to declare registry_string before registry, and
+        // production code (and some tests) implicitly depend on that ordering; the openapi-generated model
+        // declares them in the opposite order. Force this client's serialized order to match swagger's so that
+        // dependent behavior (see DockerRepoResource.checkAmazonECRPrivateAccess) doesn't regress. This is a
+        // test-only workaround for this client, not a fix for the underlying order-dependence server-side.
+        client.getJSON().getContext(DockstoreTool.class).addMixIn(DockstoreTool.class, DockstoreToolPropertyOrderMixin.class);
         return client;
     }
 
@@ -631,5 +641,9 @@ public final class CommonTestUtilities {
             this.databasedumpUpgrade = databasedumpUpgrade;
             this.dockstoreUserName = dockstoreUserName;
         }
+    }
+
+    @JsonPropertyOrder({"registry_string", "registry"})
+    private abstract static class DockstoreToolPropertyOrderMixin {
     }
 }
