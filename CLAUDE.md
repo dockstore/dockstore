@@ -56,6 +56,12 @@ rather than guessing:
   propose concrete solutions, even without an explicit instruction to do so. Bot-authored comments (Codacy,
   Copilot Autofix, etc.) are useful but secondary to human reviewer comments.
 
+## Commits
+
+When committing, omit the `Co-Authored-By: Claude` attribution line if an earlier commit already on the same
+feature branch includes that same line — since feature branches are typically squash-merged, repeating it on
+every commit is redundant and just adds noise when editing the squashed commit message.
+
 ## Build
 
 This is a multi-module Maven project (Java 21). Always invoke the Maven wrapper (`./mvnw`), never a system-installed

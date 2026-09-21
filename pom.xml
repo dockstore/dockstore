@@ -142,7 +142,6 @@
         <module>dockstore-common</module>
         <module>dockstore-language-plugin-parent</module>
         <module>dockstore-webservice</module>
-        <module>swagger-java-client</module>
         <module>openapi-java-client</module>
         <module>dockstore-integration-testing</module>
         <module>reports</module>
@@ -398,7 +397,7 @@
                 <plugin>
                     <groupId>io.swagger.codegen.v3</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>3.0.46</version>
+                    <version>3.0.82</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
                 <plugin>

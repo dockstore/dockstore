@@ -10768,6 +10768,7 @@ components:
           type: string
       required:
       - code
+      - message
     ErrorV20beta:
       type: object
       properties:
@@ -11055,6 +11056,13 @@ components:
           example: "{\"descriptorfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\"\
             },\"containerfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile\"\
             }}"
+      required:
+      - checksum
+      - content
+      - dockstore_absolute_path
+      - dockstore_self_url
+      - image_type
+      - url
     FileWrapperV20beta:
       type: object
       properties:
@@ -11249,6 +11257,13 @@ components:
         updated:
           type: string
           description: Last time the container was updated.
+      required:
+      - checksum
+      - image_name
+      - image_type
+      - registry_host
+      - size
+      - updated
     InferredDockstoreYml:
       type: object
       description: Response for an inferred .dockstore.yml
@@ -12222,10 +12237,16 @@ components:
             \ is updated."
           example: 1.0.0
       required:
+      - contactUrl
+      - createdAt
+      - description
+      - documentationUrl
+      - environment
       - id
       - name
       - organization
       - type
+      - updatedAt
       - version
     TRSServiceOrganization:
       type: object
@@ -12573,7 +12594,13 @@ components:
           items:
             $ref: '#/components/schemas/ToolVersion'
       required:
+      - aliases
+      - checker_url
+      - description
+      - has_checker
       - id
+      - meta_version
+      - name
       - organization
       - toolclass
       - url
@@ -12593,6 +12620,10 @@ components:
         name:
           type: string
           description: A short friendly name for the class.
+      required:
+      - description
+      - id
+      - name
     ToolClassV20beta:
       type: object
       properties:
@@ -12650,6 +12681,11 @@ components:
           type: string
           description: "Relative path of the file.  A descriptor's path can be used\
             \ with the GA4GH .../{type}/descriptor/{relative_path : .+} endpoint."
+      required:
+      - checksum
+      - dockstore_absolute_path
+      - file_type
+      - path
     ToolFileV20beta:
       type: object
       properties:
@@ -12900,8 +12936,20 @@ components:
             description: "Source of metadata that can support a verified tool, such\
               \ as an email or URL."
       required:
+      - author
+      - containerfile
+      - descriptor_type
+      - descriptor_type_version
       - id
+      - images
+      - included_apps
+      - is_production
+      - meta_version
+      - name
+      - signed
       - url
+      - verified
+      - verified_source
     ToolVersionV1:
       type: object
       properties:
