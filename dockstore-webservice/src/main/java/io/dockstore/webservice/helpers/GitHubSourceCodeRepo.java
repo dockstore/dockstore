@@ -59,6 +59,8 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -86,6 +88,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHBlob;
@@ -326,7 +329,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 LOG.warn("Could not process {} at {}, is likely a submodule that is not on GitHub", originalFileName, originalReference);
                                 return null;
                             }
-                            URL otherRepoURL = new URL(otherRepo);
+                            URL otherRepoURL = new URI(otherRepo).toURL();
                             // reassign repo and reference
                             final String[] split = otherRepoURL.getPath().split("/");
                             final int indexPastReposPrefix = 2;
@@ -345,7 +348,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         start = new ArrayList<>();
                         i = -1;
                     }
-                } catch (IOException e) {
+                } catch (IOException | URISyntaxException e) {
                     // move on if a file is not found
                     LOG.warn("Could not find " + partialPath + " at " + reference, e);
                 }
@@ -763,9 +766,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String sha = null;
         boolean toIgnore = false;
         if (refName.startsWith("refs/heads/")) {
-            refName = StringUtils.removeStart(refName, "refs/heads/");
+            refName = Strings.CS.removeStart(refName, "refs/heads/");
         } else if (refName.startsWith("refs/tags/")) {
-            refName = StringUtils.removeStart(refName, "refs/tags/");
+            refName = Strings.CS.removeStart(refName, "refs/tags/");
         } else if (refName.startsWith("refs/pull/")) {
             // ignore these strange pull request objects that this library produces
             toIgnore = true;
@@ -1364,7 +1367,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             repo = github.getRepository(repositoryId);
             GHRef[] refs = getBranchesAndTags(repo);
             for (GHRef ref : refs) {
-                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                String reference = stripReference(ref.getRef());
                 if (reference.equals(version.getReference())) {
                     if (ref.getRef().startsWith("refs/heads/")) {
                         version.setReferenceType(Version.ReferenceType.BRANCH);
@@ -1441,7 +1444,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Remove the 'refs/{type}/' prefix from a GitHub reference.
      */
     private String stripReference(String reference) {
-        return StringUtils.removePattern(reference, "refs/.+?/");
+        return reference == null ? null : reference.replaceAll("refs/.+?/", "");
     }
 
     private String getEmail(GHMyself myself) throws IOException {

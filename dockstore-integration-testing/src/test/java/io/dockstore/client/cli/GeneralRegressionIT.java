@@ -33,6 +33,7 @@ import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
@@ -76,7 +77,7 @@ class GeneralRegressionIT extends BaseIT {
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
-        url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
+        url = URI.create("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore").toURL();
         dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         Assertions.assertTrue(dockstore.setExecutable(true));

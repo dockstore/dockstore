@@ -50,7 +50,7 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.openapi.model.DescriptorTypeWithPlain;
 import jakarta.ws.rs.core.GenericType;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -101,7 +101,7 @@ class GalaxyPluginIT {
             // stash a Galaxy plugin in the plugin directory
             final Path temporaryTestingPlugins = Files.createTempDirectory("temporaryTestingPlugins");
             final Path path = Paths.get(temporaryTestingPlugins.toString(), GALAXY_PLUGIN_FILENAME);
-            FileUtils.copyURLToFile(new URL(GALAXY_PLUGIN_LOCATION), path.toFile());
+            FileUtils.copyURLToFile(URI.create(GALAXY_PLUGIN_LOCATION).toURL(), path.toFile());
             System.out.println("copied Galaxy plugin to: " + path);
             final String absolutePath = temporaryTestingPlugins.toFile().getAbsolutePath();
             System.out.println("path for support: " + absolutePath);

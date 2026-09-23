@@ -37,6 +37,7 @@ import io.dockstore.openapi.client.model.Workflow;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -82,14 +83,14 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
-        url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
+        url = URI.create("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore").toURL();
         dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));
-        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/checker-input-cwl.json");
+        url = URI.create("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/checker-input-cwl.json").toURL();
         md5sumJson = new File(temporaryFolder, "md5sum-wrapper-tool.json");
         FileUtils.copyURLToFile(url, md5sumJson);
-        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/md5sum.input");
+        url = URI.create("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/md5sum.input").toURL();
         File md5sumInput = new File(temporaryFolder, "md5sum.input");
         FileUtils.copyURLToFile(url, md5sumInput);
     }

@@ -44,7 +44,7 @@ import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.openapi.model.DescriptorType;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,7 +89,7 @@ class SnakemakePluginIT {
             // stash a Snakemake plugin in the plugin directory
             final Path temporaryTestingPlugins = Files.createTempDirectory("temporaryTestingPlugins");
             final Path path = Paths.get(temporaryTestingPlugins.toString(), SNAKEMAKE_PLUGIN_FILENAME);
-            FileUtils.copyURLToFile(new URL(SNAKEMAKE_PLUGIN_LOCATION), path.toFile());
+            FileUtils.copyURLToFile(URI.create(SNAKEMAKE_PLUGIN_LOCATION).toURL(), path.toFile());
             System.out.println("copied Snakemake plugin to: " + path);
             final String absolutePath = temporaryTestingPlugins.toFile().getAbsolutePath();
             System.out.println("path for support: " + absolutePath);

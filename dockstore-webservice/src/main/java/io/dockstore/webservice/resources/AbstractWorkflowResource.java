@@ -93,6 +93,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
@@ -683,7 +684,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * if the repository has not changed since the push occurred.
      */
     private String getCurrentHash(GitHubSourceCodeRepo repo, String repository, String reference) {
-        if (StringUtils.startsWith(reference, "refs/tags/")) {
+        if (Strings.CS.startsWith(reference, "refs/tags/")) {
             return repo.getHash(repository, reference);
         } else {
             return repo.getCommitID(repository, reference);

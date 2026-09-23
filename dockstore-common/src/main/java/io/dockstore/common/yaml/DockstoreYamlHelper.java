@@ -293,7 +293,7 @@ public final class DockstoreYamlHelper {
      */
     public static String getSuggestedDockstoreYamlProperty(Class<? extends DockstoreYaml> dockstoreYamlClass, String unknownProperty) {
         Set<String> validProperties = getDockstoreYamlProperties(dockstoreYamlClass);
-        LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+        LevenshteinDistance levenshteinDistance = LevenshteinDistance.getDefaultInstance();
         int shortestDistance = Integer.MAX_VALUE;
         String shortestDistanceProperty = "";
 

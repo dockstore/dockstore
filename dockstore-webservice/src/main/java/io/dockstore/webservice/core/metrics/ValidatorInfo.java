@@ -62,17 +62,17 @@ public class ValidatorInfo {
 
     @NotNull
     @Column(nullable = false)
-    @Schema(description = "The version of the validator tool that was most recently executed", required = true)
+    @Schema(description = "The version of the validator tool that was most recently executed", requiredMode = Schema.RequiredMode.REQUIRED)
     private String mostRecentVersionName;
 
     @NotNull
     @Column(nullable = false)
-    @Schema(description = "A percentage representing how often the validator successfully validated the workflow", required = true, example = "100.0")
+    @Schema(description = "A percentage representing how often the validator successfully validated the workflow", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.0")
     private double passingRate;
 
     @NotNull
     @Column(nullable = false)
-    @Schema(description = "The number of times the validator was executed on the workflow", required = true, example = "1")
+    @Schema(description = "The number of times the validator was executed on the workflow", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private int numberOfRuns;
 
     // database timestamps

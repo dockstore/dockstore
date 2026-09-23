@@ -47,7 +47,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -346,7 +346,7 @@ class WDLParseTest {
             VersionTypeValidation validation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
             assertFalse(validation.isValid());
             assertTrue(validation.getMessage().values().stream()
-                    .anyMatch(msg -> StringUtils.contains(msg, ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT)));
+                    .anyMatch(msg -> Strings.CS.contains(msg, ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT)));
         } catch (IOException e) {
             fail();
         }
@@ -375,9 +375,9 @@ class WDLParseTest {
         } catch (IOException e) {
             fail();
         } catch (CustomWebApplicationException e) {
-            assertTrue(StringUtils.contains(e.getMessage(), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
+            assertTrue(Strings.CS.contains(e.getMessage(), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
         }
-        assertTrue(StringUtils.contains(versionTypeValidation.getMessage().get(recursiveWDL.getAbsolutePath()), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
+        assertTrue(Strings.CS.contains(versionTypeValidation.getMessage().get(recursiveWDL.getAbsolutePath()), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
 
     }
 

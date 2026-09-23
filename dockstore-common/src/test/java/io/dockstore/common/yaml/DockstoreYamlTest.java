@@ -29,7 +29,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.yaml.DockstoreYamlHelper.Version;
 import io.dockstore.common.yaml.constraints.HasEntry12;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
@@ -289,7 +289,7 @@ class DockstoreYamlTest {
     void testMalformedDockstoreYaml() throws IOException {
         final String spec = "https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/"
                 + ".dockstore.yml";
-        final String content = IOUtils.toString(new URL(spec), StandardCharsets.UTF_8);
+        final String content = IOUtils.toString(URI.create(spec).toURL(), StandardCharsets.UTF_8);
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(content);
             fail("expected malformed dockstore.yml to fail");

@@ -37,7 +37,7 @@ import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -124,7 +124,7 @@ class SearchResourceIT extends BaseIT {
         assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
         // ensure source file returns
-        String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String newQuery = Strings.CS.replace(exampleESQuery, "*.sourceFiles", "");
         String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
         assertTrue(t.contains("sourceFiles") && t.contains("\"checksum\":\"cb5d0323091b22e0a1d6f52a4930ee256b15835c968462c03cf7be2cc842a4ad\""), t + " should've contained sourcefiles");
     }
@@ -138,7 +138,7 @@ class SearchResourceIT extends BaseIT {
 
         // wait until the notebook is indexed
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
-        waitForIndexRefresh(1, extendedGa4GhApi, 0, StringUtils.replace(exampleESQuery, "\"match_all\":{}", "\"match\":{\"_index\":\"notebooks\"}"));
+        waitForIndexRefresh(1, extendedGa4GhApi, 0, Strings.CS.replace(exampleESQuery, "\"match_all\":{}", "\"match\":{\"_index\":\"notebooks\"}"));
 
         // confirm the correct format and language
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
@@ -148,7 +148,7 @@ class SearchResourceIT extends BaseIT {
         assertTrue(s.contains("\"descriptorTypeSubclass\":\"Python\""));
 
         // confirm the presence of the notebook source file
-        String fileQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String fileQuery = Strings.CS.replace(exampleESQuery, "*.sourceFiles", "");
         String t = extendedGa4GhApi.toolsIndexSearch(fileQuery);
         assertTrue(t.contains("/notebook.ipynb"));
     }

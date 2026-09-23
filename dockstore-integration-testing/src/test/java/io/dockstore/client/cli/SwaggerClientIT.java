@@ -71,6 +71,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -267,11 +268,11 @@ class SwaggerClientIT extends BaseIT {
         // we need to explicitly test the path rather than use the swagger generated client classes to enforce the path
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final String basePath = client.getBasePath();
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools");
+        URL url = URI.create(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools").toURL();
         final List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
 
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/metadata");
+        url = URI.create(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/metadata").toURL();
         final List<String> metadataStrings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
         assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
