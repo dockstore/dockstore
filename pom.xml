@@ -86,20 +86,9 @@
             <name>broad-dependencies.oicr.on.ca</name>
             <url>https://artifacts.oicr.on.ca/artifactory/broad-dependencies</url>
         </repository>
-        <!-- broad -->
-        <repository>
-            <id>artifactory.broadinstitute.org</id>
-            <name>artifactory.broadinstitute.org</name>
-            <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <!-- cromwell POMs declare this id at the retired broadinstitute.jfrog.io, which now serves an HTML page
-             that gets cached in place of missing POMs; redirect it to the current Broad registry -->
+        <!-- broad: cromwell POMs declare these ids at the retired broadinstitute.jfrog.io, which now serves an HTML page
+             that gets cached in place of missing POMs. Point "Broad Artifactory" at the current Broad registry and
+             disable "Broad Artifactory Snapshots" so neither id is used at its old location -->
         <repository>
             <id>Broad Artifactory</id>
             <name>Broad Artifactory</name>
