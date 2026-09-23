@@ -61,7 +61,6 @@ class ValidationIT extends BaseIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws ApiException
      */
     private ContainersApi setupToolWebService() throws ApiException {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -72,7 +71,6 @@ class ValidationIT extends BaseIT {
      * this method will set up the webservice and return the workflows api
      *
      * @return WorkflowsApi
-     * @throws ApiException
      */
     private WorkflowsApi setupWorkflowWebService() throws ApiException {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);

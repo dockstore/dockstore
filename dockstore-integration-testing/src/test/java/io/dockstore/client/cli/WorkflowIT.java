@@ -158,13 +158,6 @@ public class WorkflowIT extends BaseIT {
     /**
      * Manually register and publish a workflow with the given path and name
      *
-     * @param workflowsApi
-     * @param workflowPath
-     * @param workflowName
-     * @param descriptorType
-     * @param sourceControl
-     * @param descriptorPath
-     * @param toPublish
      * @return Published workflow
      *
     private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
@@ -800,7 +793,6 @@ public class WorkflowIT extends BaseIT {
     /**
      * This tests that a nested WDL workflow (three levels) is properly parsed
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testNestedWdlWorkflow() throws ApiException {
@@ -849,7 +841,6 @@ public class WorkflowIT extends BaseIT {
     /**
      * Tests that trying to register a duplicate workflow fails, and that registering a non-existent repository fails
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testManualRegisterErrors() throws ApiException {

@@ -205,7 +205,6 @@ class UserResourceSwaggerIT extends BaseIT {
     /**
      * Should not be able to update username after creating an organisation
      *
-     * @throws ApiException
      */
     @Test
     void testChangeUsernameAfterOrgCreation() throws ApiException {

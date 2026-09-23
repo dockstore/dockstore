@@ -58,7 +58,7 @@ public class Satellizer {
         this.userData = userDataObject;
     }
 
-    public class UserData {
+    public static class UserData {
         private boolean register;
 
         // Getter Methods
@@ -74,7 +74,7 @@ public class Satellizer {
         }
     }
 
-    public class OauthData {
+    public static class OauthData {
         private String state;
         private String code;
         private String scope;
@@ -108,7 +108,7 @@ public class Satellizer {
         }
     }
 
-    public class AuthorizationData {
+    public static class AuthorizationData {
         private String response_type;
         private String client_id;
         private String redirect_uri;

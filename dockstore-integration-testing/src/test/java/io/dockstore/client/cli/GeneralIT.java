@@ -176,7 +176,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -187,7 +186,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      * this method will set up the database and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
-     * @throws ApiException
      */
     private String getPathfromDB(String type) {
         // Set up DB
@@ -953,7 +951,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathCWL() throws ApiException {
@@ -976,7 +973,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * should be able to refresh a tool where image ids are changing (constraints issue from #1405)
      *
-     * @throws ApiException should not see error from the webservice
      */
     @Test
     void testImageIDUpdateDuringRefresh() throws ApiException {
@@ -1169,7 +1165,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * Test to update the default path of WDL and it should change the tag's WDL path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathWDL() throws ApiException {
@@ -1312,7 +1307,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * Test to update the default path of Dockerfile and it should change the tag's dockerfile path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathDockerfile() throws ApiException {

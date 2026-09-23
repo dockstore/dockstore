@@ -203,7 +203,6 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     /**
      * This test checks that a user can successfully refresh their workflows (only stubs).
      *
-     * @throws ApiException
      */
     @Test
     void testRefreshAllForAUser() throws ApiException {
@@ -348,7 +347,6 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * Tests manual registration of a tool and check that descriptors are downloaded properly.
      * Description is pulled properly from an $include.
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {

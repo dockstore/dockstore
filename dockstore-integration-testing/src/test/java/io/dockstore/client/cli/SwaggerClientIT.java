@@ -521,7 +521,6 @@ class SwaggerClientIT extends BaseIT {
     /**
      * Try to star/unstar an unpublished tool
      *
-     * @throws ApiException
      */
     @Test
     void testStarringUnpublishedTool() throws ApiException {
@@ -546,7 +545,6 @@ class SwaggerClientIT extends BaseIT {
     /**
      * Try to star/unstar an unpublished workflow
      *
-     * @throws ApiException
      */
     @Test
     void testStarringUnpublishedWorkflow() throws ApiException {
@@ -576,7 +574,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if a tool can be starred twice.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testStarStarredTool() throws ApiException {
@@ -600,7 +597,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if an already unstarred tool can be unstarred again.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testUnstarUnstarredTool() throws ApiException {
@@ -617,7 +613,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if a workflow can be starred twice.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testStarStarredWorkflow() throws ApiException {
@@ -636,7 +631,6 @@ class SwaggerClientIT extends BaseIT {
     /**
      * This tests if a proper response is returned on a "miss"
      *
-     * @throws ApiException
      */
     @Test
     void testNotFoundWorkflow() throws ApiException {
@@ -654,7 +648,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if an already unstarred workflow can be unstarred again.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testUnstarUnstarredWorkflow() throws ApiException {
@@ -670,7 +663,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests many combinations of starred tools would be returned in the same order
      * This test will pass if the order returned is always the same
      *
-     * @throws ApiException
      */
     @Test
     void testStarredToolsOrder() throws ApiException {

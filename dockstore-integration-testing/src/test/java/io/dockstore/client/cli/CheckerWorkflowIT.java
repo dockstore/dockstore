@@ -83,7 +83,6 @@ class CheckerWorkflowIT extends BaseIT {
      * - Publish tool should publish checker
      * - Unpublish tool should unpublish checker
      *
-     * @throws ApiException
      */
     @Test
     void testCWLToolAddCheckerRefreshPublishUnpublish() throws ApiException {
@@ -294,7 +293,6 @@ class CheckerWorkflowIT extends BaseIT {
      * - Publish workflow should publish checker
      * - Unpublish workflow should unpublish checker
      *
-     * @throws ApiException
      */
     @Test
     void testCWLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
@@ -387,7 +385,6 @@ class CheckerWorkflowIT extends BaseIT {
      * - Publish workflow should publish checker
      * - Unpublish workflow should unpublish checker
      *
-     * @throws ApiException
      */
     @Test
     void testWDLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
@@ -456,7 +453,6 @@ class CheckerWorkflowIT extends BaseIT {
     /**
      * Should not be able to add a checker workflow to a stub workflow (Should fail)
      *
-     * @throws ApiException
      */
     @Test
     void testAddCheckerToStub() throws ApiException {
@@ -480,7 +476,6 @@ class CheckerWorkflowIT extends BaseIT {
     /**
      * Tests that you cannot register a tool with an underscore
      *
-     * @throws ApiException
      */
     @Test
     void testRegisteringToolWithUnderscoreInName() throws ApiException {
@@ -506,7 +501,6 @@ class CheckerWorkflowIT extends BaseIT {
     /**
      * Tests that you cannot register a workflow with an underscore
      *
-     * @throws ApiException
      */
     @Test
     void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {

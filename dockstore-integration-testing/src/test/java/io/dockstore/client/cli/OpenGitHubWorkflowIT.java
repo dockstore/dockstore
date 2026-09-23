@@ -58,7 +58,6 @@ class OpenGitHubWorkflowIT extends BaseIT {
 
     /**
      * Tests <a href="https://ucsc-cgl.atlassian.net/browse/SEAB-6717">...</a>.
-     * @throws ApiException
      */
     @Test
     void testEmptyRepoRefresh() throws ApiException {
