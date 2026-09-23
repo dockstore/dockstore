@@ -206,7 +206,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRepository repository = github.getRepository(repositoryId);
             return repository.getDescription(); // Could be null if the repository doesn't have a description
         } catch (IOException e) {
-            LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
+            LOG.error(String.format("Could not get topic from: %s", repositoryId), e);
             return null;
         }
     }

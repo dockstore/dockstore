@@ -120,7 +120,7 @@ public class LimitedSourceFileBuilder {
                     double megabytes = maximumSize / (double) BYTES_PER_MEGABYTE;
                     file.setContent("Dockstore does not store files of this type over %.1fMB in size".formatted(megabytes));
                     file.setState(SourceFile.State.NOT_STORED);
-                    logContentAction(path, "large file (%n bytes)".formatted(bytes.length));
+                    logContentAction(path, "large file (%d bytes)".formatted(bytes.length));
                     return;
                 }
             }
