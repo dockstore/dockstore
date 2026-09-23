@@ -334,7 +334,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty("full_workflow_path")
     @ApiModelProperty(position = 24)
     public String getWorkflowPath() {
-        return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
+        return getPath() + (workflowName == null || workflowName.isEmpty() ? "" : '/' + workflowName);
     }
 
     @ApiModelProperty(position = 25)

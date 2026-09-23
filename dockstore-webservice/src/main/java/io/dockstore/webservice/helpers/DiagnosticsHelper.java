@@ -350,7 +350,7 @@ public final class DiagnosticsHelper {
     }
 
     @Provider
-    public class DiagnosticsHelperContainerRequestFilter implements ContainerRequestFilter {
+    public static class DiagnosticsHelperContainerRequestFilter implements ContainerRequestFilter {
         @Context
         ResourceInfo resourceInfo;
 

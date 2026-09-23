@@ -952,7 +952,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Convert the specified workflow information into an identifying string that can be shown to the end user (in the app logs, exception messages, etc).
      * @param workflowType type of the workflow
-     * @param workflowish description of the workflow
+     * @param workflow description of the workflow
      * @return string describing the workflow
      */
     private String computeWorkflowPhrase(Class<?> workflowType, Workflowish workflow) {

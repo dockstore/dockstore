@@ -364,7 +364,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // If the file size is 1MB or larger, content will be "" and the encoding will be "none":
                 // https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28 (see "Notes")
                 // In such a case, we retrieve the content via the blob endpoint.
-                if ("".equals(content) && "none".equals(encoding)) {
+                if (content != null && content.isEmpty() && "none".equals(encoding)) {
                     long size = decodedContentAndMetadata.getLeft().getSize();
                     if (size > MAXIMUM_FILE_DOWNLOAD_SIZE) {
                         LOG.warn(gitUsername + ": file too large in readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference);

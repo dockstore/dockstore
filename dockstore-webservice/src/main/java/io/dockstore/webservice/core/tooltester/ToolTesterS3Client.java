@@ -20,7 +20,6 @@ package io.dockstore.webservice.core.tooltester;
 
 import io.dockstore.common.S3ClientHelper;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -68,7 +67,6 @@ public class ToolTesterS3Client {
      * @param runner       The runner used to test (cwltool, cromwell, etc)
      * @param filename     The log name time in milliseconds since epoch
      * @return S3 key (file path)
-     * @throws UnsupportedEncodingException Could not endpoint string
      */
     public static String generateKey(String toolId, String versionName, String testFilePath, String runner, String filename) {
         List<String> pathList = new ArrayList<>();
