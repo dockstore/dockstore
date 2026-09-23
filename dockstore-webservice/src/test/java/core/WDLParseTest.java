@@ -20,6 +20,7 @@ import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLO
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -377,6 +378,7 @@ class WDLParseTest {
         } catch (CustomWebApplicationException e) {
             assertTrue(Strings.CS.contains(e.getMessage(), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
         }
+        assertNotNull(versionTypeValidation);
         assertTrue(Strings.CS.contains(versionTypeValidation.getMessage().get(recursiveWDL.getAbsolutePath()), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
 
     }
