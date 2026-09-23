@@ -98,6 +98,7 @@ public class Notebook extends Workflow {
     }
 
     @Transient
+    @Override
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withNotebook(this);
     }

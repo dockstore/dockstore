@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 class GA4GHV2BetaIT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v2/";
 
+    @Override
     public String getApiVersion() {
         return API_VERSION;
     }
@@ -348,6 +349,7 @@ class GA4GHV2BetaIT extends GA4GHIT {
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
+    @Override
     protected void assertVersion(String version) {
         assertThat(version).contains("meta_version");
         assertThat(version).contains("descriptor_type");
@@ -357,6 +359,7 @@ class GA4GHV2BetaIT extends GA4GHIT {
         assertThat(version).doesNotContain("verified-source");
     }
 
+    @Override
     protected void assertTool(String tool, boolean isTool) {
         assertThat(tool).contains("meta_version");
         assertThat(tool).contains("verified_source");

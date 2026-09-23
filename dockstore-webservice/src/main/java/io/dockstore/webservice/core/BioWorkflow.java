@@ -116,6 +116,7 @@ public class BioWorkflow extends Workflow {
         }
     }
 
+    @Override
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withBioWorkflow(this);
     }

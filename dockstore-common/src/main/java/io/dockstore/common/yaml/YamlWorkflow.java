@@ -62,6 +62,7 @@ public class YamlWorkflow implements Workflowish {
     private List<String> otherFiles = new ArrayList<>();
 
     @EntryName
+    @Override
     public String getName() {
         return name;
     }
@@ -72,6 +73,7 @@ public class YamlWorkflow implements Workflowish {
 
     @NotNull
     @ValidDescriptorLanguage(entryType = EntryType.WORKFLOW, message = "must be a supported descriptor language (\"CWL\", \"WDL\", \"GALAXY\", \"SMK\", or \"NFL\")")
+    @Override
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();
@@ -85,6 +87,7 @@ public class YamlWorkflow implements Workflowish {
 
     @NotNull
     @AbsolutePath
+    @Override
     public String getPrimaryDescriptorPath() {
         return primaryDescriptorPath;
     }
@@ -93,6 +96,7 @@ public class YamlWorkflow implements Workflowish {
         this.primaryDescriptorPath = primaryDescriptorPath;
     }
 
+    @Override
     public Boolean getPublish() {
         return publish;
     }
@@ -102,6 +106,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @Valid
+    @Override
     public Filters getFilters() {
         return filters;
     }
@@ -111,6 +116,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @Valid
+    @Override
     public List<YamlAuthor> getAuthors() {
         return authors;
     }
@@ -119,6 +125,7 @@ public class YamlWorkflow implements Workflowish {
         this.authors = authors;
     }
 
+    @Override
     public List<@NotNull @AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
@@ -127,6 +134,7 @@ public class YamlWorkflow implements Workflowish {
         this.testParameterFiles = testParameterFiles;
     }
 
+    @Override
     public boolean getLatestTagAsDefault() {
         return latestTagAsDefault;
     }
@@ -145,6 +153,7 @@ public class YamlWorkflow implements Workflowish {
         this.readMePath = readMePath;
     }
 
+    @Override
     public String getTopic() {
         return this.topic;
     }
@@ -167,6 +176,7 @@ public class YamlWorkflow implements Workflowish {
      * read and included with the notebook.
      */
     @NotNull
+    @Override
     public List<String> getOtherFiles() {
         return otherFiles;
     }

@@ -96,6 +96,7 @@ public final class DiagnosticsHelper {
             long periodMilliseconds = Math.round(periodSeconds * MILLISECONDS_PER_SECOND);
             new Timer("diagnostics", true).scheduleAtFixedRate(
                 new TimerTask() {
+                    @Override
                     public void run() {
                         logGlobals();
                     }

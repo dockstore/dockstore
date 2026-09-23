@@ -48,6 +48,7 @@ public class YamlNotebook implements Workflowish {
     private Boolean enableAutoDois;
 
     @EntryName
+    @Override
     public String getName() {
         return name;
     }
@@ -72,6 +73,7 @@ public class YamlNotebook implements Workflowish {
         this.format = format;
     }
 
+    @Override
     public String getSubclass() {
         return format;
     }
@@ -123,6 +125,7 @@ public class YamlNotebook implements Workflowish {
         this.kernel = kernel;
     }
 
+    @Override
     public Boolean getPublish() {
         return publish;
     }
@@ -131,6 +134,7 @@ public class YamlNotebook implements Workflowish {
         this.publish = publish;
     }
 
+    @Override
     public boolean getLatestTagAsDefault() {
         return latestTagAsDefault;
     }
@@ -140,6 +144,7 @@ public class YamlNotebook implements Workflowish {
     }
 
     @Valid
+    @Override
     public Filters getFilters() {
         return filters;
     }
@@ -149,6 +154,7 @@ public class YamlNotebook implements Workflowish {
     }
 
     @Valid
+    @Override
     public List<YamlAuthor> getAuthors() {
         return authors;
     }
@@ -157,6 +163,7 @@ public class YamlNotebook implements Workflowish {
         this.authors = authors;
     }
 
+    @Override
     public List<@NotNull @AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
@@ -170,6 +177,7 @@ public class YamlNotebook implements Workflowish {
      * read and included with the notebook.
      */
     @NotNull
+    @Override
     public List<String> getOtherFiles() {
         return otherFiles;
     }
@@ -184,6 +192,7 @@ public class YamlNotebook implements Workflowish {
 
     @NotNull
     @AbsolutePath
+    @Override
     public String getPrimaryDescriptorPath() {
         return getPath();
     }
@@ -198,6 +207,7 @@ public class YamlNotebook implements Workflowish {
         this.readMePath = readMePath;
     }
 
+    @Override
     public String getTopic() {
         return this.topic;
     }

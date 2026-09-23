@@ -349,6 +349,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return toolList;
     }
 
+    @Override
     public Tool getToolFromNamespaceAndRepo(String namespace, String repository) {
         try {
             String name = namespace + "/" + repository;

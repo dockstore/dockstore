@@ -35,10 +35,12 @@ public class ServiceDAO extends EntryDAO<Service> {
         super(sessionFactory);
     }
 
+    @Override
     public Service findById(Long id) {
         return get(id);
     }
 
+    @Override
     public long create(Service file) {
         return persist(file).getId();
     }

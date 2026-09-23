@@ -96,6 +96,7 @@ public class Service extends Workflow {
     }
 
     @Transient
+    @Override
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withService(this);
     }

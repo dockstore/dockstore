@@ -486,10 +486,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return null;
     }
 
+    @Override
     public Map<String, Alias> getAliases() {
         return aliases;
     }
 
+    @Override
     public void setAliases(Map<String, Alias> aliases) {
         this.aliases = aliases;
     }

@@ -31,6 +31,7 @@ public class Service12 extends AbstractYamlService implements Workflowish {
     private DescriptorLanguageSubclass subclass;
 
     @NotNull
+    @Override
     public DescriptorLanguageSubclass getSubclass() {
         return subclass;
     }
@@ -39,10 +40,12 @@ public class Service12 extends AbstractYamlService implements Workflowish {
         this.subclass = subclass;
     }
 
+    @Override
     public List<String> getTestParameterFiles() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getPrimaryDescriptorPath() {
         throw new UnsupportedOperationException();
     }
@@ -52,6 +55,7 @@ public class Service12 extends AbstractYamlService implements Workflowish {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getTopic() {
         throw new UnsupportedOperationException();
     }
@@ -60,6 +64,7 @@ public class Service12 extends AbstractYamlService implements Workflowish {
      * Get the list of user-specified "other" files that should be
      * read and included with the notebook.
      */
+    @Override
     public List<String> getOtherFiles() {
         throw new UnsupportedOperationException();
     }

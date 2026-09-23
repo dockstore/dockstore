@@ -89,6 +89,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         super();
     }
 
+    @Override
     public Version createEmptyVersion() {
         return new Tag();
     }
@@ -126,6 +127,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         super.updateByUser(tag);
     }
 
+    @Override
     public void update(Tag tag) {
         super.update(tag);
         // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
@@ -138,6 +140,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         lastBuilt = tag.lastBuilt;
     }
 
+    @Override
     public void clone(Tag tag) {
         super.clone(tag);
         // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).

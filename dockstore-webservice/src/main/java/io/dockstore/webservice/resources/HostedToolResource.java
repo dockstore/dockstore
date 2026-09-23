@@ -89,6 +89,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         this.sessionFactory = sessionFactory;
     }
 
+    @Override
     public ToolDAO getDAO() {
         return this.toolDAO;
     }
