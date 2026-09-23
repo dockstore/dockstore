@@ -138,13 +138,13 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.35</version>
+      <version>1.5.38</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.35</version>
+      <version>1.5.38</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -1026,6 +1026,28 @@
       </snapshots>
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
+      <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>Broad Artifactory</id>
+      <name>Broad Artifactory</name>
+      <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>Broad Artifactory Snapshots</id>
+      <name>Broad Artifactory Snapshots</name>
       <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
     </repository>
   </repositories>

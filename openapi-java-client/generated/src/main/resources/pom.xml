@@ -134,5 +134,27 @@
       <name>artifactory.broadinstitute.org</name>
       <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
     </repository>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>Broad Artifactory</id>
+      <name>Broad Artifactory</name>
+      <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>Broad Artifactory Snapshots</id>
+      <name>Broad Artifactory Snapshots</name>
+      <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
+    </repository>
   </repositories>
 </project>

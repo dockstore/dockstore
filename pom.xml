@@ -98,6 +98,30 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <!-- cromwell POMs declare this id at the retired broadinstitute.jfrog.io, which now serves an HTML page
+             that gets cached in place of missing POMs; redirect it to the current Broad registry -->
+        <repository>
+            <id>Broad Artifactory</id>
+            <name>Broad Artifactory</name>
+            <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>Broad Artifactory Snapshots</id>
+            <name>Broad Artifactory Snapshots</name>
+            <url>https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <!-- might be useful someday in a pinch if oicr goes down again
         <repository>
             <id>gitlab-maven</id>
