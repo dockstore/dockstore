@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -878,12 +879,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     void testGetIncorrectContainer() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        try {
-            toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null);
-            fail("Expected an entry-not-found error");
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Entry not found"));
-        }
+        ApiException e = assertThrows(ApiException.class, () -> toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null));
+        assertTrue(e.getMessage().contains("Entry not found"));
     }
 
     /**
@@ -893,12 +890,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     void testGetOtherUsersContainer() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        try {
-            toolApi.getContainerByToolPath("quay.io/test_org/test1", null);
-            fail("Expected an entry-not-found error");
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Entry not found"));
-        }
+        ApiException e = assertThrows(ApiException.class, () -> toolApi.getContainerByToolPath("quay.io/test_org/test1", null));
+        assertTrue(e.getMessage().contains("Entry not found"));
     }
 
     /**

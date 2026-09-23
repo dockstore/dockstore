@@ -1444,7 +1444,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Remove the 'refs/{type}/' prefix from a GitHub reference.
      */
     private String stripReference(String reference) {
-        return reference == null ? null : reference.replaceAll("refs/.+?/", "");
+        return reference == null ? null : reference.replaceAll("refs/[^/]++/", "");
     }
 
     private String getEmail(GHMyself myself) throws IOException {
