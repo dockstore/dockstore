@@ -435,8 +435,9 @@ public class WorkflowIT extends BaseIT {
             new HashMap<>(), new HashMap<>(), "application/zip", "text/plain", new String[] { "BEARER" }, new GenericType<byte[]>() { });
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), responseBody);
-        ZipFile zipFile = new ZipFile(write.toFile());
-        assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        try (ZipFile zipFile = new ZipFile(write.toFile())) {
+            assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        }
 
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
@@ -457,8 +458,9 @@ public class WorkflowIT extends BaseIT {
                 new HashMap<>(), "application/zip", "text/plain", new String[] { "BEARER" }, new GenericType<byte[]>() { });
         File tempZip2 = File.createTempFile("temp", "zip");
         write = Files.write(tempZip2.toPath(), responseBody);
-        zipFile = new ZipFile(write.toFile());
-        assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        try (ZipFile zipFile = new ZipFile(write.toFile())) {
+            assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        }
         tempZip2.deleteOnExit();
     }
 
@@ -752,7 +754,7 @@ public class WorkflowIT extends BaseIT {
         assertFalse(workflowDag.isEmpty());
         Gson gson = new Gson();
         List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
-        Map<Map, List> map = gson.fromJson(workflowDag, Map.class);
+        Map<String, List<?>> map = gson.fromJson(workflowDag, Map.class);
         assertTrue(list.size() >= 9, "tool table should be present");
         long dockerCount = list.stream().filter(tool -> !tool.get("docker").isEmpty()).count();
         assertEquals(dockerCount, list.size(), "tool table is populated with docker images");

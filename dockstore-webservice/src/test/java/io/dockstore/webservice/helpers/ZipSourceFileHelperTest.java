@@ -22,20 +22,21 @@ class ZipSourceFileHelperTest {
 
     @Test
     void validateZip() throws IOException {
-        ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
-        try {
-            ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 1);
-            fail("Expected validate to throw error");
-        } catch (Exception ex) {
-            // This is expected
+        try (ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH))) {
+            try {
+                ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 1);
+                fail("Expected validate to throw error");
+            } catch (Exception ex) {
+                // This is expected
+            }
+            try {
+                ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 100);
+                fail("Expected validate to throw error");
+            } catch (Exception ex) {
+                // This is expected
+            }
+            ZipSourceFileHelper.validateZip(smartSeqZipFile, 100, 100_000);
         }
-        try {
-            ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 100);
-            fail("Expected validate to throw error");
-        } catch (Exception ex) {
-            // This is expected
-        }
-        ZipSourceFileHelper.validateZip(smartSeqZipFile, 100, 100_000);
     }
 
     @Test
@@ -61,8 +62,7 @@ class ZipSourceFileHelperTest {
 
     @Test
     void validateType() throws IOException {
-        ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
-        try {
+        try (ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH))) {
             ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, DescriptorLanguage.FileType.DOCKSTORE_CWL);
             fail("Expected failure because zip has WDL but workflow is CWL");
         } catch (CustomWebApplicationException ex) {

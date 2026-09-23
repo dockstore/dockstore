@@ -17,7 +17,6 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonXmlBindJsonProvider;
@@ -114,6 +113,7 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
                 builder = new StringBuilder();
             }
         }
+        IDENTIFIERS.add(builder.toString());
         return builder.toString();
     }
 
@@ -278,7 +278,6 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
         Registry[] registries = { Registry.AMAZON_ECR, Registry.DOCKER_HUB, Registry.GITLAB };
         int length = registries.length;
         int random = RAND.nextInt(length);
-        assertTrue(random >= 0 && random < length);
         if (random == 0) {
             return "test.dkr.ecr.test.amazonaws.com";
         } else {
