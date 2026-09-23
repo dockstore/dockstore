@@ -255,7 +255,7 @@ class UserResourceSwaggerIT extends BaseIT {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminUserApi = new UsersApi(adminWebClient);
 
-        User user = userApi.getUser();
+        userApi.getUser();
 
         // Test that deleting a user creates a deleteduser entry
         long count = testingPostgres.runSelectStatement("select count(*) from deletedusername", long.class);
@@ -314,9 +314,9 @@ class UserResourceSwaggerIT extends BaseIT {
         assertEquals("dockstore-workflow-md5sum-unified", entries.get(0).getPrettyPath());
 
         // Create organizations
-        Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
+        createOrganization(client, "Foobar", "Foo Bar");
         Organization foobarOrgTwo = createOrganization(client, "Foobar2", "Foo Bar the second");
-        Organization tacoOrg = createOrganization(client, "taco", "taco place");
+        createOrganization(client, "taco", "taco place");
 
         // taco should be most recent
         List<OrganizationUpdateTime> organizations = userApi.getUserDockstoreOrganizations(10, null);

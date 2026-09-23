@@ -293,7 +293,7 @@ class SwaggerClientIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
+        containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         List<io.dockstore.openapi.client.model.ToolV1> tools = toolApi.toolsGetV1(null, null, null, null, null, null, null, null, null);
         assertEquals(3, tools.size());
@@ -316,7 +316,7 @@ class SwaggerClientIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
+        containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final io.dockstore.openapi.client.model.ToolV1 tool = toolApi.toolsIdGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
@@ -368,7 +368,7 @@ class SwaggerClientIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
+        containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final ToolDockerfile toolDockerfile = toolApi
             .dockerfileGetV1("registry.hub.docker.com/seqware/seqware/test5", "master");

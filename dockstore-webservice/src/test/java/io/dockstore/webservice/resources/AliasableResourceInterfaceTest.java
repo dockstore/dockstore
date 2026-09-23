@@ -28,7 +28,7 @@ class AliasableResourceInterfaceTest {
             // Make sure the alias is valid
             // If it is not acceptable then an exception is generated
             try {
-                AliasableResourceInterface.checkAliases(Collections.singleton(invalidPrefix + "_some_random_alias_suffix"),
+                AliasableResourceInterface.checkAliases(Collections.singleton(invalidAlias),
                         Optional.of(user), true);
                 fail("An alias with an invalid prefix " + invalidPrefix + " was reported to be OK.");
             } catch (CustomWebApplicationException ex) {

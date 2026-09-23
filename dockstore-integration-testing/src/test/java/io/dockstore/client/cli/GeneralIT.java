@@ -466,7 +466,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Test
     void testGettingVerifiedVersions() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
@@ -593,7 +592,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     // Tests 1.10.0 migration where id=adddescriptortypecolumn
     @Test
     void testMigrationForDescriptorType() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -612,8 +610,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testRefreshingGetsDescriptorType() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.ContainersApi openToolApi = new io.dockstore.openapi.client.api.ContainersApi(client);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -885,7 +881,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         try {
-            DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null);
+            toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null);
+            fail("Expected an entry-not-found error");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Entry not found"));
         }
@@ -899,7 +896,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         try {
-            DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/test_org/test1", null);
+            toolApi.getContainerByToolPath("quay.io/test_org/test1", null);
+            fail("Expected an entry-not-found error");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Entry not found"));
         }
@@ -1587,7 +1585,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         final io.dockstore.openapi.client.api.OrganizationsApi openApiOrganizations = new io.dockstore.openapi.client.api.OrganizationsApi(openApiClient);
         io.dockstore.openapi.client.api.UsersApi openApiUsers = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
 
-        io.dockstore.openapi.client.model.User user1 = openApiUsers.getUser();
+        openApiUsers.getUser();
 
         testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
         try {

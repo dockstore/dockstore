@@ -188,7 +188,7 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
     private void refresh(long id) {
         Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/refresh")
             .request().header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").get();
-        Tool tool = registerManualResponse.readEntity(Tool.class);
+        registerManualResponse.readEntity(Tool.class);
     }
 
     private void refreshAndBuildIndex(long id) {

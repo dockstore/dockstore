@@ -164,6 +164,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIWebClient);
         final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
             DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
+        assertFalse(toolFiles.isEmpty(), "TRS should list the workflow's files");
         io.swagger.client.ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL

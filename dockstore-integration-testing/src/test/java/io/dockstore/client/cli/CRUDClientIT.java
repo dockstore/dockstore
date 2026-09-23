@@ -466,7 +466,7 @@ class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
             .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", null);
-        ApiException apiException = assertThrows(ApiException.class, () -> {
+        assertThrows(ApiException.class, () -> {
             DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
             assertTrue(refreshedTool.getUsers().size() > 0, "There should be at least one user of the workflow");
             refreshedTool.getUsers()

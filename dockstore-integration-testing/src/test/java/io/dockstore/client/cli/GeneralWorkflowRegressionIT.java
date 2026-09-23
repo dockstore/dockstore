@@ -610,6 +610,7 @@ class GeneralWorkflowRegressionIT extends BaseIT {
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='docker testing group'",
                 long.class);
+        assertEquals(1, count2, "there should be one verified workflowversion, there are " + count2);
 
         // Update workflowversion to have new verified source
         runOldDockstoreClientWithSpaces(dockstore,

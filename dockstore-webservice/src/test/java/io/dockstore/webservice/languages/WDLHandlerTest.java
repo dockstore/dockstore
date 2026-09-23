@@ -12,7 +12,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -138,7 +137,6 @@ class WDLHandlerTest {
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
         assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
 
-        final BioWorkflow entry = new BioWorkflow();
         Version version = wdlHandler.parseWorkflowContent("/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), new WorkflowVersion());
         assertEquals("Christopher Whelan", version.getAuthor());
     }

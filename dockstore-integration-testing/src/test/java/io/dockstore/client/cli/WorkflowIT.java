@@ -61,7 +61,6 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
-import io.dropwizard.testing.ResourceHelpers;
 import io.openapi.model.DescriptorType;
 import jakarta.ws.rs.core.GenericType;
 import java.io.File;
@@ -605,8 +604,6 @@ public class WorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow(workflow.getId(), "cwl", "checker-workflow-wrapping-workflow.cwl", "checker-input-cwl.json");
         workflowApi.refresh1(workflow.getId(), false);
 
-        final String fileWithIncorrectCredentials = ResourceHelpers.resourceFilePath("config_file.txt");
-        final String fileWithCorrectCredentials = ResourceHelpers.resourceFilePath("config_file2.txt");
 
         final Long versionId = refresh.getWorkflowVersions().get(0).getId();
 
