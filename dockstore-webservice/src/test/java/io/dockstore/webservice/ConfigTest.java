@@ -1,11 +1,11 @@
 package io.dockstore.webservice;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.dockstore.webservice.api.Config;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class ConfigTest {
 
@@ -15,7 +15,7 @@ class ConfigTest {
         uiConfig.setDeployVersion("1.2.3");
         uiConfig.setSupportVersion("4.5.6");
         uiConfig.setMcpVersion("7.8.9");
-        DockstoreWebserviceConfiguration webConfig = Mockito.mock(DockstoreWebserviceConfiguration.class);
+        DockstoreWebserviceConfiguration webConfig = mock(DockstoreWebserviceConfiguration.class);
         when(webConfig.getUiConfig()).thenReturn(uiConfig);
 
         Config config = Config.fromWebConfig(webConfig);
