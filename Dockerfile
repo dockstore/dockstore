@@ -1,10 +1,8 @@
 FROM eclipse-temurin:21.0.11_10-jdk-jammy
 
 # Update the APT cache
-# Prepare for Java download
 RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends
+    && apt-get upgrade -y
 
 # Explicitly upgrade perl-base and verify it is at least the version fixing
 # CVE-2026-57433, CVE-2026-13221, and CVE-2026-12087 (SEAB-7756). apt-get
@@ -16,12 +14,17 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' perl-base)" ge 5.34.0-3ubuntu1.8
-# Note locale settings seem redundant, temurin already has en_US.UTF-8 set
-#    locales \
-#    && apt-get clean \
-#    && rm -rf /var/lib/apt/lists/* \
-#    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
-# ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
+
+# Explicitly upgrade libgnutls30 and verify it is at least the version fixing
+# CVE-2026-42010 and CVE-2026-33845 (SEAB-7616). apt-get upgrade above
+# already pulls the latest available libgnutls30, but this fails the build
+# loudly if a cached/older archive would otherwise leave a vulnerable
+# version in place instead of silently shipping it.
+RUN apt-get update \
+    && apt-get install -y --only-upgrade libgnutls30 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libgnutls30)" ge 3.7.3-4ubuntu1.9
 
 # Copy the jar not ending in 's', to make sure we get don't get the one ending in 'sources'
 COPY dockstore-webservice/target/dockstore-webservice*[^s].jar /home
