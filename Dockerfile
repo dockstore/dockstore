@@ -1,10 +1,8 @@
 FROM eclipse-temurin:21.0.11_10-jdk-jammy
 
 # Update the APT cache
-# Prepare for Java download
 RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends
+    && apt-get upgrade -y
 
 # Explicitly upgrade perl-base and verify it is at least the version fixing
 # CVE-2026-57433, CVE-2026-13221, and CVE-2026-12087 (SEAB-7756). apt-get
