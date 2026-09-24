@@ -20,7 +20,7 @@ package io.dockstore.webservice.core;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import java.nio.charset.StandardCharsets;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +120,7 @@ public class LimitedSourceFileBuilder {
                     double megabytes = maximumSize / (double) BYTES_PER_MEGABYTE;
                     file.setContent("Dockstore does not store files of this type over %.1fMB in size".formatted(megabytes));
                     file.setState(SourceFile.State.NOT_STORED);
-                    logContentAction(path, "large file (%n bytes)".formatted(bytes.length));
+                    logContentAction(path, "large file (%d bytes)".formatted(bytes.length));
                     return;
                 }
             }
@@ -132,7 +132,7 @@ public class LimitedSourceFileBuilder {
 
         private static long computeMaximumSize(String path) {
             // Jupyter notebook files can contain embedded images, making them tend to be larger.
-            if (StringUtils.endsWith(path, ".ipynb")) {
+            if (Strings.CS.endsWith(path, ".ipynb")) {
                 return NOTEBOOK_MAXIMUM_FILE_SIZE;
             }
             return MAXIMUM_FILE_SIZE;

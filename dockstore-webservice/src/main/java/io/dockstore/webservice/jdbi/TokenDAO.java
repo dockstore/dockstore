@@ -16,12 +16,12 @@
 
 package io.dockstore.webservice.jdbi;
 
-import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.List;
 import org.hibernate.Session;
@@ -125,7 +125,7 @@ public class TokenDAO extends AbstractDAO<Token> {
         final byte[] buffer = new byte[bufferLength];
         SECURE_RANDOM.nextBytes(buffer);
         String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-        final String dockstoreAccessToken = Hashing.sha256().hashString(username + randomString, Charsets.UTF_8).toString();
+        final String dockstoreAccessToken = Hashing.sha256().hashString(username + randomString, StandardCharsets.UTF_8).toString();
 
         dockstoreToken = new Token();
         dockstoreToken.setTokenSource(TokenType.DOCKSTORE);

@@ -248,9 +248,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
+            - dockstore-m2-v2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-m2-
+            - dockstore-m2-v2-
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -333,9 +333,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
+            - dockstore-m2-v2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-m2-
+            - dockstore-m2-v2-
       - checkout
       - install-postgres
       - install-git-secrets
@@ -424,7 +424,7 @@ jobs:
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
-          key: dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
+          key: dockstore-m2-v2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
       - save_cache:
           # should include non-confidential, but they should probably be split out anyway
           key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -461,9 +461,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
+            - dockstore-m2-v2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-m2-
+            - dockstore-m2-v2-
       - run:
           name: build
           no_output_timeout: 30m
@@ -559,9 +559,9 @@ commands:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
+            - dockstore-m2-v2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}-{{ checksum "THIRD-PARTY-LICENSES.dev.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-m2-
+            - dockstore-m2-v2-
       - run:
           name: split up tests and create a file for cache checksum
           command: |

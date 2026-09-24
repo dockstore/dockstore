@@ -20,18 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrAndOut;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.DockerClientException;
-import com.github.dockerjava.api.model.PullResponseItem;
-import com.github.dockerjava.api.model.SearchItem;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 import io.dockstore.common.ConfidentialTest;
-import java.util.List;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,7 +47,7 @@ class DockerClientIT {
                 .sslConfig(config.getSSLConfig()).build(); DockerClient dockerClient = DockerClientImpl.getInstance(config, httpClient)) {
 
             // this does not return enough image to diagnose Docker image version
-            List<SearchItem> items = dockerClient.searchImagesCmd("Java").exec();
+            dockerClient.searchImagesCmd("Java").exec();
 
             dockerClient.pullImageCmd("weischenfeldt/pcawg_sv_merge").withTag("1.0.2").exec(new PullImageResultCallback())
                     .awaitCompletion();
@@ -61,7 +57,7 @@ class DockerClientIT {
                     // note you need a Docker client on the localhost to assess whether an image is the older schema which is than ideal
                     // see https://docs.docker.com/engine/deprecated/#pushing-and-pulling-with-image-manifest-v2-schema-1
                     // see also https://github.com/dockstore/dockstore/issues/5878
-                    ResultCallback.Adapter<PullResponseItem> memcached = dockerClient.pullImageCmd("memcached").withTag("1.4.22")
+                    dockerClient.pullImageCmd("memcached").withTag("1.4.22")
                             .exec(new PullImageResultCallback()).awaitCompletion();
                 } catch (DockerClientException exception) {
                     // this occurs on Docker clients past version 26

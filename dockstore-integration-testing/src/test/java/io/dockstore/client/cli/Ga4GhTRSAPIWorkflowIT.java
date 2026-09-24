@@ -164,6 +164,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIWebClient);
         final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
             DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
+        assertFalse(toolFiles.isEmpty(), "TRS should list the workflow's files");
         io.swagger.client.ApiResponse<byte[]> response = CommonTestUtilities.invokeAPI(
             "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
                 + "/" + DescriptorTypeWithPlain.WDL
@@ -202,7 +203,6 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     /**
      * This test checks that a user can successfully refresh their workflows (only stubs).
      *
-     * @throws ApiException
      */
     @Test
     void testRefreshAllForAUser() throws ApiException {
@@ -347,7 +347,6 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * Tests manual registration of a tool and check that descriptors are downloaded properly.
      * Description is pulled properly from an $include.
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {

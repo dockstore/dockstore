@@ -1150,7 +1150,6 @@ public class OrganizationIT extends BaseIT {
         // Setup other user
         final ApiClient webClientOtherUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
-        UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
 
         // Create org, invite user as member, and accept invitation
         Organization organization = createOrg(organizationsApiUser2);
@@ -1966,10 +1965,6 @@ public class OrganizationIT extends BaseIT {
     void testAliasesAreInReturnedOrganizationOrCollection() {
         // Setup postgres
 
-        // Setup admin
-        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
-
         // Setup user who creates Organization and collection
         final ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -2330,8 +2325,7 @@ public class OrganizationIT extends BaseIT {
         Collection collection = organizationsApi.createCollection(stubCollection, organization.getId());
         long collectionId = collection.getId();
 
-        Collection collectionTwo = organizationsApi.createCollection(stubCollectionTwo, organization.getId());
-        long collectionTwoId = collectionTwo.getId();
+        organizationsApi.createCollection(stubCollectionTwo, organization.getId());
 
         // Update description of collection
         String desc = "This is a new description.";

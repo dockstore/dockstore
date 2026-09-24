@@ -62,6 +62,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
     @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a workflow version in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Aliases are alphanumerical (case-insensitive "
         + "and may contain internal hyphens), given in a comma-delimited list.", response = WorkflowVersion.class)
+    @Override
     public WorkflowVersion addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "workflow version to modify.", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
             @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {

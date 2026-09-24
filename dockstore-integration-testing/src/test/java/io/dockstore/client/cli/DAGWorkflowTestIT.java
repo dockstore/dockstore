@@ -284,7 +284,6 @@ class DAGWorkflowTestIT extends BaseIT {
      * This tests the NCI-GDC DNASeq workflow. This workflow has a huge dag and about 30+ files. It also has secondary, tertiary, etc imports.\
      * This also tests that absolute paths are correctly used for imported files.
      *
-     * @throws ApiException
      */
     @Test
     void testHugeWorkflowWithManyImports() throws ApiException {
@@ -304,7 +303,6 @@ class DAGWorkflowTestIT extends BaseIT {
      * This tests the CWL Gene Prioritization workflow. The getSteps function returns an array instead of the previously assumed object. This has been fixed,
      * and this is testing that it is fixed.
      *
-     * @throws ApiException
      */
     @Test
     void testGetStepsArrayInsteadOfObject() throws ApiException {
@@ -327,7 +325,6 @@ class DAGWorkflowTestIT extends BaseIT {
      * womtool validate from the command line, this workflow fails to validate, so our code was correctly validating this WDL before,
      * that seems to have been incorrect.
      *
-     * @throws ApiException
      */
     @SuppressWarnings("checkstyle:EmptyCatchBlock")
     @Test

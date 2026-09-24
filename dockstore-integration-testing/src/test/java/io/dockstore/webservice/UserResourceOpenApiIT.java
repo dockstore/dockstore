@@ -97,7 +97,7 @@ class UserResourceOpenApiIT extends BaseIT {
 
     @Test
     void longAvatarUrlTest() {
-        String generatedString = RandomStringUtils.randomAlphanumeric(9001);
+        String generatedString = RandomStringUtils.secure().nextAlphanumeric(9001);
         testingPostgres.runUpdateStatement(String.format("update enduser set avatarurl='%s'", generatedString));
     }
 

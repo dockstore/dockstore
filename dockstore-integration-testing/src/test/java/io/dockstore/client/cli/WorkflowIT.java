@@ -61,7 +61,6 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
-import io.dropwizard.testing.ResourceHelpers;
 import io.openapi.model.DescriptorType;
 import jakarta.ws.rs.core.GenericType;
 import java.io.File;
@@ -159,13 +158,6 @@ public class WorkflowIT extends BaseIT {
     /**
      * Manually register and publish a workflow with the given path and name
      *
-     * @param workflowsApi
-     * @param workflowPath
-     * @param workflowName
-     * @param descriptorType
-     * @param sourceControl
-     * @param descriptorPath
-     * @param toPublish
      * @return Published workflow
      *
     private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
@@ -435,8 +427,9 @@ public class WorkflowIT extends BaseIT {
             new HashMap<>(), new HashMap<>(), "application/zip", "text/plain", new String[] { "BEARER" }, new GenericType<byte[]>() { });
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), responseBody);
-        ZipFile zipFile = new ZipFile(write.toFile());
-        assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        try (ZipFile zipFile = new ZipFile(write.toFile())) {
+            assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        }
 
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
@@ -457,8 +450,9 @@ public class WorkflowIT extends BaseIT {
                 new HashMap<>(), "application/zip", "text/plain", new String[] { "BEARER" }, new GenericType<byte[]>() { });
         File tempZip2 = File.createTempFile("temp", "zip");
         write = Files.write(tempZip2.toPath(), responseBody);
-        zipFile = new ZipFile(write.toFile());
-        assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        try (ZipFile zipFile = new ZipFile(write.toFile())) {
+            assertTrue(zipFile.stream().map(ZipEntry::getName).toList().contains("md5sum/md5sum-workflow.cwl"), "zip file seems incorrect");
+        }
         tempZip2.deleteOnExit();
     }
 
@@ -603,8 +597,6 @@ public class WorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow(workflow.getId(), "cwl", "checker-workflow-wrapping-workflow.cwl", "checker-input-cwl.json");
         workflowApi.refresh1(workflow.getId(), false);
 
-        final String fileWithIncorrectCredentials = ResourceHelpers.resourceFilePath("config_file.txt");
-        final String fileWithCorrectCredentials = ResourceHelpers.resourceFilePath("config_file2.txt");
 
         final Long versionId = refresh.getWorkflowVersions().get(0).getId();
 
@@ -752,7 +744,7 @@ public class WorkflowIT extends BaseIT {
         assertFalse(workflowDag.isEmpty());
         Gson gson = new Gson();
         List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
-        Map<Map, List> map = gson.fromJson(workflowDag, Map.class);
+        Map<String, List<?>> map = gson.fromJson(workflowDag, Map.class);
         assertTrue(list.size() >= 9, "tool table should be present");
         long dockerCount = list.stream().filter(tool -> !tool.get("docker").isEmpty()).count();
         assertEquals(dockerCount, list.size(), "tool table is populated with docker images");
@@ -801,7 +793,6 @@ public class WorkflowIT extends BaseIT {
     /**
      * This tests that a nested WDL workflow (three levels) is properly parsed
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testNestedWdlWorkflow() throws ApiException {
@@ -850,7 +841,6 @@ public class WorkflowIT extends BaseIT {
     /**
      * Tests that trying to register a duplicate workflow fails, and that registering a non-existent repository fails
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testManualRegisterErrors() throws ApiException {

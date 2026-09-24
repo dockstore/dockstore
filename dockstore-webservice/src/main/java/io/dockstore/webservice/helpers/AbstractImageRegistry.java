@@ -50,6 +50,8 @@ import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifie
 import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -437,13 +439,13 @@ public abstract class AbstractImageRegistry {
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
         Optional<String> response;
         try {
-            URL url = new URL(repoUrl);
+            URL url = new URI(repoUrl).toURL();
             response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
             if (response.isPresent()) {
                 return response;
             }
 
-        } catch (IOException ex) {
+        } catch (IOException | URISyntaxException ex) {
             LOG.info("Unable to get DockerHub response for " + repo);
         }
         return Optional.empty();
@@ -650,7 +652,7 @@ public abstract class AbstractImageRegistry {
         Optional<String> projectResponse;
 
         try {
-            URL projectURL = new URL(projectPath);
+            URL projectURL = new URI(projectPath).toURL();
             projectResponse = Optional.of(IOUtils.toString(projectURL, StandardCharsets.UTF_8));
 
             if (projectResponse.isPresent()) {
@@ -660,7 +662,7 @@ public abstract class AbstractImageRegistry {
                 List<GitLabContainerRegistry> registries = gson.fromJson(projectJSON, gitLabContainerRegistryListType);
 
                 final String tagsListPath = projectPath + '/' + registries.get(0).getId() + '/' + "tags";
-                URL tagsListURL = new URL(tagsListPath);
+                URL tagsListURL = new URI(tagsListPath).toURL();
                 Optional<String> tagsListResponse = Optional.of(IOUtils.toString(tagsListURL, StandardCharsets.UTF_8));
 
                 if (tagsListResponse.isPresent()) {
@@ -671,7 +673,7 @@ public abstract class AbstractImageRegistry {
                     try {
                         for (GitLabTag gitLabTag : gitLabTags) {
                             final String detailedTagInfoUrlString = tagsListPath + '/' + gitLabTag.getName();
-                            URL detailedTagInfoURL = new URL(detailedTagInfoUrlString);
+                            URL detailedTagInfoURL = new URI(detailedTagInfoUrlString).toURL();
                             Optional<String> detailedTagInfoResponse = Optional.of(IOUtils.toString(detailedTagInfoURL, StandardCharsets.UTF_8));
 
                             if (detailedTagInfoResponse.isPresent()) {
@@ -695,7 +697,7 @@ public abstract class AbstractImageRegistry {
             } else {
                 LOG.info("Could not get response from GitLab");
             }
-        } catch (IOException ex) {
+        } catch (IOException | URISyntaxException ex) {
             LOG.error("Unable to get GitLab response for " + repo, ex);
         }
         return Collections.emptyList();
@@ -748,7 +750,6 @@ public abstract class AbstractImageRegistry {
         // copy content over to existing files
         for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
-            List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.updateFrom(newFile);

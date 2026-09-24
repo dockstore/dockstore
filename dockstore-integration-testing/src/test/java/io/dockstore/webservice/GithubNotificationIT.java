@@ -77,7 +77,7 @@ class GithubNotificationIT extends BaseIT {
 
     @Test
     void checkNotificationGuard() {
-        CreateContent createContent = new CreateContent().invoke();
+        new CreateContent().invoke();
         GitHubAppNotification latestByRepositoryAndUserIncludingHidden = gitHubAppNotificationDAO.findLatestByRepositoryAndUserIncludingHidden(SourceControl.GITHUB, FOO_ORG, FOO_REPO, userDAO.findById(1L));
         assertNotNull(latestByRepositoryAndUserIncludingHidden);
         session.close();
@@ -101,7 +101,7 @@ class GithubNotificationIT extends BaseIT {
             User user = userDAO.findById(1L);
             n1.setUser(user);
 
-            long notification1ID = gitHubAppNotificationDAO.create(n1);
+            gitHubAppNotificationDAO.create(n1);
 
 
             session.flush();

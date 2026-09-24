@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 class GA4GHV1IT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v1/";
 
+    @Override
     public String getApiVersion() {
         return API_VERSION;
     }

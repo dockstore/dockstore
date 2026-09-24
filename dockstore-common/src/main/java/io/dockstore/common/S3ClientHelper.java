@@ -96,7 +96,7 @@ public final class S3ClientHelper {
     }
 
     private static S3ClientBuilder initS3ClientBuilder() {
-        return S3Client.builder().credentialsProvider(DefaultCredentialsProvider.create());
+        return S3Client.builder().credentialsProvider(DefaultCredentialsProvider.builder().build());
     }
 
     /**

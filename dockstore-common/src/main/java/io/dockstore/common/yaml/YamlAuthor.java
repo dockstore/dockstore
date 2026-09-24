@@ -74,6 +74,7 @@ public class YamlAuthor {
         this.orcid = orcid;
     }
 
+    @Override
     public String toString() {
         return new BriefToStringBuilder(this)
             .append("name", name)

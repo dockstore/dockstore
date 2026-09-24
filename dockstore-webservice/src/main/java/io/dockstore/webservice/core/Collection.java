@@ -241,10 +241,12 @@ public class Collection implements Serializable, Aliasable {
         this.organization = organization;
     }
 
+    @Override
     public Map<String, Alias> getAliases() {
         return aliases;
     }
 
+    @Override
     public void setAliases(Map<String, Alias> aliases) {
         this.aliases = aliases;
     }

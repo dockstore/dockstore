@@ -229,6 +229,7 @@ public class Tool extends Entry<Tool, Tag> {
         return this.getToolPath();
     }
 
+    @Override
     public EntryTypeMetadata getEntryTypeMetadata() {
         return EntryTypeMetadata.TOOL;
     }
@@ -257,6 +258,7 @@ public class Tool extends Entry<Tool, Tag> {
      *
      * @param tool
      */
+    @Override
     public void update(Tool tool) {
         super.update(tool);
         this.setDescription(tool.getDescription());
@@ -453,6 +455,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
     }
 
+    @Override
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withTool(this);
     }

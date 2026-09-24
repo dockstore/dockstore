@@ -90,7 +90,7 @@ public class CollectionEntry implements Serializable {
     }
 
     private void setEntryPathFromFragments(String sourceControl, String organization, String repository, String entryName) {
-        setEntryPath(sourceControl + '/' + organization + '/' + repository + (entryName == null || "".equals(entryName) ? "" : '/' + entryName));
+        setEntryPath(sourceControl + '/' + organization + '/' + repository + (entryName == null || entryName.isEmpty() ? "" : '/' + entryName));
     }
 
     public void setEntryPath(String entryPath) {

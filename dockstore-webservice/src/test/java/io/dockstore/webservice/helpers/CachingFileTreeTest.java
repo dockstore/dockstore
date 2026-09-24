@@ -66,6 +66,7 @@ public class CachingFileTreeTest {
             this.fileTree = fileTree;
         }
 
+        @Override
         public String readFile(Path filePath) {
             if (!readFileArgs.add(filePath)) {
                 calledMoreThanOnce();
@@ -73,6 +74,7 @@ public class CachingFileTreeTest {
             return fileTree.readFile(filePath);
         }
 
+        @Override
         public List<String> listFiles(Path dirPath) {
             if (!listFilesArgs.add(dirPath)) {
                 calledMoreThanOnce();
@@ -80,6 +82,7 @@ public class CachingFileTreeTest {
             return fileTree.listFiles(dirPath);
         }
 
+        @Override
         public List<Path> listPaths() {
             if (listedPaths) {
                 calledMoreThanOnce();

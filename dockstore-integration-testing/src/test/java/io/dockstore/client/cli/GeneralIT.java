@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -176,7 +177,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -187,7 +187,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      * this method will set up the database and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
-     * @throws ApiException
      */
     private String getPathfromDB(String type) {
         // Set up DB
@@ -466,7 +465,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     @Test
     void testGettingVerifiedVersions() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
@@ -593,7 +591,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     // Tests 1.10.0 migration where id=adddescriptortypecolumn
     @Test
     void testMigrationForDescriptorType() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -612,8 +609,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
     @Test
     void testRefreshingGetsDescriptorType() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.ContainersApi openToolApi = new io.dockstore.openapi.client.api.ContainersApi(client);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -884,11 +879,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     void testGetIncorrectContainer() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        try {
-            DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null);
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Entry not found"));
-        }
+        ApiException e = assertThrows(ApiException.class, () -> toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null));
+        assertTrue(e.getMessage().contains("Entry not found"));
     }
 
     /**
@@ -898,11 +890,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     void testGetOtherUsersContainer() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        try {
-            DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/test_org/test1", null);
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Entry not found"));
-        }
+        ApiException e = assertThrows(ApiException.class, () -> toolApi.getContainerByToolPath("quay.io/test_org/test1", null));
+        assertTrue(e.getMessage().contains("Entry not found"));
     }
 
     /**
@@ -955,7 +944,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathCWL() throws ApiException {
@@ -978,7 +966,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * should be able to refresh a tool where image ids are changing (constraints issue from #1405)
      *
-     * @throws ApiException should not see error from the webservice
      */
     @Test
     void testImageIDUpdateDuringRefresh() throws ApiException {
@@ -1171,7 +1158,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * Test to update the default path of WDL and it should change the tag's WDL path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathWDL() throws ApiException {
@@ -1314,7 +1300,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     /**
      * Test to update the default path of Dockerfile and it should change the tag's dockerfile path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathDockerfile() throws ApiException {
@@ -1587,7 +1572,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         final io.dockstore.openapi.client.api.OrganizationsApi openApiOrganizations = new io.dockstore.openapi.client.api.OrganizationsApi(openApiClient);
         io.dockstore.openapi.client.api.UsersApi openApiUsers = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
 
-        io.dockstore.openapi.client.model.User user1 = openApiUsers.getUser();
+        openApiUsers.getUser();
 
         testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
         try {

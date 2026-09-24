@@ -675,6 +675,7 @@ final class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowVersion = workflowsApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null, "metrics").stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
         assertNotNull(workflowVersion);
         Metrics allPlatformsMetrics = workflowVersion.getMetricsByPlatform().get(allPlatforms);
+        assertNotNull(allPlatformsMetrics);
 
         Map<String, Metrics> metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
         assertNotNull(metricsGet.get(platform1));

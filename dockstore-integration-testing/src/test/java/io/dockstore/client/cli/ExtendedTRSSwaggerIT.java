@@ -27,7 +27,6 @@ import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -195,8 +194,6 @@ class ExtendedTRSSwaggerIT extends BaseIT {
     void testVerificationOnSourceFileLevelForTools() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
-        Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
         DockstoreTool tool = new DockstoreTool();
         tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
@@ -223,8 +220,7 @@ class ExtendedTRSSwaggerIT extends BaseIT {
 
         // see if refresh destroys verification metadata
         registeredTool = toolApi.refresh(registeredTool.getId());
-        final Long toolId = registeredTool.getId();
-        final Long tagId = getSpecificVersion(registeredTool).getId();
+        getSpecificVersion(registeredTool).getId();
         stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", TRS_ID, VERSION_NAME, "/examples/cgpmap/bamOut/bam_input.json", "crummy platform",
                 "1.0.0", "metadata", true);

@@ -71,6 +71,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -267,11 +268,11 @@ class SwaggerClientIT extends BaseIT {
         // we need to explicitly test the path rather than use the swagger generated client classes to enforce the path
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final String basePath = client.getBasePath();
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools");
+        URL url = URI.create(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools").toURL();
         final List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
 
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/metadata");
+        url = URI.create(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/metadata").toURL();
         final List<String> metadataStrings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
         assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
@@ -292,7 +293,7 @@ class SwaggerClientIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
+        containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         List<io.dockstore.openapi.client.model.ToolV1> tools = toolApi.toolsGetV1(null, null, null, null, null, null, null, null, null);
         assertEquals(3, tools.size());
@@ -315,7 +316,7 @@ class SwaggerClientIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
+        containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final io.dockstore.openapi.client.model.ToolV1 tool = toolApi.toolsIdGetV1(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
@@ -367,7 +368,7 @@ class SwaggerClientIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
+        containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final ToolDockerfile toolDockerfile = toolApi
             .dockerfileGetV1("registry.hub.docker.com/seqware/seqware/test5", "master");
@@ -520,7 +521,6 @@ class SwaggerClientIT extends BaseIT {
     /**
      * Try to star/unstar an unpublished tool
      *
-     * @throws ApiException
      */
     @Test
     void testStarringUnpublishedTool() throws ApiException {
@@ -545,7 +545,6 @@ class SwaggerClientIT extends BaseIT {
     /**
      * Try to star/unstar an unpublished workflow
      *
-     * @throws ApiException
      */
     @Test
     void testStarringUnpublishedWorkflow() throws ApiException {
@@ -575,7 +574,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if a tool can be starred twice.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testStarStarredTool() throws ApiException {
@@ -599,7 +597,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if an already unstarred tool can be unstarred again.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testUnstarUnstarredTool() throws ApiException {
@@ -616,7 +613,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if a workflow can be starred twice.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testStarStarredWorkflow() throws ApiException {
@@ -635,7 +631,6 @@ class SwaggerClientIT extends BaseIT {
     /**
      * This tests if a proper response is returned on a "miss"
      *
-     * @throws ApiException
      */
     @Test
     void testNotFoundWorkflow() throws ApiException {
@@ -653,7 +648,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests if an already unstarred workflow can be unstarred again.
      * This test will pass if this action cannot be performed.
      *
-     * @throws ApiException
      */
     @Test
     void testUnstarUnstarredWorkflow() throws ApiException {
@@ -669,7 +663,6 @@ class SwaggerClientIT extends BaseIT {
      * This tests many combinations of starred tools would be returned in the same order
      * This test will pass if the order returned is always the same
      *
-     * @throws ApiException
      */
     @Test
     void testStarredToolsOrder() throws ApiException {

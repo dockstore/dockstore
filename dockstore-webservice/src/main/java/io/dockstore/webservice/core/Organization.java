@@ -302,10 +302,12 @@ public class Organization implements Serializable, Aliasable {
         this.status = status;
     }
 
+    @Override
     public Map<String, Alias> getAliases() {
         return aliases;
     }
 
+    @Override
     public void setAliases(Map<String, Alias> aliases) {
         this.aliases = aliases;
     }

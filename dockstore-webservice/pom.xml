@@ -1188,7 +1188,6 @@
                     <url>jdbc:postgresql://localhost:5432/webservice_test</url>
                     <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test_proposed</referenceUrl>
                     <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
-                    <logging>info</logging>
                     <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
                     <diffExcludeObjects>column:sha256</diffExcludeObjects>
                     <!-- something weird is going on, remove next line after issues at https://github.com/dockstore/dockstore/pull/6167#issuecomment-3330713937 are resolved

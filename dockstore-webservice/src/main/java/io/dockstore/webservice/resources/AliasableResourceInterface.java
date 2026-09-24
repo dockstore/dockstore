@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.http.HttpStatus;
 
 public interface AliasableResourceInterface<T extends Aliasable> {
@@ -84,7 +84,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     static void checkAliasFormat(Set<String>  aliases, boolean blockAliasesWithZenodoFormat) {
         // Gather up any aliases that contain invalid prefixes
-        List<String> invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, INVALID_PREFIXES))
+        List<String> invalidAliases = aliases.stream().filter(alias -> Strings.CS.startsWithAny(alias, INVALID_PREFIXES))
                 .collect(Collectors.toList());
 
         // If there are any aliases with invalid prefixes then report it to the user

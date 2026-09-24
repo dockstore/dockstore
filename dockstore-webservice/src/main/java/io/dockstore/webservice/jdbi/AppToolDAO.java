@@ -37,6 +37,7 @@ public class AppToolDAO extends EntryDAO<AppTool> {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
+    @Override
     protected Root<AppTool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q) {
 

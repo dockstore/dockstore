@@ -98,6 +98,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         this.sessionFactory = sessionFactory;
     }
 
+    @Override
     public WorkflowDAO getDAO() {
         return this.workflowDAO;
     }

@@ -195,6 +195,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
+    @Override
     protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
             CriteriaBuilder cb, CriteriaQuery<?> query) {
 

@@ -45,13 +45,13 @@ public class ValidatorVersionInfo {
     @NotNull
     @Column(nullable = false)
     @JsonProperty(required = true)
-    @Schema(description = "The version name of the validator tool", required = true)
+    @Schema(description = "The version name of the validator tool", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
     @NotNull
     @Column(nullable = false)
     @JsonProperty(required = true)
-    @Schema(description = "Boolean indicating if the workflow was validated successfully", required = true, example = "true")
+    @Schema(description = "Boolean indicating if the workflow was validated successfully", requiredMode = Schema.RequiredMode.REQUIRED, example = "true")
     private boolean isValid;
 
     @Schema(description = "The error message for a failed validation by the validator tool")
@@ -61,19 +61,19 @@ public class ValidatorVersionInfo {
     @Column(nullable = false)
     @ISO8601ExecutionDate
     @JsonProperty(required = true)
-    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", required = true, example = "2023-03-31T15:06:49.888745366Z")
+    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", requiredMode = Schema.RequiredMode.REQUIRED, example = "2023-03-31T15:06:49.888745366Z")
     private String dateExecuted;
 
     @NotNull
     @Column(nullable = false)
     @JsonProperty(required = true)
-    @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true, example = "100.0")
+    @Schema(description = "A percentage representing how often the validator successfully validates the workflow", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.0")
     private double passingRate;
 
     @NotNull
     @Column(nullable = false)
     @JsonProperty(required = true)
-    @Schema(description = "The number of times the validator was executed on the workflow", required = true, example = "1")
+    @Schema(description = "The number of times the validator was executed on the workflow", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private int numberOfRuns;
 
     // database timestamps

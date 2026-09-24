@@ -334,7 +334,7 @@ public class BasicIT extends BaseIT {
 
         // This should throw an error because no user exists with ID -1
         try {
-            List<Event> events = eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+            eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
             fail("No user exists with ID -1");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("User not found."));
@@ -351,7 +351,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
 
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
+        manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
@@ -369,7 +369,7 @@ public class BasicIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "alternate",
+        manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "alternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "/testDir/Dockstore.cwl", "/testDir/Dockstore.wdl",
             "/testDir/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
@@ -391,7 +391,7 @@ public class BasicIT extends BaseIT {
         existingTool.setToolname("testToolname");
         toolsApi.updateContainer(existingTool.getId(), existingTool);
 
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "testtool",
+        manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "testtool",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
@@ -411,7 +411,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "noautobuild", "alternate",
+            manualRegisterAndPublish(toolsApi, "dockstoretestuser", "noautobuild", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
             fail("Should not be able to publish");
@@ -429,7 +429,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "nobuildsatall", "alternate",
+            manualRegisterAndPublish(toolsApi, "dockstoretestuser", "nobuildsatall", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
             fail("Should not be able to register");
@@ -476,7 +476,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstore2", "testrepo2", "testOrg",
+            manualRegisterAndPublish(toolsApi, "dockstore2", "testrepo2", "testOrg",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
             fail("Should not be able to register");
@@ -628,7 +628,7 @@ public class BasicIT extends BaseIT {
 
         // Manual publish
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithubalternate", "alternate",
+            manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithubalternate", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "", "", "/testDir/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
             fail("Should not be able to publish");
@@ -710,7 +710,6 @@ public class BasicIT extends BaseIT {
     void testTestJson() {
         ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
-        ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
         // Refresh
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", "");
@@ -851,7 +850,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish private repo with tool maintainer email
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool1",
+        manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool1",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, "testemail@domain.com", null);
 
@@ -983,7 +982,7 @@ public class BasicIT extends BaseIT {
 
         // Manual publish private repo without tool maintainer email
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "",
+            manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, null, null);
             fail("Should not be able to manually register due to missing email");
@@ -1003,7 +1002,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+        manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
 
@@ -1363,7 +1362,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Manual publish correct path
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+        manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
             "test-images.sbgenomics.com");
@@ -1396,7 +1395,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                     "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                     DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, false, "duncan.andrew.g@gmail.com",
                     "images.sbgenomics.com");
@@ -1416,7 +1415,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         try {
-            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
             fail("Should fail due to no custom docker path");

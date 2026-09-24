@@ -112,7 +112,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
     @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
     @Column(name = "id", unique = true, nullable = false, columnDefinition = "bigint default nextval('enduser_id_seq')")
-    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0, readOnly = true)
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     private long id;
 
     @Column(nullable = false, unique = true)

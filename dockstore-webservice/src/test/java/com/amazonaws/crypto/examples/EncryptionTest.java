@@ -35,7 +35,6 @@ class EncryptionTest {
     void demoEncrypt() {
         // code from https://github.com/aws/aws-encryption-sdk-java
 
-        String keyArn = "foo";
         String data = "foo";
 
         // Instantiate the SDK

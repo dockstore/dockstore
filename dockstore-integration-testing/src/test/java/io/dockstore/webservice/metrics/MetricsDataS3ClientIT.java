@@ -43,7 +43,6 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +108,6 @@ public class MetricsDataS3ClientIT {
     /**
      * Tests the scenario where an S3 folder has more than 1000 objects. The ListObjectsV2Request returns at most 1,000 objects and paginates the rest (<a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">source</a>)
      * This tests that we can retrieve all S3 objects if there is pagination.
-     * @throws IOException
      */
     @Test
     void testGetMetricsDataPagination() throws FileNotFoundException {

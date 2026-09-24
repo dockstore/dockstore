@@ -88,7 +88,7 @@ class EventResourceIT extends BaseIT {
         Set<String> randomTagNames = new HashSet<>();
 
         for (int i = 0; i < EventDAO.MAX_LIMIT + 10; i++) {
-            randomTagNames.add(RandomStringUtils.randomAlphanumeric(255));
+            randomTagNames.add(RandomStringUtils.secure().nextAlphanumeric(255));
         }
         final long toolId = tool.getId();
         randomTagNames.forEach(randomTagName -> {

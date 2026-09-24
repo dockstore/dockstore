@@ -74,7 +74,7 @@ class GitHubHelperTest {
 
     private void testReferenceString(String gitReference, String expectedString) {
         Matcher matcher = GIT_BRANCH_TAG_PATTERN.matcher(gitReference);
-        final boolean b = matcher.find();
+        matcher.find();
         String gitBranchType = matcher.group(1);
         String gitBranchName = matcher.group(2);
         assertEquals(expectedString, (gitBranchType + "/" + gitBranchName));

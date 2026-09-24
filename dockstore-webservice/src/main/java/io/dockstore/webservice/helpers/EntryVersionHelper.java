@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import com.google.api.client.util.Charsets;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -38,6 +37,7 @@ import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -57,6 +57,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
@@ -374,7 +375,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 .count();
             if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
-                String absolutePath = Paths.get(StringUtils.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString(); // lgtm[java/path-injection]
+                String absolutePath = Paths.get(Strings.CS.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString(); // lgtm[java/path-injection]
                 SourceFile sourceFile = SourceFile.limitedBuilder().type(fileType).content(null).path(path).absolutePath(absolutePath).build();
 
                 long id = fileDAO.create(sourceFile);
@@ -417,7 +418,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                     }
                 }
                 zipOutputStream.putNextEntry(secondaryZipEntry);
-                zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
+                zipOutputStream.write(sourceFile.getContent().getBytes(StandardCharsets.UTF_8));
             }
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);

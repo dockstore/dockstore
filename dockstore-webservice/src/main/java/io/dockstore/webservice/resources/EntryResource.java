@@ -98,6 +98,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
@@ -835,13 +836,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         boolean isReachable;
         HttpURLConnection connection = null;
         try {
-            URL url = new URL(discourseUrl);
+            URL url = new URI(discourseUrl).toURL();
             connection = (HttpURLConnection)url.openConnection();
             connection.setRequestMethod("GET");
             connection.connect();
             int respCode = connection.getResponseCode();
             isReachable = respCode == HttpStatus.SC_OK;
-        } catch (IOException ex) {
+        } catch (IOException | URISyntaxException ex) {
             LOG.error("Error reaching " + discourseUrl, ex);
             isReachable = false;
         } finally {

@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -69,7 +70,7 @@ public final class NextflowUtilities {
         URL nextflowURL;
         String nextflowFilename;
         try {
-            nextflowURL = new URL(nextflowExec);
+            nextflowURL = new URI(nextflowExec).toURL();
             nextflowFilename = new File(nextflowURL.toURI().getPath()).getName();
         } catch (MalformedURLException | URISyntaxException e) {
             throw new NextflowParsingException("Could not create Nextflow location", e);

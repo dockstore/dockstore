@@ -34,6 +34,6 @@ java -jar dockstore-webservice/target/dockstore-webservice-*.jar db migrate dock
 ## remove timeout for mac devices, will have to break manually
 timeout 15 java -Ddw.database.url=jdbc:postgresql://localhost:5432/webservice_test_proposed -Ddw.database.properties.hibernate.hbm2ddl.auto=create -jar dockstore-webservice/target/dockstore-webservice-*.jar server dockstore-integration-testing/src/test/resources/dockstore.yml || true
 
-cd dockstore-webservice && mvn liquibase:diff
+cd dockstore-webservice && ../mvnw liquibase:diff
 
 echo 'examine proposed changes at `dockstore-webservice/target/detected-migrations.xml`'

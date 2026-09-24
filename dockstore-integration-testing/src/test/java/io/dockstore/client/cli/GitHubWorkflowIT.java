@@ -112,7 +112,6 @@ class GitHubWorkflowIT extends BaseIT {
     /**
      * This test does not use admin rights, note that a number of operations go through the UserApi to get this to work
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testPublishingAndListingOfPublished() throws ApiException {

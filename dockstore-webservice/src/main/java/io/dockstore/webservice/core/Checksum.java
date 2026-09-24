@@ -53,6 +53,7 @@ public class Checksum {
         this.checksum = checksum;
     }
 
+    @Override
     public String toString() {
         return this.getType() + ":" + this.getChecksum();
     }

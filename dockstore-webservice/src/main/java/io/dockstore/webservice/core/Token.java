@@ -88,7 +88,7 @@ public class Token implements Comparable<Token> {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "token_id_seq")
     @SequenceGenerator(name = "token_id_seq", sequenceName = "token_id_seq", allocationSize = 1)
-    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, readOnly = true)
+    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     @Column(columnDefinition = "bigint default nextval('token_id_seq')")
     @JsonView(TokenViews.User.class)
     private long id;

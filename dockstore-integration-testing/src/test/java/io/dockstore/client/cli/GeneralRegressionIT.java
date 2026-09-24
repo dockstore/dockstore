@@ -33,6 +33,7 @@ import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
@@ -76,7 +77,7 @@ class GeneralRegressionIT extends BaseIT {
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
-        url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
+        url = URI.create("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore").toURL();
         dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         Assertions.assertTrue(dockstore.setExecutable(true));
@@ -92,7 +93,6 @@ class GeneralRegressionIT extends BaseIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws ApiException comes back from a web service error
      */
     private ContainersApi setupWebService() throws ApiException {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -103,7 +103,6 @@ class GeneralRegressionIT extends BaseIT {
      * this method will set up the database and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
-     * @throws ApiException comes back from a web service error
      */
     private String getPathfromDB(String type) {
         // Set up DB
@@ -382,7 +381,6 @@ class GeneralRegressionIT extends BaseIT {
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathCWL() throws ApiException {
@@ -406,7 +404,6 @@ class GeneralRegressionIT extends BaseIT {
     /**
      * Test to update the default path of WDL and it should change the tag's WDL path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathWDL() throws ApiException {
@@ -429,7 +426,6 @@ class GeneralRegressionIT extends BaseIT {
     /**
      * Test to update the default path of Dockerfile and it should change the tag's dockerfile path in the database
      *
-     * @throws ApiException
      */
     @Test
     void testUpdateToolPathDockerfile() throws ApiException {

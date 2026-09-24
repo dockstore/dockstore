@@ -151,6 +151,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         super.updateByUser(workflowVersion);
     }
 
+    @Override
     public void update(WorkflowVersion workflowVersion) {
         super.update(workflowVersion);
         super.setReference(workflowVersion.getReference());
@@ -159,6 +160,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         synced = workflowVersion.isSynced();
     }
 
+    @Override
     public void clone(WorkflowVersion tag) {
         super.clone(tag);
         super.setReference(tag.getReference());
@@ -218,10 +220,12 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.lastModified = lastModified;
     }
 
+    @Override
     public Map<String, Alias> getAliases() {
         return aliases;
     }
 
+    @Override
     public void setAliases(Map<String, Alias> aliases) {
         this.aliases = aliases;
     }

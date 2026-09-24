@@ -102,6 +102,7 @@ public class AppTool extends Workflow {
     }
 
     @Transient
+    @Override
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withAppTool(this);
     }

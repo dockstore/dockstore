@@ -44,6 +44,8 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -711,7 +713,7 @@ public interface LanguageHandlerInterface {
 
             try {
                 do {
-                    url = new URL(repoUrl);
+                    url = new URI(repoUrl).toURL();
                     Optional<String> response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
                     final String json = response.get();
                     dockerHubTag = GSON.fromJson(json, DockerHubTag.class);
@@ -724,7 +726,7 @@ public interface LanguageHandlerInterface {
                     repoUrl = dockerHubTag.getNext();
                 } while (dockerHubTag.getNext() != null);
 
-            } catch (IOException ex) {
+            } catch (IOException | URISyntaxException ex) {
                 LOG.error("Unable to get DockerHub response for digest listing" + repo, ex);
                 return new HashSet<>();
             }
@@ -759,9 +761,9 @@ public interface LanguageHandlerInterface {
         Map<String, String> errorMap = new HashMap<>();
         Optional<String> response;
         try {
-            URL url = new URL(repoUrl);
+            URL url = new URI(repoUrl).toURL();
             response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
-        } catch (IOException ex) {
+        } catch (IOException | URISyntaxException ex) {
             LOG.error("Unable to get DockerHub response for " + repo, ex);
             response = Optional.empty();
         }

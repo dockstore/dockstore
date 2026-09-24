@@ -449,7 +449,7 @@ class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
+        usersApi.getUser().getId();
 
         // Get workflow
         Workflow githubWorkflow = workflowsApi
@@ -461,7 +461,7 @@ class GeneralWorkflowIT extends BaseIT {
             .get();
         master.setFrozen(true);
         try {
-            List<WorkflowVersion> workflowVersions = workflowsApi
+            workflowsApi
                 .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         } catch (ApiException e) {
             // should exception
@@ -478,7 +478,7 @@ class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
+        usersApi.getUser().getId();
 
         // Get workflow
         Workflow githubWorkflow = workflowsApi
@@ -965,7 +965,6 @@ class GeneralWorkflowIT extends BaseIT {
     void testRefreshingUserMetadata() {
         // Refresh all workflows
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        UsersApi usersApi = new UsersApi(client);
 
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         openManualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", DescriptorLanguage.CWL.getShortName(),

@@ -278,8 +278,7 @@ public abstract class GA4GHIT {
             return null;
         }
         String stringResponse = response.readEntity(String.class);
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(stringResponse);
+        JsonElement jsonElement = JsonParser.parseString(stringResponse);
         parseJSONElementForURLs(jsonElement);
         return response;
     }

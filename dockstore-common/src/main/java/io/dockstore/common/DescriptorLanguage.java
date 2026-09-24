@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 /**
  * This enumerates the types of descriptor language that we can associate an entry with.
@@ -156,7 +156,7 @@ public enum DescriptorLanguage {
 
     public static DescriptorLanguage convertShortStringToEnum(String descriptor) {
         // Tricky case for GALAXY because it doesn't match the rules of the other languages
-        if (StringUtils.containsIgnoreCase(descriptor, "galaxy")) {
+        if (Strings.CI.contains(descriptor, "galaxy")) {
             return GXFORMAT2;
         }
 
@@ -171,13 +171,13 @@ public enum DescriptorLanguage {
 
     public static Optional<FileType> getOptionalFileType(String descriptorType) {
         // Tricky case for GALAXY because it doesn't match the rules of the other languages
-        if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
+        if (Strings.CI.contains(descriptorType, "galaxy")) {
             return Optional.of(GXFORMAT2.fileType);
         }
         // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
-        // which is why we use StringUtils.containsIgnoreCase
+        // which is why we use Strings.CI.contains
         return Arrays.stream(DescriptorLanguage.values())
-            .filter(lang -> StringUtils.containsIgnoreCase(descriptorType, lang.toString())).findFirst().map(DescriptorLanguage::getFileType);
+            .filter(lang -> Strings.CI.contains(descriptorType, lang.toString())).findFirst().map(DescriptorLanguage::getFileType);
     }
 
     public static FileType getTestFileTypeFromDescriptorLanguageString(String descriptorType) {

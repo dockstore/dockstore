@@ -44,7 +44,7 @@ public class NamesAreUnique12Validator extends BaseConstraintValidator<NamesAreU
         for (Workflowish entry: entries) {
             String name = ObjectUtils.firstNonNull(entry.getName(), "");
             if (!names.add(name)) {
-                String reason = "at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
+                String reason = "at least two workflows or tools have " + (name.isEmpty() ? "no name" : String.format("the same name '%s'", name));
                 addConstraintViolation(context, getMessage(reason));
                 return false;
             }
