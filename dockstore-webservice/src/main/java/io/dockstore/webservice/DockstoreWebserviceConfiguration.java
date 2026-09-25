@@ -889,6 +889,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String supportVersion;
 
+        private String mcpVersion;
+
         private String cwlParsingLambdaVersion;
         private String wdlParsingLambdaVersion;
         private String nextflowParsingLambdaVersion;
@@ -1206,6 +1208,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setSupportVersion(String supportVersion) {
             this.supportVersion = supportVersion;
+        }
+
+        public String getMcpVersion() {
+            return mcpVersion;
+        }
+
+        public void setMcpVersion(String mcpVersion) {
+            this.mcpVersion = mcpVersion;
         }
     }
 }

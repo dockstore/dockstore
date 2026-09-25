@@ -10111,6 +10111,8 @@ components:
           type: string
         googleScope:
           type: string
+        mcpVersion:
+          type: string
         mybinderImportUrl:
           type: string
         nextflowParsingLambdaVersion:
