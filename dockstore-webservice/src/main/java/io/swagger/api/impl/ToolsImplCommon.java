@@ -175,6 +175,7 @@ public final class ToolsImplCommon {
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
 
             toolVersion.setSigned(false);
+            toolVersion.setDescription(version.getDescription() != null ? version.getDescription() : "");
 
             try {
                 if (!version.getAuthors().isEmpty()) {
