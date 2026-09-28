@@ -178,11 +178,11 @@ class GalaxyPluginIT {
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         final List<Tool> allStuffGalaxy = ga4Ghv20Api
-                .toolsGet(null, null, null, "galaxy", null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+                .toolsGet(null, null, null, "galaxy", null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> allStuffWdl = ga4Ghv20Api
-                .toolsGet(null, null, null, DescriptorLanguage.WDL.getShortName(), null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+                .toolsGet(null, null, null, DescriptorLanguage.WDL.getShortName(), null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> allStuffCWL = ga4Ghv20Api
-                .toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+                .toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         assertEquals(1, allStuffGalaxy.size());
         assertEquals(1, allStuffWdl.size());
         assertTrue(allStuffCWL.isEmpty());

@@ -1612,13 +1612,13 @@ class WebhookIT extends BaseIT {
         assertFalse(systemOut.getText().contains("Could not submit index to elastic search"));
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
-        final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertEquals(2, tools.size());
 
-        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS_TOOL_PATH);
+        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS_TOOL_PATH, null);
         assertNotNull(tool);
         assertEquals("CommandLineTool", tool.getToolclass().getDescription());
-        final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS);
+        final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/github.com/" + DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS, null);
         assertNotNull(trsWorkflow);
         assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
 
@@ -1716,48 +1716,48 @@ class WebhookIT extends BaseIT {
 
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
-        List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertEquals(2, tools.size());
 
         // testing filters of various kinds
 
-        tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, true, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, true, null, null, null);
         // neither the apptool or the regular workflow are checkers
         assertEquals(0, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, false, null, null, null);
         // neither the apptool or the regular workflow are checkers
         assertEquals(2, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, false, null, null, null);
         // the apptool is a commandline tool and not a workflow
         assertEquals(1, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, false, null, null, null);
         // the apptool is a commandline tool and not a workflow
         assertEquals(1, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, SERVICE, null, null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, SERVICE, null, null, null, null, null, null, null, null, false, null, null, null);
         // neither are services
         assertEquals(0, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SERVICE.getShortName(), null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SERVICE.getShortName(), null, null, null, null, null, null, null, false, null, null, null);
         // neither are services this way either
         assertEquals(0, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, NOTEBOOK, null, null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, NOTEBOOK, null, null, null, null, null, null, null, null, false, null, null, null);
         // no notebooks
         assertEquals(0, tools.size());
 
         // testing paging
 
-        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(-1), 1);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, false, null, String.valueOf(-1), 1);
         // should just go to first page
         assertEquals(1, tools.size());
         assertEquals(WORKFLOW, tools.get(0).getToolclass().getDescription());
-        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(0), 1);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, false, null, String.valueOf(0), 1);
         // first page
         assertEquals(1, tools.size());
         assertEquals(WORKFLOW, tools.get(0).getToolclass().getDescription());
-        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(1), 1);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, false, null, String.valueOf(1), 1);
         // second page
         assertEquals(1, tools.size());
         assertEquals(COMMAND_LINE_TOOL, tools.get(0).getToolclass().getDescription());
-        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(1000), 1);
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, false, null, String.valueOf(1000), 1);
         //TODO should just go to second page, but for now I guess you just scroll off into nothingness
         assertEquals(0, tools.size());
     }

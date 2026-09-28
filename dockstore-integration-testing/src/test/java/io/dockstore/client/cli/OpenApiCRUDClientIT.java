@@ -127,11 +127,11 @@ class OpenApiCRUDClientIT extends BaseIT {
         webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         final List<Tool> allStuff = ga4Ghv20Api
-                .toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+                .toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> workflows = ga4Ghv20Api
-                .toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+                .toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> tools = ga4Ghv20Api
-                .toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+                .toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         assertFalse(workflows.isEmpty());
         assertFalse(tools.isEmpty());
         assertEquals(workflows.size() + tools.size(), allStuff.size());
@@ -145,18 +145,18 @@ class OpenApiCRUDClientIT extends BaseIT {
         webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         List<Tool> weirdStuff = ga4Ghv20Api
-            .toolsGet(null, null, null, null, "fuzzString", null, null, null, null, null, null, null, Integer.MAX_VALUE);
+            .toolsGet(null, null, null, null, null, "fuzzString", null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         assertTrue(weirdStuff.isEmpty());
         ApiException returnException = assertThrows(ApiException.class, () -> ga4Ghv20Api
-            .toolsGet(null, null, null, null, null, null, null, null, null, null, null, "fuzzString", Integer.MAX_VALUE));
+            .toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, "fuzzString", Integer.MAX_VALUE));
         assertEquals(HttpStatus.SC_BAD_REQUEST, returnException.getCode());
         assertTrue(weirdStuff.isEmpty());
         returnException = assertThrows(ApiException.class, () -> ga4Ghv20Api
-            .toolsGet(null, null, null, "fuzzString", null, null, null, null, null, null, null, null, Integer.MAX_VALUE));
+            .toolsGet(null, null, null, "fuzzString", null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE));
         assertEquals(HttpStatus.SC_BAD_REQUEST, returnException.getCode());
         assertTrue(weirdStuff.isEmpty());
         weirdStuff = ga4Ghv20Api
-            .toolsGet(null, null, "fuzzString", null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+            .toolsGet(null, null, "fuzzString", null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         assertTrue(weirdStuff.isEmpty());
     }
 
@@ -212,11 +212,11 @@ class OpenApiCRUDClientIT extends BaseIT {
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         final List<Tool> allStuff = ga4Ghv20Api
-            .toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+            .toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> workflows = ga4Ghv20Api
-            .toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+            .toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> tools = ga4Ghv20Api
-            .toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+            .toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
 
         System.out.println(allStuff.size());
         System.out.println(workflows.size());
@@ -230,18 +230,18 @@ class OpenApiCRUDClientIT extends BaseIT {
         assertEquals(100, tools.size());
 
         // check on paging structure when not mixing tools and workflows
-        final List<Tool> firstToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, "0", 10);
+        final List<Tool> firstToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, null, "0", 10);
         assertEquals("awesomeTool0", firstToolPage.get(0).getName());
         assertEquals("awesomeTool9", firstToolPage.get(firstToolPage.size() - 1).getName());
-        final List<Tool> secondToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, "1", 10);
+        final List<Tool> secondToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, null, "1", 10);
         assertEquals("awesomeTool10", secondToolPage.get(0).getName());
         assertEquals("awesomeTool19", secondToolPage.get(firstToolPage.size() - 1).getName());
-        final List<Tool> lastToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, "9", 10);
+        final List<Tool> lastToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, null, "9", 10);
         assertEquals("awesomeTool90", lastToolPage.get(0).getName());
         assertEquals("awesomeTool99", lastToolPage.get(firstToolPage.size() - 1).getName());
 
         // check on paging structure when mixing tools and workflows
-        final List<Tool> mixedPage = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, "3", 30);
+        final List<Tool> mixedPage = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, "3", 30);
         assertEquals(2, mixedPage.stream().map(Tool::getToolclass).distinct().count());
     }
 

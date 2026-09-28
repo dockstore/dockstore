@@ -115,6 +115,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final int SEGMENTS_IN_ID = 3;
     //TODO this is also a maximum page size, may want to rename/split out the two concepts
     private static final int DEFAULT_PAGE_SIZE = 100;
+    // default limit declared by the TRS spec for GET /tools/{id}/versions
+    private static final int DEFAULT_VERSIONS_LIMIT = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
@@ -184,7 +186,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+    public Response toolsIdGet(String id, Boolean includeVersions, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+        if (Boolean.FALSE.equals(includeVersions)) {
+            throw new UnsupportedOperationException("includeVersions=false is not yet supported");
+        }
 
         // https://github.com/ga4gh/tool-registry-service-schemas/issues/229 (text only doesn't make sense)
         boolean consumesHeaderTextOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE) && !mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE));
@@ -203,7 +208,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+    public Response toolsIdVersionsGet(String id, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+        if (offset != null || (limit != null && limit != DEFAULT_VERSIONS_LIMIT)) {
+            throw new UnsupportedOperationException("Pagination of versions is not yet supported");
+        }
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -359,8 +367,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
-    public Response toolsGet(String id, String alias, String toolClass, DescriptorType descriptorType, String registry, String organization, String name, String toolname, String description,
-        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+    public Response toolsGet(String id, String alias, String toolClass, DescriptorType descriptorType, List<String> tags, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker, Boolean includeVersions, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+        // tag based search was added in https://github.com/ga4gh/tool-registry-service-schemas/pull/239
+        if (tags != null && !tags.isEmpty()) {
+            throw new UnsupportedOperationException("Filtering by tags is not yet supported");
+        }
+        if (Boolean.FALSE.equals(includeVersions)) {
+            throw new UnsupportedOperationException("includeVersions=false is not yet supported");
+        }
 
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         final String relativePath = value.getUriInfo().getRequestUri().getPath();
