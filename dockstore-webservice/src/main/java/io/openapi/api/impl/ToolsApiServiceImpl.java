@@ -243,7 +243,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             : entry.getWorkflowVersions().stream().filter(version -> !version.isHidden()).skip(startIndex).limit(actualLimit).map(version -> (Version<?>) version).toList();
         io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(entry, config, false, versions);
         assert (tool != null);
-        // the count includes versions that are not shown in TRS (e.g. versions without descriptors), so pages may be smaller than the limit
+        // the count includes versions that TRS does not show (e.g. without descriptors), so pages can be short or even empty before next_page stops
         return buildPagedResponse(tool.getVersions(), versionDAO.getPublicVersionsCount(entry.getId()), offset, offsetInteger, startIndex, actualLimit, value);
     }
 
