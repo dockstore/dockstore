@@ -216,7 +216,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     @Override
     public Response toolsIdVersionsGet(String id, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        final int actualLimit = Math.max(Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_VERSIONS_LIMIT), DEFAULT_VERSIONS_LIMIT), 1);
+        final int actualLimit = Math.clamp(ObjectUtils.firstNonNull(limit, DEFAULT_VERSIONS_LIMIT), 1, DEFAULT_VERSIONS_LIMIT);
         final Integer offsetInteger = parseOffset(offset);
         if (offsetInteger == null) {
             return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
@@ -398,6 +398,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (tags != null && !tags.isEmpty()) {
             throw new UnsupportedOperationException("Filtering by tags is not yet supported");
         }
+        final boolean withVersions = includeVersions;
 
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
 
@@ -424,7 +425,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             Entry<?, ?> c = toolDAO.getGenericEntryById(entryId);
             // if passing, for each container that matches the criteria, convert to standardised format and return
             // an empty list of versions to convert avoids loading versions at all
-            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config, false, includeVersions ? null : List.of());
+            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config, false, withVersions ? null : List.of());
             if (tool != null) {
                 results.add(tool);
             }

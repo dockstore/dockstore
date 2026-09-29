@@ -548,6 +548,11 @@ class ToolsImplCommonTest {
         assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
     }
 
+    /**
+     * Tests convertEntryToTool with an explicit collection of versions to convert. TRS uses this to convert one page of versions
+     * for GET /tools/{id}/versions, and an empty list for includeVersions=false, so that versions that are not returned are never
+     * loaded or converted.
+     */
     @Test
     void convertOnlyGivenVersions() {
         Workflow workflow = new BioWorkflow();
@@ -556,6 +561,7 @@ class ToolsImplCommonTest {
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setDescriptorType(DescriptorLanguage.WDL);
         workflow.setIsPublished(true);
+        // two versions with descriptions and a descriptor file, since versions without a descriptor are not shown in TRS
         List<WorkflowVersion> versions = new ArrayList<>();
         for (String name : List.of("aaa", "bbb")) {
             WorkflowVersion version = new WorkflowVersion();
@@ -566,15 +572,18 @@ class ToolsImplCommonTest {
             workflow.addWorkflowVersion(version);
             versions.add(version);
         }
+        // without a collection of versions, all of the workflow's versions are converted
         assertEquals(2, ToolsImplCommon.convertEntryToTool(workflow, actualConfig).getVersions().size());
-        // an empty list is used for includeVersions=false
+        // an empty list (as used for includeVersions=false) converts none of them
         assertTrue(ToolsImplCommon.convertEntryToTool(workflow, actualConfig, false, List.of()).getVersions().isEmpty());
+        // a subset (as used for a page of versions) converts only that subset
         List<io.openapi.model.ToolVersion> toolVersions = ToolsImplCommon.convertEntryToTool(workflow, actualConfig, false, List.of(versions.get(1))).getVersions();
         assertEquals(1, toolVersions.size());
         io.openapi.model.ToolVersion toolVersion = toolVersions.get(0);
         assertEquals("bbb", toolVersion.getName());
 
-        // version descriptions are not converted
+        // version descriptions can be large, so conversion leaves them empty. Only GET /tools/{id}/versions/{version_id}
+        // fills in the real description, for the single version it returns
         assertEquals("", toolVersion.getDescription());
     }
 }

@@ -441,10 +441,19 @@ class GA4GHV2FinalIT extends GA4GHIT {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
+    /**
+     * Tests two response size optimizations in TRS:
+     * includeVersions=false on GET /tools and GET /tools/{id} returns tools with an empty versions array,
+     * and ToolVersion.description is only filled in by GET /tools/{id}/versions/{version_id} (it is "" everywhere else).
+     */
     @Test
     void testIncludeVersionsAndVersionDescription() {
+        // the test data has no version descriptions, so give every version one. Otherwise the single version check below
+        // would pass even if descriptions were never filled in, since both cases would return ""
         final String versionDescription = "a version description";
         testingPostgres.runUpdateStatement("update version_metadata set description = '" + versionDescription + "'");
+
+        // includeVersions=false should return the same tools as the default (includeVersions=true), just without their versions
         List<Tool> tools = checkedResponse(baseURL + "tools").readEntity(new GenericType<>() {
         });
         List<Tool> toolsWithoutVersions = checkedResponse(baseURL + "tools?includeVersions=false").readEntity(new GenericType<>() {
@@ -452,16 +461,19 @@ class GA4GHV2FinalIT extends GA4GHIT {
         assertEquals(tools.stream().map(Tool::getId).toList(), toolsWithoutVersions.stream().map(Tool::getId).toList());
         assertTrue(toolsWithoutVersions.stream().allMatch(t -> t.getVersions().isEmpty()));
 
+        // same for a single tool, using one that has versions so that an empty versions array means they were left out
         Tool tool = tools.stream().filter(t -> !t.getVersions().isEmpty()).findFirst().orElseThrow();
         final String toolURL = baseURL + "tools/" + URLEncoder.encode(tool.getId(), StandardCharsets.UTF_8);
         assertTrue(checkedResponse(toolURL + "?includeVersions=false").readEntity(Tool.class).getVersions().isEmpty());
         assertEquals(tool.getVersions().size(), checkedResponse(toolURL + "?includeVersions=true").readEntity(Tool.class).getVersions().size());
 
-        // version descriptions are only included when retrieving a single version
+        // version descriptions can be large, so they are left out ("") wherever many versions are returned:
+        // the versions embedded in GET /tools and in GET /tools/{id}/versions
         tool.getVersions().forEach(v -> assertEquals("", v.getDescription()));
         List<ToolVersion> versions = checkedResponse(toolURL + "/versions").readEntity(new GenericType<>() {
         });
         versions.forEach(v -> assertEquals("", v.getDescription()));
+        // but the real description is returned when retrieving a single version
         ToolVersion version = checkedResponse(toolURL + "/versions/" + URLEncoder.encode(versions.get(0).getName(), StandardCharsets.UTF_8)).readEntity(ToolVersion.class);
         assertEquals(versionDescription, version.getDescription());
 

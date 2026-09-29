@@ -250,6 +250,12 @@ class OpenApiCRUDClientIT extends BaseIT {
         assertEquals(2, mixedPage.stream().map(Tool::getToolclass).distinct().count());
     }
 
+    /**
+     * Tests paging of GET /tools/{id}/versions via offset and limit. As with GET /tools, the offset is a page number, not an index.
+     * The test data has no published entries with multiple versions, so this creates a hosted tool and a hosted workflow with
+     * several versions each. The tool covers tool versions (tags), which are paged in memory, and the workflow covers workflow
+     * versions, which are paged in the database.
+     */
     @Test
     void testToolsIdVersionsPaging() throws IOException {
         ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -263,7 +269,7 @@ class OpenApiCRUDClientIT extends BaseIT {
         dockerfile.setPath("/Dockerfile");
         dockerfile.setAbsolutePath("/Dockerfile");
         final int numVersions = 3;
-        // each edit of a hosted entry creates a new version
+        // each edit creates a new version, so vary the descriptor each time (hosted tools also need a Dockerfile to be valid)
         for (int i = 0; i < numVersions; i++) {
             SourceFile toolDescriptor = new SourceFile();
             toolDescriptor.setContent(toolContent + "\n# version " + i);
@@ -281,12 +287,14 @@ class OpenApiCRUDClientIT extends BaseIT {
         new ContainersApi(webClient).publish(hostedTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         new WorkflowsApi(webClient).publish1(hostedWorkflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
+        // TRS is public, so use an anonymous client
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getAnonymousOpenAPIWebClient());
         for (String id : List.of(hostedTool.getToolPath(), "#workflow/" + hostedWorkflow.getFullWorkflowPath())) {
+            // without offset or limit, the default limit (1000) covers every version
             List<String> allVersionNames = ga4Ghv20Api.toolsIdVersionsGet(id, null, null).stream().map(ToolVersion::getName).toList();
             assertEquals(numVersions, allVersionNames.size());
 
-            // follow next_page one version at a time, should get the same versions in the same order
+            // follow next_page one version at a time, should get the same versions in the same order as the unpaged request
             List<String> pagedVersionNames = new ArrayList<>();
             String offset = null;
             do {
@@ -296,18 +304,21 @@ class OpenApiCRUDClientIT extends BaseIT {
                 Map<String, List<String>> headers = ga4Ghv20Api.getApiClient().getResponseHeaders();
                 assertEquals("1", headers.get("current_limit").get(0));
                 assertTrue(headers.get("last_page").get(0).contains("limit=1"));
+                // next_page uses the externally configured hostname, so only take the offset from it
                 List<String> nextPage = headers.get("next_page");
                 offset = nextPage == null ? null : nextPage.get(0).replaceAll(".*offset=(\\d+).*", "$1");
             } while (offset != null);
             assertEquals(allVersionNames, pagedVersionNames);
 
-            // past the end is an empty page, including offsets large enough to overflow when multiplied by the limit
+            // pages past the end are empty, including offsets that overflow an int when multiplied by the limit
             assertTrue(ga4Ghv20Api.toolsIdVersionsGet(id, String.valueOf(numVersions), 1).isEmpty());
             assertTrue(ga4Ghv20Api.toolsIdVersionsGet(id, String.valueOf(Integer.MAX_VALUE), 2).isEmpty());
             assertNull(ga4Ghv20Api.getApiClient().getResponseHeaders().get("next_page"));
+            // offsets are page numbers, so a non-numeric offset is a bad request
             ApiException exception = assertThrows(ApiException.class, () -> ga4Ghv20Api.toolsIdVersionsGet(id, "potato", 1));
             assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
         }
+        // GET /tools shares the same start index calculation, so check the overflow case there too
         assertTrue(ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, String.valueOf(Integer.MAX_VALUE), 2).isEmpty());
     }
 
