@@ -35,6 +35,8 @@ import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
@@ -434,6 +436,34 @@ class GA4GHV2FinalIT extends GA4GHIT {
         assertTrue(headers.get("self_link").toString().contains("toolClass=Workflow"));
         assertTrue(headers.get("last_page").toString().contains("toolClass=Workflow"));
         assertTrue(headers.get("next_page").toString().contains("toolClass=Workflow"));
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+    }
+
+    @Test
+    void testIncludeVersionsAndVersionDescription() {
+        final String versionDescription = "a version description";
+        testingPostgres.runUpdateStatement("update version_metadata set description = '" + versionDescription + "'");
+        List<Tool> tools = checkedResponse(baseURL + "tools").readEntity(new GenericType<>() {
+        });
+        List<Tool> toolsWithoutVersions = checkedResponse(baseURL + "tools?includeVersions=false").readEntity(new GenericType<>() {
+        });
+        assertEquals(tools.stream().map(Tool::getId).toList(), toolsWithoutVersions.stream().map(Tool::getId).toList());
+        assertTrue(toolsWithoutVersions.stream().allMatch(t -> t.getVersions().isEmpty()));
+
+        Tool tool = tools.stream().filter(t -> !t.getVersions().isEmpty()).findFirst().orElseThrow();
+        final String toolURL = baseURL + "tools/" + URLEncoder.encode(tool.getId(), StandardCharsets.UTF_8);
+        assertTrue(checkedResponse(toolURL + "?includeVersions=false").readEntity(Tool.class).getVersions().isEmpty());
+        assertEquals(tool.getVersions().size(), checkedResponse(toolURL + "?includeVersions=true").readEntity(Tool.class).getVersions().size());
+
+        // version descriptions are only included when retrieving a single version
+        tool.getVersions().forEach(v -> assertEquals("", v.getDescription()));
+        List<ToolVersion> versions = checkedResponse(toolURL + "/versions").readEntity(new GenericType<>() {
+        });
+        versions.forEach(v -> assertEquals("", v.getDescription()));
+        ToolVersion version = checkedResponse(toolURL + "/versions/" + URLEncoder.encode(versions.get(0).getName(), StandardCharsets.UTF_8)).readEntity(ToolVersion.class);
+        assertEquals(versionDescription, version.getDescription());
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);

@@ -31,7 +31,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdGet(id, null, securityContext, value, user));
+        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdGet(id, true, securityContext, value, user));
     }
 
     @Override
@@ -75,7 +75,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
         return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsGet(id, alias, null,  null, null, registry, organization, name, toolname,
-            description, author, checker, null, offset, limit, securityContext,
+            description, author, checker, true, offset, limit, securityContext,
             value, user));
     }
 

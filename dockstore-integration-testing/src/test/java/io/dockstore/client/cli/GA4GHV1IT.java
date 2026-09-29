@@ -19,6 +19,7 @@ import static io.dockstore.common.FixtureUtility.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -111,6 +112,9 @@ class GA4GHV1IT extends GA4GHIT {
     @Override
     void testToolsIdVersions() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions");
+        // this endpoint does not page, so all versions are returned without paging headers
+        assertNull(response.getHeaderString("next_page"));
+        assertNull(response.getHeaderString("last_page"));
         List<ToolVersionV1> responseObject = response.readEntity(new GenericType<List<ToolVersionV1>>() {
         });
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));

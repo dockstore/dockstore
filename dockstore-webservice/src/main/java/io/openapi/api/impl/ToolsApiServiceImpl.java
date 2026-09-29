@@ -57,6 +57,7 @@ import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
@@ -131,6 +132,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static BioWorkflowDAO bioWorkflowDAO;
     private static PermissionsInterface permissionsInterface;
     private static VersionDAO versionDAO;
+    private static WorkflowVersionDAO workflowVersionDAO;
     private static SessionFactory sessionFactory;
 
     public static void setToolDAO(ToolDAO toolDAO) {
@@ -173,6 +175,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         ToolsApiServiceImpl.versionDAO = versionDAO;
     }
 
+    public static void setWorkflowVersionDAO(WorkflowVersionDAO workflowVersionDAO) {
+        ToolsApiServiceImpl.workflowVersionDAO = workflowVersionDAO;
+    }
+
     public static void setSessionFactory(SessionFactory sessionFactory) {
         ToolsApiServiceImpl.sessionFactory = sessionFactory;
     }
@@ -187,9 +193,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public Response toolsIdGet(String id, Boolean includeVersions, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        if (Boolean.FALSE.equals(includeVersions)) {
-            throw new UnsupportedOperationException("includeVersions=false is not yet supported");
-        }
 
         // https://github.com/ga4gh/tool-registry-service-schemas/issues/229 (text only doesn't make sense)
         boolean consumesHeaderTextOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE) && !mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE));
@@ -204,14 +207,21 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
-        return buildToolResponse(entry, null, false);
+        return buildToolResponse(entry, null, includeVersions);
     }
 
+    /**
+     * As with toolsGet, the offset is a page number. Workflow versions are paged in the database, most recently modified first.
+     * Tool versions are paged in memory, in order of name.
+     */
     @Override
     public Response toolsIdVersionsGet(String id, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        if (offset != null || (limit != null && limit != DEFAULT_VERSIONS_LIMIT)) {
-            throw new UnsupportedOperationException("Pagination of versions is not yet supported");
+        final int actualLimit = Math.max(Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_VERSIONS_LIMIT), DEFAULT_VERSIONS_LIMIT), 1);
+        final Integer offsetInteger = parseOffset(offset);
+        if (offsetInteger == null) {
+            return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
         }
+        final int startIndex = startIndex(offsetInteger, actualLimit);
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -219,17 +229,32 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
-        return buildToolResponse(entry, null, true);
+        if (entry == null || !entry.getIsPublished()) {
+            return buildToolResponse(entry, null, true);
+        }
+        if (limit == null) {
+            // limit is only null when called from the v1 and v2-beta endpoints, which do not page, so return all versions
+            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(entry, config);
+            assert (tool != null);
+            return Response.ok(tool.getVersions()).build();
+        }
+        final List<? extends Version<?>> versions = entry instanceof Workflow
+            ? workflowVersionDAO.getWorkflowVersionsByWorkflowId(entry.getId(), actualLimit, startIndex, "desc", "lastModified", true, -1)
+            : entry.getWorkflowVersions().stream().filter(version -> !version.isHidden()).skip(startIndex).limit(actualLimit).map(version -> (Version<?>) version).toList();
+        io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(entry, config, false, versions);
+        assert (tool != null);
+        // the count includes versions that are not shown in TRS (e.g. versions without descriptors), so pages may be smaller than the limit
+        return buildPagedResponse(tool.getVersions(), versionDAO.getPublicVersionsCount(entry.getId()), offset, offsetInteger, startIndex, actualLimit, value);
     }
 
-    private Response buildToolResponse(Entry<?, ?> container, String version, boolean returnJustVersions) {
+    private Response buildToolResponse(Entry<?, ?> container, String version, boolean includeVersions) {
         Response response;
         if (container == null) {
             response = Response.status(Status.NOT_FOUND).build();
         } else if (!container.getIsPublished()) {
             response = Response.status(Status.UNAUTHORIZED).build();
         } else {
-            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config);
+            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config, false, includeVersions ? null : List.of());
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
@@ -237,14 +262,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 if (tool.getVersions().size() != 1) {
                     response = Response.status(Status.NOT_FOUND).build();
                 } else {
-                    response = Response.ok(tool.getVersions().get(0)).build();
+                    ToolVersion toolVersion = tool.getVersions().get(0);
+                    // version descriptions can be large, so they are only included when retrieving a single version
+                    container.getWorkflowVersions().stream().filter(v -> version.equals(v.getName())).findFirst()
+                        .ifPresent(v -> toolVersion.setDescription(ObjectUtils.firstNonNull(v.getDescription(), "")));
+                    response = Response.ok(toolVersion).build();
                 }
             } else {
-                if (returnJustVersions) {
-                    response = Response.ok(tool.getVersions()).build();
-                } else {
-                    response = Response.ok(tool).build();
-                }
+                response = Response.ok(tool).build();
             }
         }
         return response;
@@ -266,7 +291,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return BAD_DECODE_VERSION_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
-        return buildToolResponse(entry, newVersionId, false);
+        return buildToolResponse(entry, newVersionId, true);
     }
 
     public Entry<?, ?> getEntry(ParsedRegistryID parsedID, Optional<User> user) {
@@ -373,24 +398,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (tags != null && !tags.isEmpty()) {
             throw new UnsupportedOperationException("Filtering by tags is not yet supported");
         }
-        if (Boolean.FALSE.equals(includeVersions)) {
-            throw new UnsupportedOperationException("includeVersions=false is not yet supported");
-        }
 
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
-        final String relativePath = value.getUriInfo().getRequestUri().getPath();
 
-        int offsetInteger = 0;
-        if (offset != null) {
-            try {
-                offsetInteger = Integer.parseInt(offset);
-            } catch (NumberFormatException e) {
-                return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
-            }
-            offsetInteger = Math.max(offsetInteger, 0);
+        final Integer offsetInteger = parseOffset(offset);
+        if (offsetInteger == null) {
+            return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
         }
         // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set
-        int startIndex = offsetInteger * actualLimit;
+        int startIndex = startIndex(offsetInteger, actualLimit);
 
         final List<Entry<?, ?>> all = new ArrayList<>();
         NumberOfEntityTypes numEntries;
@@ -407,12 +423,44 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             sessionFactory.getCurrentSession().clear();
             Entry<?, ?> c = toolDAO.getGenericEntryById(entryId);
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
+            // an empty list of versions to convert avoids loading versions at all
+            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config, false, includeVersions ? null : List.of());
             if (tool != null) {
                 results.add(tool);
             }
         }
 
+        return buildPagedResponse(results, numEntries.sum(), offset, offsetInteger, startIndex, actualLimit, value);
+    }
+
+    /**
+     * @param offset TRS offset, which is a page number
+     * @return the page number, 0 if not specified, or null if it cannot be parsed
+     */
+    private static Integer parseOffset(String offset) {
+        if (offset == null) {
+            return 0;
+        }
+        try {
+            return Math.max(Integer.parseInt(offset), 0);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * @return the index of the first result on a page, capped so that a large offset gives an empty page rather than overflowing
+     */
+    private static int startIndex(int page, int pageSize) {
+        return (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Build a response for one page of results with the TRS paging headers
+     */
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    private Response buildPagedResponse(List<?> results, long totalCount, String offset, int offsetInteger, int startIndex, int actualLimit, ContainerRequestContext value) {
+        final String relativePath = value.getUriInfo().getRequestUri().getPath();
         final String scheme = config.getExternalConfig().getScheme();
         final String hostname = config.getExternalConfig().getHostname();
         final int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
@@ -423,10 +471,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", actualLimit);
         responseBuilder.header("self_link", createUrlString(scheme, hostname, port, path, encodedQuery));
-        if (startIndex + actualLimit < numEntries.sum()) {
+        if ((long) startIndex + actualLimit < totalCount) {
             responseBuilder.header("next_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, offsetInteger + 1L)));
         }
-        final long numPages = numEntries.sum() / actualLimit;
+        final long numPages = totalCount / actualLimit;
         responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, numPages)));
 
         return responseBuilder.build();

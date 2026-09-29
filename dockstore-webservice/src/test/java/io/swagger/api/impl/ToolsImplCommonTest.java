@@ -18,6 +18,7 @@ package io.swagger.api.impl;
 import static io.dockstore.webservice.DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
@@ -28,6 +29,7 @@ import io.dockstore.webservice.Utils;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -544,5 +546,35 @@ class ToolsImplCommonTest {
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
         assertEquals(1, toolVersion.getImages().size(), "There should be one default image when the Tag has none");
         assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
+    }
+
+    @Test
+    void convertOnlyGivenVersions() {
+        Workflow workflow = new BioWorkflow();
+        workflow.setOrganization("ICGC-TCGA-PanCancer");
+        workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
+        workflow.setSourceControl(SourceControl.GITHUB);
+        workflow.setDescriptorType(DescriptorLanguage.WDL);
+        workflow.setIsPublished(true);
+        List<WorkflowVersion> versions = new ArrayList<>();
+        for (String name : List.of("aaa", "bbb")) {
+            WorkflowVersion version = new WorkflowVersion();
+            version.setName(name);
+            version.setReference(name);
+            version.setDescriptionAndDescriptionSource("a description that could be long", DescriptionSource.DESCRIPTOR);
+            version.addSourceFile(getFakeSourceFile(null, false, "/pcawg-cgp-somatic-workflow.wdl"));
+            workflow.addWorkflowVersion(version);
+            versions.add(version);
+        }
+        assertEquals(2, ToolsImplCommon.convertEntryToTool(workflow, actualConfig).getVersions().size());
+        // an empty list is used for includeVersions=false
+        assertTrue(ToolsImplCommon.convertEntryToTool(workflow, actualConfig, false, List.of()).getVersions().isEmpty());
+        List<io.openapi.model.ToolVersion> toolVersions = ToolsImplCommon.convertEntryToTool(workflow, actualConfig, false, List.of(versions.get(1))).getVersions();
+        assertEquals(1, toolVersions.size());
+        io.openapi.model.ToolVersion toolVersion = toolVersions.get(0);
+        assertEquals("bbb", toolVersion.getName());
+
+        // version descriptions are not converted
+        assertEquals("", toolVersion.getDescription());
     }
 }

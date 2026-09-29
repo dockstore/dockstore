@@ -38,12 +38,15 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceControlBean;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolClass;
+import io.dockstore.openapi.client.model.ToolVersion;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -52,7 +55,9 @@ import io.openapi.model.DescriptorType;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -243,6 +248,67 @@ class OpenApiCRUDClientIT extends BaseIT {
         // check on paging structure when mixing tools and workflows
         final List<Tool> mixedPage = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, "3", 30);
         assertEquals(2, mixedPage.stream().map(Tool::getToolclass).distinct().count());
+    }
+
+    @Test
+    void testToolsIdVersionsPaging() throws IOException {
+        ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "pagedTool", DescriptorType.CWL.toString(), "coolNamespace", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "pagedWorkflow", DescriptorLanguage.CWL.getShortName(), null, null);
+        final String toolContent = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8);
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
+        final int numVersions = 3;
+        // each edit of a hosted entry creates a new version
+        for (int i = 0; i < numVersions; i++) {
+            SourceFile toolDescriptor = new SourceFile();
+            toolDescriptor.setContent(toolContent + "\n# version " + i);
+            toolDescriptor.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+            toolDescriptor.setPath("/Dockstore.cwl");
+            toolDescriptor.setAbsolutePath("/Dockstore.cwl");
+            hostedApi.editHostedTool(List.of(toolDescriptor, dockerfile), hostedTool.getId());
+            SourceFile workflowDescriptor = new SourceFile();
+            workflowDescriptor.setContent("class: Workflow\ncwlVersion: v1.0\n# version " + i);
+            workflowDescriptor.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+            workflowDescriptor.setPath("/Dockstore.cwl");
+            workflowDescriptor.setAbsolutePath("/Dockstore.cwl");
+            hostedApi.editHostedWorkflow(List.of(workflowDescriptor), hostedWorkflow.getId());
+        }
+        new ContainersApi(webClient).publish(hostedTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        new WorkflowsApi(webClient).publish1(hostedWorkflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getAnonymousOpenAPIWebClient());
+        for (String id : List.of(hostedTool.getToolPath(), "#workflow/" + hostedWorkflow.getFullWorkflowPath())) {
+            List<String> allVersionNames = ga4Ghv20Api.toolsIdVersionsGet(id, null, null).stream().map(ToolVersion::getName).toList();
+            assertEquals(numVersions, allVersionNames.size());
+
+            // follow next_page one version at a time, should get the same versions in the same order
+            List<String> pagedVersionNames = new ArrayList<>();
+            String offset = null;
+            do {
+                List<ToolVersion> page = ga4Ghv20Api.toolsIdVersionsGet(id, offset, 1);
+                assertEquals(1, page.size());
+                pagedVersionNames.add(page.get(0).getName());
+                Map<String, List<String>> headers = ga4Ghv20Api.getApiClient().getResponseHeaders();
+                assertEquals("1", headers.get("current_limit").get(0));
+                assertTrue(headers.get("last_page").get(0).contains("limit=1"));
+                List<String> nextPage = headers.get("next_page");
+                offset = nextPage == null ? null : nextPage.get(0).replaceAll(".*offset=(\\d+).*", "$1");
+            } while (offset != null);
+            assertEquals(allVersionNames, pagedVersionNames);
+
+            // past the end is an empty page, including offsets large enough to overflow when multiplied by the limit
+            assertTrue(ga4Ghv20Api.toolsIdVersionsGet(id, String.valueOf(numVersions), 1).isEmpty());
+            assertTrue(ga4Ghv20Api.toolsIdVersionsGet(id, String.valueOf(Integer.MAX_VALUE), 2).isEmpty());
+            assertNull(ga4Ghv20Api.getApiClient().getResponseHeaders().get("next_page"));
+            ApiException exception = assertThrows(ApiException.class, () -> ga4Ghv20Api.toolsIdVersionsGet(id, "potato", 1));
+            assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
+        }
+        assertTrue(ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, String.valueOf(Integer.MAX_VALUE), 2).isEmpty());
     }
 
     @Test
