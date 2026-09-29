@@ -116,8 +116,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final int SEGMENTS_IN_ID = 3;
     //TODO this is also a maximum page size, may want to rename/split out the two concepts
     private static final int DEFAULT_PAGE_SIZE = 100;
-    // default limit declared by the TRS spec for GET /tools/{id}/versions
-    private static final int DEFAULT_VERSIONS_LIMIT = 1000;
+    // maximum page size for GET /tools/{id}/versions, the same as the TRS spec's default limit
+    private static final int MAX_VERSIONS_LIMIT = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
@@ -216,12 +216,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     @Override
     public Response toolsIdVersionsGet(String id, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        final int actualLimit = Math.clamp(ObjectUtils.firstNonNull(limit, DEFAULT_VERSIONS_LIMIT), 1, DEFAULT_VERSIONS_LIMIT);
         final Integer offsetInteger = parseOffset(offset);
         if (offsetInteger == null) {
             return Response.status(getExtendedStatus(Status.BAD_REQUEST, "Bad offset")).build();
         }
-        final int startIndex = startIndex(offsetInteger, actualLimit);
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -238,9 +236,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             assert (tool != null);
             return Response.ok(tool.getVersions()).build();
         }
-        final List<? extends Version<?>> versions = entry instanceof Workflow
-            ? workflowVersionDAO.getWorkflowVersionsByWorkflowId(entry.getId(), actualLimit, startIndex, "desc", "lastModified", true, -1)
-            : entry.getWorkflowVersions().stream().filter(version -> !version.isHidden()).skip(startIndex).limit(actualLimit).map(version -> (Version<?>) version).toList();
+        // keep the requested page size between 1 and the maximum (limit is never null here)
+        final int actualLimit = Math.clamp(limit, 1, MAX_VERSIONS_LIMIT);
+        final int startIndex = startIndex(offsetInteger, actualLimit);
+        final List<? extends Version<?>> versions;
+        if (entry instanceof Workflow) {
+            // page workflow versions in the database, most recently modified first, excluding hidden versions (-1: no representative version)
+            versions = workflowVersionDAO.getWorkflowVersionsByWorkflowId(entry.getId(), actualLimit, startIndex, "desc", "lastModified", true, -1);
+        } else {
+            // tools have few versions, so page their non-hidden versions in memory, in order of name
+            versions = entry.getWorkflowVersions().stream().filter(version -> !version.isHidden()).skip(startIndex).limit(actualLimit)
+                .map(version -> (Version<?>) version).toList();
+        }
         io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(entry, config, false, versions);
         assert (tool != null);
         // the count includes versions that TRS does not show (e.g. without descriptors), so pages can be short or even empty before next_page stops
