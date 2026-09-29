@@ -393,7 +393,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
     public Response toolsGet(String id, String alias, String toolClass, DescriptorType descriptorType, List<String> tags, String registry, String organization, String name, String toolname,
-        String description, String author, Boolean checker, Boolean includeVersions, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+        String description, String author, Boolean checker, Boolean includeVersions, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
         // tag based search was added in https://github.com/ga4gh/tool-registry-service-schemas/pull/239
         if (tags != null && !tags.isEmpty()) {
             throw new UnsupportedOperationException("Filtering by tags is not yet supported");

@@ -582,8 +582,7 @@ class ToolsImplCommonTest {
         io.openapi.model.ToolVersion toolVersion = toolVersions.get(0);
         assertEquals("bbb", toolVersion.getName());
 
-        // version descriptions can be large, so conversion leaves them empty. Only GET /tools/{id}/versions/{version_id}
-        // fills in the real description, for the single version it returns
+        // version descriptions can be large, so conversion leaves them empty (only the single-version endpoint fills them in)
         assertEquals("", toolVersion.getDescription());
     }
 }
