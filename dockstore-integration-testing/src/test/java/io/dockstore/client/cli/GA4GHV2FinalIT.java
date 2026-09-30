@@ -19,11 +19,13 @@ import static io.dockstore.common.FixtureUtility.fixture;
 import static io.openapi.api.impl.ServiceInfoApiServiceImpl.getService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
+import io.dockstore.openapi.client.model.EntryAndVersionIds;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;
@@ -35,7 +37,10 @@ import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
@@ -470,5 +475,56 @@ class GA4GHV2FinalIT extends GA4GHIT {
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+    }
+
+    @Test
+    void testTrsIdToDockstoreIdMapping() {
+        final long toolId = 6;
+        final long toolVersionId = 1;
+        final long workflowId = 11;
+        final String toolTrsId = "quay.io/test_org/test6";
+        final String toolTrsVersionId = toolTrsId + ":fakeName";
+        final String workflowTrsId = "#workflow/github.com/A/l";
+
+        // published entries and non-hidden versions should map to their Dockstore IDs
+        EntryAndVersionIds ids = getTrsIdMapping("trsToolId", toolTrsId, HttpStatus.SC_OK);
+        assertEquals(toolId, ids.getEntryId());
+        assertNull(ids.getVersionId());
+        ids = getTrsIdMapping("trsToolId", workflowTrsId, HttpStatus.SC_OK);
+        assertEquals(workflowId, ids.getEntryId());
+        assertNull(ids.getVersionId());
+        ids = getTrsIdMapping("trsVersionId", toolTrsVersionId, HttpStatus.SC_OK);
+        assertEquals(toolId, ids.getEntryId());
+        assertEquals(toolVersionId, ids.getVersionId());
+
+        // nonexistent and malformed IDs should not be found
+        getTrsIdMapping("trsToolId", "quay.io/test_org/nonexistent", HttpStatus.SC_NOT_FOUND);
+        getTrsIdMapping("trsToolId", "malformed", HttpStatus.SC_NOT_FOUND);
+        getTrsIdMapping("trsToolId", "", HttpStatus.SC_NOT_FOUND);
+        getTrsIdMapping("trsVersionId", toolTrsId + ":nonexistent", HttpStatus.SC_NOT_FOUND);
+        getTrsIdMapping("trsVersionId", toolTrsId, HttpStatus.SC_NOT_FOUND);
+
+        try {
+            // hidden versions should not be found
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = true where id = " + toolVersionId);
+            getTrsIdMapping("trsVersionId", toolTrsVersionId, HttpStatus.SC_NOT_FOUND);
+            getTrsIdMapping("trsToolId", toolTrsId, HttpStatus.SC_OK);
+
+            // unpublished entries and their versions should not be found
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + toolVersionId);
+            testingPostgres.runUpdateStatement("update tool set ispublished = false where id = " + toolId);
+            getTrsIdMapping("trsToolId", toolTrsId, HttpStatus.SC_NOT_FOUND);
+            getTrsIdMapping("trsVersionId", toolTrsVersionId, HttpStatus.SC_NOT_FOUND);
+        } finally {
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + toolVersionId);
+            testingPostgres.runUpdateStatement("update tool set ispublished = true where id = " + toolId);
+        }
+    }
+
+    private EntryAndVersionIds getTrsIdMapping(String parameterName, String trsId, int expectedStatus) {
+        String url = String.format("http://localhost:%d%sentries/map%s?%s=%s", SUPPORT.getLocalPort(), basePath, StringUtils.capitalize(parameterName), parameterName,
+            URLEncoder.encode(trsId, StandardCharsets.UTF_8));
+        Response response = checkedResponse(url, expectedStatus);
+        return response == null ? null : response.readEntity(EntryAndVersionIds.class);
     }
 }
