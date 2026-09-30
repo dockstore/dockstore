@@ -284,9 +284,14 @@ class OpenAPIGeneralIT extends BaseIT {
         WorkflowsApi anonWorkflowsOpenApi = new WorkflowsApi(getAnonymousOpenAPIWebClient());
 
         Workflow workflow = registerWorkflowWithTwoVersions();
-        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflow.getId(), null, null, null, null, null);
         final long workflowId = workflow.getId();
-        final long versionId = workflowVersions.get(0).getId();
+
+        // make one version the default, and test with the other, since the default version cannot be hidden
+        final String defaultVersionName = workflowsOpenApi.getWorkflowVersions(workflowId, null, null, null, null, null).get(0).getName();
+        workflowsOpenApi.updateDefaultVersion1(workflowId, defaultVersionName);
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflowId, null, null, null, null, null);
+        WorkflowVersion testVersion = workflowVersions.stream().filter(v -> !v.getName().equals(defaultVersionName)).findFirst().orElseThrow();
+        final long versionId = testVersion.getId();
 
         // versions of unpublished workflows should not be found
         assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, versionId, null));
@@ -295,14 +300,14 @@ class OpenAPIGeneralIT extends BaseIT {
         workflowsOpenApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
         WorkflowVersion version = anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, versionId, "validations,aliases,authors");
         assertEquals(versionId, version.getId());
-        assertEquals(workflowVersions.get(0).getName(), version.getName());
+        assertEquals(testVersion.getName(), version.getName());
 
         // nonexistent versions should not be found
         assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, Long.MAX_VALUE, null));
         assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(Long.MAX_VALUE, versionId, null));
 
         // hidden versions should not be found
-        workflowVersions.get(0).setHidden(true);
+        testVersion.setHidden(true);
         workflowsOpenApi.updateWorkflowVersion(workflowId, workflowVersions);
         assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, versionId, null));
     }
