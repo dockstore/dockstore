@@ -35,6 +35,7 @@ import io.dockstore.common.Utilities;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.api.MetadataApi;
@@ -58,6 +59,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -273,5 +275,37 @@ class OpenApiCRUDClientIT extends BaseIT {
         dockerfile.setAbsolutePath("/Dockerfile");
         DockstoreTool dockstoreTool = api.editHostedTool(Lists.newArrayList(descriptorFile, dockerfile), hostedTool.getId());
         containersApi.publish(dockstoreTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+    }
+
+    @Test
+    void testGetPublishedTagById() {
+        final long toolId = 6;
+        final long tagId = 1;
+        final long otherToolTagId = 2;
+        final ContainertagsApi containertagsApi = new ContainertagsApi(getAnonymousOpenAPIWebClient());
+
+        // a non-hidden tag of a published tool should be retrieved
+        io.dockstore.openapi.client.model.Tag tag = containertagsApi.getPublishedTagById(toolId, tagId, "validations");
+        assertEquals(tagId, tag.getId());
+        assertEquals("fakeName", tag.getName());
+
+        // nonexistent tags, and tags that belong to a different tool, should not be found
+        assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, Long.MAX_VALUE, null));
+        assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, otherToolTagId, null));
+        assertNotFound(() -> containertagsApi.getPublishedTagById(Long.MAX_VALUE, tagId, null));
+
+        // hidden tags should not be found
+        testingPostgres.runUpdateStatement("update version_metadata set hidden = true where id = " + tagId);
+        assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, tagId, null));
+
+        // tags of unpublished tools should not be found
+        testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + tagId);
+        testingPostgres.runUpdateStatement("update tool set ispublished = false where id = " + toolId);
+        assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, tagId, null));
+    }
+
+    private static void assertNotFound(Executable executable) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode());
     }
 }
