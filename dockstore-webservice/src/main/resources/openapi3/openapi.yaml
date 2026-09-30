@@ -2420,6 +2420,42 @@ paths:
           description: default response
       tags:
       - containers
+  /containers/published/{containerId}/tags/{tagId}:
+    get:
+      description: Retrieve a non-hidden tag of a published tool by ID
+      operationId: getPublishedTagById
+      parameters:
+      - description: Tool to retrieve the tag from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Tag to retrieve
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "Comma-delimited list of fields to include: validations"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: Get a non-hidden tag of a published tool by ID
+        "404":
+          description: No published tool with the specified ID has a non-hidden tag
+            with the specified ID
+      tags:
+      - containertags
   /containers/registerManual:
     post:
       description: "Register a tool manually, along with tags."
@@ -8253,6 +8289,43 @@ paths:
           description: Get workflow versions in an entry. Default is 100 versions
         "400":
           description: Bad Request
+      tags:
+      - workflows
+  /workflows/published/{workflowId}/workflowVersions/{workflowVersionId}:
+    get:
+      description: Retrieve a non-hidden version of a published workflow by ID
+      operationId: getPublishedWorkflowVersionById
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+          description: Get a non-hidden version of a published workflow by ID
+        "404":
+          description: No published workflow with the specified ID has a non-hidden
+            version with the specified ID
       tags:
       - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:

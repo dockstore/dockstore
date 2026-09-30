@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainertagsApi;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.model.EntryAndVersionIds;
 import io.dockstore.openapi.client.model.FileWrapper;
@@ -519,6 +520,38 @@ class GA4GHV2FinalIT extends GA4GHIT {
             assertNotFound(() -> entriesApi.getEntryAndVersionIdsByTrsVersionId(toolTrsVersionId));
         } finally {
             testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + toolVersionId);
+            testingPostgres.runUpdateStatement("update tool set ispublished = true where id = " + toolId);
+        }
+    }
+
+    @Test
+    void testGetPublishedTagById() {
+        final long toolId = 6;
+        final long tagId = 1;
+        final long otherToolTagId = 2;
+        final ContainertagsApi containertagsApi = new ContainertagsApi(BaseIT.getAnonymousOpenAPIWebClient());
+
+        // a non-hidden tag of a published tool should be retrieved
+        io.dockstore.openapi.client.model.Tag tag = containertagsApi.getPublishedTagById(toolId, tagId, "validations");
+        assertEquals(tagId, tag.getId());
+        assertEquals("fakeName", tag.getName());
+
+        // nonexistent tags, and tags that belong to a different tool, should not be found
+        assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, Long.MAX_VALUE, null));
+        assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, otherToolTagId, null));
+        assertNotFound(() -> containertagsApi.getPublishedTagById(Long.MAX_VALUE, tagId, null));
+
+        try {
+            // hidden tags should not be found
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = true where id = " + tagId);
+            assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, tagId, null));
+
+            // tags of unpublished tools should not be found
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + tagId);
+            testingPostgres.runUpdateStatement("update tool set ispublished = false where id = " + toolId);
+            assertNotFound(() -> containertagsApi.getPublishedTagById(toolId, tagId, null));
+        } finally {
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + tagId);
             testingPostgres.runUpdateStatement("update tool set ispublished = true where id = " + toolId);
         }
     }

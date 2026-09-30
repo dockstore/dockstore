@@ -49,6 +49,14 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     /**
+     * Finds the specified version of the specified entry, if it is not hidden.
+     */
+    @SuppressWarnings("unchecked")
+    public T findNonHiddenVersionInEntry(Long entryId, Long versionId) {
+        return (T)uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Version.findNonHiddenVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+    }
+
+    /**
      * Finds the non-hidden version of the specified entry that has the specified name.
      */
     public Version<T> findNonHiddenVersionInEntryByName(Long entryId, String name) {

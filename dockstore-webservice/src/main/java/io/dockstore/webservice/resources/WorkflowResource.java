@@ -457,6 +457,29 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @GET
+    @Path("/published/{workflowId}/workflowVersions/{workflowVersionId}")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    @Operation(operationId = "getPublishedWorkflowVersionById", description = "Retrieve a non-hidden version of a published workflow by ID")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a non-hidden version of a published workflow by ID", content = @Content(
+        mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = WorkflowVersion.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "No published workflow with the specified ID has a non-hidden version with the specified ID")
+    public WorkflowVersion getPublishedWorkflowVersionById(
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+        @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include) {
+        Workflow workflow = workflowDAO.findPublishedById(workflowId);
+        checkNotNullEntry(workflow);
+        WorkflowVersion workflowVersion = workflowVersionDAO.findNonHiddenVersionInEntry(workflowId, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
+        }
+        initializeAdditionalFields(include, workflowVersion);
+        return workflowVersion;
+    }
+
+    @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}")
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
