@@ -173,7 +173,7 @@ class SwaggerServiceIT extends BaseIT {
         new CreateContent().invoke();
         final ApiClient webClient = CommonTestUtilities.getOpenAPIWebClient(true, "potato", testingPostgres);
         Ga4Ghv20Api client = new Ga4Ghv20Api(webClient);
-        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
         // TODO: change boolean once services are exposed
         boolean servicesExposedInTRS = false;

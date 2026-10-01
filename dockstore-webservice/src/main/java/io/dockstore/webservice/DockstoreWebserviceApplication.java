@@ -513,6 +513,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setNotebookDAO(notebookDAO);
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setVersionDAO(versionDAO);
+        ToolsApiServiceImpl.setWorkflowVersionDAO(workflowVersionDAO);
         ToolsApiServiceImpl.setSessionFactory(hibernate.getSessionFactory());
         ToolsApiServiceImpl.setConfig(configuration);
         ToolsApiServiceImpl.setAuthorizer(authorizer);

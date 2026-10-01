@@ -58,6 +58,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -117,6 +118,18 @@ public final class ToolsImplCommon {
      * @return standardised data object
      */
     public static Tool convertEntryToTool(Entry<?, ?> container, DockstoreWebserviceConfiguration config, boolean showHiddenTags) {
+        return convertEntryToTool(container, config, showHiddenTags, null);
+    }
+
+    /**
+     * Convert our Tool object to a standard Tool format
+     *
+     * @param container our data object
+     * @param versionsToConvert if not null, convert only these versions (e.g. a page of versions) rather than all of the container's versions
+     * @return standardised data object
+     */
+    public static Tool convertEntryToTool(Entry<?, ?> container, DockstoreWebserviceConfiguration config, boolean showHiddenTags,
+        Collection<? extends Version<?>> versionsToConvert) {
         String newID = getNewId(container);
         boolean isDockstoreTool;
         String url = getUrlFromId(config, newID);
@@ -133,7 +146,7 @@ public final class ToolsImplCommon {
         tool.setCheckerUrl(checkerWorkflowPath);
         boolean hasChecker = !(tool.getCheckerUrl().isEmpty() || tool.getCheckerUrl() == null);
         tool.setHasChecker(hasChecker);
-        Set<? extends Version<?>> inputVersions;
+        Collection<? extends Version<?>> inputVersions;
         // tool specific
         io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
@@ -162,6 +175,9 @@ public final class ToolsImplCommon {
             return null;
         }
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
+        if (versionsToConvert != null) {
+            inputVersions = versionsToConvert;
+        }
 
         for (Version<?> version : inputVersions) {
             if (shouldHideToolVersion(version, showHiddenTags, container.isHosted())) {
@@ -175,6 +191,8 @@ public final class ToolsImplCommon {
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
 
             toolVersion.setSigned(false);
+            // the real description is only filled in when retrieving a single version
+            toolVersion.setDescription("");
 
             try {
                 if (!version.getAuthors().isEmpty()) {

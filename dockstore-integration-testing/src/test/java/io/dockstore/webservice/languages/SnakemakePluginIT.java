@@ -152,7 +152,7 @@ class SnakemakePluginIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
 
         Workflow workflow = BaseIT.openManualRegisterAndPublish(workflowsApi, DockstoreTesting.SNAKEMAKE_WORKFLOW, "", DescriptorType.SMK.toString(), SourceControl.GITHUB, "/workflow/Snakefile", true);
-        List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SMK.getShortName(), null, null, null, null, null, null, null, null, null);
+        List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SMK.getShortName(), null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(workflow.isIsPublished());
         assertEquals(1, tools.size());
     }

@@ -1093,7 +1093,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         tool = toolApi.refresh(tool.getId());
         PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
-        Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
+        Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub", null);
 
         final Response.ResponseBuilder responseBuilder = Response.ok(ga4ghatool);
         Response response = responseBuilder.build();

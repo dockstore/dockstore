@@ -205,8 +205,8 @@ public class OpenAPIServiceIT extends BaseIT {
 
         // test GA4GH retrieval
         Ga4Ghv20Api ga4GhApi = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
-        final Tool tool1 = ga4GhApi.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE);
-        final Tool tool2 = ga4GhApi.toolsIdGet(EntryTypeMetadata.SERVICE.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE);
+        final Tool tool1 = ga4GhApi.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE, null);
+        final Tool tool2 = ga4GhApi.toolsIdGet(EntryTypeMetadata.SERVICE.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE, null);
         assertNotSame(tool1.getId(), tool2.getId());
     }
 

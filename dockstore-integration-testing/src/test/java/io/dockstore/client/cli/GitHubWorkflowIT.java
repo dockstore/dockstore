@@ -235,7 +235,7 @@ class GitHubWorkflowIT extends BaseIT {
         assertEquals(1, version.getImages().size(), "Should only be one image in this workflow");
         verifyImageChecksumsAreSaved(version);
 
-        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world", null, null);
         verifyTRSImageConversion(versions, "1.0.1", 1);
 
         // Test that a workflow version that contains duplicate images will not store multiples
@@ -243,7 +243,7 @@ class GitHubWorkflowIT extends BaseIT {
         WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(openWorkflowsApi, workflow.getId(), "1.0");
         assertEquals(3, versionWithDuplicateImages.getImages().size(), "Should have grabbed 3 images");
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
-        versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
+        versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114", null, null);
         verifyTRSImageConversion(versions, "1.0", 3);
     }
 
@@ -266,7 +266,7 @@ class GitHubWorkflowIT extends BaseIT {
         assertTrue(version.getImages().size() >= 8, "Should have at least 8 images. There are " + version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
-        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW);
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW, null, null);
         verifyTRSImageConversion(versions, "quayMultiArchImages", 8);
     }
 
@@ -322,7 +322,7 @@ class GitHubWorkflowIT extends BaseIT {
         assertTrue(version.getImages().size() >= 7, "Should have at least 7 images. There are " + version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
-        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW);
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW, null, null);
         verifyTRSImageConversion(versions, "ghcrImages", 7);
     }
 
@@ -341,7 +341,7 @@ class GitHubWorkflowIT extends BaseIT {
         assertTrue(version.getImages().size() >= 6, "Should have at least 6 images. There are " + version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
-        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW);
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/" + DockstoreTesting.HELLO_WDL_WORKFLOW, null, null);
         verifyTRSImageConversion(versions, "ecrImages", 6);
     }
 
@@ -496,7 +496,7 @@ class GitHubWorkflowIT extends BaseIT {
         assertEquals(10, version.getImages().size(), "Should 10 images in this workflow");
         verifyImageChecksumsAreSaved(version);
 
-        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/broad-prod-wgs-germline-snps-indels");
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/broad-prod-wgs-germline-snps-indels", null, null);
         verifyTRSImageConversion(versions, "1.1.2", 10);
     }
 
@@ -535,7 +535,7 @@ class GitHubWorkflowIT extends BaseIT {
 
         // check author explicitly for workflows
         Ga4Ghv20Api ga4GhApi = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
-        final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, "Peter Amstutz", false, "0", 10);
+        final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, null, "Peter Amstutz", false, null, "0", 10);
         assertFalse(toolsViaAuthor.isEmpty());
 
         Optional<WorkflowVersion> optionalWorkflowVersion = workflowVersions.stream()

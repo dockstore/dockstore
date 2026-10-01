@@ -4256,6 +4256,13 @@ paths:
           - SMK
           - SERVICE
           - JUPYTER
+      - description: Filter tools by registry specific tags
+        in: query
+        name: tags
+        schema:
+          type: array
+          items:
+            type: string
       - description: The image registry that contains the image.
         in: query
         name: registry
@@ -4292,6 +4299,15 @@ paths:
         name: checker
         schema:
           type: boolean
+      - description: "Support for this parameter is optional for tool registries.\
+          \ If false, the `versions` array of each returned tool will be empty. Use\
+          \ `/tools/{id}/versions` to retrieve the versions of a tool. If not specified\
+          \ in the request, versions are included."
+        in: query
+        name: includeVersions
+        schema:
+          type: boolean
+          default: true
       - description: "Start index of paging. Pagination results can be based on numbers\
           \ or other values chosen by the registry implementor (for example, SHA values).\
           \ If this exceeds the current result set return an empty set.  If not specified\
@@ -4334,22 +4350,25 @@ paths:
         required: true
         schema:
           type: string
+      - description: "Support for this parameter is optional for tool registries.\
+          \ If false, the `versions` array of each returned tool will be empty. Use\
+          \ `/tools/{id}/versions` to retrieve the versions of a tool. If not specified\
+          \ in the request, versions are included."
+        in: query
+        name: includeVersions
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Tool'
           description: A tool.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be found.
@@ -4360,7 +4379,8 @@ paths:
       - GA4GHV20
   /ga4gh/trs/v2/tools/{id}/versions:
     get:
-      description: Returns all versions of the specified tool.
+      description: Returns all versions of the specified tool. Results may be paginated
+        using the offset and limit query parameters.
       operationId: toolsIdVersionsGet
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -4370,6 +4390,21 @@ paths:
         required: true
         schema:
           type: string
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
+        name: offset
+        schema:
+          type: string
+      - description: Amount of records to return in a given page.
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
       responses:
         "200":
           content:
@@ -12708,7 +12743,9 @@ components:
           example: http://agora.broadinstitute.org/tools/123456
         versions:
           type: array
-          description: A list of versions for this tool.
+          description: "A list of versions for this tool. For tools with many versions,\
+            \ registries may return only a subset of versions here. Use `/tools/{id}/versions`\
+            \ to retrieve the complete, paginated list of versions."
           items:
             $ref: '#/components/schemas/ToolVersion'
       required:
@@ -12927,6 +12964,10 @@ components:
           type: boolean
           description: "Reports if this tool has a containerfile available. (For Docker-based\
             \ tools, this would indicate the presence of a Dockerfile)"
+        description:
+          type: string
+          description: The description of the tool version. This allows for documentation
+            of a specific tool version as a tool evolves over time.
         descriptor_type:
           type: array
           description: The type (or types) of descriptors available.
@@ -12958,7 +12999,7 @@ components:
               - DSL2
               WDL:
               - "1.0"
-              - "1.0"
+              - "1.1"
             items:
               type: string
               description: "A map providing information about the language versions\
@@ -12967,7 +13008,7 @@ components:
                 \ the language versions used for the given `descriptor_type`. Depending\
                 \ on the `descriptor_type` (e.g. CWL) multiple version values may\
                 \ be used in a single tool."
-              example: "{\"WDL\":[\"1.0\",\"1.0\"],\"CWL\":[\"v1.0.2\"],\"NFL\":[\"\
+              example: "{\"WDL\":[\"1.0\",\"1.1\"],\"CWL\":[\"v1.0.2\"],\"NFL\":[\"\
                 DSL2\"]}"
           description: "A map providing information about the language versions used\
             \ in this tool. The keys should be the same values used in the `descriptor_type`\
@@ -12981,7 +13022,7 @@ components:
             - DSL2
             WDL:
             - "1.0"
-            - "1.0"
+            - "1.1"
         id:
           type: string
           description: An identifier of the version of this tool for this particular
