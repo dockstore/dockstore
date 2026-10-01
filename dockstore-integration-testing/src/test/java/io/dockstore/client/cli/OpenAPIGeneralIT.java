@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -58,6 +59,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -273,6 +275,46 @@ class OpenAPIGeneralIT extends BaseIT {
 
         List<WorkflowVersion> publicWorkflowVersions = workflowsOpenApi.getPublicWorkflowVersions(workflow.getId(), null, null, null, null, null);
         assertEquals(1, publicWorkflowVersions.size(), "Should exclude hidden version thus only have 1 version");
+    }
+
+    @Test
+    void testGetPublishedWorkflowVersionById() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsOpenApi = new WorkflowsApi(client);
+        WorkflowsApi anonWorkflowsOpenApi = new WorkflowsApi(getAnonymousOpenAPIWebClient());
+
+        Workflow workflow = registerWorkflowWithTwoVersions();
+        final long workflowId = workflow.getId();
+
+        // make one version the default, and test with the other, since the default version cannot be hidden
+        final String defaultVersionName = workflowsOpenApi.getWorkflowVersions(workflowId, null, null, null, null, null).get(0).getName();
+        workflowsOpenApi.updateDefaultVersion1(workflowId, defaultVersionName);
+        List<WorkflowVersion> workflowVersions = workflowsOpenApi.getWorkflowVersions(workflowId, null, null, null, null, null);
+        WorkflowVersion testVersion = workflowVersions.stream().filter(v -> !v.getName().equals(defaultVersionName)).findFirst().orElseThrow();
+        final long versionId = testVersion.getId();
+
+        // versions of unpublished workflows should not be found
+        assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, versionId, null));
+
+        // a non-hidden version of a published workflow should be retrieved
+        workflowsOpenApi.publish1(workflowId, CommonTestUtilities.createOpenAPIPublishRequest(true));
+        WorkflowVersion version = anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, versionId, "validations,aliases,authors");
+        assertEquals(versionId, version.getId());
+        assertEquals(testVersion.getName(), version.getName());
+
+        // nonexistent versions should not be found
+        assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, Long.MAX_VALUE, null));
+        assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(Long.MAX_VALUE, versionId, null));
+
+        // hidden versions should not be found
+        testVersion.setHidden(true);
+        workflowsOpenApi.updateWorkflowVersion(workflowId, workflowVersions);
+        assertNotFound(() -> anonWorkflowsOpenApi.getPublishedWorkflowVersionById(workflowId, versionId, null));
+    }
+
+    private static void assertNotFound(Executable executable) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode());
     }
 
     @Test

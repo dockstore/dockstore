@@ -24,6 +24,7 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.EntryAndVersionIds;
 import io.dockstore.webservice.api.SyncStatus;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
@@ -62,6 +63,8 @@ import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
+import io.openapi.api.impl.ToolsApiServiceImpl;
+import io.openapi.api.impl.ToolsApiServiceImpl.ParsedRegistryID;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -93,15 +96,19 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
@@ -134,8 +141,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
     public static final String ENTRY_NOT_DELETABLE_MESSAGE = "The specified entry is not deletable.";
+    public static final String TRS_ID_NOT_FOUND_MESSAGE = "No published entry or version corresponds to the specified TRS ID";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
     private static final int PROCESSOR_PAGE_SIZE = 25;
+    private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
     private final TokenDAO tokenDAO;
     private LambdaUrlChecker lambdaUrlChecker;
@@ -265,6 +274,55 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryByAlias(alias);
         checkNotNullEntry(entry);
         checkCanRead(user, entry);
+        return entry;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/mapTrsToolId")
+    @Operation(operationId = "getEntryIdByTrsToolId", description = "Retrieves the ID of the published entry that corresponds to the specified TRS tool ID.")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry ID", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EntryAndVersionIds.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "No published entry corresponds to the TRS tool ID")
+    public EntryAndVersionIds getEntryIdByTrsToolId(
+            @Parameter(description = "TRS tool ID, for example `#workflow/github.com/org/repo`", name = "trsToolId", in = ParameterIn.QUERY, required = true) @QueryParam("trsToolId") String trsToolId) {
+        Entry<?, ?> entry = findPublishedEntryByTrsToolId(trsToolId);
+        return new EntryAndVersionIds(entry.getId(), null);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/mapTrsVersionId")
+    @Operation(operationId = "getEntryAndVersionIdsByTrsVersionId", description = "Retrieves the IDs of the published entry and non-hidden version that correspond to the specified TRS version ID.")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry and version IDs", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EntryAndVersionIds.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "No published entry and non-hidden version correspond to the TRS version ID")
+    public EntryAndVersionIds getEntryAndVersionIdsByTrsVersionId(
+            @Parameter(description = "TRS version ID, of the form `<TRS tool ID>:<version name>`, for example `#workflow/github.com/org/repo:main`", name = "trsVersionId", in = ParameterIn.QUERY, required = true) @QueryParam("trsVersionId") String trsVersionId) {
+        // Version names cannot contain colons, but TRS tool IDs can (for example, a registry with a port), so split at the last colon
+        int colonIndex = StringUtils.lastIndexOf(trsVersionId, ':');
+        throwIf(colonIndex < 0, TRS_ID_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
+        Entry<?, ?> entry = findPublishedEntryByTrsToolId(trsVersionId.substring(0, colonIndex));
+        Version<?> version = versionDAO.findNonHiddenVersionInEntryByName(entry.getId(), trsVersionId.substring(colonIndex + 1));
+        throwIf(version == null, TRS_ID_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
+        return new EntryAndVersionIds(entry.getId(), version.getId());
+    }
+
+    /**
+     * Finds the published entry that corresponds to the specified TRS tool ID, throwing a 404 if there is no such entry or the ID is malformed.
+     */
+    private Entry<?, ?> findPublishedEntryByTrsToolId(String trsToolId) {
+        throwIf(StringUtils.isEmpty(trsToolId), TRS_ID_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
+        Entry<?, ?> entry;
+        try {
+            // ParsedRegistryID URL-decodes its argument, but JAX-RS has already decoded the query parameter, so re-encode it to preserve the original value
+            ParsedRegistryID parsedID = new ParsedRegistryID(URLEncoder.encode(trsToolId, StandardCharsets.UTF_8));
+            // An empty user means that only published entries are returned
+            entry = TOOLS_API_SERVICE_IMPL.getEntry(parsedID, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException | WebApplicationException e) {
+            entry = null;
+        }
+        throwIf(entry == null || !entry.getIsPublished(), TRS_ID_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         return entry;
     }
 

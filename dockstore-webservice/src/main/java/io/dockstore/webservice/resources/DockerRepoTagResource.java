@@ -46,6 +46,9 @@ import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -66,6 +69,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,6 +297,31 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         checkNotNullEntry(tool);
         checkCanExamine(user, tool);
         return tool;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/published/{containerId}/tags/{tagId}")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    @Operation(operationId = "getPublishedTagById", description = "Retrieve a non-hidden tag of a published tool by ID")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a non-hidden tag of a published tool by ID", content = @Content(
+        mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Tag.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "No published tool with the specified ID has a non-hidden tag with the specified ID")
+    public Tag getPublishedTagById(
+        @Parameter(name = "containerId", description = "Tool to retrieve the tag from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
+        @Parameter(name = "tagId", description = "Tag to retrieve", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
+        @Parameter(name = "include", description = "Comma-delimited list of fields to include: validations", in = ParameterIn.QUERY) @QueryParam("include") String include) {
+        final Tool tool = toolDAO.findPublishedById(containerId);
+        checkNotNullEntry(tool);
+        final Tag tag = tagDAO.findNonHiddenVersionInEntry(containerId, tagId);
+        if (tag == null) {
+            throw new CustomWebApplicationException("Tag " + tagId + " does not exist for container " + containerId, HttpStatus.SC_NOT_FOUND);
+        }
+        if (checkIncludes(include, "validations")) {
+            Hibernate.initialize(tag.getValidations());
+        }
+        return tag;
     }
 
     @GET

@@ -2420,6 +2420,42 @@ paths:
           description: default response
       tags:
       - containers
+  /containers/published/{containerId}/tags/{tagId}:
+    get:
+      description: Retrieve a non-hidden tag of a published tool by ID
+      operationId: getPublishedTagById
+      parameters:
+      - description: Tool to retrieve the tag from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Tag to retrieve
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "Comma-delimited list of fields to include: validations"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: Get a non-hidden tag of a published tool by ID
+        "404":
+          description: No published tool with the specified ID has a non-hidden tag
+            with the specified ID
+      tags:
+      - containertags
   /containers/registerManual:
     post:
       description: "Register a tool manually, along with tags."
@@ -3473,6 +3509,54 @@ paths:
       - BEARER: []
       tags:
       - curation
+  /entries/mapTrsToolId:
+    get:
+      description: Retrieves the ID of the published entry that corresponds to the
+        specified TRS tool ID.
+      operationId: getEntryIdByTrsToolId
+      parameters:
+      - description: "TRS tool ID, for example `#workflow/github.com/org/repo`"
+        in: query
+        name: trsToolId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryAndVersionIds'
+          description: Successfully retrieved entry ID
+        "404":
+          description: No published entry corresponds to the TRS tool ID
+      tags:
+      - entries
+  /entries/mapTrsVersionId:
+    get:
+      description: Retrieves the IDs of the published entry and non-hidden version
+        that correspond to the specified TRS version ID.
+      operationId: getEntryAndVersionIdsByTrsVersionId
+      parameters:
+      - description: "TRS version ID, of the form `<TRS tool ID>:<version name>`,\
+          \ for example `#workflow/github.com/org/repo:main`"
+        in: query
+        name: trsVersionId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryAndVersionIds'
+          description: Successfully retrieved entry and version IDs
+        "404":
+          description: No published entry and non-hidden version correspond to the
+            TRS version ID
+      tags:
+      - entries
   /entries/toCategorize:
     get:
       description: "Get published entries that are new and uncategorized, or that\
@@ -8207,6 +8291,43 @@ paths:
           description: Bad Request
       tags:
       - workflows
+  /workflows/published/{workflowId}/workflowVersions/{workflowVersionId}:
+    get:
+      description: Retrieve a non-hidden version of a published workflow by ID
+      operationId: getPublishedWorkflowVersionById
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors, metrics"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+          description: Get a non-hidden version of a published workflow by ID
+        "404":
+          description: No published workflow with the specified ID has a non-hidden
+            version with the specified ID
+      tags:
+      - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     delete:
       description: Delete a stubbed workflow for a registry and repository path.
@@ -10688,6 +10809,22 @@ components:
           items:
             $ref: '#/components/schemas/Version'
           uniqueItems: true
+    EntryAndVersionIds:
+      type: object
+      description: "The Dockstore entry ID and, if applicable, version ID that correspond\
+        \ to a TRS ID"
+      properties:
+        entryId:
+          type: integer
+          format: int64
+          description: Dockstore entry ID
+        versionId:
+          type: integer
+          format: int64
+          description: "Dockstore version ID, present only if a TRS version ID was\
+            \ mapped"
+      required:
+      - entryId
     EntryLite:
       type: object
       properties:

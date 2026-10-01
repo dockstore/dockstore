@@ -91,6 +91,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.findNonHiddenVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id AND v.versionMetadata.hidden = false"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.findNonHiddenVersionInEntryByName", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :name = v.name AND v.versionMetadata.hidden = false"),
     @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
         query =
             "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "

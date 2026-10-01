@@ -19,11 +19,16 @@ import static io.dockstore.common.FixtureUtility.fixture;
 import static io.openapi.api.impl.ServiceInfoApiServiceImpl.getService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.model.EntryAndVersionIds;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;
@@ -38,6 +43,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 /**
  * @author dyuen
@@ -470,5 +476,55 @@ class GA4GHV2FinalIT extends GA4GHIT {
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+    }
+
+    @Test
+    void testTrsIdToDockstoreIdMapping() {
+        final long toolId = 6;
+        final long toolVersionId = 1;
+        final long workflowId = 11;
+        final String toolTrsId = "quay.io/test_org/test6";
+        final String toolTrsVersionId = toolTrsId + ":fakeName";
+        final String workflowTrsId = "#workflow/github.com/A/l";
+        final EntriesApi entriesApi = new EntriesApi(BaseIT.getAnonymousOpenAPIWebClient());
+
+        // published entries and non-hidden versions should map to their Dockstore IDs
+        EntryAndVersionIds ids = entriesApi.getEntryIdByTrsToolId(toolTrsId);
+        assertEquals(toolId, ids.getEntryId());
+        assertNull(ids.getVersionId());
+        ids = entriesApi.getEntryIdByTrsToolId(workflowTrsId);
+        assertEquals(workflowId, ids.getEntryId());
+        assertNull(ids.getVersionId());
+        ids = entriesApi.getEntryAndVersionIdsByTrsVersionId(toolTrsVersionId);
+        assertEquals(toolId, ids.getEntryId());
+        assertEquals(toolVersionId, ids.getVersionId());
+
+        // nonexistent and malformed IDs should not be found
+        assertNotFound(() -> entriesApi.getEntryIdByTrsToolId("quay.io/test_org/nonexistent"));
+        assertNotFound(() -> entriesApi.getEntryIdByTrsToolId("malformed"));
+        assertNotFound(() -> entriesApi.getEntryIdByTrsToolId(""));
+        assertNotFound(() -> entriesApi.getEntryAndVersionIdsByTrsVersionId(toolTrsId + ":nonexistent"));
+        assertNotFound(() -> entriesApi.getEntryAndVersionIdsByTrsVersionId(toolTrsId));
+
+        try {
+            // hidden versions should not be found
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = true where id = " + toolVersionId);
+            assertNotFound(() -> entriesApi.getEntryAndVersionIdsByTrsVersionId(toolTrsVersionId));
+            assertEquals(toolId, entriesApi.getEntryIdByTrsToolId(toolTrsId).getEntryId());
+
+            // unpublished entries and their versions should not be found
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + toolVersionId);
+            testingPostgres.runUpdateStatement("update tool set ispublished = false where id = " + toolId);
+            assertNotFound(() -> entriesApi.getEntryIdByTrsToolId(toolTrsId));
+            assertNotFound(() -> entriesApi.getEntryAndVersionIdsByTrsVersionId(toolTrsVersionId));
+        } finally {
+            testingPostgres.runUpdateStatement("update version_metadata set hidden = false where id = " + toolVersionId);
+            testingPostgres.runUpdateStatement("update tool set ispublished = true where id = " + toolId);
+        }
+    }
+
+    private static void assertNotFound(Executable executable) {
+        ApiException exception = assertThrows(ApiException.class, executable);
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode());
     }
 }
