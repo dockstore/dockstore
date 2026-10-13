@@ -21,8 +21,8 @@ services:
       - xpack.graph.enabled=false
       - xpack.watcher.enabled=false
       - xpack.ml.enabled=false
-      - script.allowed_types= none
-      - script.allowed_contexts= none
+      - script.allowed_types=inline
+      - script.allowed_contexts=score
     ulimits:
       memlock:
         soft: -1
