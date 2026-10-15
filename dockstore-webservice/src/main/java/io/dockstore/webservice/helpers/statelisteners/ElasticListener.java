@@ -450,12 +450,14 @@ public class ElasticListener implements StateListenerInterface {
         boolean isArchived = entry.isArchived();
         boolean curatedByDockstore = entry.getCategorySummaries().stream().anyMatch(cs -> cs.curator() == EntryVersion.Curator.DOCKSTORE);
         boolean curatedByUser = entry.getCategorySummaries().stream().anyMatch(cs -> cs.curator() == EntryVersion.Curator.USER);
-        // Combine the signals into a single numeric measurement.
+        // Combine the signals into a single numeric measurement that is >= 0.
         // Larger values indicate more "relevance".
+        // An entry that was updated today, but doesn't have any other positive or negative signals, should have a relevance of 1.0.
+        // An entry that was last updated many years ago, but doesn't have any other positive or negative signals, should have a relevance close to 0.0.
         // The following coefficients are tuned to the current state of Dockstore, wherein the maximum
         // execution count for any entry is approximately 1500000, and the maximum star count is 15.
-        // The goal is to get a good mix of entry types, some with stars and/or in categories, on the first page of Search results.
-        double numerator = 2 + Math.sqrt(executionCount + recentExecutionCount) + 80. * starCount + (curatedByDockstore ? 300. : 0.) + (curatedByUser ? 50. : 0.);
+        // The goal is to get a good mix of entry types, some with stars and/or with human-curated category membership, on the first page of Search results.
+        double numerator = 200. + 20 * Math.sqrt(executionCount + recentExecutionCount) + 1000. * starCount + (curatedByDockstore ? 6000. : 0.) + (curatedByUser ? 1000. : 0.);
         double denominator = (200. + daysSinceLastChange) * (isArchived ? 3 : 1);
         return numerator / denominator;
     }
