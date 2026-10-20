@@ -457,7 +457,7 @@ public class ElasticListener implements StateListenerInterface {
         // The following coefficients are tuned to the current state of Dockstore, wherein the maximum
         // execution count for any entry is approximately 1500000, and the maximum star count is 15.
         // The goal is to get a good mix of entry types, some with stars and/or with human-curated category membership, on the first page of Search results.
-        double numerator = 200. + 20 * Math.sqrt(executionCount + recentExecutionCount) + 1000. * starCount + (curatedByDockstore ? 6000. : 0.) + (curatedByUser ? 1000. : 0.);
+        double numerator = 200. + 20 * Math.sqrt(executionCount + recentExecutionCount) + 1600. * starCount + (curatedByDockstore ? 6000. : 0.) + (curatedByUser ? 1000. : 0.);
         double denominator = (200. + daysSinceLastChange) * (isArchived ? 3 : 1);
         return numerator / denominator;
     }
