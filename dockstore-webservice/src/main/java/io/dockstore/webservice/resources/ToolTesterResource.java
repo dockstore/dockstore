@@ -28,6 +28,7 @@ import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -63,12 +64,12 @@ public class ToolTesterResource {
     @Operation(summary = "Get ToolTester log file")
     @Produces(MediaType.TEXT_PLAIN)
     public String getToolTesterLog(
-            @QueryParam("tool_id") @Parameter(description = "TRS Tool Id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
-            @QueryParam("tool_version_name") @Parameter(example = "v1.0.0", required = true) String toolVersionName,
-            @QueryParam("test_filename") @Parameter(example = "hello_world.cwl.json", required = true) String testFilename,
-            @QueryParam("runner") @Parameter(example = "cwltool", required = true) String runner,
-            @QueryParam("log_type") @Parameter(required = true) ToolTesterLogType logType,
-            @QueryParam("filename") @Parameter(example = "1554477737092.log", required = true) String filename) {
+            @NotNull @QueryParam("tool_id") @Parameter(description = "TRS Tool Id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
+            @NotNull @QueryParam("tool_version_name") @Parameter(example = "v1.0.0", required = true) String toolVersionName,
+            @NotNull @QueryParam("test_filename") @Parameter(example = "hello_world.cwl.json", required = true) String testFilename,
+            @NotNull @QueryParam("runner") @Parameter(example = "cwltool", required = true) String runner,
+            @NotNull @QueryParam("log_type") @Parameter(required = true) ToolTesterLogType logType,
+            @NotNull @QueryParam("filename") @Parameter(example = "1554477737092.log", required = true) String filename) {
         if (this.bucketName == null) {
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                 HttpStatus.SC_SERVICE_UNAVAILABLE);
@@ -94,8 +95,8 @@ public class ToolTesterResource {
     @Path("logs/search")
     @Operation(summary = "Search for ToolTester log files")
     public List<ToolTesterLog> search(
-            @QueryParam("tool_id") @Parameter(description = "TRS Tool Id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
-            @QueryParam("tool_version_name") @Parameter(example = "v1.0.0", required = true) String toolVersionName) {
+            @NotNull @QueryParam("tool_id") @Parameter(description = "TRS Tool Id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
+            @NotNull @QueryParam("tool_version_name") @Parameter(example = "v1.0.0", required = true) String toolVersionName) {
         if (this.bucketName == null) {
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
