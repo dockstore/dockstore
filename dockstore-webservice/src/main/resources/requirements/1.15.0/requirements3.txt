@@ -1,6 +1,6 @@
 argcomplete==3.4.0
 CacheControl==0.14.0
-certifi==2024.7.4
+certifi==2026.10.18
 charset-normalizer==3.3.2
 coloredlogs==15.0.1
 cwl-upgrader==1.2.11
