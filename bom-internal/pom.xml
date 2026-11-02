@@ -128,6 +128,12 @@ POM as their parent.
                 <artifactId>circe-parser_2.13</artifactId>
                 <version>0.14.1</version>
             </dependency>
+            <!-- jsoup 1.23.2 requires jspecify 1.0.1; Dropwizard manages 1.0.0, which fails RequireUpperBoundDeps -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>1.0.1</version>
+            </dependency>
             <!-- Specify newer version of reflections to pass pgpverify-maven-plugin check -->
             <!-- https://mvnrepository.com/artifact/org.reflections/reflections -->
             <dependency>
