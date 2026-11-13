@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21.0.11_10-jdk-jammy
+FROM eclipse-temurin:21.0.13_9-jdk-jammy
 
 # Update the APT cache
 RUN apt-get update \
