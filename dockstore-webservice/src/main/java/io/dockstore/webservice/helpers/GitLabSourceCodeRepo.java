@@ -56,10 +56,21 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
     private final GitlabAPI gitlabAPI;
+    // GitLab rate limits requests (burst limit of 100/min per user), so look up each project only once per instance
+    private final Map<String, GitlabProject> projectCache = new HashMap<>();
 
     public GitLabSourceCodeRepo(String gitUsername, String gitlabTokenContent) {
         this.gitUsername = gitUsername;
         this.gitlabAPI = GitlabAPI.connect("https://gitlab.com", gitlabTokenContent, TokenType.ACCESS_TOKEN);
+    }
+
+    private GitlabProject getProject(String repositoryId) throws IOException {
+        GitlabProject project = projectCache.get(repositoryId);
+        if (project == null) {
+            project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            projectCache.put(repositoryId, project);
+        }
+        return project;
     }
 
     @Override
@@ -68,7 +79,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             fileName = fileName.substring(1);
         }
         try {
-            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabProject project = getProject(repositoryId);
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, fileName, reference);
             return new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -80,7 +91,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
         try {
-            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabProject project = getProject(repositoryId);
             List<GitlabRepositoryTree> repositoryTree = gitlabAPI.getRepositoryTree(project, pathToDirectory, reference, false);
             return repositoryTree.stream().map(GitlabRepositoryTree::getName).collect(Collectors.toList());
         } catch (IOException e) {
@@ -137,7 +148,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
 
         try {
-            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabProject project = getProject(repositoryId);
             List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
             List<GitlabBranch> branches = gitlabAPI.getBranches(project);
             tagList.forEach(tag -> {
@@ -207,7 +218,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     protected String getCommitID(String repositoryId, Version version) {
         try {
-            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabProject project = getProject(repositoryId);
             GitlabBranch gitlabBranch = gitlabAPI.getBranch(project, version.getReference());
             return gitlabBranch.getCommit().getId();
         } catch (IOException ex) {
@@ -245,7 +256,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String getDefaultBranch(String repositoryId) {
         try {
-            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabProject project = getProject(repositoryId);
             return project.getDefaultBranch();
         } catch (IOException e) {
             LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
@@ -266,8 +277,12 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
         // Need to remove root slash from path
         String convertedPath = path.startsWith("/") ? path.substring(1) : path;
+        if (convertedPath.isEmpty()) {
+            // nothing to fetch, and a request for it would just count against GitLab's rate limit
+            return null;
+        }
         try {
-            GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
+            GitlabProject project = getProject(id);
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, convertedPath, branch);
             if (repositoryFile != null) {
                 String content = new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
