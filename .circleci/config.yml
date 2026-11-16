@@ -480,9 +480,17 @@ commands:
       - run:
           name: Install postgresql client
           command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
+            # Retry, since apt mirrors occasionally fail or drop connections
+            for attempt in 1 2 3; do
+              if sudo rm -rf /var/lib/apt/lists/* && sudo apt update && sudo apt install -y postgresql-client; then
+                exit 0
+              fi
+              echo "Attempt $attempt of 3 to install the postgresql client failed"
+              if [ "$attempt" -lt 3 ]; then
+                sleep $((attempt * 10))
+              fi
+            done
+            exit 1
   install-git-secrets:
     steps:
       - run:
@@ -523,12 +531,31 @@ commands:
       - run:
           name: setup postgres
           command: |
+            # Everything that downloads something from the network is in a script that is retried as a whole, since
+            # postgresql.org and the apt mirrors occasionally drop connections. The key is downloaded to a file first (with
+            # curl's own retries) so that a truncated download fails here, instead of as "no valid OpenPGP data found" in gpg.
+            cat > /tmp/install_postgres_client.sh \<<'SCRIPT'
+            set -euo pipefail
             sudo apt update
             sudo apt install -y curl gpg gnupg2 lsb-release
-            curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
-            echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
+            curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o /tmp/ACCC4CF8.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+            sudo gpg --batch --yes --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg /tmp/ACCC4CF8.asc
+            echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
             sudo apt update
             sudo apt install -y postgresql-client-16
+            SCRIPT
+            installed=false
+            for attempt in 1 2 3; do
+              if bash /tmp/install_postgres_client.sh; then
+                installed=true
+                break
+              fi
+              echo "Attempt $attempt of 3 to install the postgresql client failed"
+              if [ "$attempt" -lt 3 ]; then
+                sleep $((attempt * 10))
+              fi
+            done
+            $installed
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_postgres_docker:
