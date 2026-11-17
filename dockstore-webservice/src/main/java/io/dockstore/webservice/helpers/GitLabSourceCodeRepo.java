@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
@@ -65,12 +66,18 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     private GitlabProject getProject(String repositoryId) throws IOException {
-        GitlabProject project = projectCache.get(repositoryId);
-        if (project == null) {
-            project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            projectCache.put(repositoryId, project);
+        try {
+            return projectCache.computeIfAbsent(repositoryId, id -> {
+                try {
+                    String[] parts = id.split("/");
+                    return gitlabAPI.getProject(parts[0], parts[1]);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
-        return project;
     }
 
     @Override
