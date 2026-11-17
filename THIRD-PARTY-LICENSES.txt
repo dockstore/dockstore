@@ -246,7 +246,7 @@ Lists of 349 third-party dependencies.
      (Apache License, Version 2.0) JJWT :: Impl (io.jsonwebtoken:jjwt-impl:0.11.5 - https://github.com/jwtk/jjwt/jjwt-impl)
      (The BSD License) JLine Bundle (org.jline:jline:3.30.17 - https://github.com/jline/jline3/jline)
      (Apache License, Version 2.0) Joda-Time (joda-time:joda-time:2.12.5 - https://www.joda.org/joda-time/)
-     (Public Domain) JSON in Java (org.json:json:20231013 - https://github.com/douglascrockford/JSON-java)
+     (Public Domain) JSON in Java (org.json:json:20260719 - https://github.com/douglascrockford/JSON-java)
      (The MIT License) jsoup Java HTML Parser (org.jsoup:jsoup:1.23.2 - https://jsoup.org/)
      (The Apache License, Version 2.0) JSpecify annotations (org.jspecify:jspecify:1.0.1 - https://jspecify.dev/)
      (Apache License, Version 2.0) JSR 354 (Money and Currency API) (javax.money:money-api:1.1 - https://javamoney.github.io/)
