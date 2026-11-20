@@ -1064,7 +1064,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20231013</version>
+                <version>20260719</version>
             </dependency>
             <dependency>
                 <groupId>org.pf4j</groupId>
