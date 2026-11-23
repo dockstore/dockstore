@@ -218,32 +218,6 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     }
 
     /**
-     * Tests that convert with valid imports will work (for WDL)
-     */
-    @Test
-    @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    void testRefreshAndConvertWithImportsWDLOld() {
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--descriptor-type", "wdl",
-                "--workflow-path", "/Dockstore.wdl", "--script" });
-
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
-
-        runOldDockstoreClient(dockstore,
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow:wdl_import", "--script" });
-
-    }
-
-    /**
      * Tests that a developer can launch a WDL workflow locally, instead of getting files from Dockstore
      */
     @Test

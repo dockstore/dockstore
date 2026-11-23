@@ -774,7 +774,7 @@
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
                     io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
-                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
 
@@ -835,7 +835,7 @@
                 <skipITs>false</skipITs>
                 <excludeGroups>io.dockstore.common.ToolTest, io.dockstore.common.WorkflowTest, io.dockstore.common.SlowTest,
                     io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
-                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
@@ -876,23 +876,12 @@
             </properties>
         </profile>
         <profile>
-            <id>bitbucket-tests</id>
-            <!-- run all tests involving bitbucket -->
-            <properties>
-                <skipTests>false</skipTests>
-                <skipITs>false</skipITs>
-                <groups>io.dockstore.common.BitBucketTest</groups>
-                <!-- Found through trial and error -->
-                <rerunFailingTestsCount>5</rerunFailingTestsCount>
-            </properties>
-        </profile>
-        <profile>
             <id>unit-tests</id>
             <!-- run all non-integration tests -->
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest, io.dockstore.common.HoverflyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.LocalStackTest, io.dockstore.common.HoverflyTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
             <build>

@@ -35,6 +35,7 @@ public final class RepositoryConstants {
         public static final String WORKFLOW_DOCKSTORE_YML = DOCKSTORE_TEST_USER_2 + "/workflow-dockstore-yml";
         // Contains a Galaxy workflow
         public static final String WORKFLOW_TESTING_REPO = DOCKSTORE_TEST_USER_2 + "/workflow-testing-repo";
+        public static final String TEST_WDL11_WORKFLOW = DOCKSTORE_TEST_USER_2 + "/TestEntryValidation";
     }
 
     public static class DockstoreTesting {
